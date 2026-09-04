@@ -327,6 +327,10 @@ const SETTINGS_SCHEMA = [
                 desc: "j/k to move between posts, g then i for the index, ? for the full list.",
             },
             {
+                id: "readableInk", label: "Make the board's own colours readable", type: "toggle", default: true,
+                desc: "The board colours a username by the group it is in, and several of those come out at about 2.5:1 against the page — well under what small text needs. This keeps the colour and the hue and lifts only its brightness, by the least it takes to be readable. Off leaves them exactly as the board wrote them.",
+            },
+            {
                 id: "skipLink", label: "Skip to content link", type: "toggle", default: true,
                 desc: "The first thing Tab reaches, so the top bar is not eight tabs in front of the first topic on every page.",
             },

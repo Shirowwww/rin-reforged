@@ -64,6 +64,7 @@ function bootLate() {
     guard("spacing", dropStrayBreaks);
     guard("separators", dropStraySeparators);
     guard("numbers", groupBoardNumbers);
+    guard("ink", readableBoardInk);
     guard("chrome", initChrome);
     guard("menu", initSettingsUI);
 

@@ -26,7 +26,16 @@ html[data-rr] {
     --rr-text:          #dfe4ea;
     --rr-text-strong:   #f2f5f8;
     --rr-muted:         #8b95a3;
-    --rr-faint:         #626c79;
+    /* Supporting detail: the rank under a name, the page label in the
+       pager, the date on a release row, "108 on this page". Quiet, and
+       quiet has a floor — every one of those measured between 3.1 and
+       4.0 against the surface it sits on, and 12px text is held to
+       4.5. The value on each theme is the smallest lift of the same
+       hue that clears 4.6 against --rr-surface, --rr-surface-2 and
+       --rr-bg-sunken, which is the field the palette trigger sits in.
+       test/contrast.js measures all four and fails the run if one
+       slips back. */
+    --rr-faint:         #7f8997;
 
     /* One accent, spent on actions and active state only. */
     --rr-accent:        #e0a338;
@@ -181,7 +190,7 @@ html[data-rr][data-rr-theme="native"] {
     --rr-text:          #cccccc;
     --rr-text-strong:   #ffffff;
     --rr-muted:         #aaaaaa;
-    --rr-faint:         #777777;
+    --rr-faint:         #878787;
 
     /* The board sets `a:link { color: red }`, and every link on the
        page takes its colour from this one token — the breadcrumb, the
@@ -219,7 +228,7 @@ html[data-rr][data-rr-theme="carbon"] {
     --rr-text:        #e2e2e2;
     --rr-text-strong: #f6f6f6;
     --rr-muted:       #949494;
-    --rr-faint:       #6a6a6a;
+    --rr-faint:       #8a8a8a;
     --rr-selection:   #3d3d3d;
 }
 
@@ -235,7 +244,7 @@ html[data-rr][data-rr-theme="paper"] {
     --rr-text:          #22262c;
     --rr-text-strong:   #0d1014;
     --rr-muted:         #5d646e;
-    --rr-faint:         #858c96;
+    --rr-faint:         #626972;
     --rr-accent:        #a5701a;
     --rr-accent-soft:   #f5e6c8;
     --rr-accent-text:   #ffffff;

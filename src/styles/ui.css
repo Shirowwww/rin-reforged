@@ -71,6 +71,13 @@ html[data-rr] a.rr-icon-btn:hover { color: var(--rr-text-strong); text-decoratio
     transform: translateY(-200%);
     transition: transform var(--rr-speed) ease;
 }
+/* `html[data-rr] a` is (0,1,1) and `.rr-skip` is (0,1,0), so the one
+   control on the page whose whole job is to be unmissable was drawing
+   the board's link red on the accent — 1.2:1 — and only the :focus
+   rule below was putting it right. It is only ever seen focused, so
+   nobody saw it; a rule that is correct by luck is a rule waiting to
+   be wrong. */
+html[data-rr] a.rr-skip { color: var(--rr-accent-text); }
 .rr-skip:focus {
     transform: none;
     color: var(--rr-accent-text);
@@ -503,13 +510,28 @@ html[data-rr] [data-rr-tip][data-rr-tip-side="above"]::after { top: auto; bottom
    click, so it must not offer one. */
 span.rr-tag { cursor: default; }
 
-.rr-tag[data-tag="info"]      { color: var(--rr-tag-info);      background: color-mix(in srgb, var(--rr-tag-info) 15%, transparent);      border-color: color-mix(in srgb, var(--rr-tag-info) 32%, transparent); }
-.rr-tag[data-tag="release"]   { color: var(--rr-tag-release);   background: color-mix(in srgb, var(--rr-tag-release) 15%, transparent);   border-color: color-mix(in srgb, var(--rr-tag-release) 32%, transparent); }
-.rr-tag[data-tag="problem"]   { color: var(--rr-tag-problem);   background: color-mix(in srgb, var(--rr-tag-problem) 15%, transparent);   border-color: color-mix(in srgb, var(--rr-tag-problem) 32%, transparent); }
-.rr-tag[data-tag="important"] { color: var(--rr-tag-important); background: color-mix(in srgb, var(--rr-tag-important) 15%, transparent); border-color: color-mix(in srgb, var(--rr-tag-important) 32%, transparent); }
-.rr-tag[data-tag="tutorial"]  { color: var(--rr-tag-tutorial);  background: color-mix(in srgb, var(--rr-tag-tutorial) 15%, transparent);  border-color: color-mix(in srgb, var(--rr-tag-tutorial) 32%, transparent); }
-.rr-tag[data-tag="request"]   { color: var(--rr-tag-request);   background: color-mix(in srgb, var(--rr-tag-request) 15%, transparent);   border-color: color-mix(in srgb, var(--rr-tag-request) 32%, transparent); }
-.rr-tag[data-tag="scs"]       { color: var(--rr-tag-scs);       background: color-mix(in srgb, var(--rr-tag-scs) 15%, transparent);       border-color: color-mix(in srgb, var(--rr-tag-scs) 32%, transparent); }
+/* One tag, three colours off one token.
+
+   A tag draws its own hue on a 15% tint of itself — which is a good
+   way to draw a label, and lands several of them just under 4.5:1 at
+   12px. Rather than move the palette (these hues are the board's
+   taxonomy, and two of them are the board's own red), the *ink* is
+   nudged toward whichever end of the theme it needs: lighter on a dark
+   theme, darker on a light one, from a single rule that never has to
+   know which it is on. The tint and the border stay on the pure
+   token, so the label still reads as its own colour. */
+.rr-tag[data-tag] {
+    color: color-mix(in srgb, var(--rr-tag-ink) 84%, var(--rr-text-strong));
+    background: color-mix(in srgb, var(--rr-tag-ink) 15%, transparent);
+    border-color: color-mix(in srgb, var(--rr-tag-ink) 32%, transparent);
+}
+.rr-tag[data-tag="info"]      { --rr-tag-ink: var(--rr-tag-info); }
+.rr-tag[data-tag="release"]   { --rr-tag-ink: var(--rr-tag-release); }
+.rr-tag[data-tag="problem"]   { --rr-tag-ink: var(--rr-tag-problem); }
+.rr-tag[data-tag="important"] { --rr-tag-ink: var(--rr-tag-important); }
+.rr-tag[data-tag="tutorial"]  { --rr-tag-ink: var(--rr-tag-tutorial); }
+.rr-tag[data-tag="request"]   { --rr-tag-ink: var(--rr-tag-request); }
+.rr-tag[data-tag="scs"]       { --rr-tag-ink: var(--rr-tag-scs); }
 
 /* ---- Toolbar above topic lists ---------------------------------- */
 

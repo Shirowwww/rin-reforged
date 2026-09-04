@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.7.2
+// @version         0.8.0
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -61,7 +61,16 @@ html[data-rr] {
     --rr-text:          #dfe4ea;
     --rr-text-strong:   #f2f5f8;
     --rr-muted:         #8b95a3;
-    --rr-faint:         #626c79;
+    /* Supporting detail: the rank under a name, the page label in the
+       pager, the date on a release row, "108 on this page". Quiet, and
+       quiet has a floor — every one of those measured between 3.1 and
+       4.0 against the surface it sits on, and 12px text is held to
+       4.5. The value on each theme is the smallest lift of the same
+       hue that clears 4.6 against --rr-surface, --rr-surface-2 and
+       --rr-bg-sunken, which is the field the palette trigger sits in.
+       test/contrast.js measures all four and fails the run if one
+       slips back. */
+    --rr-faint:         #7f8997;
 
     /* One accent, spent on actions and active state only. */
     --rr-accent:        #e0a338;
@@ -216,7 +225,7 @@ html[data-rr][data-rr-theme="native"] {
     --rr-text:          #cccccc;
     --rr-text-strong:   #ffffff;
     --rr-muted:         #aaaaaa;
-    --rr-faint:         #777777;
+    --rr-faint:         #878787;
 
     /* The board sets \`a:link { color: red }\`, and every link on the
        page takes its colour from this one token — the breadcrumb, the
@@ -254,7 +263,7 @@ html[data-rr][data-rr-theme="carbon"] {
     --rr-text:        #e2e2e2;
     --rr-text-strong: #f6f6f6;
     --rr-muted:       #949494;
-    --rr-faint:       #6a6a6a;
+    --rr-faint:       #8a8a8a;
     --rr-selection:   #3d3d3d;
 }
 
@@ -270,7 +279,7 @@ html[data-rr][data-rr-theme="paper"] {
     --rr-text:          #22262c;
     --rr-text-strong:   #0d1014;
     --rr-muted:         #5d646e;
-    --rr-faint:         #858c96;
+    --rr-faint:         #626972;
     --rr-accent:        #a5701a;
     --rr-accent-soft:   #f5e6c8;
     --rr-accent-text:   #ffffff;
@@ -1170,6 +1179,13 @@ html[data-rr] a.rr-icon-btn:hover { color: var(--rr-text-strong); text-decoratio
     transform: translateY(-200%);
     transition: transform var(--rr-speed) ease;
 }
+/* \`html[data-rr] a\` is (0,1,1) and \`.rr-skip\` is (0,1,0), so the one
+   control on the page whose whole job is to be unmissable was drawing
+   the board's link red on the accent — 1.2:1 — and only the :focus
+   rule below was putting it right. It is only ever seen focused, so
+   nobody saw it; a rule that is correct by luck is a rule waiting to
+   be wrong. */
+html[data-rr] a.rr-skip { color: var(--rr-accent-text); }
 .rr-skip:focus {
     transform: none;
     color: var(--rr-accent-text);
@@ -1602,13 +1618,28 @@ html[data-rr] [data-rr-tip][data-rr-tip-side="above"]::after { top: auto; bottom
    click, so it must not offer one. */
 span.rr-tag { cursor: default; }
 
-.rr-tag[data-tag="info"]      { color: var(--rr-tag-info);      background: color-mix(in srgb, var(--rr-tag-info) 15%, transparent);      border-color: color-mix(in srgb, var(--rr-tag-info) 32%, transparent); }
-.rr-tag[data-tag="release"]   { color: var(--rr-tag-release);   background: color-mix(in srgb, var(--rr-tag-release) 15%, transparent);   border-color: color-mix(in srgb, var(--rr-tag-release) 32%, transparent); }
-.rr-tag[data-tag="problem"]   { color: var(--rr-tag-problem);   background: color-mix(in srgb, var(--rr-tag-problem) 15%, transparent);   border-color: color-mix(in srgb, var(--rr-tag-problem) 32%, transparent); }
-.rr-tag[data-tag="important"] { color: var(--rr-tag-important); background: color-mix(in srgb, var(--rr-tag-important) 15%, transparent); border-color: color-mix(in srgb, var(--rr-tag-important) 32%, transparent); }
-.rr-tag[data-tag="tutorial"]  { color: var(--rr-tag-tutorial);  background: color-mix(in srgb, var(--rr-tag-tutorial) 15%, transparent);  border-color: color-mix(in srgb, var(--rr-tag-tutorial) 32%, transparent); }
-.rr-tag[data-tag="request"]   { color: var(--rr-tag-request);   background: color-mix(in srgb, var(--rr-tag-request) 15%, transparent);   border-color: color-mix(in srgb, var(--rr-tag-request) 32%, transparent); }
-.rr-tag[data-tag="scs"]       { color: var(--rr-tag-scs);       background: color-mix(in srgb, var(--rr-tag-scs) 15%, transparent);       border-color: color-mix(in srgb, var(--rr-tag-scs) 32%, transparent); }
+/* One tag, three colours off one token.
+
+   A tag draws its own hue on a 15% tint of itself — which is a good
+   way to draw a label, and lands several of them just under 4.5:1 at
+   12px. Rather than move the palette (these hues are the board's
+   taxonomy, and two of them are the board's own red), the *ink* is
+   nudged toward whichever end of the theme it needs: lighter on a dark
+   theme, darker on a light one, from a single rule that never has to
+   know which it is on. The tint and the border stay on the pure
+   token, so the label still reads as its own colour. */
+.rr-tag[data-tag] {
+    color: color-mix(in srgb, var(--rr-tag-ink) 84%, var(--rr-text-strong));
+    background: color-mix(in srgb, var(--rr-tag-ink) 15%, transparent);
+    border-color: color-mix(in srgb, var(--rr-tag-ink) 32%, transparent);
+}
+.rr-tag[data-tag="info"]      { --rr-tag-ink: var(--rr-tag-info); }
+.rr-tag[data-tag="release"]   { --rr-tag-ink: var(--rr-tag-release); }
+.rr-tag[data-tag="problem"]   { --rr-tag-ink: var(--rr-tag-problem); }
+.rr-tag[data-tag="important"] { --rr-tag-ink: var(--rr-tag-important); }
+.rr-tag[data-tag="tutorial"]  { --rr-tag-ink: var(--rr-tag-tutorial); }
+.rr-tag[data-tag="request"]   { --rr-tag-ink: var(--rr-tag-request); }
+.rr-tag[data-tag="scs"]       { --rr-tag-ink: var(--rr-tag-scs); }
 
 /* ---- Toolbar above topic lists ---------------------------------- */
 
@@ -2526,7 +2557,7 @@ html[data-rr] .rr-boardbar__donate {
        and the search box. */
     border-radius: var(--rr-radius);
     background: color-mix(in srgb, var(--rr-accent) 12%, transparent);
-    color: var(--rr-accent);
+    color: color-mix(in srgb, var(--rr-accent) 88%, var(--rr-text-strong));
     font-weight: 650;
 }
 html[data-rr] .rr-boardbar__donate:hover {
@@ -2981,7 +3012,7 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
 .rr-releases__chip[data-family][aria-pressed="true"] {
     background: color-mix(in srgb, var(--rr-family) 22%, transparent);
     border-color: var(--rr-family);
-    color: var(--rr-family);
+    color: color-mix(in srgb, var(--rr-family) 84%, var(--rr-text-strong));
     font-weight: 700;
 }
 
@@ -3052,7 +3083,10 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
 .rr-releases__tag[data-family="block"]  { --rr-family: var(--rr-danger); }
 
 .rr-releases__tag[data-family]:not([data-family="other"]) {
-    color: var(--rr-family);
+    /* The ink lifted toward the theme's own extreme, exactly as the
+       topic prefix tags do it, and for the same reason: the hue on a
+       14% tint of itself is under 4.5:1 at 12px. */
+    color: color-mix(in srgb, var(--rr-family) 84%, var(--rr-text-strong));
     background: color-mix(in srgb, var(--rr-family) 14%, transparent);
     border-color: color-mix(in srgb, var(--rr-family) 32%, transparent);
 }
@@ -3799,6 +3833,10 @@ const SETTINGS_SCHEMA = [
                 desc: "j/k to move between posts, g then i for the index, ? for the full list.",
             },
             {
+                id: "readableInk", label: "Make the board's own colours readable", type: "toggle", default: true,
+                desc: "The board colours a username by the group it is in, and several of those come out at about 2.5:1 against the page — well under what small text needs. This keeps the colour and the hue and lifts only its brightness, by the least it takes to be readable. Off leaves them exactly as the board wrote them.",
+            },
+            {
                 id: "skipLink", label: "Skip to content link", type: "toggle", default: true,
                 desc: "The first thing Tab reaches, so the top bar is not eight tabs in front of the first topic on every page.",
             },
@@ -4033,6 +4071,151 @@ function parseDocument(html) {
         console.warn("[RIN Reforged] cannot parse a fetched page:", err);
         return null;
     }
+}
+
+/* ---- Colour ------------------------------------------------------- */
+
+/* The board paints usernames from their group: administrators red,
+   moderators green, the upload crew its own colour, each written as an
+   inline style on the link. Several of those are #BF0000 and darker on
+   a near-black page — 2.5:1, against the 4.5 that 13px text is held
+   to — and they are on the header of every post and the last line of
+   every listing row.
+ *
+ * Keeping them is not in question: those colours are how this board
+ * tells you who is talking. What follows keeps the hue and the
+ * saturation and moves only the lightness, by the smallest step that
+ * makes the name readable on whatever is actually behind it. A red
+ * name stays a red name. */
+
+function parseColour(text) {
+    const raw = String(text).trim();
+
+    /* Hex, because a custom property read off the root comes back as
+       whatever was typed into the stylesheet rather than as a resolved
+       rgb(). Reading #f6f6f6 by pulling the digits out of it gives
+       rgb(6, 6, 6) — which is not near-white, it is near-black, and a
+       colour lifted toward it goes the wrong way on every theme whose
+       text colour happens to contain a digit. */
+    const hex = raw.match(/^#([0-9a-f]{3,8})$/i);
+    if (hex) {
+        const digits = hex[1].length <= 4
+            ? hex[1].split("").map((c) => c + c).join("")
+            : hex[1];
+        const byte = (at) => parseInt(digits.slice(at, at + 2), 16);
+        return {
+            r: byte(0), g: byte(2), b: byte(4),
+            a: digits.length >= 8 ? byte(6) / 255 : 1,
+        };
+    }
+
+    const parts = (raw.match(/[\d.]+/g) || []).map(Number);
+    if (parts.length < 3) return null;
+    // color-mix() resolves to color(srgb r g b / a), 0-1 per channel.
+    const scale = /^color\(/.test(raw) ? 255 : 1;
+    return {
+        r: parts[0] * scale,
+        g: parts[1] * scale,
+        b: parts[2] * scale,
+        a: parts.length > 3 ? parts[3] : 1,
+    };
+}
+
+function relativeLuminance({ r, g, b }) {
+    const channel = (value) => {
+        const v = value / 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+function contrastRatio(one, two) {
+    const a = relativeLuminance(one);
+    const b = relativeLuminance(two);
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+const INK_STEPS = 40;
+
+/**
+ * The same colour, made readable against `behind`, by mixing it toward
+ * `toward` — the theme's own strong text colour — a fortieth at a time
+ * until it reaches `target`. Returns null when it already reads, and
+ * when nothing on the way there does.
+ *
+ * Mixing rather than raising the lightness, and this is the second
+ * attempt. Climbing the lightness axis keeps the saturation, so the
+ * board's #BF0000 came out at pure rgb(255, 38, 38) — readable and
+ * neon, on a board whose author has already said in as many words that
+ * the red was too loud. Mixing toward the text colour desaturates as
+ * it lightens and lands somewhere near the softened red this script
+ * already chose for its links: the same colour, quieter and legible,
+ * rather than the same colour turned up.
+ */
+function readableInk(colour, behind, target, toward) {
+    if (!colour || !behind) return null;
+    if (contrastRatio(colour, behind) >= target) return null;
+
+    const end = toward || (relativeLuminance(behind) > 0.5
+        ? { r: 0, g: 0, b: 0, a: 1 }
+        : { r: 255, g: 255, b: 255, a: 1 });
+
+    for (let step = 1; step <= INK_STEPS; step += 1) {
+        const mix = step / INK_STEPS;
+        const blend = {
+            r: colour.r + (end.r - colour.r) * mix,
+            g: colour.g + (end.g - colour.g) * mix,
+            b: colour.b + (end.b - colour.b) * mix,
+            a: 1,
+        };
+        if (contrastRatio(blend, behind) < target) continue;
+        /* One step past the first that clears it: the same name appears
+           on a plain row and on a striped one, and those are different
+           backgrounds. A fortieth is not a visible difference in the
+           colour and it is the difference between passing everywhere
+           and passing where it was measured. */
+        const over = Math.min(step + 1, INK_STEPS) / INK_STEPS;
+        return {
+            r: colour.r + (end.r - colour.r) * over,
+            g: colour.g + (end.g - colour.g) * over,
+            b: colour.b + (end.b - colour.b) * over,
+            a: 1,
+        };
+    }
+    return null;
+}
+
+/** One colour over another, both opaque afterwards. */
+function overColour(top, bottom) {
+    return {
+        r: top.r * top.a + bottom.r * (1 - top.a),
+        g: top.g * top.a + bottom.g * (1 - top.a),
+        b: top.b * top.a + bottom.b * (1 - top.a),
+        a: 1,
+    };
+}
+
+/**
+ * What is actually painted behind a node.
+ *
+ * Composited rather than "the first ancestor that is opaque enough":
+ * a tag, a chip and a hovered row are all a tint over something else,
+ * and stopping at the first one that happens to be solid measures the
+ * wrong colour by however much the tints above it were worth.
+ */
+function backdropOf(node) {
+    const chain = [];
+    for (let at = node.parentElement; at; at = at.parentElement) {
+        chain.push(at);
+        const colour = parseColour(getComputedStyle(at).backgroundColor);
+        if (colour && colour.a >= 1) break;
+    }
+    let stack = { r: 255, g: 255, b: 255, a: 1 };
+    for (const at of chain.reverse()) {
+        const colour = parseColour(getComputedStyle(at).backgroundColor);
+        if (colour && colour.a > 0) stack = overColour(colour, stack);
+    }
+    return stack;
 }
 
 /* ---- Numbers ------------------------------------------------------ */
@@ -4738,6 +4921,65 @@ function initTheme() {
         const listener = () => { if (settings.get("theme") === "auto") applyTheme(); };
         if (query.addEventListener) query.addEventListener("change", listener);
         else if (query.addListener) query.addListener(listener);
+    }
+}
+
+/* ---- The board's own colours, kept and made readable --------------- */
+
+/* Every colour the *script* paints is measured against WCAG AA by
+   test/contrast.js and every one of them passes. The board's own are a
+   different matter and not the script's to redesign — except that they
+   are on the same page, in the same type sizes, and several of them
+   are genuinely hard to read: group-coloured usernames come out at
+   2.5:1 on the dark themes and 1.9:1 on the light one, and the
+   "[[Please login to see this link.]]" marker at 3.1.
+ *
+ * So they are kept and lifted: same hue, same saturation, the smallest
+ * change in lightness that reaches the threshold against whatever is
+ * behind them. Only colours the board wrote inline, only where they
+ * fail, and never more than they have to. The original is kept on the
+ * element so nothing is lost.
+ *
+ * It has its own switch, because a board's colours are part of how it
+ * looks and somebody may prefer them exactly as they are. */
+/* 4.5 for everything, including the large text WCAG lets off at 3.
+   Two thresholds meant the pass and test/contrast.js could disagree
+   about one span in a signature and each be right, which is a bad way
+   to spend an afternoon; and being stricter than the standard on
+   somebody else's colours only ever makes them easier to read. */
+const INK_TARGET = 4.75;
+
+function readableBoardInk() {
+    if (!settings.get("readableInk")) return;
+
+    // The end of the mix: the theme's own strongest text colour, so a
+    // lifted username lands in this palette rather than beside it.
+    const toward = parseColour(
+        getComputedStyle(document.documentElement).getPropertyValue("--rr-text-strong").trim())
+        || null;
+
+    const behind = new Map();
+    const backdropFor = (node) => {
+        const parent = node.parentElement;
+        if (!parent) return null;
+        if (!behind.has(parent)) behind.set(parent, backdropOf(node));
+        return behind.get(parent);
+    };
+
+    for (const node of document.querySelectorAll('#wrapcentre [style*="color"], .rr-nav [style*="color"]')) {
+        const written = node.style.color;
+        if (!written || node.hasAttribute("data-rr-ink")) continue;
+
+        const colour = parseColour(getComputedStyle(node).color);
+        const bg = backdropFor(node);
+        if (!colour || !bg) continue;
+
+        const lifted = readableInk(colour, bg, INK_TARGET, toward);
+        if (!lifted) continue;
+
+        node.setAttribute("data-rr-ink", written);
+        node.style.color = "rgb(" + [lifted.r, lifted.g, lifted.b]
+            .map((v) => Math.round(v)).join(", ") + ")";
     }
 }
 
@@ -10939,7 +11181,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.7.2";
+const RR_VERSION = "0.8.0";
 
 function injectStyles() {
     const host = document.head || document.documentElement;
@@ -10992,6 +11234,7 @@ function bootLate() {
     guard("spacing", dropStrayBreaks);
     guard("separators", dropStraySeparators);
     guard("numbers", groupBoardNumbers);
+    guard("ink", readableBoardInk);
     guard("chrome", initChrome);
     guard("menu", initSettingsUI);
 

@@ -164,7 +164,7 @@ html[data-rr] .rr-boardbar__donate {
        and the search box. */
     border-radius: var(--rr-radius);
     background: color-mix(in srgb, var(--rr-accent) 12%, transparent);
-    color: var(--rr-accent);
+    color: color-mix(in srgb, var(--rr-accent) 88%, var(--rr-text-strong));
     font-weight: 650;
 }
 html[data-rr] .rr-boardbar__donate:hover {
@@ -619,7 +619,7 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
 .rr-releases__chip[data-family][aria-pressed="true"] {
     background: color-mix(in srgb, var(--rr-family) 22%, transparent);
     border-color: var(--rr-family);
-    color: var(--rr-family);
+    color: color-mix(in srgb, var(--rr-family) 84%, var(--rr-text-strong));
     font-weight: 700;
 }
 
@@ -690,7 +690,10 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
 .rr-releases__tag[data-family="block"]  { --rr-family: var(--rr-danger); }
 
 .rr-releases__tag[data-family]:not([data-family="other"]) {
-    color: var(--rr-family);
+    /* The ink lifted toward the theme's own extreme, exactly as the
+       topic prefix tags do it, and for the same reason: the hue on a
+       14% tint of itself is under 4.5:1 at 12px. */
+    color: color-mix(in srgb, var(--rr-family) 84%, var(--rr-text-strong));
     background: color-mix(in srgb, var(--rr-family) 14%, transparent);
     border-color: color-mix(in srgb, var(--rr-family) 32%, transparent);
 }

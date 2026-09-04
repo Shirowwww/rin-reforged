@@ -1708,6 +1708,84 @@ const CHECKS = [
         },
     },
 
+    /* ---- The board's own colours, kept and made readable ----------- */
+    {
+        name: "ink: a username the board coloured is readable, and still that colour",
+        url: FORUM,
+        run: () => {
+            const lifted = Array.from(document.querySelectorAll("[data-rr-ink]"));
+            if (!lifted.length) return "nothing was lifted on a page full of coloured names";
+
+            const parse = (text) => {
+                const parts = (text.match(/[\d.]+/g) || []).map(Number);
+                return { r: parts[0], g: parts[1], b: parts[2] };
+            };
+            const channel = (v) => {
+                v /= 255;
+                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+            };
+            const luma = (c) => 0.2126 * channel(c.r) + 0.7152 * channel(c.g) + 0.0722 * channel(c.b);
+            const ratio = (a, b) => {
+                const x = luma(a), y = luma(b);
+                return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+            };
+            const behind = (node) => {
+                for (let at = node.parentElement; at; at = at.parentElement) {
+                    const c = getComputedStyle(at).backgroundColor;
+                    const parts = (c.match(/[\d.]+/g) || []).map(Number);
+                    if (parts.length >= 3 && (parts[3] === undefined || parts[3] >= 1)) return parse(c);
+                }
+                return { r: 0, g: 0, b: 0 };
+            };
+
+            for (const node of lifted.slice(0, 12)) {
+                const was = parse(node.getAttribute("data-rr-ink"));
+                const now = parse(getComputedStyle(node).color);
+                const bg = behind(node);
+
+                // Readable where it was not.
+                if (ratio(now, bg) < 4.5) {
+                    return "still " + ratio(now, bg).toFixed(2) + ":1 after lifting "
+                        + node.textContent.trim().slice(0, 16);
+                }
+                if (ratio(was, bg) >= 4.5) return "a colour that already read was changed anyway";
+
+                /* And still recognisably the colour the board chose:
+                   the channel that led still leads. #BF0000 lifted to
+                   pure red is readable and is not what this board looks
+                   like. */
+                const order = (c) => [["r", c.r], ["g", c.g], ["b", c.b]]
+                    .sort((a, b) => b[1] - a[1]).map((pair) => pair[0]).join("");
+                if (order(was) !== order(now)) {
+                    return "the hue moved: " + node.getAttribute("data-rr-ink")
+                        + " became " + getComputedStyle(node).color;
+                }
+            }
+            return null;
+        },
+    },
+    {
+        name: "ink: switched off, the board's colours are exactly its own",
+        url: FORUM,
+        settings: { readableInk: false },
+        run: () => {
+            if (document.querySelector("[data-rr-ink]")) return "a colour was lifted with the switch off";
+            const coloured = document.querySelector(".username-coloured");
+            if (!coloured) return "no coloured username on this page";
+            const written = (coloured.getAttribute("style") || "").match(/color:\s*([^;]+)/);
+            if (!written) return "the board did not write a colour here";
+            // What the board wrote is what is drawn.
+            const probe = document.createElement("span");
+            probe.style.color = written[1];
+            document.body.append(probe);
+            const wanted = getComputedStyle(probe).color;
+            probe.remove();
+            return getComputedStyle(coloured).color === wanted
+                ? null
+                : "drawn as " + getComputedStyle(coloured).color + ", the board wrote " + wanted;
+        },
+    },
+
     /* ---- Counts and columns ---------------------------------------- */
     {
         name: "listings: a long count is grouped, and still says what it was",

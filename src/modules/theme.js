@@ -80,3 +80,62 @@ function initTheme() {
         else if (query.addListener) query.addListener(listener);
     }
 }
+
+/* ---- The board's own colours, kept and made readable --------------- */
+
+/* Every colour the *script* paints is measured against WCAG AA by
+   test/contrast.js and every one of them passes. The board's own are a
+   different matter and not the script's to redesign — except that they
+   are on the same page, in the same type sizes, and several of them
+   are genuinely hard to read: group-coloured usernames come out at
+   2.5:1 on the dark themes and 1.9:1 on the light one, and the
+   "[[Please login to see this link.]]" marker at 3.1.
+ *
+ * So they are kept and lifted: same hue, same saturation, the smallest
+ * change in lightness that reaches the threshold against whatever is
+ * behind them. Only colours the board wrote inline, only where they
+ * fail, and never more than they have to. The original is kept on the
+ * element so nothing is lost.
+ *
+ * It has its own switch, because a board's colours are part of how it
+ * looks and somebody may prefer them exactly as they are. */
+/* 4.5 for everything, including the large text WCAG lets off at 3.
+   Two thresholds meant the pass and test/contrast.js could disagree
+   about one span in a signature and each be right, which is a bad way
+   to spend an afternoon; and being stricter than the standard on
+   somebody else's colours only ever makes them easier to read. */
+const INK_TARGET = 4.75;
+
+function readableBoardInk() {
+    if (!settings.get("readableInk")) return;
+
+    // The end of the mix: the theme's own strongest text colour, so a
+    // lifted username lands in this palette rather than beside it.
+    const toward = parseColour(
+        getComputedStyle(document.documentElement).getPropertyValue("--rr-text-strong").trim())
+        || null;
+
+    const behind = new Map();
+    const backdropFor = (node) => {
+        const parent = node.parentElement;
+        if (!parent) return null;
+        if (!behind.has(parent)) behind.set(parent, backdropOf(node));
+        return behind.get(parent);
+    };
+
+    for (const node of document.querySelectorAll('#wrapcentre [style*="color"], .rr-nav [style*="color"]')) {
+        const written = node.style.color;
+        if (!written || node.hasAttribute("data-rr-ink")) continue;
+
+        const colour = parseColour(getComputedStyle(node).color);
+        const bg = backdropFor(node);
+        if (!colour || !bg) continue;
+
+        const lifted = readableInk(colour, bg, INK_TARGET, toward);
+        if (!lifted) continue;
+
+        node.setAttribute("data-rr-ink", written);
+        node.style.color = "rgb(" + [lifted.r, lifted.g, lifted.b]
+            .map((v) => Math.round(v)).join(", ") + ")";
+    }
+}

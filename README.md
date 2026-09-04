@@ -53,6 +53,11 @@ checks this repository and offers new versions on its own.
 - **Better posting** — quick reply from the foot of the thread, quote what you
   select, an unsent reply kept in your browser, long quotes and low-value
   replies folded (never removed), images in a lightbox.
+- **Readable, and measured.** Every colour this script paints meets WCAG AA on
+  all four themes — 8 748 pieces of text checked across five pages, and the
+  check fails the build if one slips. The board's own group-coloured usernames
+  are kept and lifted too: same hue, the least change in brightness that makes
+  them readable, and a switch to leave them exactly as the board wrote them.
 
 Every feature has a switch, with a sentence saying what it does. Open the
 settings panel with the cog in the top bar.
@@ -100,7 +105,9 @@ export RR_CHROME=/path/to/chrome
 node test/check.js                 # every page, 7 widths, 9 settings combinations
 node test/features.js              # does each feature still do its job
 node test/live.js                  # the same, against cs.rin.ru itself
+node test/contrast.js              # every colour, every theme, against WCAG AA
 node test/scan.js --local --repeat # what reading a whole topic costs
+node test/perf.js                  # what the script costs to run
 ```
 
 More in [docs/DESIGN.md](docs/DESIGN.md): why each feature works the way it

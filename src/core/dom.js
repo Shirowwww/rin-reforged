@@ -197,6 +197,151 @@ function parseDocument(html) {
     }
 }
 
+/* ---- Colour ------------------------------------------------------- */
+
+/* The board paints usernames from their group: administrators red,
+   moderators green, the upload crew its own colour, each written as an
+   inline style on the link. Several of those are #BF0000 and darker on
+   a near-black page — 2.5:1, against the 4.5 that 13px text is held
+   to — and they are on the header of every post and the last line of
+   every listing row.
+ *
+ * Keeping them is not in question: those colours are how this board
+ * tells you who is talking. What follows keeps the hue and the
+ * saturation and moves only the lightness, by the smallest step that
+ * makes the name readable on whatever is actually behind it. A red
+ * name stays a red name. */
+
+function parseColour(text) {
+    const raw = String(text).trim();
+
+    /* Hex, because a custom property read off the root comes back as
+       whatever was typed into the stylesheet rather than as a resolved
+       rgb(). Reading #f6f6f6 by pulling the digits out of it gives
+       rgb(6, 6, 6) — which is not near-white, it is near-black, and a
+       colour lifted toward it goes the wrong way on every theme whose
+       text colour happens to contain a digit. */
+    const hex = raw.match(/^#([0-9a-f]{3,8})$/i);
+    if (hex) {
+        const digits = hex[1].length <= 4
+            ? hex[1].split("").map((c) => c + c).join("")
+            : hex[1];
+        const byte = (at) => parseInt(digits.slice(at, at + 2), 16);
+        return {
+            r: byte(0), g: byte(2), b: byte(4),
+            a: digits.length >= 8 ? byte(6) / 255 : 1,
+        };
+    }
+
+    const parts = (raw.match(/[\d.]+/g) || []).map(Number);
+    if (parts.length < 3) return null;
+    // color-mix() resolves to color(srgb r g b / a), 0-1 per channel.
+    const scale = /^color\(/.test(raw) ? 255 : 1;
+    return {
+        r: parts[0] * scale,
+        g: parts[1] * scale,
+        b: parts[2] * scale,
+        a: parts.length > 3 ? parts[3] : 1,
+    };
+}
+
+function relativeLuminance({ r, g, b }) {
+    const channel = (value) => {
+        const v = value / 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+function contrastRatio(one, two) {
+    const a = relativeLuminance(one);
+    const b = relativeLuminance(two);
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+const INK_STEPS = 40;
+
+/**
+ * The same colour, made readable against `behind`, by mixing it toward
+ * `toward` — the theme's own strong text colour — a fortieth at a time
+ * until it reaches `target`. Returns null when it already reads, and
+ * when nothing on the way there does.
+ *
+ * Mixing rather than raising the lightness, and this is the second
+ * attempt. Climbing the lightness axis keeps the saturation, so the
+ * board's #BF0000 came out at pure rgb(255, 38, 38) — readable and
+ * neon, on a board whose author has already said in as many words that
+ * the red was too loud. Mixing toward the text colour desaturates as
+ * it lightens and lands somewhere near the softened red this script
+ * already chose for its links: the same colour, quieter and legible,
+ * rather than the same colour turned up.
+ */
+function readableInk(colour, behind, target, toward) {
+    if (!colour || !behind) return null;
+    if (contrastRatio(colour, behind) >= target) return null;
+
+    const end = toward || (relativeLuminance(behind) > 0.5
+        ? { r: 0, g: 0, b: 0, a: 1 }
+        : { r: 255, g: 255, b: 255, a: 1 });
+
+    for (let step = 1; step <= INK_STEPS; step += 1) {
+        const mix = step / INK_STEPS;
+        const blend = {
+            r: colour.r + (end.r - colour.r) * mix,
+            g: colour.g + (end.g - colour.g) * mix,
+            b: colour.b + (end.b - colour.b) * mix,
+            a: 1,
+        };
+        if (contrastRatio(blend, behind) < target) continue;
+        /* One step past the first that clears it: the same name appears
+           on a plain row and on a striped one, and those are different
+           backgrounds. A fortieth is not a visible difference in the
+           colour and it is the difference between passing everywhere
+           and passing where it was measured. */
+        const over = Math.min(step + 1, INK_STEPS) / INK_STEPS;
+        return {
+            r: colour.r + (end.r - colour.r) * over,
+            g: colour.g + (end.g - colour.g) * over,
+            b: colour.b + (end.b - colour.b) * over,
+            a: 1,
+        };
+    }
+    return null;
+}
+
+/** One colour over another, both opaque afterwards. */
+function overColour(top, bottom) {
+    return {
+        r: top.r * top.a + bottom.r * (1 - top.a),
+        g: top.g * top.a + bottom.g * (1 - top.a),
+        b: top.b * top.a + bottom.b * (1 - top.a),
+        a: 1,
+    };
+}
+
+/**
+ * What is actually painted behind a node.
+ *
+ * Composited rather than "the first ancestor that is opaque enough":
+ * a tag, a chip and a hovered row are all a tint over something else,
+ * and stopping at the first one that happens to be solid measures the
+ * wrong colour by however much the tints above it were worth.
+ */
+function backdropOf(node) {
+    const chain = [];
+    for (let at = node.parentElement; at; at = at.parentElement) {
+        chain.push(at);
+        const colour = parseColour(getComputedStyle(at).backgroundColor);
+        if (colour && colour.a >= 1) break;
+    }
+    let stack = { r: 255, g: 255, b: 255, a: 1 };
+    for (const at of chain.reverse()) {
+        const colour = parseColour(getComputedStyle(at).backgroundColor);
+        if (colour && colour.a > 0) stack = overColour(colour, stack);
+    }
+    return stack;
+}
+
 /* ---- Numbers ------------------------------------------------------ */
 
 /* This board counts in the millions and prints the counts as one run of

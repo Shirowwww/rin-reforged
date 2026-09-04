@@ -259,6 +259,51 @@ of the four reasons it is.
 
 ![A folded quote](screenshots/folded-quote.png)
 
+### It is readable, and that is a measurement rather than an opinion
+
+Four themes and about forty colour tokens, every one of them chosen by
+eye against a screenshot. That is the right way to choose a colour and
+the wrong way to check one: "muted grey on a dark surface" is a
+judgement and 3.9:1 is a number.
+
+`test/contrast.js` walks every element that draws text on five pages
+across all four themes — 8 748 of them — works out what colour that
+text really is against what is really behind it, compositing back up
+the tree through every tint on the way, and measures the pair against
+the WCAG AA threshold for its size. It fails the run on anything this
+script paints.
+
+The first run found sixty pairs below the line. Almost all of them
+were one token: `--rr-faint`, which carries the rank under a name, the
+date on a release row, the page label in the pager and "108 on this
+page", and which measured between 3.1 and 4.0 on every theme. It is
+now the smallest lift of the same hue that clears 4.6 against all three
+surfaces it is ever set on. The tags were the other cluster: a hue on a
+15% tint of itself is a good way to draw a label and lands just under
+4.5 at 12px, so the *ink* is nudged toward whichever end of the theme
+it needs — lighter on a dark theme, darker on a light one — while the
+tint and the border stay on the pure colour.
+
+Two of the findings were bugs rather than choices. `html[data-rr] a` is
+(0,1,1) and `.rr-skip` is (0,1,0), so the one control on the page whose
+whole job is to be unmissable was drawing the board's link red on the
+accent, at 1.2:1, and only its `:focus` rule was putting that right —
+correct by luck, on the only state anyone sees it in.
+
+**The board's own colours are kept and lifted too.** phpBB paints a
+username from the group it is in, inline, per user; several of those
+land at 2.5:1 on the dark themes and 1.9:1 on the light one, on the
+header of every post and the last line of every listing row. Keeping
+them is not in question — those colours are how this board tells you
+who is talking. So the hue is kept and mixed toward the theme's own
+strongest text colour by the least it takes to reach the line. The
+board's `#BF0000` becomes `#d76060`: the same red, quieter, readable,
+and near the softened red this script had already chosen for its links.
+The first attempt raised the lightness instead, which keeps the
+saturation and produced pure `rgb(255, 38, 38)` — readable, and neon.
+It has its own switch, because a board's colours are part of how it
+looks.
+
 ### Settings
 
 Every feature above has a switch, with a sentence saying what it does
