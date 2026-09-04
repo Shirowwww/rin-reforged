@@ -481,6 +481,24 @@ without asking Valve anything. Both found real bugs on their first run —
 a request queue that deadlocked whenever a lookup needed two requests,
 and a fold threshold that folded quotes it then failed to clip.
 
+`sweep.js` goes further: fifty live pages — the index, every English
+forum and two Russian ones, thirty topics chosen off the listings for
+their prefix and their size, and the last page of every long one — with
+the bundle at document-start, each asked the same twenty questions.
+Overflow, duplicated bars, text under 11px, nameless controls,
+separators that separate nothing, Russian in an English rank, a date or
+a build id read as a version, broken images, empty boxes, runs of `<br>`
+left as spacing, a bar that has become a stack, the board's own pager
+still showing, ungrouped counts, coloured text still dim after the
+lift, two controls to one destination, clipped text, kindless rows,
+focusable ghosts. Its first run found four real things on nearly every
+page — the board's "Page 1 of 615" band still drawn on every listing,
+`<br>` spacing doubled with the blocks' own margins, a 9px label, and a
+sweep-side measurement that disagreed with the script about what was
+behind a span — and three false positives, which were fixed in the
+sweep. It is paced at one page every two seconds because the board
+queues clients that ask faster; see the note on rate limiting above.
+
 `live.js` runs the built bundle against cs.rin.ru with `addInitScript`, which
 executes it at document-start the way a userscript manager does. It is
 read-only: it opens pages, reads the DOM and closes. It has already earned its

@@ -94,6 +94,15 @@ html[data-rr] #wrapfooter {
 }
 html[data-rr] #wrapcentre { padding-top: var(--rr-s5); padding-bottom: var(--rr-s6); }
 
+/* subsilver2 spaces its blocks with bare <br> between them; every block
+   this script draws carries a margin of its own, so each of those is a
+   second gap on top of the first. dropStrayBreaks() takes the ones
+   beside the script's own bars; these are the rest — between the page
+   header and the content, between two tables — and a sweep of fifty
+   live pages found one on every listing. */
+html[data-rr] #wrapcentre > br,
+html[data-rr] #pagecontent > br { display: none; }
+
 /* The original 340px-tall masthead is replaced by rr-nav; the node stays
    in the DOM because other userscripts read it, but leaves the flow. */
 html[data-rr][data-rr-nav="on"] #wrapheader { display: none; }

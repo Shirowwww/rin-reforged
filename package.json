@@ -1,6 +1,6 @@
 {
   "name": "rin-reforged",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "A full redesign of the CS.RIN.RU forum as a userscript",
   "license": "Unlicense",
   "private": false,
@@ -17,7 +17,8 @@
     "test:shots": "node test/shots.js",
     "test:scan": "node test/scan.js",
     "test:contrast": "node test/contrast.js",
-    "test:perf": "node test/perf.js"
+    "test:perf": "node test/perf.js",
+    "test:sweep": "node test/sweep.js"
   },
   "devDependencies": {
     "playwright-core": "^1.62.1"

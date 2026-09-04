@@ -105,6 +105,7 @@ export RR_CHROME=/path/to/chrome
 node test/check.js                 # every page, 7 widths, 9 settings combinations
 node test/features.js              # does each feature still do its job
 node test/live.js                  # the same, against cs.rin.ru itself
+node test/sweep.js                 # fifty real pages, twenty questions each
 node test/contrast.js              # every colour, every theme, against WCAG AA
 node test/scan.js --local --repeat # what reading a whole topic costs
 node test/perf.js                  # what the script costs to run

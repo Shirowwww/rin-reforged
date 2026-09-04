@@ -654,8 +654,11 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
    it is labelled, unbolded and set back. */
 .rr-releases__version[data-rr-kind="build"] { color: var(--rr-faint); font-weight: 400; }
 .rr-releases__vkind {
-    font: 600 9px / 1 var(--rr-font);
-    letter-spacing: .06em;
+    /* --rr-fs-xs, not 9px: 11px is the floor everything else on the
+       page is held to, and a label that says "this is not a version"
+       is not the place to go under it. */
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
+    letter-spacing: .04em;
     text-transform: uppercase;
     color: var(--rr-faint);
     opacity: .8;

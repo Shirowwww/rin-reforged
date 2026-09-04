@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.8.0
+// @version         0.8.1
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -440,6 +440,15 @@ html[data-rr] #wrapfooter {
     box-sizing: border-box;
 }
 html[data-rr] #wrapcentre { padding-top: var(--rr-s5); padding-bottom: var(--rr-s6); }
+
+/* subsilver2 spaces its blocks with bare <br> between them; every block
+   this script draws carries a margin of its own, so each of those is a
+   second gap on top of the first. dropStrayBreaks() takes the ones
+   beside the script's own bars; these are the rest — between the page
+   header and the content, between two tables — and a sweep of fifty
+   live pages found one on every listing. */
+html[data-rr] #wrapcentre > br,
+html[data-rr] #pagecontent > br { display: none; }
 
 /* The original 340px-tall masthead is replaced by rr-nav; the node stays
    in the DOM because other userscripts read it, but leaves the flow. */
@@ -3047,8 +3056,11 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
    it is labelled, unbolded and set back. */
 .rr-releases__version[data-rr-kind="build"] { color: var(--rr-faint); font-weight: 400; }
 .rr-releases__vkind {
-    font: 600 9px / 1 var(--rr-font);
-    letter-spacing: .06em;
+    /* --rr-fs-xs, not 9px: 11px is the floor everything else on the
+       page is held to, and a label that says "this is not a version"
+       is not the place to go under it. */
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
+    letter-spacing: .04em;
     text-transform: uppercase;
     color: var(--rr-faint);
     opacity: .8;
@@ -6679,6 +6691,10 @@ function buildForumBar() {
     }
 
     heading.after(bar);
+    // The board's own "Page 1 of 615" and "[ 61469 topics ]" strips,
+    // which the bar now carries. The topic page had this pass and the
+    // listing did not, and the sweep found the band on every forum.
+    tidyBoardPagerStrip(bar, bar);
 
     // The forum name led a line of its own directly above this bar,
     // repeating what the breadcrumb says two lines further up and
@@ -11181,7 +11197,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.8.0";
+const RR_VERSION = "0.8.1";
 
 function injectStyles() {
     const host = document.head || document.documentElement;

@@ -425,6 +425,10 @@ function buildForumBar() {
     }
 
     heading.after(bar);
+    // The board's own "Page 1 of 615" and "[ 61469 topics ]" strips,
+    // which the bar now carries. The topic page had this pass and the
+    // listing did not, and the sweep found the band on every forum.
+    tidyBoardPagerStrip(bar, bar);
 
     // The forum name led a line of its own directly above this bar,
     // repeating what the breadcrumb says two lines further up and
