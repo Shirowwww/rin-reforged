@@ -726,6 +726,52 @@ const CHECKS = [
 
     /* ---- On a phone ------------------------------------------------ */
     {
+        name: "no cell draws its content outside itself",
+        url: SEARCH_ONE,
+        width: 390,
+        run: () => {
+            /* The template pins cells by hand — `.cat { height: 25px }`
+               in the board's stylesheet, `height="30"` on the
+               statistics cell. As table cells those are minimums and
+               the row grows past them; unpacked into blocks for a phone
+               they are the height, and anything that wraps to a second
+               line is simply drawn outside its own card, over whatever
+               is under it. Nothing overflows the *page*, so this is
+               invisible to an overflow check. */
+            const spills = [];
+            for (const cell of document.querySelectorAll("#wrapcentre td, #wrapcentre th")) {
+                const box = cell.getBoundingClientRect();
+                if (!box.height) continue;
+                for (const kid of cell.children) {
+                    const k = kid.getBoundingClientRect();
+                    if (!k.height || k.bottom - box.bottom <= 2) continue;
+                    spills.push((cell.className || cell.tagName) + " by " + Math.round(k.bottom - box.bottom) + "px");
+                    break;
+                }
+            }
+            return spills.length ? spills.slice(0, 3).join("; ") : null;
+        },
+    },
+    {
+        name: "no cell draws its content outside itself, on the index",
+        url: INDEX,
+        width: 390,
+        run: () => {
+            const spills = [];
+            for (const cell of document.querySelectorAll("#wrapcentre td, #wrapcentre th")) {
+                const box = cell.getBoundingClientRect();
+                if (!box.height) continue;
+                for (const kid of cell.children) {
+                    const k = kid.getBoundingClientRect();
+                    if (!k.height || k.bottom - box.bottom <= 2) continue;
+                    spills.push((cell.className || cell.tagName) + " by " + Math.round(k.bottom - box.bottom) + "px");
+                    break;
+                }
+            }
+            return spills.length ? spills.slice(0, 3).join("; ") : null;
+        },
+    },
+    {
         name: "the board links fold on a narrow screen",
         url: FORUM,
         width: 390,
@@ -782,6 +828,54 @@ const CHECKS = [
 
             const height = bar.getBoundingClientRect().height;
             return height <= 46 ? null : "the row is " + Math.round(height) + "px tall";
+        },
+    },
+
+    {
+        name: "index: the board's art and its links are one header",
+        url: INDEX,
+        run: () => {
+            const art = document.querySelector(".rr-masthead");
+            const links = document.querySelector(".rr-boardbar");
+            if (!art || !links) return "the index has no masthead or no board links";
+
+            const header = document.querySelector(".rr-header");
+            if (!header || !header.contains(art) || !header.contains(links)) {
+                return "they are still two blocks stacked";
+            }
+            // Side by side at a desktop width: 380px of art with a
+            // thousand pixels of nothing beside it was the complaint.
+            const a = art.getBoundingClientRect();
+            const b = links.getBoundingClientRect();
+            if (b.left < a.right) return "the links are not beside the art";
+            if (Math.abs(a.bottom - b.bottom) > 4) return "they do not share a baseline";
+
+            // And the art is untouched: the board's own file, at the
+            // size the board draws it.
+            const img = art.querySelector(".rr-masthead__art");
+            if (img && img.naturalWidth) {
+                const box = img.getBoundingClientRect();
+                if (Math.abs(box.width - img.naturalWidth) > 1) {
+                    return "the art was scaled to " + Math.round(box.width) + "px";
+                }
+            }
+            return null;
+        },
+    },
+    {
+        name: "index: the header stacks again on a narrow screen",
+        url: INDEX,
+        width: 390,
+        run: () => {
+            const art = document.querySelector(".rr-masthead");
+            const links = document.querySelector(".rr-boardbar");
+            if (!art || !links) return "the index has no masthead or no board links";
+            const a = art.getBoundingClientRect();
+            const b = links.getBoundingClientRect();
+            if (b.top < a.bottom - 4) return "still side by side at 390px";
+            return document.body.scrollWidth - window.innerWidth > 1
+                ? "the page overflows by " + (document.body.scrollWidth - window.innerWidth) + "px"
+                : null;
         },
     },
 

@@ -60,6 +60,12 @@
            width. */
         min-width: 0;
         max-width: 100%;
+        /* The template pins cells with height="30". On a table cell that
+           is a minimum and the row grows past it; on a block it is the
+           height, and the content simply leaves: the Statistics block on
+           the index drew its last two lines below its own card, over the
+           next one. */
+        height: auto;
         padding: 0;
         border: 0;
         background: none;
@@ -155,6 +161,14 @@
         white-space: nowrap !important;
         text-overflow: ellipsis;
     }
+
+    /* "Sort by:" is two words that label the control after them, and
+       the blanket rule above broke it across two lines with a select
+       in between. The exception carries #wrapcentre and !important for
+       the same reason the folded reply above does: the blanket rule
+       has both and would otherwise win. These labels are a handful of
+       words, so holding them together cannot widen the page. */
+    html[data-rr] #wrapcentre td.cat > span.gensmall { white-space: nowrap !important; }
 
     /* Tap targets. */
     html[data-rr] .rr-icon-btn { width: 34px; height: 34px; }

@@ -16,9 +16,13 @@ built and tested. The [README](../README.md) is the short version.
 - **The board's masthead art is kept**, at the size the board draws it,
   on the index. A crosshair over a Steam valve with CS.RIN.RU beside it
   is what this board looks like; a redesign that shows a 26px crop of
-  the wordmark and nothing else looks like any forum at all. It costs
-  one page 109px, where you land. Everywhere else the top bar carries
-  the wordmark and the content starts at the top.
+  the wordmark and nothing else looks like any forum at all. It shares
+  its row with the board links rather than sitting above them, so the
+  art anchors the left of one header band instead of leaving a thousand
+  pixels of nothing beside it — and the first listing row on the page
+  you land on is about a hundred pixels higher for it. Under 900px they
+  stack again. Everywhere else the top bar carries the wordmark and the
+  content starts at the top.
 - **Readable text.** 15px in a system sans, adjustable from 12 to 20, with line
   length capped where long posts stop being tiring.
 - **The page follows the window.** The frame was a fixed 1200px column,

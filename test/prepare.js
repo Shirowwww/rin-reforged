@@ -28,7 +28,21 @@ const IN = path.join(__dirname, "fixtures");
 const OUT = path.join(__dirname, "pages");
 
 const STYLESHEET = "https://cs.rin.ru/forum/styles/rinDark/theme/stylesheet.css";
-const LOGO = "https://cs.rin.ru/forum/styles/rinDark/imageset/site_logo-1.png";
+const ASSETS = "https://cs.rin.ru/forum/styles/rinDark/";
+
+/* Images the pages still show after the reskin, fetched so they can be
+   served locally: the board sends Cross-Origin-Resource-Policy:
+   same-origin, so nothing here can hot-link them.
+
+   The two flags matter more than they look. They are the whole content
+   of the language switch, they are in shot of every screenshot the
+   README publishes, and without them the top of every page carries two
+   broken-image icons — which is what the published screenshots showed. */
+const IMAGES = [
+    { url: "imageset/site_logo-1.png", as: "logo.png", match: /src="\.\/styles\/[^"]*site_logo[^"]*"/g },
+    { url: "theme/images/uk.png", as: "uk.png", match: /src="\.\/styles\/[^"]*\/uk\.png"/g },
+    { url: "theme/images/ru.png", as: "ru.png", match: /src="\.\/styles\/[^"]*\/ru\.png"/g },
+];
 
 /* Twenty pages of a synthetic topic, at the offsets phpBB would use.
    Listed by hand would be twenty near-identical lines. */
@@ -127,11 +141,13 @@ async function main() {
         console.warn("could not fetch the original stylesheet: " + err.message);
     }
 
-    let logo = null;
-    try {
-        logo = await getBinary(LOGO);
-    } catch (err) {
-        console.warn("could not fetch the logo: " + err.message);
+    const images = [];
+    for (const image of IMAGES) {
+        try {
+            images.push(Object.assign({ bytes: await getBinary(ASSETS + image.url) }, image));
+        } catch (err) {
+            console.warn("could not fetch " + image.url + ": " + err.message);
+        }
     }
 
     for (const page of PAGES) {
@@ -142,7 +158,9 @@ async function main() {
         fs.mkdirSync(path.dirname(target), { recursive: true });
         fs.mkdirSync(path.join(path.dirname(target), "styles"), { recursive: true });
         fs.writeFileSync(path.join(path.dirname(target), "styles", "forum.css"), css, "utf8");
-        if (logo) fs.writeFileSync(path.join(path.dirname(target), "styles", "logo.png"), logo);
+        for (const image of images) {
+            fs.writeFileSync(path.join(path.dirname(target), "styles", image.as), image.bytes);
+        }
 
         let html = fs.readFileSync(path.join(IN, page.fixture), "utf8");
 
@@ -150,7 +168,9 @@ async function main() {
         // the scripts; cs.rin.ru sends CORP: same-origin, so nothing can
         // be hot linked from a test origin.
         html = html.replace(/href="\.\/styles\/[^"]*stylesheet\.css"/g, () => 'href="./styles/forum.css"');
-        html = html.replace(/src="\.\/styles\/[^"]*site_logo[^"]*"/g, () => 'src="./styles/logo.png"');
+        for (const image of images) {
+            html = html.replace(image.match, () => 'src="./styles/' + image.as + '"');
+        }
         html = html.replace(/<script[^>]*src="[^"]*"[^>]*>\s*<\/script>/gi, () => "");
         // Embedded players hold WebGL contexts open and stall screenshots.
         html = html.replace(/<iframe[\s\S]*?<\/iframe>/gi, () => "");

@@ -586,18 +586,26 @@ function initNavbar() {
     document.body.prepend(bar);
     addSkipLink();                 // prepended after, so it lands first
 
-    if (settings.get("boardLinks")) {
-        const board = buildBoardBar();
-        const centre = document.querySelector("#wrapcentre");
-        if (board && centre) centre.prepend(board);
-    }
+    const centre = document.querySelector("#wrapcentre");
+    const board = settings.get("boardLinks") ? buildBoardBar() : null;
+    const banner = PAGE.isIndex && settings.get("masthead") ? buildMasthead() : null;
 
-    if (PAGE.isIndex && settings.get("masthead")) {
-        const banner = buildMasthead();
-        const centre = document.querySelector("#wrapcentre");
-        // Above the board links, which is where the board puts it.
-        if (banner && centre) centre.prepend(banner);
-    }
+    /* The board's own art and the row of links it used to sit above,
+       as one header block.
+
+       They were two blocks stacked: 380px of picture with a thousand
+       pixels of nothing beside it, and the links on their own line
+       underneath. Beside each other they compose — the art anchors the
+       left, the links fill the space it was leaving empty, and the
+       page you land on gets its first listing row a hundred pixels
+       higher. The stylesheet drops back to stacking them below the
+       width where that stops fitting.
+
+       Only the index has a masthead; everywhere else this is the
+       board bar on its own, exactly as before. */
+    if (centre && banner && board) centre.prepend(el("div.rr-header", {}, [banner, board]));
+    else if (centre && board) centre.prepend(board);
+    else if (centre && banner) centre.prepend(banner);
 
     // The forum anchors "back to top" at <a name="top">, which now sits
     // under the sticky bar; offset it so jumps land in the right place.
@@ -617,7 +625,7 @@ function initNavbar() {
  * Runs after every module, so a bar inserted late is covered too.
  */
 function dropStrayBreaks() {
-    const bars = ".rr-topicbar, .rr-toolbar, .rr-boardbar, .rr-releases, .rr-quickreply";
+    const bars = ".rr-header, .rr-topicbar, .rr-toolbar, .rr-boardbar, .rr-releases, .rr-quickreply";
     for (const bar of document.querySelectorAll(bars)) {
         for (const side of ["previousElementSibling", "nextElementSibling"]) {
             let node = bar[side];

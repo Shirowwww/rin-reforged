@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.7.1
+// @version         0.7.2
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -489,6 +489,14 @@ html[data-rr] th.thHead {
     border: 0;
     border-bottom: 1px solid var(--rr-line);
     box-shadow: inset 2px 0 0 var(--rr-accent);
+    /* The board's own stylesheet pins these at \`height: 25px\`. One line
+       of a section heading fits and nothing shows it — but the same
+       class carries the "Display posts from previous / Sort by / Go"
+       strip, and on a phone that wraps to two lines and spilled out of
+       the box: three controls drawn below the card they belong to, on
+       top of the pagination line under it. The heading row beside this
+       one already had to say the same thing. */
+    height: auto;
 }
 html[data-rr] td.cat h4,
 html[data-rr] td.cat a { color: var(--rr-text-strong); margin: 0; font-size: var(--rr-fs-sm); }
@@ -2736,6 +2744,36 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
 .rr-masthead {
     margin: 0 0 var(--rr-s4);
 }
+
+/* The masthead and the board links, side by side where there is room.
+
+   The art is left at the size the board draws it — 380x109, its own
+   file, not redrawn and not scaled — and the links take the width it
+   was leaving empty. Below 900px they stack again, which is what they
+   did everywhere before. */
+.rr-header { display: block; }
+
+@media (min-width: 900px) {
+    .rr-header {
+        display: flex;
+        align-items: stretch;
+        gap: var(--rr-s5);
+        margin-bottom: var(--rr-s4);
+    }
+    .rr-header > .rr-masthead { flex: none; margin: 0; }
+    .rr-header > .rr-boardbar {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        padding-bottom: 0;
+        border-bottom: 0;
+        /* Beside a 109px block the links read as a line hanging in the
+           middle of it; on the art's own baseline they read as a
+           caption to it. */
+        align-content: flex-end;
+        align-items: flex-end;
+    }
+}
 .rr-masthead__link {
     display: inline-block;
     border-radius: var(--rr-radius-lg);
@@ -3107,6 +3145,12 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
            width. */
         min-width: 0;
         max-width: 100%;
+        /* The template pins cells with height="30". On a table cell that
+           is a minimum and the row grows past it; on a block it is the
+           height, and the content simply leaves: the Statistics block on
+           the index drew its last two lines below its own card, over the
+           next one. */
+        height: auto;
         padding: 0;
         border: 0;
         background: none;
@@ -3202,6 +3246,14 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
         white-space: nowrap !important;
         text-overflow: ellipsis;
     }
+
+    /* "Sort by:" is two words that label the control after them, and
+       the blanket rule above broke it across two lines with a select
+       in between. The exception carries #wrapcentre and !important for
+       the same reason the folded reply above does: the blanket rule
+       has both and would otherwise win. These labels are a handful of
+       words, so holding them together cannot widen the page. */
+    html[data-rr] #wrapcentre td.cat > span.gensmall { white-space: nowrap !important; }
 
     /* Tap targets. */
     html[data-rr] .rr-icon-btn { width: 34px; height: 34px; }
@@ -5767,18 +5819,26 @@ function initNavbar() {
     document.body.prepend(bar);
     addSkipLink();                 // prepended after, so it lands first
 
-    if (settings.get("boardLinks")) {
-        const board = buildBoardBar();
-        const centre = document.querySelector("#wrapcentre");
-        if (board && centre) centre.prepend(board);
-    }
+    const centre = document.querySelector("#wrapcentre");
+    const board = settings.get("boardLinks") ? buildBoardBar() : null;
+    const banner = PAGE.isIndex && settings.get("masthead") ? buildMasthead() : null;
 
-    if (PAGE.isIndex && settings.get("masthead")) {
-        const banner = buildMasthead();
-        const centre = document.querySelector("#wrapcentre");
-        // Above the board links, which is where the board puts it.
-        if (banner && centre) centre.prepend(banner);
-    }
+    /* The board's own art and the row of links it used to sit above,
+       as one header block.
+
+       They were two blocks stacked: 380px of picture with a thousand
+       pixels of nothing beside it, and the links on their own line
+       underneath. Beside each other they compose — the art anchors the
+       left, the links fill the space it was leaving empty, and the
+       page you land on gets its first listing row a hundred pixels
+       higher. The stylesheet drops back to stacking them below the
+       width where that stops fitting.
+
+       Only the index has a masthead; everywhere else this is the
+       board bar on its own, exactly as before. */
+    if (centre && banner && board) centre.prepend(el("div.rr-header", {}, [banner, board]));
+    else if (centre && board) centre.prepend(board);
+    else if (centre && banner) centre.prepend(banner);
 
     // The forum anchors "back to top" at <a name="top">, which now sits
     // under the sticky bar; offset it so jumps land in the right place.
@@ -5798,7 +5858,7 @@ function initNavbar() {
  * Runs after every module, so a bar inserted late is covered too.
  */
 function dropStrayBreaks() {
-    const bars = ".rr-topicbar, .rr-toolbar, .rr-boardbar, .rr-releases, .rr-quickreply";
+    const bars = ".rr-header, .rr-topicbar, .rr-toolbar, .rr-boardbar, .rr-releases, .rr-quickreply";
     for (const bar of document.querySelectorAll(bars)) {
         for (const side of ["previousElementSibling", "nextElementSibling"]) {
             let node = bar[side];
@@ -10879,7 +10939,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.7.1";
+const RR_VERSION = "0.7.2";
 
 function injectStyles() {
     const host = document.head || document.documentElement;

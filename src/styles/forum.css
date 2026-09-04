@@ -151,6 +151,14 @@ html[data-rr] th.thHead {
     border: 0;
     border-bottom: 1px solid var(--rr-line);
     box-shadow: inset 2px 0 0 var(--rr-accent);
+    /* The board's own stylesheet pins these at `height: 25px`. One line
+       of a section heading fits and nothing shows it — but the same
+       class carries the "Display posts from previous / Sort by / Go"
+       strip, and on a phone that wraps to two lines and spilled out of
+       the box: three controls drawn below the card they belong to, on
+       top of the pagination line under it. The heading row beside this
+       one already had to say the same thing. */
+    height: auto;
 }
 html[data-rr] td.cat h4,
 html[data-rr] td.cat a { color: var(--rr-text-strong); margin: 0; font-size: var(--rr-fs-sm); }

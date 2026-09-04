@@ -382,6 +382,36 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
 .rr-masthead {
     margin: 0 0 var(--rr-s4);
 }
+
+/* The masthead and the board links, side by side where there is room.
+
+   The art is left at the size the board draws it — 380x109, its own
+   file, not redrawn and not scaled — and the links take the width it
+   was leaving empty. Below 900px they stack again, which is what they
+   did everywhere before. */
+.rr-header { display: block; }
+
+@media (min-width: 900px) {
+    .rr-header {
+        display: flex;
+        align-items: stretch;
+        gap: var(--rr-s5);
+        margin-bottom: var(--rr-s4);
+    }
+    .rr-header > .rr-masthead { flex: none; margin: 0; }
+    .rr-header > .rr-boardbar {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        padding-bottom: 0;
+        border-bottom: 0;
+        /* Beside a 109px block the links read as a line hanging in the
+           middle of it; on the art's own baseline they read as a
+           caption to it. */
+        align-content: flex-end;
+        align-items: flex-end;
+    }
+}
 .rr-masthead__link {
     display: inline-block;
     border-radius: var(--rr-radius-lg);

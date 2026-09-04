@@ -148,6 +148,22 @@ async function main() {
             if (!checkedBuild) { checkedBuild = true; await assertFreshBuild(tab); }
             await tab.waitForTimeout(350);
 
+            /* Read the settled page, not a frame of it.
+             *
+             * Several of these measurements are colours, and a colour
+             * that is mid-transition reads as whatever it started from.
+             * That is how the light theme came to report five
+             * "near-black blocks" on one page in one run out of three:
+             * the board's own stylesheet arrives after the first
+             * paint, the cells change colour, and a busy headless
+             * browser had not advanced the 140ms transition by the
+             * time the check looked. Waiting for the animations
+             * themselves rather than for another guess at a number of
+             * milliseconds makes the run repeatable. */
+            await tab.evaluate(() => Promise.all(
+                document.getAnimations().map((run) => run.finished.catch(() => {}))
+            ));
+
             const result = await tab.evaluate((expect) => {
                 const doc = document.documentElement;
                 return {
@@ -175,7 +191,14 @@ async function main() {
                         const inner = centre.getBoundingClientRect().width
                             - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
                         const narrow = [];
-                        const blocks = ".rr-topicbar, .rr-toolbar, .rr-boardbar, .rr-releases, "
+                        /* Direct children of the frame only. A block
+                           deliberately sharing a row with something
+                           else — the board links beside the masthead
+                           on the index — is not failing to follow the
+                           frame; the row around it is what has to. */
+                        const blocks = "#wrapcentre > .rr-header, #wrapcentre > .rr-topicbar, "
+                            + "#wrapcentre > .rr-toolbar, #wrapcentre > .rr-boardbar, "
+                            + "#wrapcentre > .rr-releases, "
                             + "#wrapcentre > table.tablebg, #wrapcentre > table.forumline";
                         for (const node of document.querySelectorAll(blocks)) {
                             const box = node.getBoundingClientRect();
