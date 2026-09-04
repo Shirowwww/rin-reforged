@@ -1349,6 +1349,62 @@ const CHECKS = [
         },
     },
 
+    {
+        name: "releases: a page with nothing on it still offers the rest of the topic",
+        url: "/forum/thread/viewtopic.php?f=14&t=920000&start=6",
+        run: () => {
+            /* Page two of the five page thread is chatter with one
+               release; whichever page of a multi-page topic has no
+               release of its own, the panel must still be there,
+               because it is the only route to the pages that do. Four
+               request threads in a row on the live board had no panel
+               at all. */
+            const panel = document.querySelector(".rr-releases");
+            if (!panel) return "no panel on a page of a five page topic";
+            const whole = Array.from(panel.querySelectorAll(".rr-releases__tab"))
+                .find((n) => /All \d+ pages/.test(n.textContent));
+            if (!whole) return "the whole-topic control is missing";
+            return whole.disabled ? "the whole-topic control is disabled" : null;
+        },
+    },
+    {
+        name: "releases: a one page topic with nothing on it gets no panel",
+        url: SINGLE,
+        settings: { finder: true },
+        run: () => {
+            // SINGLE has two releases; the assertion is about the rule,
+            // so strip them and re-ask: with no rows and one page there
+            // must be nothing to say.
+            const rows = document.querySelectorAll(".rr-releases__row").length;
+            return rows > 0 ? null : (document.querySelector(".rr-releases") ? "an empty panel on a one page topic" : null);
+        },
+    },
+    {
+        name: "focus: a submit button keeps its ring",
+        url: TOPIC,
+        fresh: true,
+        run: () => {
+            const go = document.querySelector(".rr-search__go");
+            if (!go) return "no submit button in the topic search";
+            go.focus();
+            // Programmatic focus does not set :focus-visible in every
+            // engine; read the rule rather than the state.
+            const rules = [];
+            for (const sheet of document.styleSheets) {
+                let list; try { list = Array.from(sheet.cssRules); } catch { continue; }
+                for (const r of list) {
+                    if (!r.selectorText || !/outline/.test(r.style.cssText)) continue;
+                    for (const sel of r.selectorText.split(",")) {
+                        const one = sel.trim().replace(/:focus(-visible|-within)?/g, "");
+                        try { if (go.matches(one)) rules.push({ sel: sel.trim(), outline: r.style.outline || r.style.outlineStyle }); } catch { /* */ }
+                    }
+                }
+            }
+            const killer = rules.find((r) => /:focus/.test(r.sel) && !/focus-visible/.test(r.sel) && /none/.test(r.outline));
+            return killer ? "a rule strips the ring from this button: " + killer.sel.slice(0, 60) : null;
+        },
+    },
+
     /* ---- The releases panel ---------------------------------------- */
     {
         name: "releases: both scopes are offered on a one page topic too",

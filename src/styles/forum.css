@@ -580,7 +580,12 @@ html[data-rr] textarea.post { font-family: var(--rr-font); line-height: var(--rr
 html[data-rr] input:hover,
 html[data-rr] select:hover,
 html[data-rr] textarea:hover { border-color: var(--rr-faint); }
-html[data-rr] input:focus,
+/* A field shows focus by colouring its own border, so the ring is not
+   drawn twice. Only a field: a submit button matches `input` too, has
+   no border to colour, and was left with no focus indicator at all —
+   which a Tab through a live topic page found on the board's own
+   Search button. Buttons keep the ring the rule above gives them. */
+html[data-rr] input:not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):focus,
 html[data-rr] select:focus,
 html[data-rr] textarea:focus { border-color: var(--rr-accent); outline: none; }
 html[data-rr] ::placeholder { color: var(--rr-faint); }

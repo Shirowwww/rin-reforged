@@ -879,7 +879,17 @@ function initReleases() {
     const canWalk = Boolean(settings.get("topicIndex"));
     const multi = total > 1;
     const kept = canWalk && PAGE.topicId ? cachedIndex(PAGE.topicId) : null;
-    if (!pageRows.length && !kept) return;
+
+    /* When there is nothing to show.
+
+       A one page topic with no release on it gets no panel: "nothing
+       here reads as a release" is the whole answer and a card saying so
+       is noise. A topic with more pages is different — the panel is the
+       only way to read the rest of it, and the page in front of you
+       being chatter says nothing about page three. That is exactly the
+       shape a request thread has when the request gets answered, and
+       four of them in a row on the live board had no panel at all. */
+    if (!pageRows.length && !kept && !(canWalk && multi)) return;
 
     /* Has the topic moved on since the index was taken?
      *

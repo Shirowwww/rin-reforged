@@ -39,6 +39,16 @@ const arg = (name, fallback) => {
 };
 const WANT = Number(arg("pages", 50));
 const SAVE = process.argv.includes("--save");
+/* The same questions at another width, or with the script set up
+   differently. A phone is a different layout entirely and the light
+   theme is a different palette; the features that ship switched off
+   have only ever been exercised on fixtures.
+
+       node test/sweep.js --width 390
+       node test/sweep.js --settings '{"theme":"paper"}'
+       node test/sweep.js --settings '{"quietPosts":true,"foldQuotesLines":3}' */
+const WIDTH = Number(arg("width", 1440));
+const SETTINGS = arg("settings", null);
 
 /* The board's English forums, off its own index, and the Russian
    general one so a page in the other language is in the sweep. */
@@ -145,7 +155,7 @@ function askThePage(COLOUR_CODE) {
 
     /* 11. The action bar has become a stack. */
     const bar = document.querySelector(".rr-topicbar[data-rr-rows]");
-    if (bar && bar.getBoundingClientRect().height > 130) {
+    if (bar && bar.getBoundingClientRect().height > (window.innerWidth < 700 ? 220 : 130)) {
         note("tall-bar", "topic bar is " + Math.round(bar.getBoundingClientRect().height) + "px tall");
     }
 
@@ -194,7 +204,9 @@ function askThePage(COLOUR_CODE) {
     }
 
     /* 16. Text clipped inside a nowrap box this script made. */
-    for (const node of document.querySelectorAll(".rr-posthead__meta, .rr-posthead__rank, .rr-releases__who, .rr-nav__crumbs a")) {
+    /* Not the breadcrumb: its last link is the page title and is
+       ellipsised on purpose, which on a phone is every page. */
+    for (const node of document.querySelectorAll(".rr-posthead__meta, .rr-posthead__rank, .rr-releases__who")) {
         if (visible(node) && node.scrollWidth - node.clientWidth > 2) {
             note("clipped", node.className + " clips " + JSON.stringify(node.textContent.trim().slice(0, 40)));
         }
@@ -247,7 +259,15 @@ async function main() {
     const bundle = fs.readFileSync(path.join(__dirname, "..", "dist", "rin-reforged.user.js"), "utf8");
     const browser = await chromium.launch(
         process.env.RR_CHROME ? { executablePath: process.env.RR_CHROME } : {});
-    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const context = await browser.newContext({
+        viewport: { width: WIDTH, height: WIDTH < 700 ? 844 : 900 },
+    });
+    if (SETTINGS) {
+        JSON.parse(SETTINGS);                                  // fail here, not in the page
+        await context.addInitScript((value) => {
+            try { localStorage.setItem("rr:settings", value); } catch { /* private mode */ }
+        }, SETTINGS);
+    }
     await context.addInitScript(bundle);
     if (SAVE) fs.mkdirSync(OUT, { recursive: true });
 
@@ -353,7 +373,7 @@ async function main() {
     await browser.close();
 
     /* The report: what was seen, how often, and where. */
-    console.log("\n" + opened + " pages opened");
+    console.log("\n" + opened + " pages opened at " + WIDTH + "px" + (SETTINGS ? " with " + SETTINGS : ""));
     const kinds = Array.from(tally.entries()).sort((a, b) => b[1] - a[1]);
     if (!kinds.length) { console.log("nothing to report"); return; }
 

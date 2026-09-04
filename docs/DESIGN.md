@@ -499,6 +499,28 @@ behind a span — and three false positives, which were fixed in the
 sweep. It is paced at one page every two seconds because the board
 queues clients that ask faster; see the note on rate limiting above.
 
+The same sweep runs at any width and with any settings — `--width 390`,
+`--settings '{"theme":"paper"}'`, `--settings '{"quietPosts":true,
+"foldQuotesLines":3}'` — because a phone is a different layout, the
+light theme is a different palette, and the features that ship switched
+off had only ever been exercised on fixtures. All three came back
+clean, once the sweep stopped counting the breadcrumb's deliberate
+ellipsis as clipped text.
+
+Four interaction probes went further than reading: Tab through a live
+topic (sixty stops, none on anything invisible, the skip link first),
+Ctrl+K on a live listing, every one of the fifty-four settings flipped
+off and on in place on a live page, and the releases panel read whole
+on real topics of different shapes. Two things came out of them. A
+submit button had no focus indicator: the rule that swaps the ring for
+an accent border on a focused field matched `input` as a whole, and a
+submit button is an input with no border to colour. And a multi-page
+topic whose first page carried no release had no panel at all — which
+is the shape a request thread takes once the request is answered, and
+the panel is the only route to the page that answered it. A one page
+topic with nothing on it still gets none: there, "nothing here reads as
+a release" is the whole answer.
+
 `live.js` runs the built bundle against cs.rin.ru with `addInitScript`, which
 executes it at document-start the way a userscript manager does. It is
 read-only: it opens pages, reads the DOM and closes. It has already earned its

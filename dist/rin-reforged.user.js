@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.8.1
+// @version         0.8.2
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -927,7 +927,12 @@ html[data-rr] textarea.post { font-family: var(--rr-font); line-height: var(--rr
 html[data-rr] input:hover,
 html[data-rr] select:hover,
 html[data-rr] textarea:hover { border-color: var(--rr-faint); }
-html[data-rr] input:focus,
+/* A field shows focus by colouring its own border, so the ring is not
+   drawn twice. Only a field: a submit button matches \`input\` too, has
+   no border to colour, and was left with no focus indicator at all —
+   which a Tab through a live topic page found on the board's own
+   Search button. Buttons keep the ring the rule above gives them. */
+html[data-rr] input:not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):focus,
 html[data-rr] select:focus,
 html[data-rr] textarea:focus { border-color: var(--rr-accent); outline: none; }
 html[data-rr] ::placeholder { color: var(--rr-faint); }
@@ -9163,7 +9168,17 @@ function initReleases() {
     const canWalk = Boolean(settings.get("topicIndex"));
     const multi = total > 1;
     const kept = canWalk && PAGE.topicId ? cachedIndex(PAGE.topicId) : null;
-    if (!pageRows.length && !kept) return;
+
+    /* When there is nothing to show.
+
+       A one page topic with no release on it gets no panel: "nothing
+       here reads as a release" is the whole answer and a card saying so
+       is noise. A topic with more pages is different — the panel is the
+       only way to read the rest of it, and the page in front of you
+       being chatter says nothing about page three. That is exactly the
+       shape a request thread has when the request gets answered, and
+       four of them in a row on the live board had no panel at all. */
+    if (!pageRows.length && !kept && !(canWalk && multi)) return;
 
     /* Has the topic moved on since the index was taken?
      *
@@ -11197,7 +11212,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.8.1";
+const RR_VERSION = "0.8.2";
 
 function injectStyles() {
     const host = document.head || document.documentElement;
