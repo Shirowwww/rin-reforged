@@ -1,0 +1,593 @@
+/* ------------------------------------------------------------------
+   Forum and topic listings.
+
+   Three jobs:
+     - label the columns so the mobile stylesheet can restack them
+     - turn [Info] / [Release] / [Problem] prefixes into a real,
+       clickable taxonomy
+     - filter 61,000 topics without a round trip
+   ------------------------------------------------------------------ */
+
+const COLUMN_NAMES = {
+    forum: "title",
+    topics: "topics",
+    posts: "posts",
+    "last post": "last",
+    replies: "replies",
+    author: "author",
+    views: "views",
+};
+
+/**
+ * Tag every cell with data-rr-col, derived from the <th> row so the
+ * mapping survives a template that adds or drops a column.
+ */
+function labelColumns(table) {
+    const headRow = table.querySelector("tr:has(th)") || table.querySelector("th")?.parentElement;
+    if (!headRow) return;
+
+    const columns = [];
+    const heads = Array.from(headRow.querySelectorAll("th"));
+    heads.forEach((th, index) => {
+        const span = parseInt(th.getAttribute("colspan") || "1", 10);
+        const text = th.textContent.trim().toLowerCase();
+
+        /* A header with no words in it heads the read/unread marker. A
+           search results page gives that column a header of its own,
+           where a forum listing spans it together with the title. */
+        if (!text) {
+            columns.push("icon");
+            for (let i = 1; i < span; i += 1) columns.push(null);
+            return;
+        }
+
+        /* A header spanning more than one column heads the title,
+           whatever the template calls it — "Forum" on the index,
+           "Topics" in a listing. Read off the span rather than the
+           word, because "Topics" is also the name of a counting column
+           on the index: taking it at its word on a search results page
+           labelled the topic titles a count, which took the marker
+           gutter and the full-width title column off that page and put
+           the number grouping through the titles.
+
+           The columns before the last are the marker and the spacer
+           the template keeps beside it. */
+        if (span > 1) {
+            for (let i = 1; i < span; i += 1) columns.push(index === 0 && i === 1 ? "icon" : null);
+            columns.push("title");
+            return;
+        }
+
+        columns.push(COLUMN_NAMES[text] || null);
+    });
+    if (!columns.length) return;
+
+    for (const row of table.querySelectorAll("tr")) {
+        const cells = row.children;
+        if (cells.length !== columns.length) continue;   // category and spacer rows
+        for (let i = 0; i < cells.length; i += 1) {
+            if (columns[i]) cells[i].setAttribute("data-rr-col", columns[i]);
+        }
+    }
+
+    /* The headings, by the same names as the cells under them.
+
+       Without this a heading's alignment and its column's alignment
+       were two decisions written in two places, and they disagreed:
+       Author sat left in the heading and centred in every row of it. A
+       column is one column. */
+    let at = 0;
+    for (const th of heads) {
+        const span = parseInt(th.getAttribute("colspan") || "1", 10);
+        // A heading that spans the status icon and the title labels the
+        // title, which is the half of it with words in.
+        const name = columns[span > 1 ? at + span - 1 : at];
+        if (name) th.setAttribute("data-rr-col", name);
+        at += span;
+    }
+}
+
+/* The columns that hold a count rather than a word. */
+const COUNT_COLUMNS = ["topics", "posts", "replies", "views"];
+
+/** Regroup the digits in every counting column of one listing. */
+function groupListingNumbers(table) {
+    const selector = COUNT_COLUMNS.map((name) => 'td[data-rr-col="' + name + '"]').join(", ");
+    for (const cell of table.querySelectorAll(selector)) groupNumbersIn(cell);
+}
+
+/* Where else on this board a long number is a quantity.
+
+   Everything here is either a cell this script built and knows the
+   contents of, or an element whose whole text is one number — never a
+   sweep over the page, because an AppID, a post number and a Steam
+   build id are all names that happen to be spelled in digits. */
+function groupBoardNumbers() {
+    /* Cells this script built and knows the contents of. The post
+       header line is not here: it carries a join year beside its post
+       count, and it groups the count itself where it is written. */
+    for (const node of document.querySelectorAll(".rr-topicbar__count, .rr-online__summary")) {
+        groupNumbersIn(node);
+    }
+    /* "Statistics :: Total posts 3097072 | Total topics 112579", and
+       the activity line under it. The board wraps each figure in its
+       own <strong>, which is exactly the shape this wants.
+
+       A profile's own counters would suit it too, and they are not
+       here: every profile and the member list are behind a login on
+       this board, so nothing in the harness or on the open board can
+       reach one. A selector no page can exercise is a selector nobody
+       finds out about until it is wrong. */
+    groupCountElements("#wrapcentre p.gensmall strong");
+}
+
+/* ---- Prefixes ---------------------------------------------------- */
+
+function decorateTitle(entry, onTagClick) {
+    const { prefix, kind, rest } = splitPrefix(entry.title);
+    if (!prefix) return null;
+
+    // The template renders the prefix as coloured spans inside the
+    // link; drop them and rebuild it as a tag beside the link. With no
+    // filter behind it — a listing too short to be worth filtering —
+    // the same tag is drawn as a label rather than a button, because a
+    // control that answers a click with nothing is worse than a word.
+    const tag = onTagClick
+        ? el("button.rr-tag", { type: "button", "data-tag": kind, title: "Show only " + prefix }, [prefix])
+        : el("span.rr-tag", { "data-tag": kind }, [prefix]);
+    if (onTagClick) {
+        tag.addEventListener("click", (event) => {
+            event.preventDefault();
+            onTagClick(prefix.toLowerCase());
+        });
+    }
+
+    // The prefix, and only the prefix: whatever else the title holds
+    // stays where it is. See stripLeading().
+    const raw = entry.link.textContent;
+    const at = raw.indexOf(rest);
+    if (rest && at > 0) stripLeading(entry.link, at);
+    else entry.link.textContent = rest;
+    entry.link.before(tag);
+    entry.row.setAttribute("data-rr-prefix", prefix.toLowerCase());
+    return prefix.toLowerCase();
+}
+
+/* ---- Visited / bookmarked --------------------------------------- */
+
+function visitedSet() {
+    return new Set(store.get("visited", []));
+}
+
+function markVisited(topicId) {
+    if (!topicId) return;
+    const list = store.get("visited", []);
+    const index = list.indexOf(topicId);
+    if (index !== -1) list.splice(index, 1);
+    list.unshift(topicId);
+    store.set("visited", list.slice(0, 800));
+}
+
+function bookmarkList() { return store.get("bookmarks", []); }
+
+function isBookmarked(topicId) {
+    return bookmarkList().some((item) => item.id === topicId);
+}
+
+function toggleBookmark(topicId, title, href) {
+    const list = bookmarkList();
+    const index = list.findIndex((item) => item.id === topicId);
+    if (index === -1) {
+        list.unshift({ id: topicId, title, href, at: Date.now() });
+        store.set("bookmarks", list.slice(0, 400));
+        return true;
+    }
+    list.splice(index, 1);
+    store.set("bookmarks", list);
+    return false;
+}
+
+function addBookmarkStar(entry) {
+    const star = el("button.rr-icon-btn.rr-star", {
+        type: "button",
+        title: "Bookmark this topic",
+        "aria-label": "Bookmark " + entry.title,
+        "aria-pressed": isBookmarked(entry.id) ? "true" : "false",
+    }, [icon("star", 13)]);
+
+    star.addEventListener("click", (event) => {
+        event.preventDefault();
+        const now = toggleBookmark(entry.id, entry.title, entry.link.getAttribute("href"));
+        star.setAttribute("aria-pressed", now ? "true" : "false");
+        toast(now ? "Bookmarked" : "Bookmark removed");
+    });
+
+    // In the marker gutter rather than after the title.
+    //
+    // After the title it is one more inline box on the end of a line
+    // that already wraps, so on a long topic name the star dropped to a
+    // line of its own and took 20px of row with it. Beside the
+    // read/unread dot it can never wrap, it lines up down the page, and
+    // the two things it sits with are the other two facts about the row
+    // rather than part of its name.
+    const gutter = entry.row.querySelector('td[data-rr-col="icon"]');
+    if (gutter) gutter.append(star);
+    else entry.link.after(star);
+}
+
+/* ---- First unread --------------------------------------------- */
+
+/**
+ * Does this row have posts the reader has not seen?
+ *
+ * The board says so twice: the status image is one of the _unread set,
+ * and its alt text reads "Unread posts". Either is enough, and both
+ * survive the icon pass, which hides the image but keeps the node —
+ * so this works whether or not the legacy imagery was replaced.
+ */
+function rowIsUnread(row) {
+    if (row.querySelector('.rr-dot[data-state="unread"]')) return true;
+    for (const img of row.querySelectorAll("img")) {
+        if (/_unread/.test(img.getAttribute("src") || "")) return true;
+        if (/^unread posts/i.test(img.getAttribute("alt") || "")) return true;
+    }
+    return false;
+}
+
+/**
+ * Point a topic title at the first post the reader has not read.
+ *
+ * The board can already do this — it is what the little arrow beside
+ * the row does — but the title, which is the thing anyone actually
+ * clicks, drops you on page one of a thread you are on page nineteen
+ * of. phpBB answers `view=unread` on viewtopic.php, so this is the
+ * board's own route, moved on to the control people use.
+ *
+ * Only for rows that have unread posts, and only with an account:
+ * unread state is per-account, and for a guest `view=unread` is a
+ * redirect to the last post, which is not what the title should do.
+ */
+function retargetToUnread(entry) {
+    if (!entry.id || !rowIsUnread(entry.row)) return false;
+
+    const href = entry.link.getAttribute("href") || "";
+    if (/view=unread/.test(href)) return true;
+
+    let url;
+    try { url = new URL(href, location.href); } catch { return false; }
+    if (!/viewtopic\.php$/.test(url.pathname)) return false;
+
+    url.searchParams.delete("start");
+    url.searchParams.set("view", "unread");
+    entry.link.setAttribute("href", url.pathname + url.search + "#unread");
+    entry.link.setAttribute("title", "Opens at the first post you have not read");
+    entry.row.setAttribute("data-rr-unread", "1");
+    return true;
+}
+
+/* ---- Filter bar --------------------------------------------------- */
+
+/* Under this many rows the filter is furniture: a box that searches a
+   list you can already see all of, a count that says "1 on this page"
+   and a chip that filters one row down to one row. The board's own
+   refine box still gets its place in the bar — that one is a round
+   trip and works whatever the page holds. */
+const FILTER_MIN_ROWS = 5;
+
+/**
+ * The board draws its refine box more than once.
+ *
+ * `#search-box` is written into the breadcrumb strip at the top of the
+ * page *and* the one at the bottom — the same id, the same form, twice
+ * — and a search results page adds a third copy of its own in the
+ * results header, labelled "Search these results:" with a Go button
+ * rather than a Search button. Three boxes, one job, two different
+ * button captions.
+ *
+ * One survives. The duplicates are hidden rather than removed, because
+ * the first `#search-box` is the one CS.RIN.RU Enhanced looks for and
+ * that is the copy kept.
+ */
+function dedupeSearchBoxes() {
+    const boxes = Array.from(document.querySelectorAll('[id="search-box"]'));
+    for (const box of boxes.slice(1)) {
+        box.setAttribute("data-rr-dupe", "");
+        box.style.display = "none";
+    }
+
+    // The results header's own copy, which is a bare cell rather than a
+    // named block. Only dropped when one of the boxes above is left to
+    // take its place; the cell beside it carries "Search term used:"
+    // and stays either way.
+    if (!boxes.length) return;
+    for (const field of document.querySelectorAll('input[name="add_keywords"]')) {
+        if (field.closest('[id="search-box"]')) continue;
+        const cell = field.closest("td");
+        if (!cell) continue;
+        cell.setAttribute("data-rr-dupe", "");
+        cell.style.display = "none";
+    }
+}
+
+/**
+ * `rich` builds the whole bar: filter box, prefix chips, count. Without
+ * it the bar is only a home for the board's own refine box — see
+ * FILTER_MIN_ROWS.
+ */
+function buildToolbar(entries, prefixes, rich) {
+    const state = { text: "", tag: null };
+
+    const count = el("span.rr-toolbar__count");
+
+    const apply = () => {
+        let shown = 0;
+        const needle = state.text.toLowerCase();
+        for (const entry of entries) {
+            const matchesText = !needle || entry.title.toLowerCase().includes(needle);
+            const matchesTag = !state.tag || entry.row.getAttribute("data-rr-prefix") === state.tag;
+            const visible = matchesText && matchesTag;
+            entry.row.toggleAttribute("data-rr-hidden", !visible);
+            if (visible) shown += 1;
+        }
+        count.textContent = shown === entries.length
+            ? entries.length + " on this page"
+            : shown + " of " + entries.length + " on this page";
+    };
+
+    const input = el("input", {
+        type: "search",
+        placeholder: "Filter this page by title",
+        "aria-label": "Filter topics on this page",
+    });
+    input.addEventListener("input", debounce(() => { state.text = input.value.trim(); apply(); }, 90));
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") { input.value = ""; state.text = ""; apply(); }
+    });
+
+    const tagRow = el("div.rr-toolbar__tags");
+    const setTag = (tag) => {
+        state.tag = state.tag === tag ? null : tag;
+        for (const button of tagRow.children) {
+            button.setAttribute("aria-pressed", button.dataset.value === state.tag ? "true" : "false");
+        }
+        apply();
+    };
+    for (const [name, kind] of prefixes) {
+        const button = el("button.rr-tag", {
+            type: "button",
+            "data-tag": kind,
+            "aria-pressed": "false",
+            title: "Show only " + name,
+        }, [name]);
+        button.dataset.value = name.toLowerCase();
+        button.addEventListener("click", () => setTag(name.toLowerCase()));
+        tagRow.append(button);
+    }
+
+    const bar = el("div.rr-toolbar", { role: "search" });
+    if (rich) {
+        bar.append(el("div.rr-toolbar__filter", {}, [icon("filter"), input]));
+        // One chip filters every row down to every row. Chips are worth
+        // their line only once there is a choice to make between them.
+        if (prefixes.length > 1) bar.append(tagRow);
+        bar.append(count);
+    }
+
+    // The board's own "Search this forum" box sits in a strip of its
+    // own above the listing. It belongs next to the filter, so it moves
+    // here rather than being duplicated.
+    const boardSearch = document.querySelector("#search-box form, #topic-search");
+    if (boardSearch) {
+        const strip = boardSearch.closest("td.row5") || boardSearch.closest("table");
+        bar.append(el("div.rr-toolbar__board", {}, [adoptBoardSearch(boardSearch)]));
+        if (strip && !strip.textContent.trim()) {
+            const holder = strip.closest("table");
+            if (holder) holder.style.display = "none";
+        }
+    }
+
+    apply();
+    return { bar, setTag, empty: !bar.children.length };
+}
+
+/* ---- Forum action bar --------------------------------------------- */
+
+/**
+ * The listing header is four separate strips: a "Post new topic" image
+ * button, "Page 1 of 615", "[ 61469 topics ]" and the numbered links.
+ * They become one bar, matching the topic view.
+ */
+function buildForumBar() {
+    const heading = document.querySelector("#wrapcentre > h2, #pageheader h2");
+    if (!heading || document.querySelector(".rr-topicbar")) return null;
+
+    const bar = el("div.rr-topicbar");
+    const info = pagination();
+
+    const post = document.querySelector('a[href*="mode=post"]');
+    if (post) {
+        bar.append(el("a.rr-btn", { href: post.getAttribute("href"), "data-variant": "primary" }, ["New topic"]));
+        const strip = post.closest("table");
+        if (strip) strip.style.display = "none";
+    }
+
+    if (info.total && info.total > 1) {
+        bar.append(buildPagerGroup(info));
+    }
+
+    // "[ 61469 topics ]" is worth keeping, but not on its own line.
+    for (const cell of document.querySelectorAll("#wrapcentre td.gensmall, #wrapcentre span.gensmall")) {
+        const match = cell.textContent.match(/\[\s*([\d\s]+)\s*(topics|posts)\s*\]/i);
+        if (!match) continue;
+        bar.append(el("span.rr-topicbar__count", {}, [match[1].trim() + " " + match[2].toLowerCase()]));
+        cell.style.display = "none";
+        break;
+    }
+
+    heading.after(bar);
+
+    // The forum name led a line of its own directly above this bar,
+    // repeating what the breadcrumb says two lines further up and
+    // costing a band of the screen to do it. Inside the bar it labels
+    // the controls that act on it, and the band is gone. The node is
+    // moved, so its heading level and any link inside it survive.
+    heading.classList.add("rr-topicbar__title");
+    bar.prepend(heading);
+
+    return bar;
+}
+
+/* ---- Last post ----------------------------------------------------- */
+
+/* "Tuesday, 01 Sep 2026, 18:10" — the weekday is four words of a date
+   nobody reads a weekday off. Kept on the title, dropped from the line
+   so the date and the poster fit beside each other. */
+const WEEKDAY_RE = /^\s*(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day,\s*/i;
+
+/**
+ * Fold the Last post cell's two lines into one.
+ *
+ * The template prints the date in one <p> and the poster in another,
+ * and that stack is the tallest thing in a listing row: it set the
+ * height of all 108 rows on a page. Joined with a separator the same
+ * two facts take one line, and the row loses a third of its height.
+ *
+ * Nodes are moved rather than rewritten, so the poster's link, its role
+ * colour and the jump-to-post arrow all come across intact. If the pair
+ * is too wide for the column it simply wraps back to two lines, which
+ * is where it started.
+ */
+function tightenLastPost(cell) {
+    const lines = Array.from(cell.children).filter((node) => node.tagName === "P");
+    if (lines.length < 2) return;
+
+    const first = lines[0];
+    const full = cell.textContent.replace(/\s+/g, " ").trim();
+
+    for (const node of first.childNodes) {
+        if (node.nodeType === 3 && WEEKDAY_RE.test(node.textContent)) {
+            node.textContent = node.textContent.replace(WEEKDAY_RE, "");
+        }
+    }
+
+    for (const rest of lines.slice(1)) {
+        if (!rest.textContent.trim() && !rest.querySelector("a, img")) { rest.remove(); continue; }
+        first.append(el("span.rr-sep", { "aria-hidden": "true" }, ["·"]));
+        while (rest.firstChild) first.append(rest.firstChild);
+        rest.remove();
+    }
+
+    first.classList.add("rr-lastpost");
+    first.setAttribute("title", full);
+}
+
+/* ---- Announcements ------------------------------------------------ */
+
+function collapseAnnouncements(entries) {
+    const pinned = entries.filter((entry) => entry.row.getAttribute("data-rr-prefix") === "important");
+    if (pinned.length < 3) return;
+
+    let open = false;
+    const toggle = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
+        icon("chevronD"),
+        pinned.length + " pinned announcements",
+    ]);
+    const setState = () => {
+        for (const entry of pinned) entry.row.style.display = open ? "" : "none";
+        toggle.firstChild.style.transform = open ? "rotate(180deg)" : "";
+    };
+    toggle.addEventListener("click", () => { open = !open; setState(); });
+    setState();
+
+    const firstRow = pinned[0].row;
+    const holder = el("tr", {}, [
+        el("td", { colspan: String(firstRow.children.length), style: { padding: "6px 12px" } }, [toggle]),
+    ]);
+    firstRow.before(holder);
+}
+
+/* ---- Entry point --------------------------------------------------- */
+
+function initLists() {
+    for (const table of document.querySelectorAll("table.tablebg")) {
+        labelColumns(table);
+        // A listing, as opposed to a post or a strip of chrome. The
+        // stylesheet needs to know which is which: row1/row2 alternate
+        // down a listing and wrap whole posts in a topic, so the same
+        // two classes mean opposite things on the two kinds of page.
+        if (table.querySelector("a.topictitle, a.forumlink")) {
+            table.setAttribute("data-rr-list", "");
+            groupListingNumbers(table);
+        }
+    }
+
+    dedupeSearchBoxes();
+
+    if (!PAGE.isForum && !PAGE.isIndex && !PAGE.isSearch) return;
+
+    // Before the topic rows are looked for, not after. The index has no
+    // topic rows at all — it lists forums — so everything below the
+    // early return never ran there, and the Last post column read on
+    // one line in a forum listing and on two on the page in front of
+    // it. It is the same column.
+    if (settings.get("tightRows")) {
+        for (const cell of document.querySelectorAll('td[data-rr-col="last"]')) tightenLastPost(cell);
+    }
+
+    const entries = topicRows();
+    if (!entries.length) return;
+
+    if (PAGE.isForum || PAGE.isSearch) buildForumBar();
+
+    const visited = settings.get("hideVisited") ? visitedSet() : null;
+    const seenPrefixes = new Map();
+    const unreadRouting = settings.get("unreadFromList") && !PAGE.isSearch && isLoggedIn();
+
+    // A prefix in a title is a button that drives the filter chips. On
+    // a page with no chips there is nothing for it to drive, so it is
+    // drawn as a label instead of a control that does nothing.
+    const filtering = settings.get("listFilter") && entries.length >= FILTER_MIN_ROWS;
+
+    let setTag = () => {};
+    for (const entry of entries) {
+        if (settings.get("prefixTags")) {
+            const { prefix, kind } = splitPrefix(entry.title);
+            const applied = decorateTitle(entry, filtering ? (value) => setTag(value) : null);
+            if (applied && prefix) seenPrefixes.set(prefix, kind);
+        }
+        if (settings.get("bookmarks") && entry.id) addBookmarkStar(entry);
+        if (unreadRouting) retargetToUnread(entry);
+        if (visited && entry.id && visited.has(entry.id)) {
+            entry.row.setAttribute("data-rr-visited", "1");
+        }
+    }
+
+    if (settings.get("listFilter")) {
+        const prefixes = Array.from(seenPrefixes.entries())
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .slice(0, 8);
+        const toolbar = buildToolbar(entries, prefixes, filtering);
+        setTag = toolbar.setTag;
+
+        // The action bar and the filter bar carry one job between them
+        // and sat as two separate cards with a gap, one above the other:
+        // 123px of chrome before the first topic on the page. The filter
+        // becomes the action bar's second row instead. They are not
+        // siblings in the template, so this cannot be done in CSS.
+        //
+        // A bar with nothing in it is not placed at all: on a short
+        // listing with no board search box there is no filter left to
+        // draw, and an empty card is worse than no card.
+        const actions = document.querySelector(".rr-topicbar");
+        if (toolbar.empty) {
+            /* nothing to place */
+        } else if (actions) {
+            actions.append(toolbar.bar);
+        } else {
+            const table = entries[0].row.closest("table.tablebg");
+            if (table) table.before(toolbar.bar);
+        }
+    }
+
+    if (settings.get("hideAnnouncements")) collapseAnnouncements(entries);
+}

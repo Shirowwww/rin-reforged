@@ -1,0 +1,1143 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-gb" xml:lang="en-gb">
+<head>
+
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<meta http-equiv="content-language" content="en-gb" />
+<meta http-equiv="content-style-type" content="text/css" />
+<meta http-equiv="imagetoolbar" content="no" />
+<meta name="resource-type" content="document" />
+<meta name="distribution" content="global" />
+<meta name="keywords" content="" />
+<meta name="description" content="Cracking Steam and coding Steam related tools and emulators since 2003. Get all Steam games you want and play them the way you want to - for free!" />
+<meta name="robots" content="noindex,nofollow" />
+
+<title>CS RIN - Steam Underground &bull; Search</title>
+
+<link rel="alternate" type="application/atom+xml" title="Feed - CS RIN - Steam Underground" href="https://cs.rin.ru/forum/feed.php" /><link rel="alternate" type="application/atom+xml" title="Feed - All forums" href="https://cs.rin.ru/forum/feed.php?mode=forums" /><link rel="alternate" type="application/atom+xml" title="Feed - New Topics" href="https://cs.rin.ru/forum/feed.php?mode=topics" /><link rel="alternate" type="application/atom+xml" title="Feed - Active Topics" href="https://cs.rin.ru/forum/feed.php?mode=topics_active" />
+
+<link rel="stylesheet" href="./styles/rinDark/theme/stylesheet.css" type="text/css" />
+<!-- <script type="text/javascript" src="./mobiquo/tapatalkdetect.js"></script> -->
+<script type="text/javascript" src="./styles/subsilver2/template/forum_fn.js"></script>
+<!-- <script type="text/javascript" src="//yandex.st/share/share.js" charset="utf-8"></script>-->
+<script type="text/javascript">
+// <![CDATA[
+
+
+function popup(url, width, height, name)
+{
+	if (!name)
+	{
+		name = '_popup';
+	}
+
+	window.open(url.replace(/&amp;/g, '&'), name, 'height=' + height + ',resizable=yes,scrollbars=yes,width=' + width);
+	return false;
+}
+
+function jumpto()
+{
+	var page = prompt('Enter the page number you wish to go to:', '1');
+	var per_page = '';
+	var base_url = '';
+
+	if (page !== null && !isNaN(page) && page == Math.floor(page) && page > 0)
+	{
+		if (base_url.indexOf('?') == -1)
+		{
+			document.location.href = base_url + '?start=' + ((page - 1) * per_page);
+		}
+		else
+		{
+			document.location.href = base_url.replace(/&amp;/g, '&') + '&start=' + ((page - 1) * per_page);
+		}
+	}
+}
+
+/**
+* Find a member
+*/
+function find_username(url)
+{
+	popup(url, 760, 570, '_usersearch');
+	return false;
+}
+
+/**
+* Mark/unmark checklist
+* id = ID of parent container, name = name prefix, state = state [true/false]
+*/
+function marklist(id, name, state)
+{
+	var parent = document.getElementById(id);
+	if (!parent)
+	{
+		eval('parent = document.' + id);
+	}
+
+	if (!parent)
+	{
+		return;
+	}
+
+	var rb = parent.getElementsByTagName('input');
+	
+	for (var r = 0; r < rb.length; r++)
+	{
+		if (rb[r].name.substr(0, name.length) == name)
+		{
+			rb[r].checked = state;
+		}
+	}
+}
+
+
+
+// ]]>
+
+// RIN donation overlay
+//subsilver2
+window.onload = onloadFunction;
+//proSilver
+if (!(typeof onload_functions === 'undefined')) {
+	onload_functions.push('onloadFunction();');
+} 
+
+function overlayconfirm() {
+  document.getElementById("overlay").style.display = "none";
+  document.cookie = "csrin_overlay=0; path=/forum; max-age=31536000";
+}
+
+function onloadFunction()
+{
+    // RIN donation overlay
+    // if cookie NOT set, display
+    var decodedCookie = decodeURIComponent(document.cookie);
+    if (decodedCookie.search("csrin_overlay=0") === -1)
+    {
+        //document.getElementById("overlay").style.display = "block";
+    }
+}
+
+// RIN: load page in the background
+function loadAsync(page, returnTarget, returnText, returnClass) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onload = () => {
+        if (xhttp.readyState === XMLHttpRequest.DONE) {
+            if (xhttp.status === 200) {
+                console.log("yay");
+                var successText = document.createElement("span");
+                successText.innerHTML = returnText;
+                successText.className = returnClass;
+                returnTarget.replaceWith(successText);
+            } else {
+                console.error(xhttp.statusText);
+            }
+        }
+    };
+    xhttp.open("GET", page, true);
+    xhttp.send();
+}
+
+// RIN image resizer
+function resizeimg(img)
+{
+    if (img.style.maxHeight == 'none')
+        img.style.maxHeight = '250px';
+    else
+        img.style.maxHeight = 'none';
+}
+</script>
+
+<!-- Malicious filehosts -->
+<script type="text/javascript">
+function reveal_unsafe(e) {
+  e.style.display = "none";
+  e.parentElement.getElementsByClassName('link_unsafe')[0].style.display = "inline";
+}
+</script>
+<style></style>
+<style>
+.link_unsafe_overlay {
+  --warning-color: red;
+  border-style:dashed;
+  border-color: var(--warning-color);
+  border-width: thin;
+  width: fit-content;
+  display: inline-block;
+  color: var(--warning-color);
+}
+
+.link_unsafe_overlay2 {
+  --warning-color: orange;
+  border-style:dashed;
+  border-color: var(--warning-color);
+  border-width: thin;
+  width: fit-content;
+  display: inline-block;
+  color: var(--warning-color);
+}
+
+.link_unsafe_reveal {
+  cursor: pointer;
+  color: #AAAAAA;
+}
+
+.link_unsafe {
+  display: none;
+}
+
+.link_unsafe_note {
+  font-size: 0.8em;
+  vertical-align: super;
+  position: relative;
+}
+
+.tooltip {
+  border-bottom: 1px dotted green;
+  color: green;
+  cursor: pointer;
+}
+
+.tooltiptext {
+  visibility: hidden;
+  font-size: 1.3em;
+  width: 22em;
+  color: var(--warning-color);
+  background-color: black;
+  text-align: center;
+  padding: 0.5em 0.5em;
+  border-radius: 6px;
+  position: absolute;
+  cursor: default;
+  z-index: 1;
+  top: 100%;
+  left: -13em;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+</style>
+
+<!-- Donation overlay --><!-- duplicated here because of caching issues -->
+<style>
+#overlay {
+  position: fixed;
+  width: 40%;
+  height: 40%;
+  top: 50%;
+  left: 50%;
+  margin-right: -50%; 
+  right: 0;
+  bottom: 0;
+  min-width: 300px;
+  min-height: 300px;
+  background-color: rgba(0,0,0,0.9);
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  border: 1px solid #777777;
+  display: none;
+}
+
+#overlaytext {
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  font-size: 1.2em;
+  color: white;
+  transform: translate(-5%,-5%);
+  -ms-transform: translate(-5%,-5%);
+}
+
+#overlayconfirmbtn {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%); 
+  bottom: 0px;
+  font-size: 1.2em;
+  padding: 1px 5px;
+}
+</style>
+<!-- RIN: image resize and page stretch fix -->
+<style>
+.postbody img,
+.postbody ~ table img {
+  max-width: 95%;
+  max-height: 250px;
+}
+</style>
+
+</head>
+<body class="ltr">
+
+<!-- Donation overlay -->
+<div id="overlay">
+  <div id="overlaytext">
+  <p align="center">We need your help!</p>
+  <br /><br />
+  <p>For 17 years, this forum has served us as a platform for sharing games with each other, graciously hosted by the owner of RIN for all this time. Sadly, he can no longer afford our server.</p>
+  <br /><br />
+  <p>To keep this forum alive, we need your help with covering the hosting expenses.</p>
+  <br /><br />
+  <p>For more information, click <a href="../donate" target="_blank" onclick="overlayconfirm()">here</a>.</p>
+  
+  </div>
+  <a id="overlayconfirmbtn" onclick="overlayconfirm()" href="javascript:overlayconfirm();">Close</a>
+</div>
+
+<table align="center" width="100%" class="bodyline">
+	<tr>
+		<td>
+<a name="top"></a>		
+<div id="wrapheader">
+
+	<div id="logodesc">
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td><a href="./index.php?sid=ba5a91612ad50a208edf64c7bb284f37"><img src="./styles/rinDark/imageset/site_logo-1.png" alt="Logo" title="Logo" /></a></td>
+			<td width="100%" align="center"><h1>CS RIN - Steam Underground</h1><span class="gen">cs.rin.ru | csrin.org | The password is usually one of these.</span></td>
+		</tr>
+		</table>
+	</div>
+
+	<div id="menubar">
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				<a href="./viewtopic.php?f=10&amp;t=44034&amp;sid=ba5a91612ad50a208edf64c7bb284f37"><img src="./styles/rinDark/theme/images/icon_mini_rules.gif" width="14" height="14" alt="*" /> Forum rules</a>
+                &nbsp;:: &nbsp;<a href="../donate"><img src="./styles/rinDark/theme/images/icon_donate.gif" width="14" height="14" alt="*" /> Donate</a>
+			</td>
+			<td class="genmed" align="right">
+                <a href="chat.php"><img src="./styles/rinDark/theme/images/icon_mini_irc.gif" width="14" height="14" alt="*" /> Chat</a>
+				&nbsp;:: &nbsp;<a href="./viewtopic.php?f=10&amp;t=98158&amp;sid=ba5a91612ad50a208edf64c7bb284f37"><img src="./styles/rinDark/theme/images/icon_mini_faq.gif" width="12" height="13" alt="*" /> FAQ</a><!--<sup style="color:#FF0000;"> new!</sup>-->
+				
+			</td>
+		</tr>
+		</table>
+		<br>
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				 &nbsp;<a href="./ucp.php?mode=register&amp;sid=ba5a91612ad50a208edf64c7bb284f37"><img src="./styles/rinDark/theme/images/icon_mini_register.gif" width="12" height="13" alt="*" /> Register</a>
+					
+			</td>
+			<td class="genmed" align="right">
+				<a href="./search.php?sid=ba5a91612ad50a208edf64c7bb284f37"><img src="./styles/rinDark/theme/images/icon_mini_search.gif" width="12" height="13" alt="*" /> Search</a>
+                        &nbsp;:: &nbsp;<a href="./ucp.php?mode=login&amp;sid=ba5a91612ad50a208edf64c7bb284f37"><img src="./styles/rinDark/theme/images/icon_mini_login.gif" width="12" height="13" alt="*" /> Login</a>
+				
+			</td>
+		</tr>
+		</table>
+		
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				
+			</td>
+		</tr>
+		</table>
+	</div>
+
+	<div id="datebar">
+		<table width="100%" cellspacing="0">
+			<td class="gensmall"></td>
+            
+			<td class="gensmall" align="right">It is currently Friday, 04 Sep 2026, 16:38<br /></td>
+		</tr>
+		</table>
+	</div>
+
+	<div>
+		<table width="100%" cellspacing="0">
+		<br>
+		<tr>
+			<td class="genmed" align="right"><a href="index.php?lang=en"><img src="./styles/rinDark/theme/images/uk.png" width="16" height="11" alt="English" /></a> | <a href="index.php?lang=ru"><img src="./styles/rinDark/theme/images/ru.png" width="16" height="11" alt="Русский" /></a></td>
+		</tr>
+		</table>
+</div>
+</div>
+
+<div id="wrapcentre">
+
+	
+	<p class="searchbar">
+		<span style="float: left;"><a href="./search.php?search_id=unanswered&amp;sid=ba5a91612ad50a208edf64c7bb284f37">View unanswered posts</a> | <a href="./search.php?search_id=active_topics&amp;sid=ba5a91612ad50a208edf64c7bb284f37">View active topics</a></span>
+		
+	</p>
+	
+
+	<br style="clear: both;" />
+
+	<table class="tablebg" width="100%" cellspacing="1" cellpadding="0" style="margin-top: 5px;">
+	<tr>
+		<td class="row5">
+			<p class="breadcrumbs"><a class="breadcrumbs" href="./index.php?sid=ba5a91612ad50a208edf64c7bb284f37">Board index</a></p>
+			
+		<div id="search-box">
+			<form method="post" id="search" action="./search.php?st=0&amp;sk=t&amp;sd=d&amp;sr=topics&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;keywords=steam+api&amp;sf=titleonly">
+				<input class="inputbox search tiny" type="text" name="add_keywords" id="search_keywords" value="Search these results" size="23" onclick="if(this.value=='Search these results')this.value='';" onblur="if(this.value=='')this.value='Search these results';"/> 
+				<input class="button1" type="submit" name="submit" value="Search" />
+			</form>
+		</div>
+
+
+		</td>
+	</tr>
+	</table>
+
+	<br />
+
+<form method="post" action="./search.php?st=0&amp;sk=t&amp;sd=d&amp;sr=topics&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;keywords=steam+api&amp;sf=titleonly">
+
+<table width="100%" cellspacing="1">
+<tr>
+	<td colspan="2"><span class="titles">Search found 26 matches</span><br /></td>
+</tr>
+<tr>
+	<td class="genmed">Search term used: <a href="./search.php?st=0&amp;sk=t&amp;sd=d&amp;sr=topics&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;keywords=steam+api&amp;sf=titleonly"><b>steam api</b></a> ignored: <b>steam</b></td>
+	<td align="right"><span class="genmed">Search these results: </span><input class="post" type="text" name="add_keywords" value="" /> <input class="btnlite" type="submit" name="submit" value="Go" /></td>
+</tr>
+</table>
+
+<br clear="all" />
+
+
+
+	<table class="tablebg" width="100%" cellspacing="1">
+	<tr>
+		<th width="4%" nowrap="nowrap">&nbsp;</th>
+		<th colspan="2" nowrap="nowrap">&nbsp;Topics&nbsp;</th>
+		<th nowrap="nowrap">&nbsp;Author&nbsp;</th>
+		<th nowrap="nowrap">&nbsp;Replies&nbsp;</th>
+		<th nowrap="nowrap">&nbsp;Views&nbsp;</th>
+		<th nowrap="nowrap">&nbsp;Last post&nbsp;</th>
+	</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read_hot.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=29&amp;t=99323&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"><span style="color:#25BCBC;">[</span><span style="color:#25BCBC;font-size: 0.9em;">Release</span><span style="color:#25BCBC;">]</span> Mini_Uplay_API_Emu</a>
+				
+					<p class="gensmall"> [ <img src="./styles/rinDark/imageset/icon_post_target.gif" width="12" height="9" alt="Go to page" title="Go to page" />Go to page: <a href="./viewtopic.php?f=29&amp;t=99323&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37">1</a><span class="page-sep">, </span><a href="./viewtopic.php?f=29&amp;t=99323&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;start=15">2</a><span class="page-sep">, </span><a href="./viewtopic.php?f=29&amp;t=99323&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;start=30">3</a><span class="page-sep">, </span><a href="./viewtopic.php?f=29&amp;t=99323&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;start=45">4</a> ] </p>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=29&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Releases</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=1038688&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Rat431</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">57</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">27933</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Wednesday, 02 Sep 2026, 00:37</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=1258709&amp;sid=ba5a91612ad50a208edf64c7bb284f37">ant_sh</a>
+					<a href="./viewtopic.php?f=29&amp;t=99323&amp;hilit=steam+api&amp;p=3580672&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p3580672"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=29&amp;t=136448&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"><span style="color:#25BCBC;">[</span><span style="color:#25BCBC;font-size: 0.9em;">Release</span><span style="color:#25BCBC;">]</span> Steam API Check Bypass</a>
+				
+					<p class="gensmall"> [ <img src="./styles/rinDark/imageset/icon_post_target.gif" width="12" height="9" alt="Go to page" title="Go to page" />Go to page: <a href="./viewtopic.php?f=29&amp;t=136448&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37">1</a><span class="page-sep">, </span><a href="./viewtopic.php?f=29&amp;t=136448&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;start=15">2</a><span class="page-sep">, </span><a href="./viewtopic.php?f=29&amp;t=136448&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;start=30">3</a> ] </p>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=29&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Releases</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=1281489&amp;sid=ba5a91612ad50a208edf64c7bb284f37">rejet25984</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">40</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">24834</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Friday, 31 Jul 2026, 11:49</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=3812794&amp;sid=ba5a91612ad50a208edf64c7bb284f37">tSduX6p8UfOtAeRH2cgG</a>
+					<a href="./viewtopic.php?f=29&amp;t=136448&amp;hilit=steam+api&amp;p=3560803&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p3560803"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=29&amp;t=136551&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"><span style="color:#25BCBC;">[</span><span style="color:#25BCBC;font-size: 0.9em;">Release</span><span style="color:#25BCBC;">]</span> Universal Steam API Patcher (for steamclient emu)</a>
+				
+					<p class="gensmall"> [ <img src="./styles/rinDark/imageset/icon_post_target.gif" width="12" height="9" alt="Go to page" title="Go to page" />Go to page: <a href="./viewtopic.php?f=29&amp;t=136551&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37">1</a><span class="page-sep">, </span><a href="./viewtopic.php?f=29&amp;t=136551&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;start=15">2</a> ] </p>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=29&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Releases</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=1349148&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Pandor</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">15</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">9934</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Friday, 24 Apr 2026, 18:10</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=3125167&amp;sid=ba5a91612ad50a208edf64c7bb284f37">ping_lord</a>
+					<a href="./viewtopic.php?f=29&amp;t=136551&amp;hilit=steam+api&amp;p=3497176&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p3497176"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=14&amp;t=144625&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"><span style="color:#BFBFBF;">[</span><span style="color:#BFBFBF;font-size: 0.9em;">Question</span><span style="color:#BFBFBF;">]</span> Steam discussion/anouncement API endpoints</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=14&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Off Topic</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=842145&amp;sid=ba5a91612ad50a208edf64c7bb284f37">mrtrademaster</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">0</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">185</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Sunday, 17 Nov 2024, 04:49</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=842145&amp;sid=ba5a91612ad50a208edf64c7bb284f37">mrtrademaster</a>
+					<a href="./viewtopic.php?f=14&amp;t=144625&amp;hilit=steam+api&amp;p=3167770&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p3167770"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=14&amp;t=133000&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"><span style="color:#BFBFBF;">[</span><span style="color:#BFBFBF;font-size: 0.9em;">Question</span><span style="color:#BFBFBF;">]</span> Cracking old game that does not use steam api or steam stub?</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=14&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Off Topic</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=1852918&amp;sid=ba5a91612ad50a208edf64c7bb284f37">box23rog</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">0</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">438</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Sunday, 28 May 2023, 02:14</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=1852918&amp;sid=ba5a91612ad50a208edf64c7bb284f37">box23rog</a>
+					<a href="./viewtopic.php?f=14&amp;t=133000&amp;hilit=steam+api&amp;p=2837506&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p2837506"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=29&amp;t=89553&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"><span style="color:#25BCBC;">[</span><span style="color:#25BCBC;font-size: 0.9em;">Release</span><span style="color:#25BCBC;">]</span> Basic Steam API Wrapper</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=29&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Releases</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=640196&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Kirbiflint</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">13</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">19732</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Wednesday, 25 Jan 2023, 20:16</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=2097009&amp;sid=ba5a91612ad50a208edf64c7bb284f37">max1887</a>
+					<a href="./viewtopic.php?f=29&amp;t=89553&amp;hilit=steam+api&amp;p=2759118&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p2759118"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=14&amp;t=125511&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"><span style="color:#BFBFBF;">[</span><span style="color:#BFBFBF;font-size: 0.9em;">Question</span><span style="color:#BFBFBF;">]</span> Trouble Creating an Application Using the Mediafire API</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=14&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Off Topic</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=1960027&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Gazawi</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">0</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">184</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Saturday, 13 Aug 2022, 23:36</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=1960027&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Gazawi</a>
+					<a href="./viewtopic.php?f=14&amp;t=125511&amp;hilit=steam+api&amp;p=2657992&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p2657992"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=14&amp;t=121633&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"> Does cream api work with Steam Proton games in Linux?</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=14&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Off Topic</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=1069061&amp;sid=ba5a91612ad50a208edf64c7bb284f37">capstanted</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">3</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">8713</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Thursday, 19 May 2022, 19:55</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=781594&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Riku_Wayfinder</a>
+					<a href="./viewtopic.php?f=14&amp;t=121633&amp;hilit=steam+api&amp;p=2603825&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p2603825"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=14&amp;t=118732&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"><span style="color:#BFBFBF;">[</span><span style="color:#BFBFBF;font-size: 0.9em;">Request</span><span style="color:#BFBFBF;">]</span> api-ms-.......</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=14&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Off Topic</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=773575&amp;sid=ba5a91612ad50a208edf64c7bb284f37">dumass</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">2</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">262</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Wednesday, 12 Jan 2022, 22:23</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=773575&amp;sid=ba5a91612ad50a208edf64c7bb284f37">dumass</a>
+					<a href="./viewtopic.php?f=14&amp;t=118732&amp;hilit=steam+api&amp;p=2522788&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p2522788"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read_locked.png" width="31" height="27" alt="This topic is locked, you cannot edit posts or make further replies." title="This topic is locked, you cannot edit posts or make further replies." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=14&amp;t=96416&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"><span style="color:#BFBFBF;">[</span><span style="color:#BFBFBF;font-size: 0.9em;">Question</span><span style="color:#BFBFBF;">]</span> Dead by Daylight Cream API</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=14&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Off Topic</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=915130&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Koroudo</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">5</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">6842</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Wednesday, 22 May 2019, 12:03</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=611628&amp;sid=ba5a91612ad50a208edf64c7bb284f37" style="color: #ACBFAC;" class="username-coloured">ASDF</a>
+					<a href="./viewtopic.php?f=14&amp;t=96416&amp;hilit=steam+api&amp;p=1902785&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p1902785"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=10&amp;t=70173&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"> VoiceTranscoder AMXX API 2017 RC2 (Feb 03 2017)</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=10&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Main Forum</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=434528&amp;sid=ba5a91612ad50a208edf64c7bb284f37">PRoSToTeM@</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">9</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">4464</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Thursday, 02 Nov 2017, 23:02</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=434528&amp;sid=ba5a91612ad50a208edf64c7bb284f37">PRoSToTeM@</a>
+					<a href="./viewtopic.php?f=10&amp;t=70173&amp;hilit=steam+api&amp;p=1572911&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p1572911"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=10&amp;t=67768&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"> steam_api.dll?</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=10&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Main Forum</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=557792&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Anamano1</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">2</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">5818</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Thursday, 21 May 2015, 19:15</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=557792&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Anamano1</a>
+					<a href="./viewtopic.php?f=10&amp;t=67768&amp;hilit=steam+api&amp;p=1058387&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p1058387"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=15&amp;t=67127&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"><span style="color:#BFBFBF;">[</span><span style="color:#BFBFBF;font-size: 0.9em;">Question</span><span style="color:#BFBFBF;">]</span> Origin and Uplay equivalents of steam_api.dll?</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=15&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Archive</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=545541&amp;sid=ba5a91612ad50a208edf64c7bb284f37">The Duke</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">3</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">7192</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Sunday, 08 Feb 2015, 16:46</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=481045&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Shlak</a>
+					<a href="./viewtopic.php?f=15&amp;t=67127&amp;hilit=steam+api&amp;p=1011846&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p1011846"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=14&amp;t=64397&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"><span style="color:#258CBC;">[</span><span style="color:#258CBC;font-size: 0.9em;">Info</span><span style="color:#258CBC;">]</span> DirectX 11 hardware will be ready for DirectX 12 API</a>
+				
+					<p class="gensmall"> [ <img src="./styles/rinDark/imageset/icon_post_target.gif" width="12" height="9" alt="Go to page" title="Go to page" />Go to page: <a href="./viewtopic.php?f=14&amp;t=64397&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37">1</a><span class="page-sep">, </span><a href="./viewtopic.php?f=14&amp;t=64397&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;start=15">2</a> ] </p>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=14&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Off Topic</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=510780&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Walnut</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">16</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">3281</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Sunday, 23 Mar 2014, 18:55</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=510780&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Walnut</a>
+					<a href="./viewtopic.php?f=14&amp;t=64397&amp;hilit=steam+api&amp;p=899602&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p899602"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=31&amp;t=63162&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"> Where can I find a cracked steam_api.dll, or make my own?</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=31&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Ancient Threads</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=506829&amp;sid=ba5a91612ad50a208edf64c7bb284f37">andersonsmith969</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">6</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">5380</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Sunday, 16 Jun 2013, 06:02</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=145196&amp;sid=ba5a91612ad50a208edf64c7bb284f37">pakrat</a>
+					<a href="./viewtopic.php?f=31&amp;t=63162&amp;hilit=steam+api&amp;p=833509&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p833509"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read_locked.png" width="31" height="27" alt="This topic is locked, you cannot edit posts or make further replies." title="This topic is locked, you cannot edit posts or make further replies." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=31&amp;t=54556&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"> Steam API Emulator (Crack for a lot of games)</a>
+				
+					<p class="gensmall"> [ <img src="./styles/rinDark/imageset/icon_post_target.gif" width="12" height="9" alt="Go to page" title="Go to page" />Go to page: <a href="./viewtopic.php?f=31&amp;t=54556&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37">1</a><span class="page-sep">, </span><a href="./viewtopic.php?f=31&amp;t=54556&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;start=15">2</a> ] </p>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=31&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Ancient Threads</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=177662&amp;sid=ba5a91612ad50a208edf64c7bb284f37">SoBeit</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">29</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">22146</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Tuesday, 15 Mar 2011, 20:50</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=354505&amp;sid=ba5a91612ad50a208edf64c7bb284f37" style="color: #ACBFAC;" class="username-coloured">hegyak</a>
+					<a href="./viewtopic.php?f=31&amp;t=54556&amp;hilit=steam+api&amp;p=734423&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p734423"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=14&amp;t=58260&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"><span style="color:#BC2525;">[</span><span style="color:#BC2525;font-size: 0.9em;">Error</span><span style="color:#BC2525;">]</span> Steam API url exloiting</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=14&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Off Topic</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=411180&amp;sid=ba5a91612ad50a208edf64c7bb284f37">C0nw0nk</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">12</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">2711</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Tuesday, 23 Nov 2010, 23:36</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=411180&amp;sid=ba5a91612ad50a208edf64c7bb284f37">C0nw0nk</a>
+					<a href="./viewtopic.php?f=14&amp;t=58260&amp;hilit=steam+api&amp;p=721888&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p721888"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=31&amp;t=57480&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"> [Question] steam_api.dll</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=31&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Ancient Threads</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=414382&amp;sid=ba5a91612ad50a208edf64c7bb284f37">maple_nub</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">0</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">1940</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Saturday, 18 Sep 2010, 02:48</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=414382&amp;sid=ba5a91612ad50a208edf64c7bb284f37">maple_nub</a>
+					<a href="./viewtopic.php?f=31&amp;t=57480&amp;hilit=steam+api&amp;p=711024&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p711024"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=31&amp;t=56854&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"><span style="color:#BC2525;">[</span><span style="color:#BC2525;font-size: 0.9em;">Problem</span><span style="color:#BC2525;">]</span> Error:libsteam_api_c.so: cannot open shared object file: No</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=31&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Ancient Threads</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=446995&amp;sid=ba5a91612ad50a208edf64c7bb284f37">omgitsme</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">0</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">2134</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Friday, 09 Jul 2010, 11:25</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=446995&amp;sid=ba5a91612ad50a208edf64c7bb284f37">omgitsme</a>
+					<a href="./viewtopic.php?f=31&amp;t=56854&amp;hilit=steam+api&amp;p=699620&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p699620"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=31&amp;t=56804&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"> [Problem] tf2 steam_api error</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=31&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Ancient Threads</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=412669&amp;sid=ba5a91612ad50a208edf64c7bb284f37">shady10</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">0</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">989</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Sunday, 04 Jul 2010, 13:53</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=412669&amp;sid=ba5a91612ad50a208edf64c7bb284f37">shady10</a>
+					<a href="./viewtopic.php?f=31&amp;t=56804&amp;hilit=steam+api&amp;p=698634&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p698634"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=31&amp;t=55504&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"> Need TF2 steam_api.dll</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=31&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Ancient Threads</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=377688&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Frenzyd</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">2</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">1691</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Saturday, 27 Feb 2010, 22:03</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=377688&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Frenzyd</a>
+					<a href="./viewtopic.php?f=31&amp;t=55504&amp;hilit=steam+api&amp;p=662229&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p662229"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=31&amp;t=48804&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"> [REQ] Steamworks API</a>
+				
+					<p class="gensmall"> [ <img src="./styles/rinDark/imageset/icon_post_target.gif" width="12" height="9" alt="Go to page" title="Go to page" />Go to page: <a href="./viewtopic.php?f=31&amp;t=48804&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37">1</a><span class="page-sep">, </span><a href="./viewtopic.php?f=31&amp;t=48804&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;start=15">2</a><span class="page-sep">, </span><a href="./viewtopic.php?f=31&amp;t=48804&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;start=30">3</a> ] </p>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=31&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Ancient Threads</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=263168&amp;sid=ba5a91612ad50a208edf64c7bb284f37">p3ng3l</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">38</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">6759</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Thursday, 25 Jun 2009, 14:47</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=312573&amp;sid=ba5a91612ad50a208edf64c7bb284f37">HubmaN</a>
+					<a href="./viewtopic.php?f=31&amp;t=48804&amp;hilit=steam+api&amp;p=608183&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p608183"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=31&amp;t=52114&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"> steam_api.dll for etw</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=31&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Ancient Threads</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=397335&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Bl4ckR0ck</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">1</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">1229</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Thursday, 02 Apr 2009, 22:09</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=349990&amp;sid=ba5a91612ad50a208edf64c7bb284f37" style="color: #00BFBF;" class="username-coloured">Steaming_Noob</a>
+					<a href="./viewtopic.php?f=31&amp;t=52114&amp;hilit=steam+api&amp;p=592290&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p592290"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=31&amp;t=51794&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"> EMPIRE TOTAL WAR &quot;steam_api.dll&quot; MISSING...</a>
+				
+					<p class="gensmall"> [ <img src="./styles/rinDark/imageset/icon_post_target.gif" width="12" height="9" alt="Go to page" title="Go to page" />Go to page: <a href="./viewtopic.php?f=31&amp;t=51794&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37">1</a><span class="page-sep">, </span><a href="./viewtopic.php?f=31&amp;t=51794&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;start=15">2</a><span class="page-sep">, </span><a href="./viewtopic.php?f=31&amp;t=51794&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;start=30">3</a> ] </p>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=31&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Ancient Threads</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=387092&amp;sid=ba5a91612ad50a208edf64c7bb284f37">shakamaka</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">36</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">11759</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Sunday, 29 Mar 2009, 16:13</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=396110&amp;sid=ba5a91612ad50a208edf64c7bb284f37">bluebird14</a>
+					<a href="./viewtopic.php?f=31&amp;t=51794&amp;hilit=steam+api&amp;p=591489&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p591489"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=14&amp;t=20554&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"> Need Api Spy program---- anyone?</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=14&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Off Topic</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=199452&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Who?</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">3</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">908</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Tuesday, 08 Nov 2005, 22:34</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=135814&amp;sid=ba5a91612ad50a208edf64c7bb284f37">|2eM!x</a>
+					<a href="./viewtopic.php?f=14&amp;t=20554&amp;hilit=steam+api&amp;p=257953&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p257953"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+		<tr valign="middle">
+			<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.png" width="31" height="27" alt="There are no new unread posts for this topic." title="There are no new unread posts for this topic." /></td>
+			<td class="row1" width="25" align="center">
+			
+			</td>
+			<td class="row1">
+				
+				 <a href="./viewtopic.php?f=14&amp;t=10185&amp;hilit=steam+api&amp;sid=ba5a91612ad50a208edf64c7bb284f37" class="topictitle"> [VB6] Appear on top API</a>
+				
+					<p class="gensmall">in <a href="./viewforum.php?f=14&amp;sid=ba5a91612ad50a208edf64c7bb284f37">Off Topic</a></p>
+				
+			</td>
+			<td class="row2" width="100" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=135814&amp;sid=ba5a91612ad50a208edf64c7bb284f37">|2eM!x</a></p></td>
+			<td class="row1" width="50" align="center"><p class="topicdetails">0</p></td>
+			<td class="row2" width="50" align="center"><p class="topicdetails">686</p></td>
+			<td class="row1" width="120" align="center">
+				<p class="topicdetails">Sunday, 23 Jan 2005, 03:41</p>
+				<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=135814&amp;sid=ba5a91612ad50a208edf64c7bb284f37">|2eM!x</a>
+					<a href="./viewtopic.php?f=14&amp;t=10185&amp;hilit=steam+api&amp;p=126423&amp;sid=ba5a91612ad50a208edf64c7bb284f37#p126423"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+				</p>
+			</td>
+		</tr>
+	
+	<tr>
+		<td class="cat" colspan="7" valign="middle" align="center"><span class="gensmall">Display posts from previous:</span> <select name="st" id="st"><option value="0" selected="selected">All results</option><option value="1">1 day</option><option value="7">7 days</option><option value="14">2 weeks</option><option value="30">1 month</option><option value="90">3 months</option><option value="180">6 months</option><option value="365">1 year</option></select>&nbsp;<span class="gensmall">Sort by:</span> <select name="sk" id="sk"><option value="a">Author</option><option value="t" selected="selected">Post time</option><option value="f">Forum</option><option value="i">Topic title</option><option value="s">Post subject</option></select> <select name="sd" id="sd"><option value="a">Ascending</option><option value="d" selected="selected">Descending</option></select>&nbsp;<input class="btnlite" type="submit" value="Go" name="sort" /></td>
+	</tr>
+	</table>
+
+
+
+</form>
+
+<div class="gensmall" style="float: left;"><span class="nav">Page <strong>1</strong> of <strong>1</strong></span> [ Search found 26 matches ]</div>
+<div class="nav" style="float: right;"></div>
+
+<br clear="all" /><br />
+
+<table class="tablebg" width="100%" cellspacing="1" cellpadding="0" style="margin-top: 5px;">
+	<tr>
+		<td class="row5">
+			<p class="breadcrumbs"><a class="breadcrumbs" href="./index.php?sid=ba5a91612ad50a208edf64c7bb284f37">Board index</a></p>
+			
+		<div id="search-box">
+			<form method="post" id="search" action="./search.php?st=0&amp;sk=t&amp;sd=d&amp;sr=topics&amp;sid=ba5a91612ad50a208edf64c7bb284f37&amp;keywords=steam+api&amp;sf=titleonly">
+				<input class="inputbox search tiny" type="text" name="add_keywords" id="search_keywords" value="Search these results" size="23" onclick="if(this.value=='Search these results')this.value='';" onblur="if(this.value=='')this.value='Search these results';"/> 
+				<input class="button1" type="submit" name="submit" value="Search" />
+			</form>
+		</div>
+
+
+		</td>
+	</tr>
+	</table>
+
+<br clear="all" />
+
+<div align="right">
+	<form method="post" name="jumpbox" action="./viewforum.php?sid=ba5a91612ad50a208edf64c7bb284f37" onsubmit="if(document.jumpbox.f.value == -1){return false;}">
+
+	<table cellspacing="0" cellpadding="0" border="0">
+	<tr>
+		<td nowrap="nowrap"><span class="gensmall">Jump to:</span>&nbsp;<select name="f" onchange="if(this.options[this.selectedIndex].value != -1){ document.forms['jumpbox'].submit() }">
+
+		
+			<option value="-1">Select a forum</option>
+		<option value="-1">------------------</option>
+			<option value="26">Russian Forums (Форумы)</option>
+		
+			<option value="5">&nbsp; &nbsp;Новости</option>
+		
+			<option value="1">&nbsp; &nbsp;Общий форум</option>
+		
+			<option value="2">&nbsp; &nbsp;Counter Strike</option>
+		
+			<option value="3">&nbsp; &nbsp;Сервер cs.rin.ru</option>
+		
+			<option value="4">&nbsp; &nbsp;Книга жалоб</option>
+		
+			<option value="9">&nbsp; &nbsp;Читы и Читеры</option>
+		
+			<option value="6">&nbsp; &nbsp;Оффтопик</option>
+		
+			<option value="8">&nbsp; &nbsp;Чемпионат</option>
+		
+			<option value="11">&nbsp; &nbsp;Опросы</option>
+		
+			<option value="27">English Forums</option>
+		
+			<option value="10">&nbsp; &nbsp;Main Forum</option>
+		
+			<option value="29">&nbsp; &nbsp;&nbsp; &nbsp;Releases</option>
+		
+			<option value="32">&nbsp; &nbsp;&nbsp; &nbsp;Standalones</option>
+		
+			<option value="38">&nbsp; &nbsp;&nbsp; &nbsp;Other Gaming Platforms</option>
+		
+			<option value="41">&nbsp; &nbsp;&nbsp; &nbsp;Temporarily Restricted Topics</option>
+		
+			<option value="14">&nbsp; &nbsp;Off Topic</option>
+		
+			<option value="20">&nbsp; &nbsp;Developer Forum</option>
+		
+			<option value="22">&nbsp; &nbsp;Steam Content Sharing</option>
+		
+			<option value="19">&nbsp; &nbsp;Foreign Languages Forum</option>
+		
+			<option value="15">&nbsp; &nbsp;Archive</option>
+		
+			<option value="31">&nbsp; &nbsp;&nbsp; &nbsp;Ancient Threads</option>
+		
+			<option value="24">&nbsp; &nbsp;Junk</option>
+		
+
+		</select>&nbsp;<input class="btnlite" type="submit" value="Go" /></td>
+	</tr>
+	</table>
+
+	</form>
+</div>
+
+
+</div>
+
+<div id="wrapfooter">
+    <br><br><br>
+	
+	<span class="copyright">Powered by <a href="https://www.phpbb.com/">phpBB</a>&reg; Forum Software &copy; phpBB Group
+	</span>
+	<br><br>
+</div>
+	
+		</td>
+	</tr>
+	<br>
+</table>
+	<br>
+</body>
+</html>

@@ -1,0 +1,5 @@
+# One line ending everywhere. dist/ is committed and CI compares it with
+# a fresh build on Linux; a CRLF working copy on Windows would make that
+# comparison fail for no reason.
+* text=auto eol=lf
+*.png binary

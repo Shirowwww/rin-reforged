@@ -1,0 +1,231 @@
+/* ------------------------------------------------------------------
+   Mobile.
+
+   The forum ships no viewport meta and lays everything out in fixed
+   tables, so on a phone it is a horizontal scroll of 11px text. The
+   script injects the viewport tag; these rules unpack the tables.
+
+   Layout modules tag cells with data-rr-col so the rules below can be
+   specific instead of guessing at :nth-child.
+   ------------------------------------------------------------------ */
+
+@media (max-width: 860px) {
+    /* Content width is a desktop setting; on a phone the window is the
+       constraint whatever it says. */
+    html[data-rr] { --rr-content-max: 100%; --rr-measure: none; }
+
+    html[data-rr] #wrapcentre,
+    html[data-rr] #wrapfooter { padding-left: var(--rr-s3); padding-right: var(--rr-s3); }
+    html[data-rr] #wrapcentre { padding-top: var(--rr-s3); }
+
+    html[data-rr] .rr-nav { padding: 0 var(--rr-s2); gap: var(--rr-s2); }
+    html[data-rr] .rr-nav__search { min-width: 0; width: 30px; padding: 0; justify-content: center; }
+    html[data-rr] .rr-nav__search span,
+    html[data-rr] .rr-nav__kbd { display: none; }
+
+    /* subsilver2 nests unclassed layout tables inside the data tables:
+       pagination strips, button rows, the profile block. Each one keeps
+       a table's intrinsic minimum width, so they are unpacked too. */
+    html[data-rr] #wrapcentre table:not(.tablebg):not(.forumline),
+    html[data-rr] #wrapcentre table:not(.tablebg):not(.forumline) > tbody,
+    html[data-rr] #wrapcentre table:not(.tablebg):not(.forumline) > tbody > tr,
+    html[data-rr] #wrapcentre table:not(.tablebg):not(.forumline) > tbody > tr > td {
+        display: block;
+        width: auto !important;
+        max-width: 100%;
+    }
+
+    /* Tables stop being grids and become stacked blocks. overflow is
+       left visible: with the rows as flex containers, hiding it clips
+       any cell that wraps to a second line. */
+    html[data-rr] table.tablebg,
+    html[data-rr] table.forumline { display: block; overflow: visible; }
+    html[data-rr] table.tablebg > tbody,
+    html[data-rr] table.forumline > tbody { display: block; }
+    html[data-rr] table.tablebg > tbody > tr,
+    html[data-rr] table.forumline > tbody > tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 2px var(--rr-s2);
+        padding: var(--rr-s3);
+        border-bottom: 1px solid var(--rr-line);
+    }
+    html[data-rr] table.tablebg > tbody > tr > td,
+    html[data-rr] table.forumline > tbody > tr > td {
+        display: block;
+        width: auto !important;
+        /* Flex items default to min-width:auto, which refuses to shrink
+           below the widest word — a long list item then sets the page
+           width. */
+        min-width: 0;
+        max-width: 100%;
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+    /* Column headers mean nothing once the columns are gone; the row
+       has to go with them or it leaves a padded empty band. */
+    html[data-rr] table.tablebg > tbody > tr > th { display: none; }
+    html[data-rr] table.tablebg > tbody > tr:has(> th):not(:has(> td)) { display: none; }
+
+    /* Topic and forum rows: the title takes the line, the counters
+       become one muted meta line underneath. */
+    html[data-rr] td[data-rr-col="title"] { flex: 1 1 100%; order: 1; }
+    html[data-rr] td[data-rr-col="icon"] { order: 0; flex: none; }
+    html[data-rr] td[data-rr-col="replies"],
+    html[data-rr] td[data-rr-col="views"],
+    html[data-rr] td[data-rr-col="author"],
+    html[data-rr] td[data-rr-col="topics"],
+    html[data-rr] td[data-rr-col="posts"],
+    html[data-rr] td[data-rr-col="last"] {
+        order: 2;
+        font-size: var(--rr-fs-xs);
+        color: var(--rr-muted);
+    }
+    html[data-rr] td[data-rr-col] p { display: inline; margin: 0; }
+
+    /* The template pins several cells with nowrap="nowrap" and the
+       original stylesheet adds more. On a 390px screen a single
+       unbreakable "Wednesday, 02 Sep 2026, 23:04" is the whole
+       horizontal scrollbar. */
+    html[data-rr] #wrapcentre :where(td, th, p, span, div, li, ul, ol, dd, dt, b, strong, i, em, a),
+    html[data-rr] [nowrap] { white-space: normal !important; }
+    html[data-rr] #wrapcentre :where(pre, code, .code) { white-space: pre !important; }
+    html[data-rr] p.forumdesc { display: block; }
+    html[data-rr] td[data-rr-col="replies"]::before { content: "replies "; color: var(--rr-faint); }
+    html[data-rr] td[data-rr-col="views"]::before { content: "views "; color: var(--rr-faint); }
+    html[data-rr] td[data-rr-col="topics"]::before { content: "topics "; color: var(--rr-faint); }
+    html[data-rr] td[data-rr-col="posts"]::before { content: "posts "; color: var(--rr-faint); }
+    html[data-rr] td[data-rr-col="last"] { flex: 1 1 100%; }
+    html[data-rr] td[data-rr-col="last"] br { display: none; }
+
+    /* Posts: the 150px author column becomes a header strip. */
+    html[data-rr] td.profile { display: flex !important; align-items: center; gap: var(--rr-s2); }
+    html[data-rr] td.profile table { width: auto !important; }
+    html[data-rr] td.profile img[src*="/avatars/"],
+    html[data-rr] td.profile img.avatar { width: 32px !important; height: 32px !important; border-radius: 50%; }
+    html[data-rr] .postbody { max-width: none; }
+    html[data-rr] .postbody img { max-width: 100% !important; height: auto !important; }
+
+    /* Long unbreakable strings (links, hashes) must not widen the page. */
+    html[data-rr] .postbody,
+    html[data-rr] .code,
+    html[data-rr] blockquote { overflow-wrap: anywhere; }
+    html[data-rr] .code { max-width: 100%; }
+
+    html[data-rr] .rr-game { grid-template-columns: 1fr; }
+    html[data-rr] .rr-panel { width: 100vw; border-left: 0; }
+    html[data-rr] .rr-palette { margin-top: 6vh; max-height: 76vh; }
+    html[data-rr] .rr-sheet dl { grid-template-columns: 1fr; }
+    html[data-rr] .rr-sheet dt { text-align: left; }
+    html[data-rr] .rr-fab { right: var(--rr-s2); bottom: var(--rr-s2); }
+
+    /* The print / previous-topic / next-topic strip is a nested table
+       that does not survive the column collapse, and on a phone the
+       action bar above it already covers moving around. */
+    html[data-rr] tr:has(> td.cat > table) { display: none; }
+
+    /* A folded reply is still one line here.
+
+       Everything above unpacks a post's table cells into blocks and
+       lets its text wrap anywhere, which is right for a post and
+       undoes the fold for a folded one: the message went back to
+       laying itself out in full, on the screen where a wall of
+       "thanks" costs the most. */
+    /* #wrapcentre is in both selectors on purpose. The blanket rules
+       above carry an id, and an id outranks any number of classes even
+       when both sides are !important — so a class-only rule here loses
+       to them silently, which is exactly what happened: the fold was
+       written twice and applied on neither phone. */
+    html[data-rr] #wrapcentre table.tablebg[data-rr-quiet] td:has(> .postbody) {
+        display: flex !important;
+        align-items: baseline;
+        gap: var(--rr-s2);
+    }
+    html[data-rr] #wrapcentre table.tablebg[data-rr-quiet] .postbody {
+        min-width: 0;
+        overflow: hidden;
+        /* !important against !important. The blanket rule further up
+           this file forces white-space: normal on every td, p, span
+           and div inside the content — it is what stops the board's
+           own nowrap attributes widening a phone — and it is the one
+           thing standing between a folded reply and one line. This is
+           the deliberate exception to it, on one state of one node. */
+        white-space: nowrap !important;
+        text-overflow: ellipsis;
+    }
+
+    /* Tap targets. */
+    html[data-rr] .rr-icon-btn { width: 34px; height: 34px; }
+    html[data-rr] td[data-rr-col="title"] a.topictitle { line-height: 1.45; }
+}
+
+@media (max-width: 480px) {
+    html[data-rr] { --rr-fs: 15px; --rr-fs-h1: calc(var(--rr-fs) + 5px); }
+
+    /* Once the bar wraps, the divider before the board search separates
+       nothing. */
+    html[data-rr] .rr-toolbar__board {
+        border-left: 0;
+        padding-left: 0;
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+    html[data-rr] .rr-toolbar__board .rr-search,
+    html[data-rr] .rr-topicbar__search .rr-search { flex: 1; min-width: 0; width: 100%; }
+
+    html[data-rr] .rr-nav__crumbs a:not(:last-child),
+    html[data-rr] .rr-nav__sep { display: none; }
+    html[data-rr] .rr-toolbar { padding: var(--rr-s3); }
+
+    /* The topic bar carries nine controls and a search box, and on a
+       phone that is five wrapped rows before the first post. The air
+       between them is what a wide screen wants — there they sit on one
+       line and the gap is the only thing separating them — and here it
+       is five gaps stacked on top of each other. So the row gap comes
+       back down, and only here. */
+    html[data-rr] .rr-topicbar { gap: var(--rr-s1) var(--rr-s2); }
+    html[data-rr] .rr-topicbar .rr-btn { padding: 6px 10px; }
+    html[data-rr] .rr-topicbar__search { flex: 1 1 100%; }
+    html[data-rr] .rr-topicbar__search form { flex-wrap: wrap; }
+}
+
+/* Print: drop the script chrome entirely. */
+@media print {
+    .rr-nav, .rr-fab, .rr-toolbar, .rr-progress, .rr-toasts, .rr-posttools { display: none !important; }
+    html[data-rr] body { background: #fff; color: #000; }
+
+    /* And unfold everything the screen folded.
+
+       A fold is an affordance: a clipped quote says "there is more,
+       click here". Paper has no click. Printing a thread came out with
+       quotes cut off mid-sentence and every short reply clipped to its
+       first line, with the controls that would have opened them
+       printed alongside — the one place where folding really would
+       have lost content. */
+    html[data-rr] [data-rr-quote="folded"] {
+        max-height: none !important;
+        -webkit-mask-image: none !important;
+                mask-image: none !important;
+    }
+    /* Carrying #wrapcentre for the same reason the narrow-screen rules
+       above do: printing from a phone-width window puts both media
+       queries in play at once, and without the id this loses to the
+       fold it is supposed to undo. */
+    html[data-rr] table.tablebg[data-rr-quiet] { opacity: 1 !important; }
+    html[data-rr] table.tablebg[data-rr-quiet] > tbody > tr { display: table-row !important; }
+    html[data-rr] #wrapcentre table.tablebg[data-rr-quiet] td:has(> .postbody) { display: table-cell !important; }
+    html[data-rr] #wrapcentre table.tablebg[data-rr-quiet] .postbody {
+        display: block !important;
+        max-height: none !important;
+        max-width: none !important;
+        overflow: visible !important;
+        white-space: normal !important;
+        text-overflow: clip !important;
+        font-size: inherit !important;
+        color: inherit !important;
+    }
+    html[data-rr] table.tablebg[data-rr-quiet] .postbody br { display: inline !important; }
+    .rr-quote-toggle, .rr-quiet-chip, .rr-sig-toggle, .rr-quote-bubble { display: none !important; }
+}

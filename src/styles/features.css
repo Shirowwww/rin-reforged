@@ -1,0 +1,691 @@
+/* ------------------------------------------------------------------
+   Styles for what v0.4 added: folded quotes, folded chatter, the Steam
+   preview card, and the donation link.
+
+   The two folds share one idea and it is worth saying once. Neither of
+   them hides anything: `display: none` and `visibility: hidden` take a
+   node out of the layout, out of the accessibility tree and out of the
+   browser's own find-in-page, which is exactly what the previous
+   attempt at folding quotes did wrong. What is below is `max-height`
+   and a mask — the content is still laid out, still read aloud, still
+   found by Ctrl+F, still visible to the finder. Only the box drawn
+   around it is smaller.
+   ------------------------------------------------------------------ */
+
+/* ---- Folded quotes ------------------------------------------------ */
+
+html[data-rr] .postbody [data-rr-quote="folded"] {
+    max-height: var(--rr-quote-max, 7em);
+    overflow: hidden;
+    cursor: zoom-in;
+    /* The fade is the affordance: a clipped block with a hard bottom
+       edge reads as a short quote, one that fades reads as more. */
+    -webkit-mask-image: linear-gradient(to bottom, #000 55%, rgba(0, 0, 0, .12) 100%);
+            mask-image: linear-gradient(to bottom, #000 55%, rgba(0, 0, 0, .12) 100%);
+}
+html[data-rr] .postbody [data-rr-quote="folded"]:hover {
+    -webkit-mask-image: linear-gradient(to bottom, #000 70%, rgba(0, 0, 0, .3) 100%);
+            mask-image: linear-gradient(to bottom, #000 70%, rgba(0, 0, 0, .3) 100%);
+}
+
+.rr-quote-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: var(--rr-s2);
+    padding: 2px 8px;
+    background: var(--rr-surface-3);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-pill);
+    color: var(--rr-muted);
+    font: 600 var(--rr-fs-xs) / 1.5 var(--rr-font);
+    cursor: pointer;
+    vertical-align: baseline;
+}
+.rr-quote-toggle:hover { background: var(--rr-surface-2); color: var(--rr-text-strong); border-color: var(--rr-line-strong); }
+.rr-quote-toggle svg { width: 11px; height: 11px; transition: transform var(--rr-speed) ease; }
+.rr-quote-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+/* ---- Folded chatter ----------------------------------------------- */
+
+/* One dim line where a "thanks!" used to be a full post box. The
+   original post is untouched underneath: the message is clipped to a
+   single line of its own text, not replaced by a summary of it. */
+html[data-rr] table.tablebg[data-rr-quiet] { opacity: .72; }
+html[data-rr] table.tablebg[data-rr-quiet]:hover { opacity: 1; }
+
+html[data-rr] table.tablebg[data-rr-quiet] > tbody > tr > td { padding-top: 4px; padding-bottom: 4px; }
+
+html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead {
+    display: inline-flex;
+    margin: 0 var(--rr-s2) 0 0;
+    padding: 0;
+    border: 0;
+    vertical-align: middle;
+}
+html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead__avatar,
+html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead__rank,
+html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead__meta,
+html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead__spacer,
+html[data-rr] table.tablebg[data-rr-quiet] .rr-posttools,
+html[data-rr] table.tablebg[data-rr-quiet] .rr-signature,
+html[data-rr] table.tablebg[data-rr-quiet] .rr-sig-toggle { display: none; }
+html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead__name { font-size: var(--rr-fs-xs); font-weight: 600; }
+html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead__date { display: none; }
+
+/* The author, the control and the message on one line.
+
+   The message used to be `display: inline` so it would flow beside the
+   name, and that quietly undid the fold: `overflow` and `max-height`
+   do not apply to a non-replaced inline box at all, so a short reply
+   looked folded only because it was short. A 300-character "thank you
+   so much for taking the time" — well inside what this folds — laid
+   itself out in full and nothing clipped it.
+
+   A flex row on the cell puts the three on one line properly, and the
+   message is then a flex item, which is a box that can be clipped. */
+html[data-rr] table.tablebg[data-rr-quiet] td:has(> .postbody) {
+    display: flex;
+    align-items: baseline;
+    gap: var(--rr-s2);
+}
+html[data-rr] table.tablebg[data-rr-quiet] .postbody {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    /* One line, ending in an ellipsis rather than a hard edge. The
+       text is all still there and still found by find-in-page; it is
+       the box around it that stops. */
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: var(--rr-fs-sm);
+    line-height: var(--rr-lh-meta);
+    color: var(--rr-faint);
+    cursor: zoom-in;
+}
+html[data-rr] table.tablebg[data-rr-quiet] .postbody br { display: none; }
+
+/* Everything the template leaves after the message: the two <br> it
+   uses as spacing and the empty strip that held the per-post controls.
+   Folding the message and leaving 45px of that behind saves half of
+   what the fold is for. A signature is a second .postbody, so it is
+   covered by the same rule — a folded reply is one line, all in. */
+html[data-rr] table.tablebg[data-rr-quiet] .postbody ~ * { display: none; }
+html[data-rr] table.tablebg[data-rr-quiet] .postbody ~ .rr-quiet-chip { display: inline-flex; }
+
+/* And the rows around it. A post is four table rows, and folding the
+   message alone left three of them standing: 77px for a reply that now
+   says "thx". The row holding the message is the only one a folded
+   reply has anything to show in — the header row is already hidden by
+   the modern layout, and the footer row is what is left of the Top and
+   Profile controls after they moved into the post's own action strip.
+   The template's cellspacing="5" is the last of it. */
+html[data-rr] table.tablebg[data-rr-quiet] > tbody > tr:not(:has(.postbody)):not(:has(.rr-posthead)) {
+    display: none;
+}
+html[data-rr] table.tablebg[data-rr-quiet] td > table { border-spacing: 0; margin: 0; }
+html[data-rr] table.tablebg[data-rr-quiet] > tbody > tr > td { padding: 2px 4px; }
+
+.rr-quiet-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-right: var(--rr-s2);
+    padding: 2px 8px;
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-pill);
+    color: var(--rr-faint);
+    font: 600 var(--rr-fs-xs) / 1.5 var(--rr-font);
+    cursor: pointer;
+    vertical-align: middle;
+}
+.rr-quiet-chip:hover { color: var(--rr-text); border-color: var(--rr-line-strong); }
+.rr-quiet-chip svg { width: 11px; height: 11px; }
+/* Once opened, the post is an ordinary post again and the chip is the
+   only thing left saying otherwise. */
+html[data-rr] table.tablebg:not([data-rr-quiet]) .rr-quiet-chip { opacity: .4; }
+html[data-rr] table.tablebg:not([data-rr-quiet]) .rr-quiet-chip:hover { opacity: 1; }
+
+/* ---- The donation link -------------------------------------------- */
+
+/* Present, not loud: an outline in the accent and a heart, in a row
+   where everything else is grey text. The board is asking for money to
+   stay hosted; this is one line of emphasis, not a banner. */
+html[data-rr] .rr-boardbar__donate {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 9px;
+    border: 1px solid color-mix(in srgb, var(--rr-accent) 45%, transparent);
+    /* A control, so the button radius — not the pill it used to be,
+       which put three different corner radii on one bar next to Reply
+       and the search box. */
+    border-radius: var(--rr-radius);
+    background: color-mix(in srgb, var(--rr-accent) 12%, transparent);
+    color: var(--rr-accent);
+    font-weight: 650;
+}
+html[data-rr] .rr-boardbar__donate:hover {
+    background: color-mix(in srgb, var(--rr-accent) 22%, transparent);
+    border-color: var(--rr-accent);
+    color: var(--rr-accent);
+}
+html[data-rr] .rr-boardbar__donate svg {
+    width: 12px;
+    height: 12px;
+    flex: none;
+    fill: currentColor;
+    stroke-width: 0;
+}
+
+@media (max-width: 720px) {
+    /* Everything past the two entry points folds behind More. This one
+       does not: it is the link the board is asking for, and it fits
+       once it is the heart alone. */
+    html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > [data-rr-donate] {
+        display: flex;
+    }
+    /* Its group is shown for its sake alone, so nothing else in that
+       group comes back with it. */
+    html[data-rr] .rr-boardbar:not([data-rr-open]) [data-rr-donate] > :not(.rr-boardbar__donate) {
+        display: none;
+    }
+    html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__donate-label {
+        /* Off the screen rather than display:none, so the label still
+           belongs to the link for anything reading it aloud. */
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+    html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__donate { padding: 4px 8px; }
+}
+
+@media (max-width: 560px) {
+    /* On a phone the row is 366px wide and the two entry points, the
+       heart and the More control come to 389. Something has to fold,
+       and the choice is between the second entry point and the word
+       "More" — the second entry point, because it is one tap away
+       behind a control that is still labelled, where a More button
+       reduced to a bare chevron is a control that is not.
+
+       "View unanswered posts" is the one every guide to this board
+       tells people to bookmark, so it is the one that stays.
+
+       Both selectors below read the row as groups, which is what it is
+       now. Written against the flat row it used to be, the first one
+       excluded .rr-boardbar__donate — the class on the *link* — while
+       what sits in __main is the *group* around it, so it folded the
+       group the heart lives in and left the link laid out at zero
+       width inside. And nth-child(n+2) then meant "every group after
+       the first", which on a row whose first group holds both entry
+       points folds nothing at all: the two of them plus the heart plus
+       More come to 357px in a 366px row, and More wrapped to a second
+       line.
+
+       So: every group after the first goes, except the one with the
+       heart in it, and inside the first group only its opening link
+       stays. */
+    html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :nth-child(n+2):not([data-rr-donate]) {
+        display: none;
+    }
+    html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :first-child > :nth-child(n+2) {
+        display: none;
+    }
+}
+
+/* ---- Steam preview ------------------------------------------------ */
+
+.rr-steam-pop {
+    position: absolute;
+    z-index: 1200;
+    width: 340px;
+    max-width: calc(100vw - 24px);
+    pointer-events: auto;
+}
+.rr-steam {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rr-s3);
+    padding: var(--rr-card-pad);
+    background: var(--rr-surface);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius-lg);
+    box-shadow: var(--rr-shadow-pop);
+}
+.rr-steam--quiet { gap: 0; }
+.rr-steam__art {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--rr-radius);
+    background: var(--rr-surface-3);
+}
+.rr-steam__head { display: flex; align-items: baseline; gap: var(--rr-s2); }
+.rr-steam__name {
+    flex: 1;
+    min-width: 0;
+    font: 650 var(--rr-fs) / 1.3 var(--rr-font);
+    color: var(--rr-text-strong);
+}
+.rr-steam__score {
+    flex: none;
+    padding: 1px 7px;
+    border-radius: var(--rr-radius);
+    font: 700 var(--rr-fs-xs) / 1.6 var(--rr-font-mono);
+    background: var(--rr-surface-3);
+    color: var(--rr-muted);
+}
+.rr-steam__score[data-band="good"]  { background: color-mix(in srgb, var(--rr-ok) 20%, transparent);     color: var(--rr-ok); }
+.rr-steam__score[data-band="mixed"] { background: color-mix(in srgb, var(--rr-warn) 20%, transparent);   color: var(--rr-warn); }
+.rr-steam__score[data-band="poor"]  { background: color-mix(in srgb, var(--rr-danger) 20%, transparent); color: var(--rr-danger); }
+
+.rr-steam__facts {
+    font: var(--rr-fs-xs) / var(--rr-lh-meta) var(--rr-font);
+    color: var(--rr-faint);
+}
+.rr-steam__tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.rr-steam__tag {
+    padding: 1px 7px;
+    border-radius: var(--rr-radius-pill);
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    color: var(--rr-muted);
+    font: 600 var(--rr-fs-xs) / 1.6 var(--rr-font);
+}
+.rr-steam__blurb {
+    margin: 0;
+    font-size: var(--rr-fs-sm);
+    line-height: 1.55;
+    color: var(--rr-text);
+    /* Three lines is the length at which a store blurb still says what
+       the game is and does not become the page. */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.rr-steam__links { display: flex; gap: 6px; }
+.rr-steam__links .rr-btn { padding: 4px 8px; font-size: var(--rr-fs-xs); }
+
+/* A row whose title now opens at the first unread post. The board
+   already marks the row unread with its dot; this is only here so the
+   retarget is visible to a test and to anyone reading the DOM. */
+html[data-rr] tr[data-rr-unread] a.topictitle { text-underline-offset: 3px; }
+
+
+/* ---- Category collapse ------------------------------------------- */
+
+/* The board draws this as a background image on an <input type=button>
+   sized 12x12. Two selectors, not one: `html[data-rr] input[type=button]`
+   in forum.css is one element more specific than a bare class would be,
+   so a class-only rule loses the padding and the border to the generic
+   button styling and the control comes out as a 34px slab.
+
+   The arrow is the input's own `value`, written by boardindex.js. It
+   cannot be a pseudo-element: an <input> is a replaced element and
+   generates none. */
+html[data-rr] input.ccclose,
+html[data-rr] input.ccopen,
+html[data-rr] .ccclose,
+html[data-rr] .ccopen {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    min-width: 0;
+    padding: 0;
+    background: none;
+    background-image: none !important;
+    border: 1px solid transparent;
+    border-radius: var(--rr-radius);
+    color: var(--rr-muted);
+    font: 700 12px/1 var(--rr-font);
+    text-align: center;
+    cursor: pointer;
+    vertical-align: middle;
+    transition: background var(--rr-speed) ease, color var(--rr-speed) ease;
+}
+html[data-rr] input.ccclose:hover,
+html[data-rr] input.ccopen:hover,
+html[data-rr] .ccclose:hover,
+html[data-rr] .ccopen:hover {
+    background: var(--rr-surface-3);
+    border-color: var(--rr-line);
+    color: var(--rr-text-strong);
+}
+
+
+/* ---- Light theme, seen by eye ------------------------------------ */
+
+/* The prefix filters rest at half opacity so a row of bright chips
+   does not compete with the listing behind them. Against a dark
+   surface half of a mid-tone still reads; against white it is most of
+   the way to gone, and Info and Tutorial in particular stopped being
+   legible as words. They rest higher on Paper and land in the same
+   place visually. */
+html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
+
+
+/* ---- The board's masthead ---------------------------------------- */
+
+/* Shown at the size the board draws it, on the one page where the
+   board's name is the point. The plate the art sits on is part of the
+   art — it is a dark rectangle with the emblem knocked out of it — so
+   it keeps its own background on every theme rather than being tinted
+   to match one. */
+.rr-masthead {
+    margin: 0 0 var(--rr-s4);
+}
+.rr-masthead__link {
+    display: inline-block;
+    border-radius: var(--rr-radius-lg);
+    overflow: hidden;
+    line-height: 0;
+    transition: filter var(--rr-speed) ease;
+}
+.rr-masthead__link:hover { filter: brightness(1.12); }
+.rr-masthead__art {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    border: 0;
+}
+
+@media (max-width: 560px) {
+    /* Two thirds the size, which keeps the wordmark legible and the
+       emblem recognisable without taking a third of the screen. */
+    .rr-masthead__art { width: 260px; }
+    .rr-masthead { margin-bottom: var(--rr-s3); }
+}
+
+
+/* ---- An unsent reply --------------------------------------------- */
+
+/* The quick reply with something kept in it. A dot rather than a
+   sentence: the button beside it already says "Finish your reply", and
+   this is only there so the block reads as waiting for you from across
+   the page. */
+.rr-reply[data-rr-draft] {
+    border-color: color-mix(in srgb, var(--rr-accent) 40%, var(--rr-line));
+}
+.rr-reply[data-rr-draft] > .rr-btn::after {
+    content: "";
+    width: 6px;
+    height: 6px;
+    margin-left: 2px;
+    border-radius: 50%;
+    background: var(--rr-accent-text);
+    opacity: .8;
+}
+
+
+/* ---- Releases ---------------------------------------------------- */
+
+/* A table without a <table>: five columns on one line per row, with
+   the two that carry meaning — the version and what kind of thing it
+   is — leading, and the bookkeeping trailing off to the right where it
+   can be ignored. */
+.rr-releases {
+    margin: 0 0 var(--rr-post-gap);
+    background: var(--rr-surface);
+    border: 1px solid var(--rr-line);
+    border-left: 3px solid var(--rr-accent);
+    border-radius: var(--rr-radius-lg);
+    overflow: hidden;
+}
+.rr-releases__head {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s2);
+    flex-wrap: wrap;
+    padding: var(--rr-card-pad);
+    border-bottom: 1px solid var(--rr-line);
+}
+.rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); }
+/* What the panel is showing: how much of the topic, and whether the
+   topic itself is filtered down to it. Two controls answering the same
+   question, so they sit together rather than at opposite ends of the
+   card. */
+.rr-releases__controls {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s2);
+    margin-left: auto;
+    flex-wrap: wrap;
+}
+.rr-releases__only { padding: 4px 10px; font-size: var(--rr-fs-xs); }
+.rr-releases__head svg { color: var(--rr-accent); flex: none; }
+.rr-releases__count { color: var(--rr-faint); font-size: var(--rr-fs-xs); }
+
+/* This page / all N pages. The same segmented control the settings
+   panel uses, because it is the same kind of choice. */
+.rr-releases__scope {
+    display: inline-flex;
+    padding: 2px;
+    gap: 2px;
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+}
+.rr-releases__tab {
+    padding: 4px 10px;
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    color: var(--rr-muted);
+    font: 600 var(--rr-fs-xs) / 1.4 var(--rr-font);
+    cursor: pointer;
+    white-space: nowrap;
+}
+.rr-releases__tab:hover { color: var(--rr-text-strong); }
+.rr-releases__tab[aria-selected="true"] { background: var(--rr-surface-3); color: var(--rr-text-strong); }
+.rr-releases__tab[aria-busy] { color: var(--rr-accent); cursor: progress; }
+.rr-releases__tab:disabled { cursor: progress; }
+/* Disabled because there is nothing for it to do on this topic, not
+   because it is busy. Still drawn as one of two options, so the
+   control reads as a control on a one page topic too. */
+.rr-releases__tab[data-rr-why] {
+    cursor: default;
+    color: var(--rr-faint);
+    opacity: .65;
+}
+.rr-releases__tab[data-rr-why]:hover { color: var(--rr-faint); }
+
+.rr-releases__note {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s3);
+    flex-wrap: wrap;
+    padding: var(--rr-s2) var(--rr-card-pad);
+    background: var(--rr-surface-2);
+    border-bottom: 1px solid var(--rr-line);
+    font-size: var(--rr-fs-xs);
+    color: var(--rr-faint);
+}
+.rr-releases__note .rr-spacer { flex: 1; }
+/* When it was read, whether it has moved on, and the button that reads
+   it again: one fact and the action on it, side by side. */
+.rr-releases__read {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s2);
+    flex-wrap: wrap;
+}
+.rr-releases__read .rr-btn { padding: 3px 8px; font-size: var(--rr-fs-xs); }
+.rr-releases__latest {
+    padding: 2px 8px;
+    border-radius: var(--rr-radius-pill);
+    background: color-mix(in srgb, var(--rr-accent) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--rr-accent) 40%, transparent);
+    color: var(--rr-accent);
+    font-weight: 700;
+}
+
+/* The board was queueing, so the walk stood down. Said quietly: it is
+   an explanation of the wait, not a problem with the answer. */
+.rr-releases__eased {
+    padding: 2px 8px;
+    border-radius: var(--rr-radius-pill);
+    border: 1px solid var(--rr-line);
+    color: var(--rr-faint);
+    font-weight: 600;
+}
+
+.rr-releases__stale {
+    padding: 2px 8px;
+    border-radius: var(--rr-radius-pill);
+    background: color-mix(in srgb, var(--rr-warn) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--rr-warn) 40%, transparent);
+    color: var(--rr-warn);
+    font-weight: 700;
+}
+
+.rr-releases__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: var(--rr-s2) var(--rr-card-pad);
+    border-bottom: 1px solid var(--rr-line);
+}
+.rr-releases__chip {
+    padding: 2px 9px;
+    border-radius: var(--rr-radius-pill);
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    color: var(--rr-muted);
+    font: 600 var(--rr-fs-xs) / 1.6 var(--rr-font);
+    cursor: pointer;
+    transition: background var(--rr-speed) ease, color var(--rr-speed) ease;
+}
+/* The chips were grey to a kind while the same word in the rows below
+   was coloured: one filter, two vocabularies. They take the family
+   colour too — held back while off, filled in while on, which is also
+   what the row of chips was missing: any visible sign of which one is
+   active. */
+.rr-releases__chip[data-family="game"]   { --rr-family: var(--rr-tag-release); }
+.rr-releases__chip[data-family="run"]    { --rr-family: var(--rr-warn); }
+.rr-releases__chip[data-family="change"] { --rr-family: var(--rr-tag-info); }
+.rr-releases__chip[data-family="extra"]  { --rr-family: var(--rr-tag-tutorial); }
+.rr-releases__chip[data-family="beside"] { --rr-family: var(--rr-tag-scs); }
+.rr-releases__chip[data-family="block"]  { --rr-family: var(--rr-danger); }
+
+.rr-releases__chip[data-family]:not([data-family="other"]) {
+    color: color-mix(in srgb, var(--rr-family) 78%, var(--rr-muted));
+    border-color: color-mix(in srgb, var(--rr-family) 26%, transparent);
+}
+.rr-releases__chip:hover { color: var(--rr-text-strong); border-color: var(--rr-line-strong); }
+.rr-releases__chip[aria-pressed="true"] {
+    background: var(--rr-accent-soft);
+    border-color: var(--rr-accent);
+    color: var(--rr-accent);
+}
+.rr-releases__chip[data-family][aria-pressed="true"] {
+    background: color-mix(in srgb, var(--rr-family) 22%, transparent);
+    border-color: var(--rr-family);
+    color: var(--rr-family);
+    font-weight: 700;
+}
+
+.rr-releases__list { margin: 0; padding: 0; list-style: none; max-height: 60vh; overflow-y: auto; }
+.rr-releases__row + .rr-releases__row { border-top: 1px solid var(--rr-line); }
+.rr-releases__row[hidden] { display: none; }
+.rr-releases__link {
+    display: flex;
+    align-items: baseline;
+    gap: var(--rr-s3);
+    padding: 9px var(--rr-card-pad);
+    color: var(--rr-text);
+}
+.rr-releases__link:hover { background: var(--rr-surface-2); text-decoration: none; }
+
+/* Three different answers to "which one is this", drawn as three
+   different things rather than as three variations on a version
+   number. */
+.rr-releases__version {
+    flex: none;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    min-width: 9ch;
+    font: 700 var(--rr-fs-sm) / 1.4 var(--rr-font-mono);
+    color: var(--rr-muted);
+    font-variant-numeric: tabular-nums;
+}
+.rr-releases__version[data-rr-latest] { color: var(--rr-accent); }
+
+/* A build id is not a version and must never be read as a bigger one:
+   it is labelled, unbolded and set back. */
+.rr-releases__version[data-rr-kind="build"] { color: var(--rr-faint); font-weight: 400; }
+.rr-releases__vkind {
+    font: 600 9px / 1 var(--rr-font);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--rr-faint);
+    opacity: .8;
+}
+
+/* And nothing at all is an empty state, not a piece of punctuation
+   somebody left in the column. */
+.rr-releases__version[data-rr-kind="none"] { color: var(--rr-faint); font-weight: 400; }
+.rr-releases__vnone { opacity: .45; }
+
+.rr-releases__tags { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; min-width: 0; }
+.rr-releases__tag {
+    padding: 0 7px;
+    border-radius: var(--rr-radius-pill);
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    color: var(--rr-muted);
+    font: 600 var(--rr-fs-xs) / 1.7 var(--rr-font);
+    white-space: nowrap;
+}
+/* Six families, covering all eleven kinds the finder knows, painted
+   once here and used by both the tags in the rows and the chips that
+   filter them. releases.js decides which family a kind belongs to and
+   a test fails if a kind is ever added without one — five of them used
+   to be coloured and six grey, which looked like a taxonomy and was
+   really a list of the ones somebody had got round to. */
+.rr-releases__tag[data-family="game"]   { --rr-family: var(--rr-tag-release); }
+.rr-releases__tag[data-family="run"]    { --rr-family: var(--rr-warn); }
+.rr-releases__tag[data-family="change"] { --rr-family: var(--rr-tag-info); }
+.rr-releases__tag[data-family="extra"]  { --rr-family: var(--rr-tag-tutorial); }
+.rr-releases__tag[data-family="beside"] { --rr-family: var(--rr-tag-scs); }
+.rr-releases__tag[data-family="block"]  { --rr-family: var(--rr-danger); }
+
+.rr-releases__tag[data-family]:not([data-family="other"]) {
+    color: var(--rr-family);
+    background: color-mix(in srgb, var(--rr-family) 14%, transparent);
+    border-color: color-mix(in srgb, var(--rr-family) 32%, transparent);
+}
+
+.rr-releases__who { flex: none; font-size: var(--rr-fs-xs); color: var(--rr-muted); max-width: 18ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rr-releases__when { flex: none; font-size: var(--rr-fs-xs); color: var(--rr-faint); white-space: nowrap; }
+.rr-releases__page {
+    flex: none;
+    min-width: 4ch;
+    text-align: right;
+    font: 600 var(--rr-fs-xs) / 1.4 var(--rr-font-mono);
+    color: var(--rr-faint);
+}
+.rr-releases__empty { margin: 0; padding: var(--rr-s5) var(--rr-card-pad); color: var(--rr-faint); font-size: var(--rr-fs-sm); }
+
+@media (max-width: 720px) {
+    /* Two lines: what it is, then who and where. The five-column line
+       is 620px of content and there is no honest way to fit it. */
+    .rr-releases__link { flex-wrap: wrap; row-gap: 4px; }
+    .rr-releases__tags { flex-basis: 100%; order: 3; }
+    .rr-releases__who { order: 4; }
+    .rr-releases__when { order: 5; }
+    .rr-releases__page { order: 6; margin-left: auto; }
+    .rr-releases__controls { margin-left: 0; flex-basis: 100%; }
+    .rr-releases__scope { flex: 1; }
+    .rr-releases__tab { flex: 1; }
+    .rr-releases__read { flex-basis: 100%; }
+}

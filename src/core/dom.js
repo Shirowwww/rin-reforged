@@ -1,0 +1,419 @@
+/* ------------------------------------------------------------------
+   DOM helpers and the icon set.
+
+   Nothing in this script parses markup. Post content is only ever
+   moved, cloned or read as textContent, and the icon set — the last
+   place that did — is built with createElementNS. That keeps the
+   interface working under a Trusted Types policy, where innerHTML and
+   DOMParser both throw.
+   ------------------------------------------------------------------ */
+
+const $ = (selector, root = document) => root.querySelector(selector);
+const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+/**
+ * Build an element.
+ *   el("button.rr-btn", { onclick, "aria-pressed": "true" }, ["Save"])
+ * Tag supports .class and #id shorthand. Children may be nodes or
+ * strings; strings become text nodes, never markup.
+ */
+function el(tag, attrs = {}, children = []) {
+    const [name, ...rest] = tag.split(/(?=[.#])/);
+    const node = document.createElement(name || "div");
+    for (const token of rest) {
+        if (token[0] === ".") node.classList.add(token.slice(1));
+        else if (token[0] === "#") node.id = token.slice(1);
+    }
+    for (const [key, value] of Object.entries(attrs)) {
+        if (value === null || value === undefined || value === false) continue;
+        if (key === "style" && typeof value === "object") Object.assign(node.style, value);
+        else if (key.startsWith("on") && typeof value === "function") node.addEventListener(key.slice(2), value);
+        else if (key === "text") node.textContent = value;
+        else if (value === true) node.setAttribute(key, "");
+        else node.setAttribute(key, value);
+    }
+    for (const child of [].concat(children)) {
+        if (child === null || child === undefined || child === false) continue;
+        node.append(child instanceof Node ? child : document.createTextNode(String(child)));
+    }
+    return node;
+}
+
+function on(target, type, handler, options) {
+    target.addEventListener(type, handler, options);
+    return () => target.removeEventListener(type, handler, options);
+}
+
+/**
+ * Run fn once <html> exists.
+ *
+ * At document-start the script can be running before the parser has
+ * produced anything at all, so documentElement is not a given. Every
+ * theme attribute and the stylesheet depend on it.
+ */
+function whenRoot(fn) {
+    if (document.documentElement) { fn(); return; }
+    const observer = new MutationObserver(() => {
+        if (document.documentElement) { observer.disconnect(); fn(); }
+    });
+    observer.observe(document, { childList: true });
+}
+
+/**
+ * Run fn once <body> exists.
+ *
+ * Observes `document` rather than documentElement, which is not
+ * guaranteed to exist yet at document-start and is not a valid observe
+ * target when it does not.
+ */
+function whenBody(fn) {
+    if (document.body) { fn(); return; }
+    const observer = new MutationObserver(() => {
+        if (document.body) { observer.disconnect(); fn(); }
+    });
+    observer.observe(document, { childList: true, subtree: true });
+}
+
+function whenReady(fn) {
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn, { once: true });
+    else fn();
+}
+
+/**
+ * Keep Tab inside a dialog while it is open.
+ *
+ * Every overlay in this script draws a scrim over the page, which says
+ * "nothing behind this is reachable" to anyone using a mouse and says
+ * nothing at all to anyone using a keyboard: Tab walks straight out of
+ * the dialog and into a page they cannot see. Returns a teardown.
+ */
+function trapFocus(container, restoreTo) {
+    const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), ' +
+        'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    const onKey = (event) => {
+        if (event.key !== "Tab") return;
+        const items = Array.from(container.querySelectorAll(FOCUSABLE))
+            .filter((node) => node.offsetParent !== null || node === document.activeElement);
+        if (!items.length) { event.preventDefault(); container.focus(); return; }
+
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    };
+
+    container.addEventListener("keydown", onKey);
+    return () => {
+        container.removeEventListener("keydown", onKey);
+        if (restoreTo && document.contains(restoreTo)) restoreTo.focus();
+    };
+}
+
+function debounce(fn, wait) {
+    let timer = 0;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), wait);
+    };
+}
+
+function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+
+/**
+ * May the interface animate?
+ *
+ * The stylesheet already answers this for transitions, twice: a media
+ * query for the system setting and an attribute for the one in the
+ * panel. Scrolling does not go through the stylesheet — a `behavior`
+ * option passed to scrollTo or scrollIntoView beats the CSS
+ * `scroll-behavior` property by design — so every one of the seven
+ * places this script scrolls was gliding the page regardless of what
+ * either setting said. Reading it back here is what makes the switch
+ * mean what it says.
+ */
+function motionAllowed() {
+    if (settings.get("reduceMotion")) return false;
+    return !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+
+/** "smooth" or "auto", for a scroll option. */
+function scrollBehaviour() { return motionAllowed() ? "smooth" : "auto"; }
+
+/* ---- Parsing a page this script fetched --------------------------- */
+
+/* Two features fetch a page of the board and read it: the quick reply
+   lifts the real form out of posting.php, and the releases panel walks
+   a topic. Both need HTML turned into a document, and there is exactly
+   one way to do that — DOMParser.
+
+   Under `require-trusted-types-for 'script'` DOMParser.parseFromString
+   throws, verified rather than assumed: a page served with that header
+   refuses parseFromString, innerHTML, and innerHTML on a document from
+   createHTMLDocument, all three with "This document requires
+   'TrustedHTML'". cs.rin.ru does not send it today. The embedded video
+   players in a game thread do, and @noframes keeps this out of those,
+   but a board can add a header any day.
+
+   The escape hatch is the one Trusted Types is designed around: a
+   policy. It works whenever the CSP does not also name an allow-list
+   that excludes it — checked the same way, and `createPolicy` then
+   returns a wrapper whose output parseFromString accepts. Where even
+   that is refused, this returns null and the caller says so, which is
+   the difference between a feature that reports it cannot run and one
+   that throws inside a click handler. */
+let htmlPolicy;
+
+function trustedHtml(html) {
+    if (typeof window.trustedTypes !== "object" || !window.trustedTypes) return html;
+    if (htmlPolicy === undefined) {
+        try {
+            // The content is a page of the board this script is already
+            // running on, fetched same-origin, and it is only ever read
+            // — never inserted. There is nothing here to sanitise that
+            // the document it came from had not already accepted.
+            htmlPolicy = window.trustedTypes.createPolicy("rin-reforged-page", { createHTML: (input) => input });
+        } catch (err) {
+            console.warn("[RIN Reforged] no Trusted Types policy available:", err);
+            htmlPolicy = null;
+        }
+    }
+    return htmlPolicy ? htmlPolicy.createHTML(html) : html;
+}
+
+/** A fetched page as a document, or null if this browser will not let
+    us make one. Never inserted into the page: only read. */
+function parseDocument(html) {
+    try {
+        return new DOMParser().parseFromString(trustedHtml(html), "text/html");
+    } catch (err) {
+        console.warn("[RIN Reforged] cannot parse a fetched page:", err);
+        return null;
+    }
+}
+
+/* ---- Numbers ------------------------------------------------------ */
+
+/* This board counts in the millions and prints the counts as one run of
+   digits: 3097072 posts, 168938 views, 61469 topics. At that length a
+   number stops being read and becomes a length — nobody reads 3097072,
+   they see "long". Grouped, it is three million at a glance.
+
+   The separator is a narrow no-break space (U+202F): the typographic
+   one, and no-break, so it can never leave a lone digit at the end of a
+   wrapped line. Not a comma — a comma is the decimal separator for half
+   this board's readers, to whom 3,097,072 is a number with two decimal
+   points in it.
+
+   The digits are regrouped, never rounded or abbreviated: "3.1M" is a
+   different fact from 3 097 072, and the exact figure is what a
+   counting column is for. And only quantities — a Steam build id, an
+   AppID or a post number is a name that happens to be spelled in
+   digits, and grouping one would be like putting a comma in a
+   postcode. Nothing here runs over a page; every caller names what it
+   is handing in. */
+const DIGIT_GROUP = "\u202f";
+
+/* Where the grouping starts.
+
+   Four digits, where the caller knows the number is a count: in a
+   column, 2393 sitting between 545 and 16 736 is the only one that has
+   to be counted rather than read.
+
+   Five, where the caller only knows it is *probably* a count — a
+   figure inside the board's own markup rather than a cell this script
+   built. 2026 is a year, and a year is a name for a year; grouping one
+   would be an error the reader has to undo. Nothing between 1000 and
+   9999 is worth that risk when the element could be anything. */
+const GROUP_FROM_COUNT = 4;
+const GROUP_FROM_GUESS = 5;
+
+/** 3097072 -> "3 097 072". Anything that is not a plain run of digits,
+    or is short enough to read as it is, comes back untouched. */
+function groupDigits(text, from) {
+    const raw = String(text).trim();
+    if (!/^\d+$/.test(raw)) return raw;
+    if (raw.length < (from || GROUP_FROM_COUNT)) return raw;
+    return raw.replace(/\B(?=(\d{3})+(?!\d))/g, DIGIT_GROUP);
+}
+
+/**
+ * Regroup every long run of digits inside a node, once.
+ *
+ * The board's own text stays on the title attribute, so the run of
+ * digits it printed can still be read off and copied.
+ */
+function groupNumbersIn(node, from) {
+    if (!node || node.hasAttribute("data-rr-grouped")) return;
+
+    const least = from || GROUP_FROM_COUNT;
+    const runs = new RegExp("\\d{" + least + ",}", "g");
+    const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+    const changes = [];
+    let text;
+    while ((text = walker.nextNode())) {
+        const grouped = text.textContent.replace(runs, (run) => groupDigits(run, least));
+        if (grouped !== text.textContent) changes.push([text, grouped]);
+    }
+    if (!changes.length) return;
+
+    const before = node.textContent.replace(/\s+/g, " ").trim();
+    for (const [node_, grouped] of changes) node_.textContent = grouped;
+    node.setAttribute("data-rr-grouped", "");
+    if (!node.getAttribute("title")) node.setAttribute("title", before);
+}
+
+/**
+ * The same, for anything whose *whole* text is one number.
+ *
+ * Used where the surrounding markup is the board's rather than this
+ * script's — the statistics line, a profile's counters — and where a
+ * run of digits could as easily be somebody's username.
+ */
+function groupCountElements(selector, root) {
+    for (const node of (root || document).querySelectorAll(selector)) {
+        if (!/^\s*\d{5,}\s*$/.test(node.textContent)) continue;
+        groupNumbersIn(node, GROUP_FROM_GUESS);
+    }
+}
+
+/* ---- Icons ------------------------------------------------------- */
+
+const ICON_PATHS = {
+    search:    '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    settings:  '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+    mail:      '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/>',
+    user:      '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    star:      '<path d="m12 3 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3-5.8 3 1.1-6.5L2.6 9.8l6.5-.9z"/>',
+    arrowUp:   '<path d="M12 20V5"/><path d="m5 12 7-7 7 7"/>',
+    arrowDown: '<path d="M12 4v15"/><path d="m19 12-7 7-7-7"/>',
+    link:      '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',
+    copy:      '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+    quote:     '<path d="M7 15c-2 0-3-1.3-3-3.2C4 8.7 6 6.3 9 5l.8 1.7C7.9 7.6 7 8.8 7 10c1.7 0 3 1.1 3 2.6C10 14 8.8 15 7 15z"/><path d="M17 15c-2 0-3-1.3-3-3.2 0-3.1 2-5.5 5-6.8l.8 1.7C17.9 7.6 17 8.8 17 10c1.7 0 3 1.1 3 2.6 0 1.4-1.2 2.4-3 2.4z"/>',
+    close:     '<path d="M6 6 18 18M18 6 6 18"/>',
+    chevron:   '<path d="m9 6 6 6-6 6"/>',
+    chevronL:  '<path d="m15 6-6 6 6 6"/>',
+    pageFirst: '<path d="m17 6-6 6 6 6"/><path d="M8 5v14"/>',
+    pageLast:  '<path d="m7 6 6 6-6 6"/><path d="M16 5v14"/>',
+    chevronD:  '<path d="m6 9 6 6 6-6"/>',
+    external:  '<path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    home:      '<path d="M4 10 12 3l8 7v10a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',
+    layers:    '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
+    clock:     '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    keyboard:  '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8"/>',
+    filter:    '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
+    game:      '<rect x="2" y="7" width="20" height="11" rx="4"/><path d="M7 11v3M5.5 12.5h3M16 12h.01M18.5 14h.01"/>',
+    check:     '<path d="m5 12 5 5 9-10"/>',
+    reply:     '<path d="M9 10 4 15l5 5"/><path d="M4 15h10a6 6 0 0 0 6-6V5"/>',
+    heart:     '<path d="M12 20.3 4.6 13a4.7 4.7 0 0 1 0-6.7 4.7 4.7 0 0 1 6.7 0l.7.7.7-.7a4.7 4.7 0 0 1 6.7 0 4.7 4.7 0 0 1 0 6.7z"/>',
+    sliders:   '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h10M18 18h2"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="16" cy="18" r="2"/>',
+    fold:      '<path d="m7 9 5 5 5-5"/><path d="M4 5h16"/><path d="M4 19h16"/>',
+    // The board's own emblem, redrawn: the masthead is a crosshair over
+    // a Steam valve, and the crosshair is the half that survives being
+    // shrunk to 20px.
+    crosshair: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2"/><path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5"/>',
+};
+
+/* Each icon's shapes, built once as real nodes and cloned after.
+
+   The definitions above are written as markup because that is how they
+   are read and edited. Getting them into the page is another matter:
+   under a Content Security Policy with require-trusted-types-for, both
+   svg.innerHTML and DOMParser.parseFromString throw. This script draws
+   its entire interface with these, and a throw inside icon() takes the
+   whole calling module with it — the top bar included — so neither is
+   a route worth depending on.
+
+   The vocabulary here is three self-closing tags with plain attributes
+   and nothing else, all of them written in this file. Reading that back
+   with a pair of expressions and createElementNS is exact for what it
+   has to handle, and there is no markup sink left to be gated.
+
+   (Verified against the live board, where the video embeds in a game
+   thread do enforce such a policy: the icons survive it.) */
+const SHAPE_RE = /<([a-z]+)\s+([^>]*?)\s*\/>/gi;
+const ATTR_RE = /([\w-]+)="([^"]*)"/g;
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+const ICON_CACHE = new Map();
+
+function iconShapes(name) {
+    if (ICON_CACHE.has(name)) return ICON_CACHE.get(name);
+
+    const shapes = [];
+    const markup = ICON_PATHS[name] || "";
+    SHAPE_RE.lastIndex = 0;
+    let shape;
+    while ((shape = SHAPE_RE.exec(markup)) !== null) {
+        const node = document.createElementNS(SVG_NS, shape[1]);
+        ATTR_RE.lastIndex = 0;
+        let attr;
+        while ((attr = ATTR_RE.exec(shape[2])) !== null) {
+            node.setAttribute(attr[1], attr[2]);
+        }
+        shapes.push(node);
+    }
+
+    ICON_CACHE.set(name, shapes);
+    return shapes;
+}
+
+/** An inline SVG icon. The shapes are literals defined above, never
+    user content. */
+function icon(name, size) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "1.8");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("aria-hidden", "true");
+    if (size) { svg.style.width = size + "px"; svg.style.height = size + "px"; }
+
+    for (const shape of iconShapes(name)) svg.append(shape.cloneNode(true));
+    return svg;
+}
+
+/* ---- Feedback ---------------------------------------------------- */
+
+let toastHost = null;
+
+function toast(message) {
+    if (!toastHost) {
+        toastHost = el("div.rr-toasts");
+        document.body.append(toastHost);
+    }
+    const node = el("div.rr-toast", {}, [message]);
+    toastHost.append(node);
+    setTimeout(() => {
+        node.style.transition = "opacity 200ms ease";
+        node.style.opacity = "0";
+        setTimeout(() => node.remove(), 220);
+    }, 1800);
+}
+
+async function copyText(text, okMessage) {
+    try {
+        await navigator.clipboard.writeText(text);
+        toast(okMessage || "Copied");
+        return true;
+    } catch {
+        // Clipboard API needs a secure context and a user gesture; fall
+        // back to a throwaway textarea so this still works over Tor.
+        const box = el("textarea", { style: { position: "fixed", opacity: "0" } });
+        box.value = text;
+        document.body.append(box);
+        box.select();
+        let ok = false;
+        try { ok = document.execCommand("copy"); } catch { ok = false; }
+        box.remove();
+        toast(ok ? (okMessage || "Copied") : "Could not copy");
+        return ok;
+    }
+}

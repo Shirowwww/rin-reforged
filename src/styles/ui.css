@@ -1,0 +1,1261 @@
+/* ------------------------------------------------------------------
+   Components the script injects. Everything here is prefixed .rr- and
+   owns its own markup, so no specificity fights with phpBB.
+   ------------------------------------------------------------------ */
+
+.rr-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--rr-surface-2);
+    color: var(--rr-text);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+    padding: 7px 12px;
+    font: 600 var(--rr-fs-sm) / 1.15 var(--rr-font);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--rr-speed) ease, border-color var(--rr-speed) ease, color var(--rr-speed) ease;
+}
+.rr-btn:hover { background: var(--rr-surface-3); border-color: var(--rr-line-strong); color: var(--rr-text-strong); }
+.rr-btn:active { transform: translateY(1px); }
+.rr-btn[data-variant="primary"] { background: var(--rr-accent); border-color: var(--rr-accent); color: var(--rr-accent-text); }
+.rr-btn[data-variant="primary"]:hover { filter: brightness(1.08); }
+.rr-btn[data-variant="quiet"] { background: transparent; border-color: transparent; color: var(--rr-muted); }
+.rr-btn[data-variant="quiet"]:hover { background: var(--rr-surface-2); color: var(--rr-text); }
+.rr-btn[aria-pressed="true"] { background: var(--rr-accent-soft); border-color: var(--rr-accent); color: var(--rr-accent); }
+.rr-btn svg { width: 14px; height: 14px; flex: none; }
+
+.rr-icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--rr-radius);
+    color: var(--rr-muted);
+    cursor: pointer;
+    transition: background var(--rr-speed) ease, color var(--rr-speed) ease;
+}
+.rr-icon-btn:hover { background: var(--rr-surface-2); color: var(--rr-text-strong); }
+.rr-icon-btn svg { width: 16px; height: 16px; }
+
+/* An icon button that happens to be a link is still an icon button.
+
+   `html[data-rr] a` is (0,1,1) and .rr-icon-btn is (0,1,0), so every
+   one of these built as an anchor — private messages, the account link
+   — lost its colour to the link rule and came out in the board's red,
+   while the two built as buttons stayed grey. Three controls sitting
+   together in the top bar, two of them coloured as if they meant
+   something different from the third. They do not. */
+html[data-rr] a.rr-icon-btn { color: var(--rr-muted); }
+html[data-rr] a.rr-icon-btn:hover { color: var(--rr-text-strong); text-decoration: none; }
+
+/* ---- Skip link ---------------------------------------------------- */
+
+/* Off screen until it is focused, which is the only time it is useful
+   and the only time it must be impossible to miss. */
+.rr-skip {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 3000;
+    padding: 10px 16px;
+    background: var(--rr-accent);
+    color: var(--rr-accent-text);
+    border-radius: var(--rr-radius);
+    font: 600 var(--rr-fs-sm) / 1 var(--rr-font);
+    box-shadow: var(--rr-shadow-pop);
+    transform: translateY(-200%);
+    transition: transform var(--rr-speed) ease;
+}
+.rr-skip:focus {
+    transform: none;
+    color: var(--rr-accent-text);
+    text-decoration: none;
+}
+/* The skip target must not keep a ring once it has been jumped to. */
+html[data-rr] #wrapcentre:focus { outline: none; }
+
+/* An imageset image the icon pass did not recognise. It is left alone
+   rather than hidden, so a control the board adds later still shows;
+   this only stops an oversized one stretching its row. */
+html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align: middle; }
+
+/* ---- Top navigation --------------------------------------------- */
+
+.rr-nav {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s3);
+    height: var(--rr-nav-h);
+    padding: 0 var(--rr-s4);
+    background: color-mix(in srgb, var(--rr-bg) 88%, transparent);
+    backdrop-filter: blur(10px) saturate(140%);
+    border-bottom: 1px solid var(--rr-line);
+}
+.rr-nav__brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: 700 var(--rr-fs) / 1 var(--rr-font);
+    letter-spacing: -.02em;
+    color: var(--rr-text-strong);
+    flex: none;
+}
+.rr-nav__brand:hover { text-decoration: none; color: var(--rr-accent); }
+/* A window on to the board's own masthead art, sized and offset by the
+   custom properties navbar.js measures. The art is light on a dark
+   plate, which is how the board presents it, so it keeps that plate on
+   every theme rather than being recoloured. */
+.rr-nav__logo {
+    position: relative;
+    display: block;
+    width: var(--rr-logo-w);
+    height: var(--rr-logo-h);
+    overflow: hidden;
+    border-radius: 4px;
+    flex: none;
+}
+.rr-nav__art {
+    position: absolute;
+    top: var(--rr-logo-y);
+    left: var(--rr-logo-x);
+    width: var(--rr-logo-img-w);
+    height: var(--rr-logo-img-h);
+    max-width: none;
+    border: 0;
+}
+.rr-nav__brand:hover .rr-nav__logo { filter: brightness(1.15); }
+
+/* The board sets its name in wide-tracked caps; that tracking is most
+   of what makes the wordmark recognisable, so the fallback keeps it
+   rather than the tight default the rest of the interface uses. */
+.rr-nav__word {
+    font-weight: 700;
+    letter-spacing: .09em;
+    font-size: var(--rr-fs-sm);
+    text-transform: uppercase;
+}
+/* One or the other, never both. */
+.rr-nav__brand[data-rr-logo="art"] .rr-nav__word { display: none; }
+
+/* ---- Board links -------------------------------------------------- */
+
+/* The row the masthead used to carry. Slim, quiet and above the
+   content rather than inside it, which is where the board put it. */
+.rr-boardbar {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s2) var(--rr-s3);
+    flex-wrap: wrap;
+    margin: 0 0 var(--rr-s4);
+    padding-bottom: var(--rr-s3);
+    border-bottom: 1px solid var(--rr-line);
+    font-size: var(--rr-fs-sm);
+}
+.rr-boardbar__main,
+.rr-boardbar__end {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s2) var(--rr-s5);
+    flex-wrap: wrap;
+    min-width: 0;
+}
+.rr-boardbar__end { margin-left: auto; gap: var(--rr-s2); }
+
+/* Ways of looking at threads, then what the board is, then you.
+
+   The grouping is carried by spacing and one hairline rather than by
+   headings: the row is 22px tall and three labels in it would be a
+   second row of text explaining the first. Inside a group the links
+   sit at the ordinary gap; between groups they sit at twice it with a
+   rule down the middle, which is enough to read as three things. */
+.rr-boardbar__group {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s3);
+    flex-wrap: wrap;
+    min-width: 0;
+}
+.rr-boardbar__group + .rr-boardbar__group {
+    padding-left: var(--rr-s5);
+    border-left: 1px solid var(--rr-line);
+}
+.rr-boardbar__link {
+    color: var(--rr-muted);
+    font-weight: 500;
+    white-space: nowrap;
+}
+.rr-boardbar__link:hover { color: var(--rr-accent); text-decoration: none; }
+.rr-boardbar__flag {
+    display: block;
+    width: 16px;
+    height: auto;
+    border-radius: 2px;
+    opacity: .75;
+    transition: opacity var(--rr-speed) ease;
+}
+.rr-boardbar__link:hover .rr-boardbar__flag { opacity: 1; }
+
+/* ---- The language switch ------------------------------------------ */
+
+/* Two flags with no words and no current state, made into the same
+   segmented control the settings panel uses for a two-way choice. */
+.rr-langswitch {
+    display: inline-flex;
+    padding: 2px;
+    gap: 2px;
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+}
+html[data-rr] a.rr-langswitch__option {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--rr-muted);
+    font: 600 var(--rr-fs-xs) / 1.5 var(--rr-font);
+    letter-spacing: .03em;
+}
+html[data-rr] a.rr-langswitch__option:hover {
+    color: var(--rr-text-strong);
+    background: var(--rr-surface-3);
+    text-decoration: none;
+}
+html[data-rr] a.rr-langswitch__option[aria-current] {
+    background: var(--rr-surface-3);
+    color: var(--rr-text-strong);
+}
+html[data-rr] a.rr-langswitch__option[aria-current] .rr-boardbar__flag { opacity: 1; }
+.rr-langswitch__option .rr-boardbar__flag { opacity: .6; }
+.rr-langswitch__option:hover .rr-boardbar__flag { opacity: 1; }
+
+/* The fold. Hidden entirely where the row fits on one line. */
+.rr-boardbar__more { display: none; }
+
+@media (max-width: 720px) {
+    .rr-boardbar { gap: var(--rr-s2); }
+    .rr-boardbar__more {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: auto;
+        padding: 2px 8px;
+        background: var(--rr-surface-2);
+        color: var(--rr-muted);
+        border: 1px solid var(--rr-line);
+        border-radius: var(--rr-radius);
+        font: 600 var(--rr-fs-sm) / 1.6 var(--rr-font);
+        cursor: pointer;
+    }
+    .rr-boardbar__more[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+    /* Two entry points stay: "View unanswered posts" and "View active
+       topics" are what every guide to this board says to bookmark, and
+       they lead the views group. The third thing in that group is the
+       board's plain Search, which the top bar already carries as its
+       own control — so the group folds past two like everything else.
+       What the board is, who you are and the language switch all wait
+       behind the More control. */
+    .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :not([data-rr-group="views"]),
+    .rr-boardbar:not([data-rr-open]) [data-rr-group="views"] > :nth-child(n+3),
+    .rr-boardbar:not([data-rr-open]) .rr-boardbar__end { display: none; }
+    /* With the groups folded away there is nothing for the rule to
+       divide, and the row is 366px wide with a More control to fit in
+       it — so the grouping costs no width at all here. */
+    .rr-boardbar__group + .rr-boardbar__group { padding-left: 0; border-left: 0; }
+    .rr-boardbar__main, .rr-boardbar__end { gap: var(--rr-s2) var(--rr-s3); }
+
+    .rr-boardbar[data-rr-open] { flex-wrap: wrap; }
+    .rr-boardbar[data-rr-open] .rr-boardbar__end { margin-left: 0; flex-basis: 100%; }
+}
+
+/* ---- Restored board controls -------------------------------------- */
+
+/* A control the board drew as a bare GIF inside a link. The image is
+   hidden and this label takes its place, so the control keeps working
+   and can now be seen. */
+html[data-rr] a.rr-ctl {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+    background: var(--rr-surface-2);
+    color: var(--rr-muted);
+    font-size: var(--rr-fs-xs);
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+html[data-rr] a.rr-ctl:hover {
+    background: var(--rr-surface-3);
+    border-color: var(--rr-line-strong);
+    color: var(--rr-text-strong);
+    text-decoration: none;
+}
+.rr-nav__crumbs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+    font-size: var(--rr-fs-sm);
+    color: var(--rr-muted);
+    overflow: hidden;
+}
+.rr-nav__crumbs a { color: var(--rr-muted); white-space: nowrap; }
+.rr-nav__crumbs a:last-child { color: var(--rr-text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.rr-nav__sep { color: var(--rr-faint); }
+.rr-nav__actions { display: flex; align-items: center; gap: 2px; flex: none; }
+
+/* One search shape, used by the palette trigger here and by the
+   board's own forms in the topic bar and the listing toolbar. It was a
+   pill; a pill in this interface is a label, and this is a control. */
+.rr-nav__search,
+.rr-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    min-width: 190px;
+    padding: 0 4px 0 10px;
+    background: var(--rr-bg-sunken);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+    color: var(--rr-faint);
+    font-size: var(--rr-fs-sm);
+    cursor: pointer;
+    transition: border-color var(--rr-speed) ease;
+    box-sizing: border-box;
+}
+.rr-nav__search { padding-right: 10px; }
+.rr-nav__search:hover,
+.rr-search:hover { border-color: var(--rr-line-strong); color: var(--rr-muted); }
+.rr-nav__search svg,
+.rr-search svg { width: 14px; height: 14px; flex: none; }
+.rr-nav__kbd { margin-left: auto; }
+
+/* The board's form inside that frame. The input loses its own border
+   and background — the frame is the border now — and the submit
+   becomes the trailing affordance, where the Ctrl K chip sits in the
+   palette trigger. */
+.rr-search:focus-within { border-color: var(--rr-accent); }
+.rr-search__form { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+html[data-rr] .rr-search__input {
+    flex: 1;
+    min-width: 0;
+    height: 26px;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    color: var(--rr-text);
+    font-size: var(--rr-fs-sm);
+}
+html[data-rr] .rr-search__input:focus-visible { outline: none; }
+html[data-rr] .rr-search__go {
+    flex: none;
+    height: 22px;
+    padding: 0 9px;
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    border-radius: 4px;
+    color: var(--rr-muted);
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
+    cursor: pointer;
+}
+html[data-rr] .rr-search__go:hover {
+    background: var(--rr-surface-3);
+    border-color: var(--rr-line-strong);
+    color: var(--rr-text-strong);
+}
+
+.rr-kbd {
+    font: 600 11px/1 var(--rr-font-mono);
+    color: var(--rr-faint);
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    border-radius: 4px;
+    padding: 3px 5px;
+    white-space: nowrap;
+}
+
+.rr-badge {
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: var(--rr-radius-pill);
+    background: var(--rr-danger);
+    color: #fff;
+    font: 700 10px/16px var(--rr-font);
+    text-align: center;
+    position: absolute;
+    top: 1px;
+    right: 0;
+}
+.rr-nav__actions > * { position: relative; }
+
+/* The line between the board's controls and this script's. */
+.rr-nav__divide {
+    width: 1px;
+    height: 18px;
+    margin: 0 5px;
+    background: var(--rr-line-strong);
+    flex: none;
+}
+
+/* ---- Tooltips ----------------------------------------------------- */
+
+/* An icon with no words next to it is a guess until you hover it for a
+   second and the browser decides to help. This draws the name of the
+   control straight away, on hover and on keyboard focus alike, from
+   the same string that is on `title` and `aria-label`.
+
+   Pointer events are off so the label can never sit between the cursor
+   and the button it describes. */
+html[data-rr] [data-rr-tip] { position: relative; }
+html[data-rr] [data-rr-tip]::after {
+    content: attr(data-rr-tip);
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 960;
+    padding: 4px 8px;
+    background: var(--rr-surface-3);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius);
+    box-shadow: var(--rr-shadow-pop);
+    color: var(--rr-text-strong);
+    font: 600 var(--rr-fs-xs) / 1.4 var(--rr-font);
+    white-space: nowrap;
+    pointer-events: none;
+    /* display, not visibility: a hidden-but-laid-out label on a control
+       at the right edge of the window is 41px of horizontal overflow on
+       every page of the board, which is exactly what it was. */
+    display: none;
+}
+html[data-rr] [data-rr-tip]:hover::after,
+html[data-rr] [data-rr-tip]:focus-visible::after { display: block; }
+/* Near the right edge the label would still push the page sideways
+   while it is up, so those hang off their own right edge instead. The
+   last control in the top bar is against the window; so is the corner
+   the jump buttons live in. */
+html[data-rr] [data-rr-tip][data-rr-tip-side="right"]::after,
+html[data-rr] .rr-nav__actions > :last-child[data-rr-tip]::after { left: auto; right: 0; transform: none; }
+html[data-rr] [data-rr-tip][data-rr-tip-side="above"]::after { top: auto; bottom: calc(100% + 6px); }
+
+/* ---- Reading progress ------------------------------------------- */
+
+/* On the bottom edge of the sticky top bar, not floating at the top
+   left of the window where a loading bar lives. --rr-nav-h is set by
+   theme.js so this stays put when the bar is switched off. */
+.rr-progress {
+    position: fixed;
+    top: calc(var(--rr-nav-h, 48px) - 2px);
+    left: 0;
+    height: 2px;
+    width: 0;
+    background: var(--rr-accent);
+    z-index: 950;
+    transition: width 80ms linear, opacity var(--rr-speed) ease;
+}
+/* Nothing to report yet: at the top of the page, or on a page with
+   nothing below the fold. */
+.rr-progress[data-rr-idle] { opacity: 0; }
+
+/* ---- Topic prefix tags ------------------------------------------ */
+
+.rr-tag {
+    display: inline-flex;
+    align-items: center;
+    /* An inline-flex box sits on the *bottom margin edge* of the line
+       box by default, so in a heading two type sizes larger than the
+       tag the badge hung below the words it labels. Aligning it to the
+       middle of the surrounding text puts it back on the line. */
+    vertical-align: middle;
+    height: 18px;
+    padding: 0 7px;
+    margin-right: 7px;
+    border-radius: var(--rr-radius-pill);
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
+    letter-spacing: .01em;
+    vertical-align: 1px;
+    color: var(--rr-tag-neutral);
+    background: color-mix(in srgb, var(--rr-tag-neutral) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--rr-tag-neutral) 32%, transparent);
+    cursor: pointer;
+    flex: none;
+}
+/* The same badge drawn as a label, on a listing too short to be worth
+   filtering: it says what kind of topic the row is and answers no
+   click, so it must not offer one. */
+span.rr-tag { cursor: default; }
+
+.rr-tag[data-tag="info"]      { color: var(--rr-tag-info);      background: color-mix(in srgb, var(--rr-tag-info) 15%, transparent);      border-color: color-mix(in srgb, var(--rr-tag-info) 32%, transparent); }
+.rr-tag[data-tag="release"]   { color: var(--rr-tag-release);   background: color-mix(in srgb, var(--rr-tag-release) 15%, transparent);   border-color: color-mix(in srgb, var(--rr-tag-release) 32%, transparent); }
+.rr-tag[data-tag="problem"]   { color: var(--rr-tag-problem);   background: color-mix(in srgb, var(--rr-tag-problem) 15%, transparent);   border-color: color-mix(in srgb, var(--rr-tag-problem) 32%, transparent); }
+.rr-tag[data-tag="important"] { color: var(--rr-tag-important); background: color-mix(in srgb, var(--rr-tag-important) 15%, transparent); border-color: color-mix(in srgb, var(--rr-tag-important) 32%, transparent); }
+.rr-tag[data-tag="tutorial"]  { color: var(--rr-tag-tutorial);  background: color-mix(in srgb, var(--rr-tag-tutorial) 15%, transparent);  border-color: color-mix(in srgb, var(--rr-tag-tutorial) 32%, transparent); }
+.rr-tag[data-tag="request"]   { color: var(--rr-tag-request);   background: color-mix(in srgb, var(--rr-tag-request) 15%, transparent);   border-color: color-mix(in srgb, var(--rr-tag-request) 32%, transparent); }
+.rr-tag[data-tag="scs"]       { color: var(--rr-tag-scs);       background: color-mix(in srgb, var(--rr-tag-scs) 15%, transparent);       border-color: color-mix(in srgb, var(--rr-tag-scs) 32%, transparent); }
+
+/* ---- Toolbar above topic lists ---------------------------------- */
+
+.rr-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s3);
+    flex-wrap: wrap;
+    margin: 0 0 var(--rr-s3);
+    padding: var(--rr-card-pad);
+    background: var(--rr-surface);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-lg);
+}
+.rr-toolbar__filter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1 1 220px;
+    min-width: 180px;
+    height: 34px;
+    padding: 0 12px;
+    background: var(--rr-bg-sunken);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+}
+.rr-toolbar__filter svg { width: 14px; height: 14px; color: var(--rr-faint); flex: none; }
+.rr-toolbar__filter input {
+    flex: 1;
+    background: none;
+    border: 0;
+    outline: none;
+    color: var(--rr-text);
+    font: var(--rr-fs-sm) / 1.2 var(--rr-font);
+    min-width: 0;
+    padding: 0;
+}
+.rr-toolbar__count { color: var(--rr-faint); font-size: var(--rr-fs-xs); margin-left: auto; white-space: nowrap; }
+
+/* The board's own search sits in the same bar as the page filter, so a
+   rule keeps "narrow what is here" and "search the whole board" from
+   reading as one control. */
+.rr-toolbar__board {
+    display: flex;
+    align-items: center;
+    padding-left: var(--rr-s3);
+    border-left: 1px solid var(--rr-line);
+}
+.rr-toolbar__board .rr-search { min-width: 200px; }
+.rr-toolbar__tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.rr-toolbar__tags .rr-tag { margin: 0; opacity: .5; }
+.rr-toolbar__tags .rr-tag[aria-pressed="true"] { opacity: 1; }
+
+tr[data-rr-hidden] { display: none; }
+
+/* ---- Quick reply -------------------------------------------------- */
+
+.rr-reply {
+    margin: var(--rr-post-gap) 0 0;
+    padding: var(--rr-card-pad);
+    background: var(--rr-surface);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-lg);
+}
+.rr-reply__form { display: flex; flex-direction: column; gap: var(--rr-s3); }
+.rr-reply__text {
+    width: 100%;
+    min-height: 130px;
+    resize: vertical;
+    background: var(--rr-bg-sunken);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius);
+    color: var(--rr-text);
+    padding: var(--rr-s3);
+    font: var(--rr-fs) / var(--rr-lh) var(--rr-font);
+    box-sizing: border-box;
+}
+.rr-reply__actions { display: flex; gap: var(--rr-s2); align-items: center; }
+
+.rr-quote-bubble {
+    position: absolute;
+    z-index: 1500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: var(--rr-surface-3);
+    color: var(--rr-text-strong);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius-pill);
+    box-shadow: var(--rr-shadow-pop);
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
+    cursor: pointer;
+}
+.rr-quote-bubble:hover { background: var(--rr-accent); color: var(--rr-accent-text); border-color: var(--rr-accent); }
+
+/* ---- Who is online ------------------------------------------------ */
+
+.rr-online {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s3);
+    flex-wrap: wrap;
+}
+.rr-online__summary {
+    font-size: var(--rr-fs-sm);
+    color: var(--rr-text);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- Topic action bar -------------------------------------------- */
+
+.rr-topicbar {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s2) var(--rr-s3);
+    flex-wrap: wrap;
+    margin: 0 0 var(--rr-s4);
+    padding: var(--rr-card-pad);
+    background: var(--rr-surface);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-lg);
+}
+/* The filter, nested into the action bar as its second row: one card
+   with a rule across it rather than two cards with a gap.
+
+   Its own padding and the bar's cancelled each other out at the seam —
+   the negative margin pulls it back to the card edge and the padding
+   pushes it in again — so both have to move together or the second row
+   sits at a different inset from the first. */
+.rr-topicbar > .rr-toolbar {
+    flex-basis: 100%;
+    margin: var(--rr-card-pad) calc(-1 * var(--rr-card-pad)) calc(-1 * var(--rr-card-pad));
+    padding: var(--rr-card-pad);
+    background: transparent;
+    border: 0;
+    border-top: 1px solid var(--rr-line);
+    border-radius: 0 0 calc(var(--rr-radius-lg) - 1px) calc(var(--rr-radius-lg) - 1px);
+}
+
+/* The forum name, moved into the bar it labels. */
+.rr-topicbar__title {
+    margin: 0 var(--rr-s2) 0 0 !important;
+    font-size: var(--rr-fs-lg) !important;
+    line-height: 1.25;
+    flex: none;
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Two rows, always. The first is this topic, the second is everywhere
+   else; a hairline between them says so without a heading. */
+.rr-topicbar[data-rr-rows] { display: block; padding: 0; }
+.rr-topicbar__row {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s2) var(--rr-s3);
+    flex-wrap: wrap;
+    padding: var(--rr-card-pad);
+}
+.rr-topicbar__row + .rr-topicbar__row {
+    border-top: 1px solid var(--rr-line);
+    /* Where you go next, not what you do here: quieter, and shorter. */
+    padding-top: var(--rr-s2);
+    padding-bottom: var(--rr-s2);
+}
+.rr-topicbar[data-rr-rows] > .rr-toolbar { margin-top: 0; }
+
+.rr-topicbar__spacer { flex: 1; min-width: var(--rr-s3); }
+.rr-topicbar__count { color: var(--rr-muted); font-size: var(--rr-fs-sm); }
+.rr-topicbar__search .rr-search { min-width: 210px; }
+.rr-topicbar .rr-pager { margin: 0; }
+
+/* Leaving this topic is quieter than acting on it. */
+.rr-topicbar__row[data-rr-row="away"] .rr-btn {
+    font-weight: 500;
+    font-size: var(--rr-fs-xs);
+    padding: 4px 8px;
+}
+.rr-topicbar__row[data-rr-row="away"] .rr-search { height: 28px; }
+
+/* ---- Pager ------------------------------------------------------- */
+
+.rr-pager {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: var(--rr-s3);
+    flex-wrap: wrap;
+}
+.rr-pager__label { color: var(--rr-faint); font-size: var(--rr-fs-sm); }
+/* The four page steps read as one control, which is most of what keeps
+   "Next page" from being taken for "Next topic". */
+.rr-pager__step { gap: 3px; padding: 5px 8px; }
+.rr-pager__step svg { width: 13px; height: 13px; }
+.rr-pager__input {
+    width: 62px;
+    height: 30px;
+    padding: 0 8px;
+    background: var(--rr-bg-sunken);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius);
+    color: var(--rr-text);
+    font: var(--rr-fs-sm) / 1 var(--rr-font-mono);
+    text-align: center;
+}
+.rr-pager [hidden] { display: none; }
+
+/* ---- Game card --------------------------------------------------- */
+
+.rr-game {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: var(--rr-s5);
+    margin: 0 0 var(--rr-post-gap);
+    padding: var(--rr-s5);
+    background: var(--rr-surface);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-lg);
+}
+.rr-game__art { width: 100%; border-radius: var(--rr-radius); display: block; }
+.rr-game__body { min-width: 0; }
+.rr-game__title {
+    margin: 0 0 var(--rr-s1);
+    font: 650 var(--rr-fs-lg) / 1.2 var(--rr-font);
+    color: var(--rr-text-strong);
+    letter-spacing: -.01em;
+}
+.rr-game__meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px var(--rr-s4);
+    margin: var(--rr-s4) 0 0;
+    font-size: var(--rr-fs-sm);
+}
+.rr-game__meta dt { color: var(--rr-faint); white-space: nowrap; }
+.rr-game__meta dd { margin: 0; color: var(--rr-text); }
+.rr-game__appid {
+    font-family: var(--rr-font-mono);
+    font-size: var(--rr-fs-sm);
+    color: var(--rr-muted);
+}
+.rr-game__links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--rr-s3); }
+
+/* ---- Post chrome ------------------------------------------------- */
+
+.rr-posthead {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s2) var(--rr-s3);
+    flex-wrap: wrap;
+    margin: 0 0 var(--rr-s4);
+    padding-bottom: var(--rr-s3);
+    border-bottom: 1px solid var(--rr-line);
+}
+.rr-posthead__avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: none;
+    margin: 0;
+    background: var(--rr-surface-3);
+}
+.rr-posthead__who { display: flex; align-items: baseline; gap: var(--rr-s2); min-width: 0; }
+.rr-posthead__name { font-weight: 650; color: var(--rr-text-strong); font-size: var(--rr-fs-sm); }
+.rr-posthead__rank {
+    font-size: var(--rr-fs-xs);
+    color: var(--rr-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 22ch;
+}
+.rr-posthead__meta {
+    font-size: var(--rr-fs-xs);
+    line-height: var(--rr-lh-meta);
+    color: var(--rr-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* No fixed cap. 28ch cut "Joined: Thursday, 13 Feb 2020, 13:07"
+       inside the clock and left "13:…" on the page. The line is
+       shortened at the source now, so it fits — and where it still
+       does not, it gives way to the things around it rather than to a
+       number written here. */
+    min-width: 0;
+    flex: 0 1 auto;
+}
+/* Per-post actions.
+
+   These were invisible until the post was hovered. The board showed its
+   own Quote and Profile controls at all times, so hiding them outright
+   is one step back from what it did: a control nobody can see is a
+   control nobody uses. They rest dimmed instead — quiet enough not to
+   compete with the message, present enough to be found. */
+.rr-posttools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    /* It wraps. On a phone at the largest text size the strip is a post
+       number, three icon buttons and two labelled controls the board
+       drew as GIFs, and one line of that is wider than the screen —
+       which is how it came to push the page sideways the moment the
+       "hide posts by someone" control joined it. */
+    flex-wrap: wrap;
+    gap: 2px;
+    margin-left: auto;
+    min-width: 0;
+    max-width: 100%;
+    opacity: .5;
+    transition: opacity var(--rr-speed) ease;
+}
+tr:hover .rr-posttools,
+.rr-posthead:hover .rr-posttools,
+.rr-posttools:hover,
+.rr-posttools:focus-within { opacity: 1; }
+@media (hover: none) { .rr-posttools { opacity: 1; } }
+
+/* The post number, which is also the link to the post: it took the
+   job off the board's own "Post" control rather than sitting beside
+   it saying the same thing without doing anything. */
+html[data-rr] .rr-postnum {
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font-mono);
+    color: var(--rr-faint);
+    padding: 3px 5px;
+    border-radius: 4px;
+    background: var(--rr-surface-2);
+}
+html[data-rr] a.rr-postnum:hover {
+    color: var(--rr-text-strong);
+    background: var(--rr-surface-3);
+    text-decoration: none;
+}
+
+.rr-sig-toggle {
+    display: block;
+    margin: var(--rr-s2) 0 0;
+    font-size: var(--rr-fs-xs);
+    color: var(--rr-faint);
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+}
+.rr-sig-toggle:hover { color: var(--rr-muted); }
+[data-rr-sig="collapsed"] { display: none; }
+
+/* The board draws the divider as a run of underscores. A rule reads
+   better and does not wrap. */
+.rr-signature {
+    position: relative;
+    margin-top: var(--rr-s3);
+    padding-top: var(--rr-s3);
+    border-top: 1px solid var(--rr-line);
+    font-size: var(--rr-fs-sm);
+    color: var(--rr-faint);
+}
+.rr-signature img { max-height: 90px; width: auto; }
+
+/* ---- Command palette --------------------------------------------- */
+
+.rr-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    background: rgba(6, 8, 11, .55);
+    backdrop-filter: blur(2px);
+}
+.rr-palette {
+    width: min(640px, calc(100vw - 32px));
+    max-height: min(60vh, 520px);
+    margin-top: 12vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--rr-surface);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius-lg);
+    box-shadow: var(--rr-shadow-pop);
+    overflow: hidden;
+}
+.rr-palette__input {
+    height: 48px;
+    padding: 0 var(--rr-s4);
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--rr-line);
+    color: var(--rr-text-strong);
+    font: var(--rr-fs-lg) / 1 var(--rr-font);
+    outline: none;
+}
+.rr-palette__list { overflow-y: auto; padding: var(--rr-s1); margin: 0; list-style: none; }
+.rr-palette__group {
+    padding: var(--rr-s2) var(--rr-s3) var(--rr-s1);
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
+    color: var(--rr-faint);
+}
+.rr-palette__item {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s3);
+    padding: 10px var(--rr-s4);
+    border-radius: var(--rr-radius);
+    cursor: pointer;
+    color: var(--rr-text);
+    font-size: var(--rr-fs-sm);
+}
+.rr-palette__item[aria-selected="true"] { background: var(--rr-surface-3); color: var(--rr-text-strong); }
+.rr-palette__item svg { width: 15px; height: 15px; color: var(--rr-faint); flex: none; }
+.rr-palette__label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rr-palette__hint { color: var(--rr-faint); font-size: var(--rr-fs-xs); flex: none; }
+.rr-palette__empty { padding: var(--rr-s5); text-align: center; color: var(--rr-faint); font-size: var(--rr-fs-sm); }
+
+/* ---- Settings panel ---------------------------------------------- */
+
+.rr-panel {
+    position: fixed;
+    top: 0; right: 0;
+    height: 100vh;
+    width: min(720px, 100vw);
+    z-index: 2100;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    background: var(--rr-surface);
+    border-left: 1px solid var(--rr-line-strong);
+    box-shadow: var(--rr-shadow-pop);
+}
+.rr-panel__head {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s3);
+    padding: var(--rr-s3) var(--rr-s4);
+    border-bottom: 1px solid var(--rr-line);
+}
+.rr-panel__id { display: flex; align-items: baseline; gap: 6px; flex: none; }
+.rr-panel__title { font: 650 var(--rr-fs-lg) / 1.2 var(--rr-font); color: var(--rr-text-strong); margin: 0; }
+.rr-panel__ver { font: var(--rr-fs-xs) / 1 var(--rr-font-mono); color: var(--rr-faint); }
+.rr-panel__search {
+    flex: 1;
+    min-width: 0;
+    height: 32px;
+    padding: 0 10px;
+    background: var(--rr-bg-sunken);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+    color: var(--rr-text);
+    font: var(--rr-fs-sm) / 1 var(--rr-font);
+    outline: none;
+}
+
+/* The rail and the page beside it. The rail scrolls on its own, so a
+   long category cannot push the categories off the bottom. */
+.rr-panel__body {
+    display: grid;
+    grid-template-columns: 186px 1fr;
+    min-height: 0;
+    overflow: hidden;
+}
+.rr-panel__rail {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: var(--rr-s2);
+    overflow-y: auto;
+    background: var(--rr-bg-sunken);
+    border-right: 1px solid var(--rr-line);
+}
+.rr-panel__tab {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s2);
+    width: 100%;
+    padding: 9px 11px;
+    background: none;
+    border: 0;
+    border-radius: var(--rr-radius);
+    color: var(--rr-muted);
+    font: 600 var(--rr-fs-sm) / 1.4 var(--rr-font);
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--rr-speed) ease, color var(--rr-speed) ease;
+}
+.rr-panel__tab svg { width: 15px; height: 15px; flex: none; color: var(--rr-faint); }
+.rr-panel__tabname { flex: 1; min-width: 0; }
+.rr-panel__tab:hover { background: var(--rr-surface-2); color: var(--rr-text); }
+.rr-panel__tab[aria-selected="true"] {
+    background: var(--rr-surface-3);
+    color: var(--rr-text-strong);
+}
+.rr-panel__tab[aria-selected="true"] svg { color: var(--rr-accent); }
+.rr-panel__tabcount:not(:empty) {
+    flex: none;
+    min-width: 18px;
+    padding: 1px 5px;
+    border-radius: var(--rr-radius-pill);
+    background: var(--rr-accent-soft);
+    color: var(--rr-accent);
+    font: 700 var(--rr-fs-xs) / 1.5 var(--rr-font-mono);
+    text-align: center;
+}
+/* A category with nothing matching the search is dimmed rather than
+   removed: the rail keeps the same shape while typing. */
+.rr-panel__tab[data-rr-empty] { opacity: .35; }
+.rr-panel__tab[data-rr-empty] .rr-panel__tabcount { background: none; color: var(--rr-faint); }
+
+.rr-panel__pages { overflow-y: auto; padding: var(--rr-s4) var(--rr-s5) var(--rr-s5); min-height: 0; }
+.rr-panel__empty { padding: var(--rr-s6) 0; text-align: center; color: var(--rr-faint); font-size: var(--rr-fs-sm); }
+.rr-panel__empty[hidden] { display: none; }
+
+.rr-panel__foot {
+    display: flex;
+    gap: var(--rr-s2);
+    padding: var(--rr-s3) var(--rr-s4);
+    border-top: 1px solid var(--rr-line);
+    background: var(--rr-surface-2);
+}
+.rr-panel__foot .rr-spacer { flex: 1; }
+
+.rr-group { margin-bottom: var(--rr-s6); }
+.rr-group[data-rr-off] { display: none; }
+.rr-group__title {
+    margin: 0 0 var(--rr-s1);
+    font: 650 var(--rr-fs-lg) / 1.3 var(--rr-font);
+    color: var(--rr-text-strong);
+}
+.rr-group__note { margin: 0 0 var(--rr-s3); font-size: var(--rr-fs-sm); line-height: 1.6; color: var(--rr-muted); max-width: 62ch; }
+/* While a search is running the heading says which box the match was
+   filed under, so the rail and the page agree. */
+.rr-group[data-rr-searching] .rr-group__note { display: none; }
+
+.rr-field {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--rr-s4);
+    padding: var(--rr-s4) 0;
+    border-top: 1px solid var(--rr-line);
+}
+.rr-field:first-of-type { border-top: 0; }
+.rr-field__text { flex: 1; min-width: 0; }
+.rr-field__label { display: block; font: 600 var(--rr-fs-sm) / var(--rr-lh-meta) var(--rr-font); color: var(--rr-text); }
+.rr-field__desc { display: block; margin-top: 3px; font-size: var(--rr-fs-xs); line-height: 1.55; color: var(--rr-muted); max-width: 52ch; }
+.rr-field__control { flex: none; display: flex; align-items: center; gap: var(--rr-s2); padding-top: 2px; }
+.rr-field[hidden],
+.rr-field[data-rr-dep-off],
+.rr-field[data-rr-nomatch] { display: none; }
+/* A field that depends on another is stepped in under it, so "off
+   because the thing above is off" is visible rather than inferred. */
+.rr-field[data-rr-dep] { padding-left: var(--rr-s3); }
+.rr-rangewrap { display: flex; align-items: center; gap: var(--rr-s2); }
+
+.rr-switch {
+    position: relative;
+    width: 38px;
+    height: 22px;
+    flex: none;
+    border-radius: var(--rr-radius-pill);
+    background: var(--rr-surface-3);
+    border: 1px solid var(--rr-line-strong);
+    cursor: pointer;
+    transition: background var(--rr-speed) ease, border-color var(--rr-speed) ease;
+    padding: 0;
+}
+.rr-switch::after {
+    content: "";
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--rr-muted);
+    transition: transform var(--rr-speed) ease, background var(--rr-speed) ease;
+}
+.rr-switch[aria-checked="true"] { background: var(--rr-accent); border-color: var(--rr-accent); }
+.rr-switch[aria-checked="true"]::after { transform: translateX(16px); background: var(--rr-accent-text); }
+
+.rr-seg { display: inline-flex; background: var(--rr-surface-2); border: 1px solid var(--rr-line); border-radius: var(--rr-radius); padding: 2px; gap: 2px; }
+.rr-seg button {
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    padding: 4px 9px;
+    font: 600 var(--rr-fs-xs) / 1.3 var(--rr-font);
+    color: var(--rr-muted);
+    cursor: pointer;
+}
+.rr-seg button[aria-pressed="true"] { background: var(--rr-surface-3); color: var(--rr-text-strong); }
+
+.rr-range { width: 130px; accent-color: var(--rr-accent); }
+.rr-range-val { font: var(--rr-fs-xs) / 1 var(--rr-font-mono); color: var(--rr-muted); min-width: 34px; text-align: right; }
+
+.rr-swatches { display: flex; gap: 6px; }
+.rr-swatch {
+    width: 26px; height: 26px;
+    border-radius: var(--rr-radius);
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+}
+.rr-swatch[aria-pressed="true"] { border-color: var(--rr-text-strong); }
+
+/* ---- Lightbox ---------------------------------------------------- */
+
+.rr-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 2200;
+    display: grid;
+    place-items: center;
+    background: rgba(6, 8, 11, .88);
+    cursor: zoom-out;
+}
+.rr-lightbox img {
+    max-width: 94vw;
+    max-height: 92vh;
+    border-radius: var(--rr-radius);
+    box-shadow: var(--rr-shadow-pop);
+}
+
+/* ---- Floating actions -------------------------------------------- */
+
+/* The corner is the one place a centred tooltip cannot go. */
+.rr-fab [data-rr-tip]::after { left: auto; right: 0; transform: none; }
+
+.rr-fab {
+    position: fixed;
+    right: var(--rr-s4);
+    bottom: var(--rr-s4);
+    z-index: 880;
+    display: flex;
+    flex-direction: column;
+    gap: var(--rr-s2);
+}
+.rr-fab button {
+    width: 38px; height: 38px;
+    display: grid; place-items: center;
+    background: var(--rr-surface-2);
+    color: var(--rr-muted);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+    cursor: pointer;
+    box-shadow: var(--rr-shadow-pop);
+    transition: color var(--rr-speed) ease, background var(--rr-speed) ease, opacity var(--rr-speed) ease;
+}
+.rr-fab button:hover { color: var(--rr-text-strong); background: var(--rr-surface-3); }
+.rr-fab button svg { width: 17px; height: 17px; }
+.rr-fab button[hidden] { display: none; }
+
+/* ---- Toast ------------------------------------------------------- */
+
+.rr-toasts {
+    position: fixed;
+    left: 50%;
+    bottom: var(--rr-s5);
+    transform: translateX(-50%);
+    z-index: 2300;
+    display: flex;
+    flex-direction: column;
+    gap: var(--rr-s2);
+    align-items: center;
+    pointer-events: none;
+}
+.rr-toast {
+    background: var(--rr-surface-3);
+    color: var(--rr-text-strong);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius-pill);
+    padding: 7px 16px;
+    font: 600 var(--rr-fs-sm) / 1 var(--rr-font);
+    box-shadow: var(--rr-shadow-pop);
+}
+
+/* ---- Shortcut sheet ---------------------------------------------- */
+
+.rr-sheet__head {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s3);
+    margin-bottom: var(--rr-s3);
+}
+.rr-sheet__head h2 { margin: 0; flex: 1; }
+.rr-sheet__close { flex: none; }
+
+.rr-sheet {
+    width: min(560px, calc(100vw - 32px));
+    margin: auto;
+    background: var(--rr-surface);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius-lg);
+    box-shadow: var(--rr-shadow-pop);
+    padding: var(--rr-s5);
+    max-height: 80vh;
+    overflow-y: auto;
+}
+.rr-sheet h2 { margin: 0 0 var(--rr-s4); font-size: var(--rr-fs-lg); }
+.rr-sheet dl { display: grid; grid-template-columns: 120px 1fr; gap: var(--rr-s3) var(--rr-s5); margin: 0; }
+.rr-sheet dt { text-align: right; }
+.rr-sheet dd { margin: 0; font-size: var(--rr-fs-sm); color: var(--rr-muted); }
+
+/* ---- Bookmarked topic marker ------------------------------------- */
+
+.rr-star { color: var(--rr-faint); }
+.rr-star[aria-pressed="true"] { color: var(--rr-accent); }
+.rr-star[aria-pressed="true"] svg { fill: currentColor; }
+
+/* ---- Scrollbars --------------------------------------------------- */
+
+/* Only inside the script's own panels: the page keeps the browser's. */
+.rr-palette__list,
+.rr-panel__body,
+.rr-sheet {
+    scrollbar-width: thin;
+    scrollbar-color: var(--rr-line-strong) transparent;
+}
+.rr-palette__list::-webkit-scrollbar,
+.rr-panel__body::-webkit-scrollbar,
+.rr-sheet::-webkit-scrollbar { width: 10px; }
+.rr-palette__list::-webkit-scrollbar-track,
+.rr-panel__body::-webkit-scrollbar-track,
+.rr-sheet::-webkit-scrollbar-track { background: transparent; }
+.rr-palette__list::-webkit-scrollbar-thumb,
+.rr-panel__body::-webkit-scrollbar-thumb,
+.rr-sheet::-webkit-scrollbar-thumb {
+    background: var(--rr-line-strong);
+    border: 3px solid transparent;
+    border-radius: var(--rr-radius-pill);
+    background-clip: content-box;
+}
+.rr-palette__list::-webkit-scrollbar-thumb:hover,
+.rr-panel__body::-webkit-scrollbar-thumb:hover,
+.rr-sheet::-webkit-scrollbar-thumb:hover { background: var(--rr-faint); background-clip: content-box; }
+
+.rr-posthead__spacer { flex: 1; min-width: var(--rr-s2); }
+.rr-posthead__date { font-size: var(--rr-fs-xs); color: var(--rr-faint); white-space: nowrap; }
+.rr-posthead .rr-posttools { margin-left: 0; }
+
+/* ---- Hidden posts -------------------------------------------------- */
+
+.rr-hidden-note {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s3);
+    padding: var(--rr-s2) 0;
+    font-size: var(--rr-fs-sm);
+    line-height: var(--rr-lh-meta);
+    color: var(--rr-faint);
+}

@@ -1,0 +1,301 @@
+/* ------------------------------------------------------------------
+   Design tokens.
+
+   Every colour the redesign uses is declared here, once, on :root.
+   Themes are attribute switches on <html>; nothing below this file
+   ever writes a raw hex value.
+   ------------------------------------------------------------------ */
+
+html[data-rr] {
+    /* Slate & Brass - the default. A blue-leaning slate rather than
+       pure black: on OLED panels pure black behind light text causes
+       halation, and this forum is read for hours at a time. */
+    --rr-bg:            #0e1013;
+    --rr-bg-sunken:     #08090b;
+    --rr-surface:       #15181d;
+    --rr-surface-2:     #1c2026;
+    --rr-surface-3:     #252a31;
+    /* The board draws its grid with a 1px gap showing the table's own
+       light background through, which is most of what makes a listing
+       readable at a glance. A hairline too faint to see turns the same
+       listing into one undifferentiated block, so these are pitched to
+       stay visible against --rr-surface rather than to disappear. */
+    --rr-line:          #2f353e;
+    --rr-line-strong:   #454e5a;
+
+    --rr-text:          #dfe4ea;
+    --rr-text-strong:   #f2f5f8;
+    --rr-muted:         #8b95a3;
+    --rr-faint:         #626c79;
+
+    /* One accent, spent on actions and active state only. */
+    --rr-accent:        #e0a338;
+    --rr-accent-soft:   #4a3a1c;
+    --rr-accent-text:   #0e1013;
+    --rr-link:          #7fb4de;
+    --rr-link-visited:  #9d93cf;
+
+    /* Taxonomy. These map to the forum's own topic prefixes, so the
+       colour carries information rather than decoration. */
+    --rr-tag-info:      #6ea8d8;
+    --rr-tag-release:   #6bbd85;
+    --rr-tag-problem:   #d97a6c;
+    --rr-tag-important: #e0a338;
+    --rr-tag-tutorial:  #a795d8;
+    --rr-tag-request:   #d8a0c4;
+    --rr-tag-scs:       #63b8b0;
+    --rr-tag-neutral:   #8b95a3;
+
+    --rr-ok:            #6bbd85;
+    --rr-warn:          #e0a338;
+    --rr-danger:        #d9635a;
+
+    --rr-selection:     #2f4a63;
+    --rr-mark:          #5a4a1e;
+
+    /* Type */
+    --rr-font: "Inter", "Inter var", ui-sans-serif, "Segoe UI Variable Text",
+               "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --rr-font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", "SF Mono",
+               Menlo, Consolas, "DejaVu Sans Mono", monospace;
+
+    --rr-fs:            15px;   /* overridden by the font-size setting */
+    /* Derived sizes have a floor: at the smallest setting the -2/-3
+       steps would land on 10 and 9px, which is where the original
+       stylesheet already was. */
+    --rr-fs-sm:         max(12px, calc(var(--rr-fs) - 2px));
+    --rr-fs-xs:         max(11px, calc(var(--rr-fs) - 3px));
+    --rr-fs-lg:         calc(var(--rr-fs) + 3px);
+    --rr-fs-h1:         calc(var(--rr-fs) + 9px);
+    --rr-lh:            1.7;
+    /* Leading for supporting detail — the author line under a topic
+       title, the joined last-post line, the pagination strip. It was
+       1.4 everywhere, written in eight places, which at 13px is 18.2px
+       of box around a 13px line: a stack of text rather than two
+       facts. */
+    --rr-lh-meta:       1.55;
+    /* And the title itself. 1.35 is fine on one line and tight on the
+       two-line titles this board is full of. */
+    --rr-lh-title:      1.45;
+    --rr-measure:       78ch;
+
+    /* Space - a 4px base, so densities stay on the same rhythm. */
+    --rr-s1: 4px;
+    --rr-s2: 8px;
+    --rr-s3: 12px;
+    --rr-s4: 16px;
+    --rr-s5: 24px;
+    --rr-s6: 32px;
+    --rr-s7: 48px;
+
+    /* The sticky top bar's height, so anything that has to sit on its
+       edge does not carry its own copy of the number. */
+    --rr-nav-h: 48px;
+
+    --rr-radius:      7px;
+    --rr-radius-lg:   12px;
+    --rr-radius-pill: 999px;
+
+    /* Only genuinely floating things cast a shadow. Surfaces separate
+       by value and a hairline instead. */
+    --rr-shadow-pop: 0 8px 24px -6px rgba(0, 0, 0, .55), 0 2px 6px rgba(0, 0, 0, .35);
+    --rr-shadow-bar: 0 1px 0 var(--rr-line);
+
+    /* Vertical padding on a listing cell.
+
+       Two passes of tightening took this to 6px and then to 5, each of
+       them defensible on its own and both of them measured against how
+       many rows fit on a screen rather than against how the page reads.
+       Together they made a listing a wall. 9px is where a row has a top
+       and a bottom again; the original board fits a topic row in 34px
+       and this one now fits it in about 60, which is the trade being
+       made deliberately rather than drifted into.
+
+       Compact is still the old number, for anyone who wants it. */
+    --rr-row-pad:     9px;
+    --rr-post-gap:    var(--rr-s5);
+
+    /* How wide the page frame gets.
+
+       This was a flat 1200px, and on a 1900px window that is 350px of
+       nothing down each side — on every page, including the index,
+       where it left the board's own masthead art stranded in the
+       middle of a black field. A fixed column is the right answer for
+       prose and the wrong one for a frame that also has to hold a
+       listing with six columns, a pager, an action bar and the
+       releases panel.
+
+       So the frame is fluid with a ceiling, and the two jobs are split
+       between two tokens: this one sizes the frame, --rr-measure still
+       caps the line length of anything that is actually read as prose.
+       Widening the frame therefore does not lengthen a line of a post.
+
+       1560px is the ceiling and 95vw the slope, which lands the frame
+       at the window's width up to about 1640px and holds it there
+       above. */
+    --rr-content-max: min(1560px, 95vw);
+
+    /* The inside edge of a card the script draws. Two passes of
+       tightening landed on 8px, which against a 10px corner radius
+       reads as content pressed into the corner; the action bar and the
+       filter row it now contains were both at 8, so their shared edge
+       was the tightest place on the page. */
+    --rr-card-pad:    14px;
+
+    --rr-speed: 140ms;
+}
+
+/* Native - the board's own colours.
+
+   Everything else here is a redesign that could be any forum, and put
+   side by side with cs.rin.ru that is exactly what it looks like. The
+   board is not a blue-leaning slate with blue links: it is near-black
+   (#070707), grey text (#CCCCCC), and red — `a:link { color: red }` is
+   in its stylesheet, its usernames are #BF0000, its [Important] tags
+   are red, and that is most of what makes a screenshot of it
+   recognisable at a glance.
+
+   So this theme is the board's own palette on the redesign's layout:
+   its colours, its contrast and its links, with the spacing, the type
+   scale and the structure of everything else in this script. The red
+   is pulled off pure #FF0000, which vibrates against black at any
+   length, and no further — it has to still read as the board's red.
+
+   It is the default. Slate and Carbon stay for anyone who wants the
+   quieter version. */
+html[data-rr][data-rr-theme="native"] {
+    /* A shade off the board's own #070707 rather than on it. The
+       reasoning at the top of this file has not changed — pure black
+       behind light text halates on an OLED panel and this forum is
+       read for hours — and the identity is not in the last three
+       percent of the black anyway. It is in the neutral (no blue cast,
+       unlike Slate), the grey text, and the red. */
+    --rr-bg:            #101010;
+    --rr-bg-sunken:     #0a0a0a;
+    --rr-surface:       #171717;
+    --rr-surface-2:     #1e1e1e;
+    --rr-surface-3:     #292929;
+    --rr-line:          #2e2e2e;
+    --rr-line-strong:   #474747;
+
+    --rr-text:          #cccccc;
+    --rr-text-strong:   #ffffff;
+    --rr-muted:         #aaaaaa;
+    --rr-faint:         #777777;
+
+    /* The board sets `a:link { color: red }`, and every link on the
+       page takes its colour from this one token — the breadcrumb, the
+       board links, the finder, the lookup buttons. At the board's own
+       saturation that is a page shouting in red rather than a page
+       with red links in it. Same hue, conversational volume. */
+    --rr-link:          #d1786b;
+    --rr-link-visited:  #a8807c;
+
+    /* The board's own taxonomy colours, where it has one: [Important]
+       is red on the real board and amber here, which is the single
+       most visible place the redesign stopped looking like it. */
+    --rr-tag-important: #cf6152;
+    --rr-tag-problem:   #cf6152;
+    --rr-tag-release:   #4faa60;
+    --rr-tag-info:      #4088b3;
+    --rr-tag-neutral:   #999999;
+
+    --rr-ok:            #4faa60;
+    --rr-danger:        #cf6152;
+
+    --rr-selection:     #45211c;
+    --rr-mark:          #4e0707;
+}
+
+/* Carbon - neutral grey for anyone who finds the blue cast distracting. */
+html[data-rr][data-rr-theme="carbon"] {
+    --rr-bg:          #131313;
+    --rr-bg-sunken:   #0c0c0c;
+    --rr-surface:     #1a1a1a;
+    --rr-surface-2:   #222222;
+    --rr-surface-3:   #2b2b2b;
+    --rr-line:        #383838;
+    --rr-line-strong: #525252;
+    --rr-text:        #e2e2e2;
+    --rr-text-strong: #f6f6f6;
+    --rr-muted:       #949494;
+    --rr-faint:       #6a6a6a;
+    --rr-selection:   #3d3d3d;
+}
+
+/* Paper - a real light theme, warm enough not to glare at night. */
+html[data-rr][data-rr-theme="paper"] {
+    --rr-bg:            #f4f5f7;
+    --rr-bg-sunken:     #e8eaee;
+    --rr-surface:       #ffffff;
+    --rr-surface-2:     #f4f5f7;
+    --rr-surface-3:     #e9ebef;
+    --rr-line:          #d2d6de;
+    --rr-line-strong:   #b0b7c2;
+    --rr-text:          #22262c;
+    --rr-text-strong:   #0d1014;
+    --rr-muted:         #5d646e;
+    --rr-faint:         #858c96;
+    --rr-accent:        #a5701a;
+    --rr-accent-soft:   #f5e6c8;
+    --rr-accent-text:   #ffffff;
+    --rr-link:          #1f5f96;
+    --rr-link-visited:  #6b4d9e;
+    --rr-tag-info:      #1f6294;
+    --rr-tag-release:   #24734a;
+    --rr-tag-problem:   #a83c2c;
+    --rr-tag-important: #96660f;
+    --rr-tag-tutorial:  #6a4fa3;
+    --rr-tag-request:   #9c4f80;
+    --rr-tag-scs:       #14706a;
+    --rr-tag-neutral:   #5d646e;
+    --rr-ok:            #24734a;
+    --rr-warn:          #96660f;
+    --rr-danger:        #a83c2c;
+    --rr-selection:     #cfe0f0;
+    --rr-mark:          #fbeaae;
+    --rr-shadow-pop: 0 8px 24px -8px rgba(20, 26, 34, .22), 0 2px 6px rgba(20, 26, 34, .10);
+}
+
+/* Density. Compact keeps the old forum's information-per-screen,
+   Roomy is for long reading sessions. */
+html[data-rr][data-rr-density="compact"] {
+    --rr-lh: 1.5;
+    --rr-lh-meta: 1.4;
+    --rr-lh-title: 1.35;
+    --rr-card-pad: 7px;
+    --rr-row-pad: 3px;
+    --rr-post-gap: var(--rr-s2);
+    --rr-s5: 16px;
+    --rr-s6: 22px;
+}
+html[data-rr][data-rr-density="roomy"] {
+    --rr-lh: 1.8;
+    --rr-lh-meta: 1.65;
+    --rr-lh-title: 1.5;
+    --rr-card-pad: 18px;
+    --rr-row-pad: 14px;
+    --rr-post-gap: var(--rr-s6);
+}
+
+/* Wide keeps the same slope and lifts the ceiling; Full drops both.
+   Reading is the fluid default above. */
+html[data-rr][data-rr-width="wide"]  { --rr-content-max: min(1980px, 97vw); --rr-measure: 92ch; }
+html[data-rr][data-rr-width="full"]  { --rr-content-max: none;              --rr-measure: none; }
+
+/* No bar, no edge to sit on. */
+html[data-rr][data-rr-nav="off"] { --rr-nav-h: 0px; }
+
+@media (prefers-reduced-motion: reduce) {
+    html[data-rr] { --rr-speed: 0ms; }
+}
+/* And the same, asked for explicitly rather than read off the system. */
+html[data-rr][data-rr-still] { --rr-speed: 0ms; scroll-behavior: auto; }
+html[data-rr][data-rr-still] *,
+html[data-rr][data-rr-still] *::before,
+html[data-rr][data-rr-still] *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+}

@@ -1,0 +1,8 @@
+node_modules/
+test/pages/
+*.png
+!docs/screenshots/*.png
+
+# Reference copies of another project's script, kept locally for
+# comparison. Not ours to redistribute.
+CS.RIN.RU Enhanced*.txt

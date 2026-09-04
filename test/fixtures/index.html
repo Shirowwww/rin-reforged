@@ -1,0 +1,943 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-gb" xml:lang="en-gb">
+<head>
+
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<meta http-equiv="content-language" content="en-gb" />
+<meta http-equiv="content-style-type" content="text/css" />
+<meta http-equiv="imagetoolbar" content="no" />
+<meta name="resource-type" content="document" />
+<meta name="distribution" content="global" />
+<meta name="keywords" content="" />
+<meta name="description" content="Cracking Steam and coding Steam related tools and emulators since 2003. Get all Steam games you want and play them the way you want to - for free!" />
+<meta name="robots" content="noindex,nofollow" />
+
+<title>CS RIN - Steam Underground &bull; Index page</title>
+
+<link rel="alternate" type="application/atom+xml" title="Feed - CS RIN - Steam Underground" href="https://cs.rin.ru/forum/feed.php" /><link rel="alternate" type="application/atom+xml" title="Feed - All forums" href="https://cs.rin.ru/forum/feed.php?mode=forums" /><link rel="alternate" type="application/atom+xml" title="Feed - New Topics" href="https://cs.rin.ru/forum/feed.php?mode=topics" /><link rel="alternate" type="application/atom+xml" title="Feed - Active Topics" href="https://cs.rin.ru/forum/feed.php?mode=topics_active" />
+
+<link rel="stylesheet" href="./styles/rinDark/theme/stylesheet.css" type="text/css" />
+<!-- <script type="text/javascript" src="./mobiquo/tapatalkdetect.js"></script> -->
+<script type="text/javascript" src="./styles/subsilver2/template/forum_fn.js"></script>
+<!-- <script type="text/javascript" src="//yandex.st/share/share.js" charset="utf-8"></script>-->
+<script type="text/javascript">
+// <![CDATA[
+
+
+function popup(url, width, height, name)
+{
+	if (!name)
+	{
+		name = '_popup';
+	}
+
+	window.open(url.replace(/&amp;/g, '&'), name, 'height=' + height + ',resizable=yes,scrollbars=yes,width=' + width);
+	return false;
+}
+
+function jumpto()
+{
+	var page = prompt('Enter the page number you wish to go to:', '');
+	var per_page = '';
+	var base_url = '';
+
+	if (page !== null && !isNaN(page) && page == Math.floor(page) && page > 0)
+	{
+		if (base_url.indexOf('?') == -1)
+		{
+			document.location.href = base_url + '?start=' + ((page - 1) * per_page);
+		}
+		else
+		{
+			document.location.href = base_url.replace(/&amp;/g, '&') + '&start=' + ((page - 1) * per_page);
+		}
+	}
+}
+
+/**
+* Find a member
+*/
+function find_username(url)
+{
+	popup(url, 760, 570, '_usersearch');
+	return false;
+}
+
+/**
+* Mark/unmark checklist
+* id = ID of parent container, name = name prefix, state = state [true/false]
+*/
+function marklist(id, name, state)
+{
+	var parent = document.getElementById(id);
+	if (!parent)
+	{
+		eval('parent = document.' + id);
+	}
+
+	if (!parent)
+	{
+		return;
+	}
+
+	var rb = parent.getElementsByTagName('input');
+	
+	for (var r = 0; r < rb.length; r++)
+	{
+		if (rb[r].name.substr(0, name.length) == name)
+		{
+			rb[r].checked = state;
+		}
+	}
+}
+
+
+
+// ]]>
+
+// RIN donation overlay
+//subsilver2
+window.onload = onloadFunction;
+//proSilver
+if (!(typeof onload_functions === 'undefined')) {
+	onload_functions.push('onloadFunction();');
+} 
+
+function overlayconfirm() {
+  document.getElementById("overlay").style.display = "none";
+  document.cookie = "csrin_overlay=0; path=/forum; max-age=31536000";
+}
+
+function onloadFunction()
+{
+    // RIN donation overlay
+    // if cookie NOT set, display
+    var decodedCookie = decodeURIComponent(document.cookie);
+    if (decodedCookie.search("csrin_overlay=0") === -1)
+    {
+        //document.getElementById("overlay").style.display = "block";
+    }
+}
+
+// RIN: load page in the background
+function loadAsync(page, returnTarget, returnText, returnClass) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onload = () => {
+        if (xhttp.readyState === XMLHttpRequest.DONE) {
+            if (xhttp.status === 200) {
+                console.log("yay");
+                var successText = document.createElement("span");
+                successText.innerHTML = returnText;
+                successText.className = returnClass;
+                returnTarget.replaceWith(successText);
+            } else {
+                console.error(xhttp.statusText);
+            }
+        }
+    };
+    xhttp.open("GET", page, true);
+    xhttp.send();
+}
+
+// RIN image resizer
+function resizeimg(img)
+{
+    if (img.style.maxHeight == 'none')
+        img.style.maxHeight = '250px';
+    else
+        img.style.maxHeight = 'none';
+}
+</script>
+
+<!-- Malicious filehosts -->
+<script type="text/javascript">
+function reveal_unsafe(e) {
+  e.style.display = "none";
+  e.parentElement.getElementsByClassName('link_unsafe')[0].style.display = "inline";
+}
+</script>
+<style></style>
+<style>
+.link_unsafe_overlay {
+  --warning-color: red;
+  border-style:dashed;
+  border-color: var(--warning-color);
+  border-width: thin;
+  width: fit-content;
+  display: inline-block;
+  color: var(--warning-color);
+}
+
+.link_unsafe_overlay2 {
+  --warning-color: orange;
+  border-style:dashed;
+  border-color: var(--warning-color);
+  border-width: thin;
+  width: fit-content;
+  display: inline-block;
+  color: var(--warning-color);
+}
+
+.link_unsafe_reveal {
+  cursor: pointer;
+  color: #AAAAAA;
+}
+
+.link_unsafe {
+  display: none;
+}
+
+.link_unsafe_note {
+  font-size: 0.8em;
+  vertical-align: super;
+  position: relative;
+}
+
+.tooltip {
+  border-bottom: 1px dotted green;
+  color: green;
+  cursor: pointer;
+}
+
+.tooltiptext {
+  visibility: hidden;
+  font-size: 1.3em;
+  width: 22em;
+  color: var(--warning-color);
+  background-color: black;
+  text-align: center;
+  padding: 0.5em 0.5em;
+  border-radius: 6px;
+  position: absolute;
+  cursor: default;
+  z-index: 1;
+  top: 100%;
+  left: -13em;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+</style>
+
+<!-- Donation overlay --><!-- duplicated here because of caching issues -->
+<style>
+#overlay {
+  position: fixed;
+  width: 40%;
+  height: 40%;
+  top: 50%;
+  left: 50%;
+  margin-right: -50%; 
+  right: 0;
+  bottom: 0;
+  min-width: 300px;
+  min-height: 300px;
+  background-color: rgba(0,0,0,0.9);
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  border: 1px solid #777777;
+  display: none;
+}
+
+#overlaytext {
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  font-size: 1.2em;
+  color: white;
+  transform: translate(-5%,-5%);
+  -ms-transform: translate(-5%,-5%);
+}
+
+#overlayconfirmbtn {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%); 
+  bottom: 0px;
+  font-size: 1.2em;
+  padding: 1px 5px;
+}
+</style>
+<!-- RIN: image resize and page stretch fix -->
+<style>
+.postbody img,
+.postbody ~ table img {
+  max-width: 95%;
+  max-height: 250px;
+}
+</style>
+
+</head>
+<body class="ltr">
+
+<!-- Donation overlay -->
+<div id="overlay">
+  <div id="overlaytext">
+  <p align="center">We need your help!</p>
+  <br /><br />
+  <p>For 17 years, this forum has served us as a platform for sharing games with each other, graciously hosted by the owner of RIN for all this time. Sadly, he can no longer afford our server.</p>
+  <br /><br />
+  <p>To keep this forum alive, we need your help with covering the hosting expenses.</p>
+  <br /><br />
+  <p>For more information, click <a href="../donate" target="_blank" onclick="overlayconfirm()">here</a>.</p>
+  
+  </div>
+  <a id="overlayconfirmbtn" onclick="overlayconfirm()" href="javascript:overlayconfirm();">Close</a>
+</div>
+
+<table align="center" width="100%" class="bodyline">
+	<tr>
+		<td>
+<a name="top"></a>		
+<div id="wrapheader">
+
+	<div id="logodesc">
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td><a href="./index.php?sid=d45ae25332905b3eaaa0b8424d8e4f83"><img src="./styles/rinDark/imageset/site_logo-1.png" alt="Logo" title="Logo" /></a></td>
+			<td width="100%" align="center"><h1>CS RIN - Steam Underground</h1><span class="gen">cs.rin.ru | csrin.org | The password is usually one of these.</span></td>
+		</tr>
+		</table>
+	</div>
+
+	<div id="menubar">
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				<a href="./viewtopic.php?f=10&amp;t=44034&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83"><img src="./styles/rinDark/theme/images/icon_mini_rules.gif" width="14" height="14" alt="*" /> Forum rules</a>
+                &nbsp;:: &nbsp;<a href="../donate"><img src="./styles/rinDark/theme/images/icon_donate.gif" width="14" height="14" alt="*" /> Donate</a>
+			</td>
+			<td class="genmed" align="right">
+                <a href="chat.php"><img src="./styles/rinDark/theme/images/icon_mini_irc.gif" width="14" height="14" alt="*" /> Chat</a>
+				&nbsp;:: &nbsp;<a href="./viewtopic.php?f=10&amp;t=98158&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83"><img src="./styles/rinDark/theme/images/icon_mini_faq.gif" width="12" height="13" alt="*" /> FAQ</a><!--<sup style="color:#FF0000;"> new!</sup>-->
+				
+			</td>
+		</tr>
+		</table>
+		<br>
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				 &nbsp;<a href="./ucp.php?mode=register&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83"><img src="./styles/rinDark/theme/images/icon_mini_register.gif" width="12" height="13" alt="*" /> Register</a>
+					
+			</td>
+			<td class="genmed" align="right">
+				<a href="./search.php?sid=d45ae25332905b3eaaa0b8424d8e4f83"><img src="./styles/rinDark/theme/images/icon_mini_search.gif" width="12" height="13" alt="*" /> Search</a>
+                        &nbsp;:: &nbsp;<a href="./ucp.php?mode=login&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83"><img src="./styles/rinDark/theme/images/icon_mini_login.gif" width="12" height="13" alt="*" /> Login</a>
+				
+			</td>
+		</tr>
+		</table>
+		
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				
+			</td>
+		</tr>
+		</table>
+	</div>
+
+	<div id="datebar">
+		<table width="100%" cellspacing="0">
+			<td class="gensmall"></td>
+            
+			<td class="gensmall" align="right">It is currently Friday, 04 Sep 2026, 00:36<br /></td>
+		</tr>
+		</table>
+	</div>
+
+	<div>
+		<table width="100%" cellspacing="0">
+		<br>
+		<tr>
+			<td class="genmed" align="right"><a href="index.php?lang=en"><img src="./styles/rinDark/theme/images/uk.png" width="16" height="11" alt="English" /></a> | <a href="index.php?lang=ru"><img src="./styles/rinDark/theme/images/ru.png" width="16" height="11" alt="Русский" /></a></td>
+		</tr>
+		</table>
+</div>
+</div>
+
+<div id="wrapcentre">
+
+	
+	<p class="searchbar">
+		<span style="float: left;"><a href="./search.php?search_id=unanswered&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">View unanswered posts</a> | <a href="./search.php?search_id=active_topics&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">View active topics</a></span>
+		
+	</p>
+	
+
+	<br style="clear: both;" />
+
+	<table class="tablebg" width="100%" cellspacing="1" cellpadding="0" style="margin-top: 5px;">
+	<tr>
+		<td class="row5">
+			<p class="breadcrumbs"><a class="breadcrumbs" href="./index.php?sid=d45ae25332905b3eaaa0b8424d8e4f83">Board index</a></p>
+			
+        <div id="search-box">
+            <form action="./search.php?sid=d45ae25332905b3eaaa0b8424d8e4f83" method="post" id="search">
+                <input name="keywords" id="keywords" type="text" maxlength="128" title="Search for keywords" class="inputbox search" value="Search…" onclick="if(this.value=='Search…')this.value='';" onblur="if(this.value=='')this.value='Search…';" />
+                <input class="button1" value="Search" type="submit" /><br />
+				<input type="hidden" name="sr" value="topics" />
+				<input type="hidden" value="titleonly" name="sf" />
+            </form>
+        </div>
+
+
+		</td>
+	</tr>
+	</table>
+
+	<br /><style>
+.ccopen{
+	background: #FFFFFF url("./styles/rinDark/theme/images/cc_down.gif") no-repeat center center;
+	width: 12px;
+	height:12px; 
+}
+.ccclose{
+	background: #FFFFFF url("./styles/rinDark/theme/images/cc_up.gif") no-repeat center center;
+	width: 12px;
+	height:12px;
+}
+</style> 
+<script type="text/javascript">
+// <![CDATA[
+function flipf(btn, thiscat)
+{
+	rnd = Math.random().toString().substring(2);
+    myurl = "./ajax_update_collapse.php?dummy=1&sid=d45ae25332905b3eaaa0b8424d8e4f83" + "&rnd=" + rnd;
+	if (btn.className=="ccclose")
+	{
+		btn.className="ccopen";
+		document.getElementById('flist'+thiscat).style.display="none";
+		myurl = myurl + "&cset=" + thiscat;
+	}
+	else
+	{
+		btn.className="ccclose";
+		document.getElementById('flist'+thiscat).style.display="";
+		myurl = myurl + "&cunset=" + thiscat;
+	}
+	// alert (myurl);
+	var myajax=ajaxobject();
+	myajax.open('GET',myurl,true);
+	myajax.onreadystatechange = function()
+		{
+			if (myajax.readyState == 4)
+			{
+				if (myoutput = myajax.responseXML)
+					{
+						// Discard
+						return;
+					}
+			}		
+		}
+	myajax.send(null);
+}
+function ajaxobject()
+{
+	try
+	{
+		var http_request = false;
+		if (window.XMLHttpRequest)
+		{ // Mozilla, Safari,...
+			http_request = new XMLHttpRequest();
+			if (http_request.overrideMimeType)
+			{
+				http_request.overrideMimeType('text/xml');
+			}
+		}
+		else if (window.ActiveXObject)
+		{ // IE
+			try
+			{
+				http_request = new ActiveXObject('Msxml2.XMLHTTP');
+			}
+			catch (e)
+			{
+				try
+				{
+					http_request = new ActiveXObject('Microsoft.XMLHTTP');
+				}
+				catch (e)
+				{
+				}
+			}
+		}
+
+		if (!http_request)
+		{
+			 return false;
+		}
+		else
+		{
+			return http_request;
+	}	
+	}
+	catch (e)
+	{
+		handle(e);
+		return false;
+	}
+}
+
+//]]>
+</script>
+<table class="tablebg" cellspacing="1" width="100%">
+<tbody>
+
+<tr>
+	<td class="cat" colspan="5" align="right">&nbsp;</td>
+</tr>
+<tr>
+	<th colspan="2">&nbsp;Forum&nbsp;</th>
+	<th width="50">&nbsp;Topics&nbsp;</th>
+	<th width="50">&nbsp;Posts&nbsp;</th>
+	<th>&nbsp;Last post&nbsp;</th>
+</tr>
+
+    </tbody>
+		<tr>
+			<td class="cat" colspan="2"><h4><a href="./viewforum.php?f=26&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Russian Forums (Форумы)</a></h4></td>
+			<td class="catdiv" colspan="3" align="right"><input type="button" class="ccopen" value=" " onclick="flipf(this,'26');">&nbsp;</td>
+		</tr>
+		<tbody id="flist26" style="display:none">
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=5&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Новости</a>
+				<p class="forumdesc"></p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">96</p></td>
+			<td class="row2" align="center"><p class="topicdetails">1550</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Wednesday, 20 May 2026, 20:19</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=1628426&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ChikaTTiLLO</a>
+						<a href="./viewtopic.php?f=5&amp;p=3514204&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p3514204"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=1&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Общий форум</a>
+				<p class="forumdesc">Форум обо всем :)</p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">941</p></td>
+			<td class="row2" align="center"><p class="topicdetails">14840</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Wednesday, 28 Jan 2026, 11:32</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=1723083&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Babarrossa</a>
+						<a href="./viewtopic.php?f=1&amp;p=3440999&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p3440999"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=2&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Counter Strike</a>
+				<p class="forumdesc">Разговоры об игре и обо всем что с этим связано.</p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">2047</p></td>
+			<td class="row2" align="center"><p class="topicdetails">16054</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Saturday, 15 Aug 2026, 10:04</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=3834563&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">msilvapica4msilvapica4</a>
+						<a href="./viewtopic.php?f=2&amp;p=3569712&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p3569712"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=3&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Сервер cs.rin.ru</a>
+				<p class="forumdesc">Форум по работе игрового сервера cs.rin.ru</p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">600</p></td>
+			<td class="row2" align="center"><p class="topicdetails">9889</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Friday, 09 May 2025, 18:54</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=1487505&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">daratmpcseru</a>
+						<a href="./viewtopic.php?f=3&amp;p=3276819&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p3276819"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=4&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Книга жалоб</a>
+				<p class="forumdesc">Жалобы составленные в оскарбительной форме будут удалены, их автор наказан.</p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">640</p></td>
+			<td class="row2" align="center"><p class="topicdetails">15000</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Wednesday, 10 Sep 2025, 21:20</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=353242&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">-cola</a>
+						<a href="./viewtopic.php?f=4&amp;p=3354733&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p3354733"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=9&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Читы и Читеры</a>
+				<p class="forumdesc">Сюда пишем все ваши подозрения на читеров, или же попытки доказать, что вы не читер!</p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">615</p></td>
+			<td class="row2" align="center"><p class="topicdetails">10227</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Tuesday, 03 Aug 2021, 15:18</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=355308&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">rin*~VoV~</a>
+						<a href="./viewtopic.php?f=9&amp;p=2420850&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p2420850"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=6&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Оффтопик</a>
+				<p class="forumdesc">Общение на любые темы. Минимум правил и ограничений. Можно немного пофлудить.</p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">834</p></td>
+			<td class="row2" align="center"><p class="topicdetails">28348</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Friday, 20 Feb 2026, 15:18</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=355308&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">rin*~VoV~</a>
+						<a href="./viewtopic.php?f=6&amp;p=3456172&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p3456172"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=8&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Чемпионат</a>
+				<p class="forumdesc"></p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">71</p></td>
+			<td class="row2" align="center"><p class="topicdetails">2216</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Tuesday, 07 Mar 2023, 16:25</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=425555&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Starter</a>
+						<a href="./viewtopic.php?f=8&amp;p=2785788&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p2785788"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=11&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Опросы</a>
+				<p class="forumdesc"></p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">6</p></td>
+			<td class="row2" align="center"><p class="topicdetails">369</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Wednesday, 15 Apr 2009, 17:03</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=11311&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83" style="color: #ACBFAC;" class="username-coloured">VORTEX</a>
+						<a href="./viewtopic.php?f=11&amp;p=594287&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p594287"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+    </tbody>
+		<tr>
+			<td class="cat" colspan="2"><h4><a href="./viewforum.php?f=27&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">English Forums</a></h4></td>
+			<td class="catdiv" colspan="3" align="right"><input type="button" class="ccclose" value=" " onclick="flipf(this,'27');">&nbsp;</td>
+		</tr>
+		<tbody id="flist27" >
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=10&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Main Forum</a>
+				<p class="forumdesc">Discussions and support.</p>
+				
+					<p class="forumdesc"><strong>Subforums: </strong> <a href="./viewforum.php?f=29&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83" class="subforum read" title="No unread posts">Releases</a>, <a href="./viewforum.php?f=32&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83" class="subforum read" title="No unread posts">Standalones</a>, <a href="./viewforum.php?f=38&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83" class="subforum read" title="No unread posts">Other Gaming Platforms</a></p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">62679</p></td>
+			<td class="row2" align="center"><p class="topicdetails">2349578</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">1 minute ago</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=591608&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">afraidium</a>
+						<a href="./viewtopic.php?f=10&amp;p=3581978&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p3581978"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=14&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Off Topic</a>
+				<p class="forumdesc">Discussions and chatter that do not fit into other subforums.</p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">10899</p></td>
+			<td class="row2" align="center"><p class="topicdetails">175381</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Yesterday, 22:37</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=620646&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Rebis</a>
+						<a href="./viewtopic.php?f=14&amp;p=3581819&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p3581819"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=20&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Developer Forum</a>
+				<p class="forumdesc">Coders and crackers only - work in progress!</p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">1348</p></td>
+			<td class="row2" align="center"><p class="topicdetails">15102</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Yesterday, 22:01</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=3289889&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">LukeWarmSodas</a>
+						<a href="./viewtopic.php?f=20&amp;p=3581896&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p3581896"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=22&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Steam Content Sharing</a>
+				<p class="forumdesc">Unmodified and verified game files, directly from Steam.</p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">13601</p></td>
+			<td class="row2" align="center"><p class="topicdetails">34541</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Yesterday, 17:16</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=328528&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83" style="color: #5A4BBC;" class="username-coloured">SCS God</a>
+						<a href="./viewtopic.php?f=22&amp;p=3581757&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p3581757"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=19&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Foreign Languages Forum</a>
+				<p class="forumdesc">Discussions and support in foreign languages.</p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">50</p></td>
+			<td class="row2" align="center"><p class="topicdetails">7408</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Monday, 31 Aug 2026, 19:36</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=500027&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">minibouc</a>
+						<a href="./viewtopic.php?f=19&amp;p=3579910&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p3579910"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read_locked.png" width="46" height="40" alt="Forum locked" title="Forum locked" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=15&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Archive</a>
+				<p class="forumdesc">Old topics which are not needed anymore.</p>
+				
+					<p class="forumdesc"><strong>Subforum: </strong> <a href="./viewforum.php?f=31&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83" class="subforum read" title="No unread posts">Ancient Threads</a></p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">17284</p></td>
+			<td class="row2" align="center"><p class="topicdetails">398833</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Saturday, 01 Aug 2026, 18:59</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=1494657&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">EXTIINCT</a>
+						<a href="./viewtopic.php?f=15&amp;p=3561692&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p3561692"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+		<tr>
+			<td class="row1" width="50" align="center"><img src="./styles/rinDark/imageset/forum_read_locked.png" width="46" height="40" alt="Forum locked" title="Forum locked" /></td>
+			<td class="row1" width="100%">
+				
+				<a class="forumlink" href="./viewforum.php?f=24&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Junk</a>
+				<p class="forumdesc">Useless and obsolete threads.</p>
+				
+			</td>
+			<td class="row2" align="center"><p class="topicdetails">89</p></td>
+			<td class="row2" align="center"><p class="topicdetails">318</p></td>
+			<td class="row2" align="center" nowrap="nowrap">
+				
+					<p class="topicdetails">Yesterday, 13:24</p>
+					<p class="topicdetails"><a href="./memberlist.php?mode=viewprofile&amp;u=916835&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83" style="color: #00BF00;" class="username-coloured">Valentine</a>
+						<a href="./viewtopic.php?f=24&amp;p=3581600&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83#p3581600"><img src="./styles/rinDark/imageset/icon_topic_latest.gif" width="18" height="9" alt="View the latest post" title="View the latest post" /></a>
+					</p>
+				
+			</td>
+		</tr>
+	
+</tbody>
+</table>
+
+<span class="gensmall"><a href="./ucp.php?mode=delete_cookies&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Delete all board cookies</a> | <a href="./memberlist.php?mode=leaders&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">The team</a></span><br />
+
+<br clear="all" />
+
+<table class="tablebg" width="100%" cellspacing="1" cellpadding="0" style="margin-top: 5px;">
+	<tr>
+		<td class="row5">
+			<p class="breadcrumbs"><a class="breadcrumbs" href="./index.php?sid=d45ae25332905b3eaaa0b8424d8e4f83">Board index</a></p>
+			
+        <div id="search-box">
+            <form action="./search.php?sid=d45ae25332905b3eaaa0b8424d8e4f83" method="post" id="search">
+                <input name="keywords" id="keywords" type="text" maxlength="128" title="Search for keywords" class="inputbox search" value="Search…" onclick="if(this.value=='Search…')this.value='';" onblur="if(this.value=='')this.value='Search…';" />
+                <input class="button1" value="Search" type="submit" /><br />
+				<input type="hidden" name="sr" value="topics" />
+				<input type="hidden" value="titleonly" name="sf" />
+            </form>
+        </div>
+
+
+		</td>
+	</tr>
+	</table>
+<br clear="all" />
+
+
+	<br clear="all" />
+
+	<table class="tablebg" width="100%" cellspacing="1">
+	<tr>
+		<td class="cat" colspan="2"><h4>Who is online</h4></td>
+	</tr>
+	<tr>
+	
+		<td class="row1" rowspan="6" align="center" valign="middle"><img src="./styles/rinDark/theme/images/whosonline.gif" alt="Who is online" /></td>
+	
+		<td class="row1" width="100%"><span class="genmed notranslate">In total there are <strong>513</strong> users online :: 326 registered, 29 hidden and 158 guests (based on users active over the past 5 minutes)<br />Most users ever online was <strong>5180</strong> on Thursday, 10 Dec 2020, 01:31<br /><br />Registered users: <a href="./memberlist.php?mode=viewprofile&amp;u=3072215&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">109018</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1222380&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">12332101</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2901018&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">2Clumzy</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2687976&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">404Enzor</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=617327&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">666mithology666</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1011962&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">7162</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3122174&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">AAM_Mello</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=644570&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">acorazado</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3668428&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Adagiocanta2026</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2472030&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">adbdanotty</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=591608&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">afraidium</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=597409&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">agojia</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=921124&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ahmednaje96</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1502006&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ahmedzet</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3847027&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">alfdotgov</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2007206&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">amongus202</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3860276&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">anon.proxy</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1778472&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Apexic</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3171799&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Arakh69</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2290486&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">asd3dd</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1729176&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Asus2005</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1507054&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Avri223</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1013513&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">baseddoge</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1471589&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">bathalamode</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1235190&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">battab09</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3777243&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Beko0815</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1854328&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">belugas.plaster.0v@icloud.com</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=706935&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Berwve</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=988660&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Bi9M4c</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3172193&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Biboo007</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=856886&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">bigeggyeah</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3170659&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">BismarckedderKoenig</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=751442&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Blindone</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1596910&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">bmalstitch</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=629473&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">boj</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3216116&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">bon27r</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2692759&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">brutuslol</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2294495&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">bubmer</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2165134&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">burNinGAlpha</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=946085&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Butajiru</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3235353&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">cacacatu4</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1147382&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Carguein</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2903766&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">carri</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=841187&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">cesarjunior233</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=774473&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">CFRailworks</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2097805&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">chuuqo</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3042617&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">clothes8730</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=844795&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">cocokokobr</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1493316&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">cornerofadream</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=828746&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Coul</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=708890&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">cronus</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2770877&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">CROWBOB2</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2674260&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">csrinruein</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3610746&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">cucuXtreme</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3251093&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">D4RK13</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3404585&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">D_Xenocks</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3706003&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">DaniloCoelho</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=970238&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">dantemoro2</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2015180&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">DarkBaphomet</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3023512&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Darknadragon</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3039771&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">datekohgyo</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2128909&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">DB.59</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1621140&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">dbeck49</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1176186&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Deftones™</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=976039&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">delwin30</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1827815&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">DeXter2uzbeki</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=780361&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">diego963</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2615759&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">DJLink654</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2487219&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">doyling</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1000246&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">DrPleaseRespect</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3860278&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">druk</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2308811&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Ederwolf</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=958817&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">edijs</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=435951&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">edwin_kyr</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3541981&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">eggnade</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2794028&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Elaria</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=566676&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Eligori</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1369908&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Elisa100</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1710637&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">enrajb</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1044643&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Enzie</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1548197&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">EnzymeX</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2888069&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Erbeun</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2007332&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ertade</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3567250&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">exotile-x0</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1158203&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">fallenbutter</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3847421&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">faruk320</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2728399&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">fascade91</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3578241&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Fatouh</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=691349&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">feverish</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2012651&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">fightclub096</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2298491&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">FingerPoint</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1952770&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">folkenvon</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1030942&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">fredator</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=666354&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">frostieh</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3732561&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">frostybeachhead</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=578163&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">fuckthenazis</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=472156&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">fwank</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=928366&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">fye121</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2888155&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">gabi9292</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2086783&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Gaminglegend307</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=703956&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">gdfgti</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=754530&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">genshibeam</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=660982&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ger</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3426913&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">gerolium</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2873909&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">GlitchTG</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2013882&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">God fist Nemesis</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=944040&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">groggypack</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1628878&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">gsmcnini</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1001445&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">h3llf1re</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2489860&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Haroline</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1823891&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">harour</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3837043&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">havitleon</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3819515&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">hellodont12355</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=957575&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">hirtwarez</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=937052&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">hollshore</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1622378&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Homie98</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1065210&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Hoxton13</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=548333&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">hung228</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3647621&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">hythooomh</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1774539&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">IamNelson</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=885711&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">icedtea676</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1165151&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ico78</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2936193&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">iFuory</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3266095&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">igsveff</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3305194&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">impulsezzx</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1810836&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Infamousy</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=608786&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">infer1905</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1192431&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">iskra73</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3859732&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">itzr89</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1490438&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ivanmalang55</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3086266&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">JackJBlackBeard</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1810741&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Jeixu</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2634399&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">jesuswasnotwhite</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2843700&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">jimmytony0506</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3616461&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">jjkkj</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2823401&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">jotido</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3823400&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">JRayLoQue</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1429110&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Juffer</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=659675&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">julodegracia</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2104351&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">JustAKnave</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=631796&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Jydmu</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3635117&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">kaiser619619</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1785617&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">kalhua29</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1105428&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">kamuia</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=778050&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Karlaw</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2680410&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">KarlGoose</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1712382&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">KevSan974</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2827171&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">keys1243</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1882614&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Kiniho</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1009844&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Kransekage</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3784244&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">kur5</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3801047&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">kuro0202</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1812556&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">kuyhAa</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2957458&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">LaughingBees</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2048774&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">lazyguy23</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1486863&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Lee five</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3537517&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">leelosta123123</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2219472&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">leexdevil</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3368623&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">LennyL</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=815316&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">leoleo123456</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3815326&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">leomesquispe</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1291128&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">lilkebu</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3860277&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">LOBBERDARK</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1564085&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Lolbataman</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2476507&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Lord Moldybutt</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1312170&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">louienif</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2637070&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Loupingloupes</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1557866&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">LumyPop</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3347491&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Luniee</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=586497&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">lynxisss</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2706967&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">M91011</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3638009&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">magnanimus123</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2205454&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ManFightDemon</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2000985&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Markwright93</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3860188&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">marwal</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1658322&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">maxhikaru</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=824452&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">mccrayon</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2836435&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Melandre</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1097710&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Mghost99</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3265317&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">mighxsp_</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2827132&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Mikednv</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3833832&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">minaanim</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=607783&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">mont2022</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=955787&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">morenya</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1527489&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Mr F.</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1064728&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">MrDankDaddy</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1671701&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">MrProzac95</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1867614&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">MrReuse</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=476455&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">MrTopBananaZ</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2202834&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Mthales</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2806294&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">muzuly</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2435490&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">MyAlice</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3659823&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Mystec</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3656032&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">nachman</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2797307&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ndap.6450</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1052209&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">nemesisx18</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2509423&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">nicestuff</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1034823&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">nightryuzaki</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1395188&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">nights131</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2134188&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">NixonHat</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1812309&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Nixvip</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3706947&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Noaphemy</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3588342&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">noein-noir</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3550233&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">nomanic</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1157639&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">notabombshelter</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2559347&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">NotKaarm</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3369967&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">nubyesilovewatermelon543</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3257671&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">o1pm25jxm@mozmail.com</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2817557&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">oldmicrowavedcoffee</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3311911&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">onnan</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1725483&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">onwarp</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1724573&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">orlend</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3020697&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">osxmastyle</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1639657&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">othelen</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2324350&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Out3rz</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1452073&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ovoturtle</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1883392&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Owla</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3531602&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Ozlandian</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2800278&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">pallas81</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=873114&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">pandamutante</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3485843&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">paramoon</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=576196&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">pedreiros</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2026105&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Pepega07102022</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3260374&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">phelan55</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1975058&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">psppspunkunknowncheatsme</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1811959&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">qianshiqiang</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1496768&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">qualcosa</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2944122&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">QuietSuburbs</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3717317&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">QuoSavage</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2690289&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">r914064</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=531463&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ragen188</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=545845&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">RainToNiGHT</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2559671&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">rando_stage</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3450333&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">RaulJefferson</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2695530&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">RavenDxC</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1056564&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">redbow</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3334046&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Requeim</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2161943&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">RetroDiplomatics</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=855745&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">revalot</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1008728&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Rexels</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3812485&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">richardsilva831</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=715714&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ricks84</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2436078&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">rinruwhonu</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3860275&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">robbot1967</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3767626&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">rodgerdodger123</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3858891&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">rofl_panda</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3267728&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">rolytyzzzzz</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2622873&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Romokka</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1065557&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">rosaman79</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3608029&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">roshko1337</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2671658&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Sansanson4002</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1085851&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">sarosaro</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2719963&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">SC97cz</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1105403&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">schifer</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=828480&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Seobin</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=880797&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Sergoros</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1673402&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">seritude12</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3825014&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">shadow367</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1216983&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ShampooBrain</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1342627&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Sharingan345</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=905131&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Sharpen</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3521668&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">shepardd951</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3592943&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ShiyaWii</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2534255&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">SHLAPMASTER</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2135897&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">sigmundfr</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3530653&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Siiisman</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3058058&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">silverdust0915</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1580990&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">SkeetFromJN</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3569619&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">SkibidiRizzler67</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2788208&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">sn0wz</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1405173&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">sngga</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3800393&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">solarlotus333</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3855329&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Solzeum</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=853287&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">spiblvv</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1337956&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Spotlizard03</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=946570&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">SSSPrince</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=741073&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">steelingdj</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1695139&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Steve23x</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3670777&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Storm1521</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2939290&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Strabble</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1255213&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">straytoes</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3338169&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Sukino__</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1958094&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Super45</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3850126&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">swwwwnt3</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3745246&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">sxxdwip.rid</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=985997&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">tacticsogre</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1840952&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">The Real SlimShady</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3839230&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">thecasperian</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3698775&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ThePirateSupremacistLeader</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2354114&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Throw1251</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=772934&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Ticedaddy</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3127364&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">tmh1337</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1267956&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Trapmaster112</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3283645&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">trollol035</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3377599&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">tuofenghangxian</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=517160&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Twin-Peaks-Citizen</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1347226&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Uniityy</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2067666&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">valfar666</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1047958&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Valhawk</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=770933&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Veendetta</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1469982&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">vg88</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3860279&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ViktorTsarev32</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=972676&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">VincentOfEngland</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1701415&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Vogue</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3860271&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Vx4enge</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1161182&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">w0nd3rb0yfx</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3010250&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">werin</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3036084&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">WhiteSpork</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2873364&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Whitestorm777</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3752778&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">wizorbitluv</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3310359&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">woongdae0829</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=808810&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Wubberducky</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2399074&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Xane300</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1707792&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">xNoah</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1407095&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">xSinsational</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2042388&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">XxUnknownPixX</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1138128&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">xxxbra</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=3496146&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Xzyxth</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2150826&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">yanoti</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1205210&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">yES1245</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2905947&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">yoyo5113</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2247533&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">zaaqudns</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=2219448&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">zanehyde</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1185651&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ZeroStelliar</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1862122&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">zhedu</a>, <a href="./memberlist.php?mode=viewprofile&amp;u=1168073&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Zmogus</a></span></td>
+
+	</tr>
+	
+		<tr>
+			<td class="row1"><b class="gensmall">Legend :: <a style="color:#BF0000" href="./memberlist.php?mode=group&amp;g=344338&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Administrators</a>, <a style="color:#00BFBF" href="./memberlist.php?mode=group&amp;g=344340&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Developers</a>, <a style="color:#00BF00" href="./memberlist.php?mode=group&amp;g=344337&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Global moderators</a>, <a style="color:#5FBF5F" href="./memberlist.php?mode=group&amp;g=344345&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Junior moderators</a>, <a style="color:#ACBFAC" href="./memberlist.php?mode=group&amp;g=344348&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Retired staff</a>, <a style="color:#5A4BBC" href="./memberlist.php?mode=group&amp;g=340998&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Upload Crew</a></b></td>
+		</tr>
+	
+	<tr>
+			<td class="row1" height="30px"><p class="gensmall"><b>Statistics :: </b>Total posts <strong>3097072</strong> | Total topics <strong>112579</strong> | Total members <strong>2641675</strong> | Our newest member <strong><a href="./memberlist.php?mode=viewprofile&amp;u=3860279&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">ViktorTsarev32</a></strong></p></td>
+	</tr>
+	
+	<tr>
+			<td class="row1" height="30px"><p class="gensmall"><b>Activity over the last 24 hours :: </b>New Posts <strong>639</strong> | New Topics <strong>21</strong> | New users <strong>1439</strong></p></td>
+	</tr>
+	
+</table>
+
+	<br clear="all" />
+
+	<form method="post" action="./ucp.php?mode=login&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">
+	
+	<table class="tablebg" width="100%" cellspacing="1">
+	<tr>
+		<td class="cat"><h4><a href="./ucp.php?mode=login&amp;sid=d45ae25332905b3eaaa0b8424d8e4f83">Login</a></h4></td>
+	</tr>
+	<tr>
+		<td class="row1" align="center"><span class="genmed">Username:</span> <input class="post" type="text" name="username" size="10" />&nbsp; <span class="genmed">Password:</span> <input class="post" type="password" name="password" size="10" />&nbsp;  <span class="gensmall">Log me on automatically each visit</span> <input type="checkbox" class="radio" name="autologin" />&nbsp; <input type="submit" class="btnmain" name="login" value="Login" /></td>
+	</tr>
+	</table>
+	<input type="hidden" name="redirect" value="./index.php?sid=d45ae25332905b3eaaa0b8424d8e4f83" />
+
+	
+	</form>
+
+
+<br clear="all" />
+
+<table class="legend">
+<tr>
+	<td width="20" align="center"><img src="./styles/rinDark/imageset/forum_unread.png" width="46" height="40" alt="Unread posts" title="Unread posts" /></td>
+	<td><span class="gensmall">Unread posts</span></td>
+	<td>&nbsp;&nbsp;</td>
+	<td width="20" align="center"><img src="./styles/rinDark/imageset/forum_read.png" width="46" height="40" alt="No unread posts" title="No unread posts" /></td>
+	<td><span class="gensmall">No unread posts</span></td>
+	<td>&nbsp;&nbsp;</td>
+	<td width="20" align="center"><img src="./styles/rinDark/imageset/forum_read_locked.png" width="46" height="40" alt="No unread posts [ Locked ]" title="No unread posts [ Locked ]" /></td>
+	<td><span class="gensmall">Forum locked</span></td>
+</tr>
+</table>
+
+
+</div>
+
+<div id="wrapfooter">
+    <br><br><br>
+	
+	<span class="copyright">Powered by <a href="https://www.phpbb.com/">phpBB</a>&reg; Forum Software &copy; phpBB Group
+	</span>
+	<br><br>
+</div>
+	
+		</td>
+	</tr>
+	<br>
+</table>
+	<br>
+</body>
+</html>

@@ -1,0 +1,27 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build
+        run: node build.js
+
+      - name: Syntax check
+        run: node --check dist/rin-reforged.user.js
+
+      # dist/ is what people install and what the update URL points at,
+      # so a commit that changes src/ without rebuilding would ship the
+      # previous version to everyone.
+      - name: dist/ is up to date
+        run: git diff --exit-code -- dist/

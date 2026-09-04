@@ -1,0 +1,751 @@
+/* ------------------------------------------------------------------
+   Reskin of the phpBB (subsilver2 / rinDark) markup.
+
+   The forum is built from nested layout tables with inline widths and
+   colours, so a handful of rules here need !important to win. Those
+   are marked; everything else relies on the html[data-rr] prefix for
+   specificity.
+   ------------------------------------------------------------------ */
+
+html[data-rr] body,
+html[data-rr] body.ltr {
+    background: var(--rr-bg);
+    color: var(--rr-text);
+    font-family: var(--rr-font);
+    font-size: var(--rr-fs);
+    line-height: var(--rr-lh);
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-wrap: break-word;
+}
+
+html[data-rr] ::selection { background: var(--rr-selection); color: var(--rr-text-strong); }
+
+/* phpBB sets 62.5% on <body> and then sizes everything in em. Reset the
+   descendants that relied on it so one font-size setting drives it all. */
+html[data-rr] .gen,
+html[data-rr] .genmed,
+html[data-rr] .gensmall,
+html[data-rr] .postbody,
+html[data-rr] .postdetails,
+html[data-rr] .nav,
+html[data-rr] .topicdetails,
+html[data-rr] .topicauthor,
+html[data-rr] .forumdesc,
+html[data-rr] .breadcrumbs,
+html[data-rr] .copyright,
+html[data-rr] th,
+html[data-rr] td,
+html[data-rr] p,
+html[data-rr] li,
+html[data-rr] input,
+html[data-rr] select,
+html[data-rr] textarea {
+    font-family: var(--rr-font);
+    font-size: var(--rr-fs);
+    line-height: var(--rr-lh);
+    color: var(--rr-text);
+}
+
+html[data-rr] .gensmall,
+html[data-rr] .forumdesc,
+html[data-rr] .topicdetails,
+html[data-rr] .copyright { font-size: var(--rr-fs-sm); color: var(--rr-muted); }
+
+html[data-rr] a { color: var(--rr-link); text-decoration: none; }
+html[data-rr] a:hover { color: var(--rr-text-strong); text-decoration: underline; text-underline-offset: 2px; }
+html[data-rr] a:focus-visible,
+html[data-rr] button:focus-visible,
+html[data-rr] input:focus-visible,
+html[data-rr] select:focus-visible,
+html[data-rr] textarea:focus-visible,
+html[data-rr] [tabindex]:focus-visible {
+    outline: 2px solid var(--rr-accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+}
+
+/* ---- Page frame ------------------------------------------------- */
+
+/* The whole page sits inside one layout table. Left as a table it
+   computes a minimum width from its widest cell, which is what makes
+   the board scroll sideways on a phone no matter what the cells do.
+   Turning the wrapper into blocks removes that floor. */
+html[data-rr] table.bodyline,
+html[data-rr] table.bodyline > tbody,
+html[data-rr] table.bodyline > tbody > tr,
+html[data-rr] table.bodyline > tbody > tr > td {
+    display: block;
+    width: auto;
+    max-width: none;
+    background: transparent;
+    border: 0;
+    padding: 0;
+}
+
+html[data-rr] #wrapcentre,
+html[data-rr] #wrapfooter {
+    max-width: var(--rr-content-max);
+    margin: 0 auto;
+    padding: 0 var(--rr-s5);
+    box-sizing: border-box;
+}
+html[data-rr] #wrapcentre { padding-top: var(--rr-s5); padding-bottom: var(--rr-s6); }
+
+/* The original 340px-tall masthead is replaced by rr-nav; the node stays
+   in the DOM because other userscripts read it, but leaves the flow. */
+html[data-rr][data-rr-nav="on"] #wrapheader { display: none; }
+
+/* ---- Tables ----------------------------------------------------- */
+
+/* The gap between one post and the next, and between one block and
+   the next on a listing page. The token for it existed from the start
+   and was never actually applied to anything: the only thing holding
+   two posts apart was whatever <br> the template happened to leave
+   between them, which is why a thread read as one continuous slab. */
+html[data-rr] table.tablebg,
+html[data-rr] table.forumline {
+    margin-bottom: var(--rr-post-gap);
+    background: var(--rr-line);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius-lg);
+    border-spacing: 0 !important;
+    border-collapse: separate;
+    overflow: hidden;
+    width: 100%;
+}
+
+html[data-rr] th {
+    background: var(--rr-surface-2);
+    color: var(--rr-muted);
+    font-size: var(--rr-fs-xs);
+    font-weight: 600;
+    letter-spacing: .02em;
+    text-align: left;
+    padding: var(--rr-s2) var(--rr-s3);
+    border: 0;
+    border-bottom: 1px solid var(--rr-line);
+    background-image: none;
+    height: auto;
+    white-space: nowrap;
+}
+
+/* Category bars are the one piece of phpBB furniture worth keeping:
+   every board has them, and a tinted bar with an accent edge reads as
+   a section head at a glance. Toned right down from the original. */
+html[data-rr] td.cat,
+html[data-rr] td.catHead,
+html[data-rr] td.catBottom,
+html[data-rr] th.thHead {
+    background: linear-gradient(
+        to right,
+        color-mix(in srgb, var(--rr-accent) 10%, var(--rr-surface-2)),
+        var(--rr-surface-2) 260px
+    );
+    color: var(--rr-text-strong);
+    font-weight: 650;
+    font-size: var(--rr-fs-sm);
+    padding: var(--rr-s2) var(--rr-s3);
+    border: 0;
+    border-bottom: 1px solid var(--rr-line);
+    box-shadow: inset 2px 0 0 var(--rr-accent);
+}
+html[data-rr] td.cat h4,
+html[data-rr] td.cat a { color: var(--rr-text-strong); margin: 0; font-size: var(--rr-fs-sm); }
+
+/* A category row is one cell plus a few empty ones the table needs to
+   keep its columns. Tinting the whole row stops it reading as a bar
+   that runs out halfway across. */
+html[data-rr] tr:has(> td.cat) > td {
+    background: var(--rr-surface-2);
+    border-bottom: 1px solid var(--rr-line);
+}
+
+/* The collapse control is an <input type="button"> the original theme
+   dressed with a background image. Here it becomes a chevron that
+   points the way the click will move things. */
+html[data-rr] td.catdiv { text-align: right; }
+html[data-rr] input.ccopen[type="button"],
+html[data-rr] input.ccclose[type="button"] {
+    width: 26px;
+    height: 22px;
+    padding: 0;
+    font-size: 0;
+    background: transparent no-repeat center / 13px 13px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b95a3' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    border: 1px solid transparent;
+    border-radius: var(--rr-radius);
+    cursor: pointer;
+    transition: background-color var(--rr-speed) ease, transform var(--rr-speed) ease;
+}
+html[data-rr] input.ccopen[type="button"] { transform: rotate(-90deg); }
+html[data-rr] input.ccopen[type="button"]:hover,
+html[data-rr] input.ccclose[type="button"]:hover { background-color: var(--rr-surface-3); border-color: var(--rr-line); }
+
+/* Some .cat cells are not section heads at all: they hold the print /
+   previous / next strip, or the "Display posts from previous / Sort by
+   / Go" controls a listing ends with. Those get the surface without
+   the accent — the tinted edge marks a block of content, and a row of
+   form controls is not one. */
+html[data-rr] td.cat:has(> table),
+html[data-rr] td.cat:has(select),
+html[data-rr] td.cat:has(input[type="submit"]) {
+    background: var(--rr-surface-2);
+    box-shadow: none;
+    font-weight: 400;
+}
+html[data-rr] td.cat:has(> table) a { color: var(--rr-muted); font-weight: 500; }
+html[data-rr] td.cat:has(> table) a:hover { color: var(--rr-text-strong); }
+
+/* The template puts these classes on <tr> as well as <td>, and the
+   original stylesheet colours both. A row left uncovered keeps its
+   near-black background, which is invisible on a dark theme and very
+   visible on a light one. */
+html[data-rr] tr.row1,
+html[data-rr] tr.row2,
+html[data-rr] tr.row3,
+html[data-rr] tr.row4,
+html[data-rr] tr.row5 { background: var(--rr-surface); }
+html[data-rr] tr.row4,
+html[data-rr] tr.row5 { background: var(--rr-surface-2); }
+
+html[data-rr] td.row1,
+html[data-rr] td.row2,
+html[data-rr] td.row3,
+html[data-rr] td.row4,
+html[data-rr] td.row5 {
+    background: var(--rr-surface);
+    border: 0;
+    border-bottom: 1px solid var(--rr-line);
+    padding: var(--rr-row-pad) var(--rr-s3);
+    vertical-align: middle;
+    transition: background var(--rr-speed) ease;
+}
+html[data-rr] td.row4,
+html[data-rr] td.row5 { background: var(--rr-surface-2); }
+
+/* Alternating rows.
+
+   The board alternates row1 and row2 down every listing, and that
+   banding is how a reader tracks one topic's title across to its last
+   post without losing the line. Painting both the same colour is what
+   made a 108-topic page read as one undifferentiated block.
+
+   Only listings get it: lists.js marks those tables, because in a topic
+   the same two classes wrap whole posts and striping those would band
+   the thread rather than the rows. */
+html[data-rr] table[data-rr-list] td.row2 { background: var(--rr-surface-2); }
+
+/* Whole-row hover, which the table markup cannot express by itself. */
+html[data-rr] tr:hover > td.row1,
+html[data-rr] tr:hover > td.row2 { background: var(--rr-surface-3); }
+
+html[data-rr] tr:last-child > td { border-bottom: 0; }
+
+/* The marker gutter: read/unread, and whether the topic is bookmarked.
+
+   Scoped to listings on purpose. lists.js labels the columns of every
+   table it can find a header row for, and "icon" only means a marker
+   column in a listing — on the login page the same label lands on a
+   cell holding a paragraph of prose, and a nowrap there stretched the
+   page to 3275px. Every column rule below carries the same scope. */
+html[data-rr] table[data-rr-list] td[data-rr-col="icon"] {
+    /* min-width, not width: the title column asks for 100% and would
+       otherwise squeeze this one down onto the marker. */
+    min-width: 44px;
+    padding-left: var(--rr-s2);
+    padding-right: 0;
+    white-space: nowrap;
+    text-align: left;
+}
+html[data-rr] table[data-rr-list] td[data-rr-col="icon"] .rr-dot { margin: 0 2px; }
+html[data-rr] .rr-star {
+    width: 22px;
+    height: 22px;
+    vertical-align: middle;
+    /* Quiet until it means something, or until the row is under the
+       pointer: a column of bright stars beside unstarred rows is
+       noise, and this column is read at a glance or not at all. */
+    opacity: .28;
+}
+html[data-rr] tr:hover .rr-star,
+html[data-rr] .rr-star:focus-visible,
+html[data-rr] .rr-star[aria-pressed="true"] { opacity: 1; }
+html[data-rr] .rr-star[aria-pressed="true"] { color: var(--rr-accent); }
+
+/* A listing cell holds one line of type; the description under a forum
+   name is the exception and sets its own. */
+html[data-rr] td.row1,
+html[data-rr] td.row2 { line-height: var(--rr-lh-meta); }
+
+/* Replies, views, author and last post are supporting detail beside the
+   title, not four more columns of body text. The template wraps each in
+   a <p>, which the reset above gave the reading line-height and the
+   browser gives a margin: two of them stacked in the Last post cell is
+   what set the height of every row in the listing. */
+html[data-rr] td.row1 p,
+html[data-rr] td.row2 p,
+html[data-rr] td.row1 > span.gensmall,
+html[data-rr] td.row2 > span.gensmall {
+    margin: 0;
+    line-height: var(--rr-lh-meta);
+    font-size: var(--rr-fs-sm);
+}
+html[data-rr] td.row1 p.topicauthor,
+html[data-rr] td.row2 p.topicauthor { color: var(--rr-muted); }
+
+/* The joined Last post line. It wraps rather than clipping: two lines
+   is where it started, and a truncated username is worse than both. */
+html[data-rr] p.rr-lastpost { line-height: var(--rr-lh-meta); }
+html[data-rr] p.rr-lastpost .rr-sep { color: var(--rr-faint); margin: 0 5px; }
+
+/* The narrow columns.
+
+   A listing is laid out by the browser's automatic algorithm, which
+   sizes a column to the widest thing in it. Nothing here overrides
+   that with pixel widths — under automatic layout a width on a cell is
+   a hint the browser is free to ignore, and it does. What does work is
+   telling it these columns never need to wrap: a count and a heading
+   then claim exactly their own width, and everything left over goes to
+   the title, which is the one column whose content has no natural
+   width and the one whose wrapping sets the height of the row. */
+html[data-rr] table[data-rr-list] th,
+html[data-rr] table[data-rr-list] td[data-rr-col="replies"],
+html[data-rr] table[data-rr-list] td[data-rr-col="views"],
+html[data-rr] table[data-rr-list] td[data-rr-col="topics"],
+html[data-rr] table[data-rr-list] td[data-rr-col="posts"] { white-space: nowrap; }
+
+/* One alignment per column, heading and cells together.
+
+   The template aligns each cell on its own with an align attribute, so
+   a column could and did disagree with its own heading: Author left in
+   the heading and centred in the rows, Views right in the rows under a
+   heading asking to be centred. Both are keyed on the column name now,
+   which labelColumns() puts on the <th> as well as the <td>.
+
+   Counts are right aligned on tabular figures, so the digits of one row
+   sit over the digits of the next and a column of numbers can be read
+   down rather than across. Everything with words in it is left
+   aligned. */
+html[data-rr] table[data-rr-list] [data-rr-col="replies"],
+html[data-rr] table[data-rr-list] [data-rr-col="views"],
+html[data-rr] table[data-rr-list] [data-rr-col="topics"],
+html[data-rr] table[data-rr-list] [data-rr-col="posts"] {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+html[data-rr] table[data-rr-list] [data-rr-col="title"],
+html[data-rr] table[data-rr-list] [data-rr-col="author"],
+html[data-rr] table[data-rr-list] [data-rr-col="last"] { text-align: left; }
+html[data-rr] table[data-rr-list] [data-rr-col="icon"] { text-align: center; }
+
+/* The board writes align="center" on every count cell, and an attribute
+   on the element beats a stylesheet rule of equal weight. */
+html[data-rr] table[data-rr-list] td[data-rr-col][align] { text-align: inherit; }
+html[data-rr] table[data-rr-list] tr > td[data-rr-col="replies"][align],
+html[data-rr] table[data-rr-list] tr > td[data-rr-col="views"][align],
+html[data-rr] table[data-rr-list] tr > td[data-rr-col="topics"][align],
+html[data-rr] table[data-rr-list] tr > td[data-rr-col="posts"][align] { text-align: right; }
+html[data-rr] table[data-rr-list] tr > td[data-rr-col="author"][align],
+html[data-rr] table[data-rr-list] tr > td[data-rr-col="last"][align] { text-align: left; }
+
+/* And the title column claims what is left.
+   Under automatic layout a cell asking for 100% is given every pixel
+   the other columns do not need, which is the one width declaration the
+   algorithm does honour. Without it, joining the last-post lines made
+   that column wide enough to want a single line, and it took the room
+   out of the titles: rows stopped stacking their date and started
+   stacking their title instead, which is a worse trade.
+
+   The heading is asked by name rather than by position. A forum listing
+   heads the marker and the title with one spanned cell, so the first
+   heading is the title's; a search results page heads the marker on its
+   own, and there `th:first-child` handed the whole page to the marker
+   gutter and left the titles in a 177px column against the right-hand
+   edge. */
+html[data-rr] table[data-rr-list] td[data-rr-col="title"],
+html[data-rr] table[data-rr-list] th[data-rr-col="title"] { width: 100%; }
+
+html[data-rr] .forumlink,
+html[data-rr] .topictitle {
+    color: var(--rr-text-strong);
+    font-size: var(--rr-fs);
+    font-weight: 600;
+    line-height: var(--rr-lh-title);
+}
+html[data-rr] .forumlink:hover,
+html[data-rr] .topictitle:hover { color: var(--rr-accent); text-decoration: none; }
+html[data-rr] .forumdesc { margin: 5px 0 0; line-height: 1.5; max-width: var(--rr-measure); }
+
+html[data-rr] .breadcrumbs { margin: 0; font-size: var(--rr-fs-sm); color: var(--rr-muted); }
+html[data-rr] a.breadcrumbs { color: var(--rr-muted); font-weight: 500; }
+html[data-rr] a.breadcrumbs:hover { color: var(--rr-text); }
+
+html[data-rr] h1, html[data-rr] h2, html[data-rr] h3 {
+    color: var(--rr-text-strong);
+    font-weight: 650;
+    letter-spacing: -.01em;
+    line-height: 1.2;
+    margin: 0 0 var(--rr-s3);
+}
+html[data-rr] #pageheader h2 {
+    font-size: calc(var(--rr-fs) + 5px);
+    /* The heading is a tag followed by the title. Laid out as a flex
+       row with a baseline alignment the two share a baseline whatever
+       the type sizes are, which line-box arithmetic on an inline-flex
+       badge could only approximate. */
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0;
+}
+html[data-rr] #pageheader h2 > .rr-tag { align-self: center; }
+html[data-rr] #pageheader h2 a.titles { color: var(--rr-text-strong); }
+
+/* ---- Posts ------------------------------------------------------ */
+
+html[data-rr] .postbody {
+    font-family: var(--rr-font);
+    font-size: var(--rr-fs);
+    line-height: var(--rr-lh);
+    color: var(--rr-text);
+    max-width: var(--rr-measure);
+}
+html[data-rr] .postbody img { max-width: 100%; height: auto; border-radius: var(--rr-radius); }
+html[data-rr] .postdetails { color: var(--rr-muted); font-size: var(--rr-fs-sm); }
+html[data-rr] .postauthor { color: var(--rr-text-strong); font-weight: 650; font-size: var(--rr-fs); }
+
+/* The author column: quiet supporting detail beside the message, not a
+   second column of equal weight. */
+html[data-rr] td.profile {
+    background: var(--rr-surface-2);
+    width: 168px;
+    vertical-align: top;
+}
+html[data-rr] td.profile,
+html[data-rr] td.profile .postdetails {
+    font-size: var(--rr-fs-xs);
+    color: var(--rr-faint);
+    line-height: 1.5;
+}
+html[data-rr] td.profile b,
+html[data-rr] td.profile strong { color: var(--rr-muted); font-weight: 600; }
+html[data-rr] td.profile img {
+    max-width: 110px;
+    height: auto;
+    border-radius: var(--rr-radius);
+    margin: var(--rr-s2) 0;
+}
+/* The inner table carries width="150"; giving it a real width is what
+   stops the auto layout collapsing the column to 60px. */
+html[data-rr] td.profile > table { width: 150px !important; }
+
+/* ---- Modern post layout ------------------------------------------ */
+
+/* With the author moved into a header strip, the column and the
+   template's own subject row have nothing left to show. */
+html[data-rr][data-rr-posts="modern"] td.profile { display: none; }
+html[data-rr][data-rr-posts="modern"] table.tablebg > tbody > tr > td[valign="top"] { width: auto; }
+html[data-rr][data-rr-posts="modern"] b.postauthor { display: none; }
+html[data-rr][data-rr-posts="modern"] table.tablebg > tbody > tr > td[align="center"][valign="middle"] { display: none; }
+html[data-rr][data-rr-posts="modern"] table.tablebg th { display: none; }
+
+/* The template pads the space under a message with bare <br> tags that
+   used to separate the signature and the edit controls. With those
+   restyled, each post ends in 40px of empty line boxes. */
+html[data-rr][data-rr-posts="modern"] .rr-posthead ~ br { display: none; }
+
+/* Spoilers: the board draws them with an inline-styled button. */
+html[data-rr] .spoiler {
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+    padding: var(--rr-s3) var(--rr-s4);
+    margin: var(--rr-s4) 0;
+}
+html[data-rr] .spoiler input[type="button"] {
+    width: auto !important;
+    font-size: var(--rr-fs-xs) !important;
+    padding: 3px 10px !important;
+    background: var(--rr-surface-3);
+    color: var(--rr-text);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius);
+    cursor: pointer;
+}
+
+html[data-rr] .postbody a { color: var(--rr-link); }
+html[data-rr] .postbody a:visited { color: var(--rr-link-visited); }
+
+/* Quotes: a rule and a tint, not a boxed card. */
+html[data-rr] blockquote,
+html[data-rr] .quotecontent {
+    background: var(--rr-surface-2);
+    border: 0;
+    border-left: 3px solid var(--rr-line-strong);
+    border-radius: 0 var(--rr-radius) var(--rr-radius) 0;
+    margin: var(--rr-s4) 0;
+    padding: var(--rr-s3) var(--rr-s4);
+    color: var(--rr-muted);
+    font-size: var(--rr-fs-sm);
+}
+html[data-rr] blockquote blockquote { background: var(--rr-surface-3); }
+html[data-rr] .quotetitle,
+html[data-rr] blockquote > cite {
+    display: block;
+    color: var(--rr-text);
+    font-style: normal;
+    font-weight: 600;
+    font-size: var(--rr-fs-xs);
+    margin-bottom: var(--rr-s1);
+    border: 0;
+    background: none;
+    padding: 0;
+}
+
+html[data-rr] .codetitle,
+html[data-rr] .code,
+html[data-rr] pre {
+    font-family: var(--rr-font-mono);
+    font-size: var(--rr-fs-sm);
+    line-height: 1.55;
+}
+html[data-rr] .codetitle {
+    background: var(--rr-surface-3);
+    color: var(--rr-muted);
+    border: 1px solid var(--rr-line);
+    border-bottom: 0;
+    border-radius: var(--rr-radius) var(--rr-radius) 0 0;
+    padding: var(--rr-s1) var(--rr-s2);
+    font-family: var(--rr-font);
+    font-size: var(--rr-fs-xs);
+}
+html[data-rr] .code {
+    background: var(--rr-bg-sunken);
+    color: var(--rr-text);
+    border: 1px solid var(--rr-line);
+    border-radius: 0 0 var(--rr-radius) var(--rr-radius);
+    padding: var(--rr-s4);
+    overflow-x: auto;
+}
+
+html[data-rr] .username-coloured,
+html[data-rr] .postauthor a { font-weight: 600; }
+
+html[data-rr] hr { border: 0; border-top: 1px solid var(--rr-line); margin: var(--rr-s4) 0; }
+
+/* ---- Forms ------------------------------------------------------ */
+
+html[data-rr] input[type="text"],
+html[data-rr] input[type="password"],
+html[data-rr] input[type="search"],
+html[data-rr] input[type="email"],
+html[data-rr] select,
+html[data-rr] textarea,
+html[data-rr] .inputbox,
+html[data-rr] .post {
+    background: var(--rr-bg-sunken);
+    color: var(--rr-text);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius);
+    padding: var(--rr-s2) var(--rr-s3);
+    font-family: var(--rr-font);
+    font-size: var(--rr-fs-sm);
+    line-height: 1.4;
+    transition: border-color var(--rr-speed) ease;
+    box-sizing: border-box;
+    max-width: 100%;
+}
+html[data-rr] textarea,
+html[data-rr] textarea.post { font-family: var(--rr-font); line-height: var(--rr-lh); }
+html[data-rr] input:hover,
+html[data-rr] select:hover,
+html[data-rr] textarea:hover { border-color: var(--rr-faint); }
+html[data-rr] input:focus,
+html[data-rr] select:focus,
+html[data-rr] textarea:focus { border-color: var(--rr-accent); outline: none; }
+html[data-rr] ::placeholder { color: var(--rr-faint); }
+
+html[data-rr] input.button1,
+html[data-rr] input.button2,
+html[data-rr] input[type="submit"],
+html[data-rr] input[type="button"],
+html[data-rr] input[type="reset"] {
+    background: var(--rr-surface-3);
+    color: var(--rr-text);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius);
+    padding: var(--rr-s2) var(--rr-s4);
+    font-family: var(--rr-font);
+    font-size: var(--rr-fs-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--rr-speed) ease, border-color var(--rr-speed) ease;
+}
+html[data-rr] input.button1:hover,
+html[data-rr] input[type="submit"]:hover {
+    background: var(--rr-accent);
+    border-color: var(--rr-accent);
+    color: var(--rr-accent-text);
+}
+
+/* ---- Legacy imagery --------------------------------------------- */
+
+/* The GIF interface is swapped out in JS (see icons.js); these are the
+   styles for what replaces it. Read state becomes a dot, because the
+   distinction is worth one glance, not a beveled checkbox. */
+
+html[data-rr] img[src$="spacer.gif"] { display: none; }
+
+/* Three states, one mark, and each of them legible on its own.
+
+   Read used to be a filled dot in --rr-line-strong, which against the
+   page is a smudge: on a listing where every row is read the whole
+   column said nothing, and beside a title the mark was easy to miss
+   entirely. It is a ring now, in the same grey as the meta text, so it
+   reads as deliberately empty rather than as a dot that failed to
+   paint. Unread stays a filled accent dot — the one state worth the
+   board's accent colour — and a row this browser has already been to
+   fills the ring in grey.
+
+   The ring is a border rather than an inset shadow: the locked variant
+   below owns box-shadow, and a mark can be both.
+
+   This is also the *only* signal for read state. The topic title used
+   to be greyed out as well on rows already opened, which put two faint
+   marks on one fact and cost the title its contrast. */
+.rr-dot {
+    display: inline-block;
+    box-sizing: border-box;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: 2px solid var(--rr-muted);
+    background: transparent;
+    vertical-align: middle;
+}
+.rr-dot[data-state="unread"] { border-color: var(--rr-accent); background: var(--rr-accent); }
+html[data-rr] [data-rr-visited] .rr-dot[data-state="read"] { background: var(--rr-muted); }
+.rr-dot[data-locked] { box-shadow: 0 0 0 2px var(--rr-surface), 0 0 0 3px var(--rr-line-strong); opacity: .6; }
+
+.rr-latest { color: var(--rr-faint); vertical-align: -2px; }
+a:hover > .rr-latest { color: var(--rr-accent); }
+
+/* "[ Go to page: 1 ... 41, 42, 43 ]" under a long topic's title.
+   Two things were wrong with it. The size it asks for here never
+   applied: `td.row1 p` above is one element more specific, so the
+   strip rendered at the same 13px as the title's own meta line and
+   competed with it. And the numbers are a run of touching 12px links
+   with no box around any of them — the densest thing on the page and
+   the one most often aimed at with a pointer.
+
+   Both selectors below carry the cell, so they win where the old one
+   lost; each number gets a real hit target, and the strip finally
+   reads as the secondary thing it is. */
+html[data-rr] td.row1 p.rr-pagejump,
+html[data-rr] td.row2 p.rr-pagejump {
+    margin: 5px 0 0;
+    color: var(--rr-faint);
+    font-size: var(--rr-fs-xs);
+    line-height: 1.35;
+}
+/* The air this strip needed was sideways, and height is the one thing a
+   108-row page cannot spend: seventy of those rows carry one of these,
+   so a pixel here is seventy down the page.
+
+   Padding on an inline box is exactly that trade — it widens the hit
+   target without touching the line box, so each number gets something
+   to aim at and the row is the height it was. A flex row was tried
+   first and it also pulled the template's own commas out into flex
+   items of their own, which put a space in front of every one of
+   them: "41 , 42 , 43". */
+html[data-rr] p.rr-pagejump a {
+    /* The padding is the hit target; the negative margin gives the
+       spacing back, so the template's own commas still hug the number
+       in front of them instead of floating five pixels off it. */
+    padding: 2px 5px;
+    margin: 0 -3px;
+    border-radius: 4px;
+    color: var(--rr-muted);
+    font-variant-numeric: tabular-nums;
+}
+html[data-rr] p.rr-pagejump a:hover {
+    background: var(--rr-surface-3);
+    color: var(--rr-text-strong);
+    text-decoration: none;
+}
+
+/* ---- Duplicated chrome ------------------------------------------- */
+
+/* The breadcrumb now lives in the top bar; the template's copy, its
+   empty category strip and the wall of vertical space around the forum
+   title are all redundant once it does. */
+html[data-rr][data-rr-nav="on"] td.row5 > p.breadcrumbs { display: none; }
+html[data-rr][data-rr-nav="on"] td.row5 {
+    padding: var(--rr-s2) var(--rr-s3);
+    border-radius: var(--rr-radius-lg);
+}
+html[data-rr][data-rr-nav="on"] td.row5:has(> #search-box) { display: flex; justify-content: flex-end; }
+
+/* The template floats the links inside this paragraph, so without a
+   containing block the heading below rides up onto the same line. */
+html[data-rr] p.searchbar {
+    display: flow-root;
+    margin: 0 0 var(--rr-s3);
+    font-size: var(--rr-fs-sm);
+}
+html[data-rr] p.searchbar > span { float: none !important; }
+html[data-rr] p.searchbar a { color: var(--rr-muted); }
+html[data-rr] p.searchbar a:hover { color: var(--rr-accent); }
+
+html[data-rr] #pageheader { margin-bottom: var(--rr-s3); }
+html[data-rr] #pageheader h2 { margin: 0; }
+/* The template spaces its blocks with bare <br>. Once the strips
+   around them are restyled or hidden, each one is a 19px band of
+   nothing; the one directly under <body> is what put 25px between the
+   top bar and the first line of content. */
+html[data-rr] #pageheader br,
+html[data-rr] body > br,
+html[data-rr] #wrapcentre > br { display: none; }
+
+/* The forum name renders as a bare <h2> outside #pageheader on listing
+   pages, where the template relied on a 40px gap to separate it. */
+/* The forum name. It was set at the page-title size with 24px above
+   it, which on a listing page repeats what the breadcrumb two lines up
+   already says, at twice the weight and a whole screen-band of its
+   own. It reads as a heading at the section size. */
+html[data-rr] #wrapcentre > h2,
+html[data-rr] #wrapcentre > form > h2 {
+    font-size: var(--rr-fs-lg);
+    margin: var(--rr-s4) 0 var(--rr-s2);
+}
+html[data-rr] #wrapcentre > p.searchbar:first-child { margin-top: 0; }
+html[data-rr][data-rr-nav="on"] #wrapcentre { padding-top: var(--rr-s4); }
+
+/* Category strips the template leaves empty. */
+html[data-rr] td.cat:empty,
+html[data-rr] tr:has(> td.cat:empty) { display: none; }
+
+/* ---- Donation overlay ------------------------------------------- */
+
+html[data-rr] #overlay {
+    background: rgba(10, 12, 16, .72);
+    backdrop-filter: blur(3px);
+}
+html[data-rr] #overlaytext {
+    background: var(--rr-surface);
+    color: var(--rr-text);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-lg);
+    box-shadow: var(--rr-shadow-pop);
+    padding: var(--rr-s5);
+    max-width: 560px;
+}
+html[data-rr] #overlayconfirmbtn {
+    background: var(--rr-accent);
+    color: var(--rr-accent-text);
+    border-radius: var(--rr-radius);
+    font-weight: 600;
+}

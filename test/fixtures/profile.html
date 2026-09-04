@@ -1,0 +1,568 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-gb" xml:lang="en-gb">
+<head>
+
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<meta http-equiv="content-language" content="en-gb" />
+<meta http-equiv="content-style-type" content="text/css" />
+<meta http-equiv="imagetoolbar" content="no" />
+<meta name="resource-type" content="document" />
+<meta name="distribution" content="global" />
+<meta name="keywords" content="" />
+<meta name="description" content="Cracking Steam and coding Steam related tools and emulators since 2003. Get all Steam games you want and play them the way you want to - for free!" />
+<meta name="robots" content="noindex,nofollow" />
+
+<title>CS RIN - Steam Underground &bull; Login</title>
+
+<link rel="alternate" type="application/atom+xml" title="Feed - CS RIN - Steam Underground" href="https://cs.rin.ru/forum/feed.php" /><link rel="alternate" type="application/atom+xml" title="Feed - All forums" href="https://cs.rin.ru/forum/feed.php?mode=forums" /><link rel="alternate" type="application/atom+xml" title="Feed - New Topics" href="https://cs.rin.ru/forum/feed.php?mode=topics" /><link rel="alternate" type="application/atom+xml" title="Feed - Active Topics" href="https://cs.rin.ru/forum/feed.php?mode=topics_active" />
+
+<link rel="stylesheet" href="./styles/rinDark/theme/stylesheet.css" type="text/css" />
+<!-- <script type="text/javascript" src="./mobiquo/tapatalkdetect.js"></script> -->
+<script type="text/javascript" src="./styles/subsilver2/template/forum_fn.js"></script>
+<!-- <script type="text/javascript" src="//yandex.st/share/share.js" charset="utf-8"></script>-->
+<script type="text/javascript">
+// <![CDATA[
+
+
+function popup(url, width, height, name)
+{
+	if (!name)
+	{
+		name = '_popup';
+	}
+
+	window.open(url.replace(/&amp;/g, '&'), name, 'height=' + height + ',resizable=yes,scrollbars=yes,width=' + width);
+	return false;
+}
+
+function jumpto()
+{
+	var page = prompt('Enter the page number you wish to go to:', '');
+	var per_page = '';
+	var base_url = '';
+
+	if (page !== null && !isNaN(page) && page == Math.floor(page) && page > 0)
+	{
+		if (base_url.indexOf('?') == -1)
+		{
+			document.location.href = base_url + '?start=' + ((page - 1) * per_page);
+		}
+		else
+		{
+			document.location.href = base_url.replace(/&amp;/g, '&') + '&start=' + ((page - 1) * per_page);
+		}
+	}
+}
+
+/**
+* Find a member
+*/
+function find_username(url)
+{
+	popup(url, 760, 570, '_usersearch');
+	return false;
+}
+
+/**
+* Mark/unmark checklist
+* id = ID of parent container, name = name prefix, state = state [true/false]
+*/
+function marklist(id, name, state)
+{
+	var parent = document.getElementById(id);
+	if (!parent)
+	{
+		eval('parent = document.' + id);
+	}
+
+	if (!parent)
+	{
+		return;
+	}
+
+	var rb = parent.getElementsByTagName('input');
+	
+	for (var r = 0; r < rb.length; r++)
+	{
+		if (rb[r].name.substr(0, name.length) == name)
+		{
+			rb[r].checked = state;
+		}
+	}
+}
+
+
+
+// ]]>
+
+// RIN donation overlay
+//subsilver2
+window.onload = onloadFunction;
+//proSilver
+if (!(typeof onload_functions === 'undefined')) {
+	onload_functions.push('onloadFunction();');
+} 
+
+function overlayconfirm() {
+  document.getElementById("overlay").style.display = "none";
+  document.cookie = "csrin_overlay=0; path=/forum; max-age=31536000";
+}
+
+function onloadFunction()
+{
+    // RIN donation overlay
+    // if cookie NOT set, display
+    var decodedCookie = decodeURIComponent(document.cookie);
+    if (decodedCookie.search("csrin_overlay=0") === -1)
+    {
+        //document.getElementById("overlay").style.display = "block";
+    }
+}
+
+// RIN: load page in the background
+function loadAsync(page, returnTarget, returnText, returnClass) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onload = () => {
+        if (xhttp.readyState === XMLHttpRequest.DONE) {
+            if (xhttp.status === 200) {
+                console.log("yay");
+                var successText = document.createElement("span");
+                successText.innerHTML = returnText;
+                successText.className = returnClass;
+                returnTarget.replaceWith(successText);
+            } else {
+                console.error(xhttp.statusText);
+            }
+        }
+    };
+    xhttp.open("GET", page, true);
+    xhttp.send();
+}
+
+// RIN image resizer
+function resizeimg(img)
+{
+    if (img.style.maxHeight == 'none')
+        img.style.maxHeight = '250px';
+    else
+        img.style.maxHeight = 'none';
+}
+</script>
+
+<!-- Malicious filehosts -->
+<script type="text/javascript">
+function reveal_unsafe(e) {
+  e.style.display = "none";
+  e.parentElement.getElementsByClassName('link_unsafe')[0].style.display = "inline";
+}
+</script>
+<style></style>
+<style>
+.link_unsafe_overlay {
+  --warning-color: red;
+  border-style:dashed;
+  border-color: var(--warning-color);
+  border-width: thin;
+  width: fit-content;
+  display: inline-block;
+  color: var(--warning-color);
+}
+
+.link_unsafe_overlay2 {
+  --warning-color: orange;
+  border-style:dashed;
+  border-color: var(--warning-color);
+  border-width: thin;
+  width: fit-content;
+  display: inline-block;
+  color: var(--warning-color);
+}
+
+.link_unsafe_reveal {
+  cursor: pointer;
+  color: #AAAAAA;
+}
+
+.link_unsafe {
+  display: none;
+}
+
+.link_unsafe_note {
+  font-size: 0.8em;
+  vertical-align: super;
+  position: relative;
+}
+
+.tooltip {
+  border-bottom: 1px dotted green;
+  color: green;
+  cursor: pointer;
+}
+
+.tooltiptext {
+  visibility: hidden;
+  font-size: 1.3em;
+  width: 22em;
+  color: var(--warning-color);
+  background-color: black;
+  text-align: center;
+  padding: 0.5em 0.5em;
+  border-radius: 6px;
+  position: absolute;
+  cursor: default;
+  z-index: 1;
+  top: 100%;
+  left: -13em;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+</style>
+
+<!-- Donation overlay --><!-- duplicated here because of caching issues -->
+<style>
+#overlay {
+  position: fixed;
+  width: 40%;
+  height: 40%;
+  top: 50%;
+  left: 50%;
+  margin-right: -50%; 
+  right: 0;
+  bottom: 0;
+  min-width: 300px;
+  min-height: 300px;
+  background-color: rgba(0,0,0,0.9);
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  border: 1px solid #777777;
+  display: none;
+}
+
+#overlaytext {
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  font-size: 1.2em;
+  color: white;
+  transform: translate(-5%,-5%);
+  -ms-transform: translate(-5%,-5%);
+}
+
+#overlayconfirmbtn {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%); 
+  bottom: 0px;
+  font-size: 1.2em;
+  padding: 1px 5px;
+}
+</style>
+<!-- RIN: image resize and page stretch fix -->
+<style>
+.postbody img,
+.postbody ~ table img {
+  max-width: 95%;
+  max-height: 250px;
+}
+</style>
+
+</head>
+<body class="ltr">
+
+<!-- Donation overlay -->
+<div id="overlay">
+  <div id="overlaytext">
+  <p align="center">We need your help!</p>
+  <br /><br />
+  <p>For 17 years, this forum has served us as a platform for sharing games with each other, graciously hosted by the owner of RIN for all this time. Sadly, he can no longer afford our server.</p>
+  <br /><br />
+  <p>To keep this forum alive, we need your help with covering the hosting expenses.</p>
+  <br /><br />
+  <p>For more information, click <a href="../donate" target="_blank" onclick="overlayconfirm()">here</a>.</p>
+  
+  </div>
+  <a id="overlayconfirmbtn" onclick="overlayconfirm()" href="javascript:overlayconfirm();">Close</a>
+</div>
+
+<table align="center" width="100%" class="bodyline">
+	<tr>
+		<td>
+<a name="top"></a>		
+<div id="wrapheader">
+
+	<div id="logodesc">
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td><a href="./index.php?sid=1cbe607e0d94fdd9a8622a52d6de248d"><img src="./styles/rinDark/imageset/site_logo-1.png" alt="Logo" title="Logo" /></a></td>
+			<td width="100%" align="center"><h1>CS RIN - Steam Underground</h1><span class="gen">cs.rin.ru | csrin.org | The password is usually one of these.</span></td>
+		</tr>
+		</table>
+	</div>
+
+	<div id="menubar">
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				<a href="./viewtopic.php?f=10&amp;t=44034&amp;sid=1cbe607e0d94fdd9a8622a52d6de248d"><img src="./styles/rinDark/theme/images/icon_mini_rules.gif" width="14" height="14" alt="*" /> Forum rules</a>
+                &nbsp;:: &nbsp;<a href="../donate"><img src="./styles/rinDark/theme/images/icon_donate.gif" width="14" height="14" alt="*" /> Donate</a>
+			</td>
+			<td class="genmed" align="right">
+                <a href="chat.php"><img src="./styles/rinDark/theme/images/icon_mini_irc.gif" width="14" height="14" alt="*" /> Chat</a>
+				&nbsp;:: &nbsp;<a href="./viewtopic.php?f=10&amp;t=98158&amp;sid=1cbe607e0d94fdd9a8622a52d6de248d"><img src="./styles/rinDark/theme/images/icon_mini_faq.gif" width="12" height="13" alt="*" /> FAQ</a><!--<sup style="color:#FF0000;"> new!</sup>-->
+				
+			</td>
+		</tr>
+		</table>
+		<br>
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				 &nbsp;<a href="./ucp.php?mode=register&amp;sid=1cbe607e0d94fdd9a8622a52d6de248d"><img src="./styles/rinDark/theme/images/icon_mini_register.gif" width="12" height="13" alt="*" /> Register</a>
+					
+			</td>
+			<td class="genmed" align="right">
+				<a href="./search.php?sid=1cbe607e0d94fdd9a8622a52d6de248d"><img src="./styles/rinDark/theme/images/icon_mini_search.gif" width="12" height="13" alt="*" /> Search</a>
+                        &nbsp;:: &nbsp;<a href="./ucp.php?mode=login&amp;sid=1cbe607e0d94fdd9a8622a52d6de248d"><img src="./styles/rinDark/theme/images/icon_mini_login.gif" width="12" height="13" alt="*" /> Login</a>
+				
+			</td>
+		</tr>
+		</table>
+		
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				
+			</td>
+		</tr>
+		</table>
+	</div>
+
+	<div id="datebar">
+		<table width="100%" cellspacing="0">
+			<td class="gensmall"></td>
+            
+			<td class="gensmall" align="right">It is currently Friday, 04 Sep 2026, 01:41<br /></td>
+		</tr>
+		</table>
+	</div>
+
+	<div>
+		<table width="100%" cellspacing="0">
+		<br>
+		<tr>
+			<td class="genmed" align="right"><a href="index.php?lang=en"><img src="./styles/rinDark/theme/images/uk.png" width="16" height="11" alt="English" /></a> | <a href="index.php?lang=ru"><img src="./styles/rinDark/theme/images/ru.png" width="16" height="11" alt="Русский" /></a></td>
+		</tr>
+		</table>
+</div>
+</div>
+
+<div id="wrapcentre">
+
+	
+	<p class="searchbar">
+		<span style="float: left;"><a href="./search.php?search_id=unanswered&amp;sid=1cbe607e0d94fdd9a8622a52d6de248d">View unanswered posts</a> | <a href="./search.php?search_id=active_topics&amp;sid=1cbe607e0d94fdd9a8622a52d6de248d">View active topics</a></span>
+		
+	</p>
+	
+
+	<br style="clear: both;" />
+
+	<table class="tablebg" width="100%" cellspacing="1" cellpadding="0" style="margin-top: 5px;">
+	<tr>
+		<td class="row5">
+			<p class="breadcrumbs"><a class="breadcrumbs" href="./index.php?sid=1cbe607e0d94fdd9a8622a52d6de248d">Board index</a></p>
+			
+
+		</td>
+	</tr>
+	</table>
+
+	<br />
+
+<form action="./ucp.php?mode=login&amp;sid=1cbe607e0d94fdd9a8622a52d6de248d" method="post">
+
+<table class="tablebg" width="100%" cellspacing="1">
+<tr>
+	
+		<th colspan="2">Login</th>
+	
+</tr>
+
+	<tr>
+		<td class="row3" colspan="2" align="center"><span class="gensmall">The board requires you to be registered and logged in to view profiles.</span></td>
+	</tr>
+
+<tr>
+	<td class="row1" width="50%">
+		<!--<p class="genmed">In order to login you must be registered. Registering takes only a few moments but gives you increased capabilities. The board administrator may also grant additional permissions to registered users. Before you register please ensure you are familiar with our terms of use and related policies. Please ensure you read any forum rules as you navigate around the board.</p>
+
+		<p class="genmed" align="center">
+			<a href="./ucp.php?mode=terms&amp;sid=1cbe607e0d94fdd9a8622a52d6de248d">Terms of use</a> | <a href="./ucp.php?mode=privacy&amp;sid=1cbe607e0d94fdd9a8622a52d6de248d">Privacy policy</a>
+		</p>-->
+		<div class="postbody">
+		<br>Welcome!<br><br>Before you log in and start posting, important information and basic rules:<br><br><ul><li> <span style="color: #00FF00">Advanced difficulty</span>: You should know how to use a PC, how to stay safe on the internet and how to navigate a classic bulletin board forum.</li><li> <span style="color: #00FF00">Remember the passwords for downloads</span>: "<span style="font-weight: bold">cs.rin.ru</span>" and "<span style="font-weight: bold">csrin.org</span>".</li><li> <span style="color: #00FF00">Know the basics</span>: Before posting, read the <span style="font-weight: bold">forum rules, FAQ and other announcements</span>.</li><li> <span style="color: #00FF00">Do your own research</span>: Before posting, <span style="font-weight: bold">search existing posts</span> on the first page and the last few pages of relevant topics (games, emulators, tools).</li><li> <span style="color: #00FF00">Do not spam</span>: Keep your posts on topic and solution-oriented, avoid small talk and do not repeat requests.</li><li> <span style="color: #00FF00">Be safe</span>: Download from trusted uploaders, report suspicious files to the staff team, use an ad blocker on all filesharing sites.</li><li> <span style="color: #00FF00">.. but not paranoid</span>: Malware in game files is uncommon. Antivirus software reports many false positives in pirated software. Don't accuse members of spreading malware based on AV detections.</li><li> <span style="color: #00FF00">You shall not pass</span>: Posts from new users are queued for manual review by moderators before they show up. This may take up to a few days. Be patient and do not try to submit your post multiple times.</li><li> <span style="color: #00FF00">Clean and efficient</span>: <span style="font-weight: bold">We often reject or delete posts</span> that are off topic or redundant, ignore one of these basic rules, violate one of our other forum rules, contain questions that are too vague or have already been answered, and so on. If your post is rejected, you get a notification by e-mail.</li><li> <span style="color: #00FF00">It's not personal</span>: We review dozens or even hundreds of posts per day. Unfortunately we have to be very strict or game topics become too big. Please don't take a post disapproval personally and keep a copy of your post until it has been reviewed.</li></ul><br><span style="font-weight: bold"><span style="color: #FF0000">IMPORTANT:</span></span> Following these basic rules helps keep this huge forum manageable for the staff team. Please do your part.<br><br><span style="color: #FFFF00">By clicking on "Login", <span style="font-weight: bold">you confirm that you have read and understood these rules and that you will follow them.</span></span><br><br><br>
+		</div>
+	</td>
+	
+	<td class="row2">
+	
+		<table align="center" cellspacing="1" cellpadding="4" style="width: 100%;">
+		
+
+		<tr>
+			<td valign="top" ><b class="gensmall">Username:</b></td>
+			<td><input class="post" type="text" name="username" size="25" value="" tabindex="1" />
+				
+					<br /><a class="gensmall" href="./ucp.php?mode=register&amp;sid=1cbe607e0d94fdd9a8622a52d6de248d">Register</a>
+				
+			</td>
+		</tr>
+		<tr>
+			<td valign="top" ><b class="gensmall">Password:</b></td>
+			<td>
+				<input class="post" type="password" name="password" size="25" tabindex="2" />
+				<br /><a class="gensmall" href="./ucp.php?mode=sendpassword&amp;sid=1cbe607e0d94fdd9a8622a52d6de248d">I forgot my password</a><br /><a class="gensmall" href="./ucp.php?mode=resend_act&amp;sid=1cbe607e0d94fdd9a8622a52d6de248d">Resend activation e-mail</a>
+			</td>
+		</tr>
+		
+			<tr>
+				<td>&nbsp;</td>
+				<td><input type="checkbox" class="radio" name="autologin" tabindex="3" /> <span class="gensmall">Log me on automatically each visit</span></td>
+			</tr>
+			
+			<tr>
+				<td>&nbsp;</td>
+				<td><input type="checkbox" class="radio" name="viewonline" tabindex="4" /> <span class="gensmall">Hide my online status this session</span></td>
+			</tr>
+		
+		</table>
+	</td>
+</tr>
+
+
+
+<input type="hidden" name="redirect" value="./memberlist.php?mode=viewprofile&amp;u=217703&amp;sid=1cbe607e0d94fdd9a8622a52d6de248d" />
+
+<tr>
+	<td class="cat" colspan="2" align="center"><input type="hidden" name="sid" value="1cbe607e0d94fdd9a8622a52d6de248d" />
+<input type="submit" name="login" class="btnmain" value="Login" tabindex="5" /></td>
+</tr>
+</table>
+
+</form>
+
+<br clear="all" />
+
+<table class="tablebg" width="100%" cellspacing="1" cellpadding="0" style="margin-top: 5px;">
+	<tr>
+		<td class="row5">
+			<p class="breadcrumbs"><a class="breadcrumbs" href="./index.php?sid=1cbe607e0d94fdd9a8622a52d6de248d">Board index</a></p>
+			
+
+		</td>
+	</tr>
+	</table>
+
+<br clear="all" />
+
+<div align="right">
+	<form method="post" name="jumpbox" action="./viewforum.php?sid=1cbe607e0d94fdd9a8622a52d6de248d" onsubmit="if(document.jumpbox.f.value == -1){return false;}">
+
+	<table cellspacing="0" cellpadding="0" border="0">
+	<tr>
+		<td nowrap="nowrap"><span class="gensmall">Jump to:</span>&nbsp;<select name="f" onchange="if(this.options[this.selectedIndex].value != -1){ document.forms['jumpbox'].submit() }">
+
+		
+			<option value="-1">Select a forum</option>
+		<option value="-1">------------------</option>
+			<option value="26">Russian Forums (Форумы)</option>
+		
+			<option value="5">&nbsp; &nbsp;Новости</option>
+		
+			<option value="1">&nbsp; &nbsp;Общий форум</option>
+		
+			<option value="2">&nbsp; &nbsp;Counter Strike</option>
+		
+			<option value="3">&nbsp; &nbsp;Сервер cs.rin.ru</option>
+		
+			<option value="4">&nbsp; &nbsp;Книга жалоб</option>
+		
+			<option value="9">&nbsp; &nbsp;Читы и Читеры</option>
+		
+			<option value="6">&nbsp; &nbsp;Оффтопик</option>
+		
+			<option value="8">&nbsp; &nbsp;Чемпионат</option>
+		
+			<option value="11">&nbsp; &nbsp;Опросы</option>
+		
+			<option value="27">English Forums</option>
+		
+			<option value="10">&nbsp; &nbsp;Main Forum</option>
+		
+			<option value="29">&nbsp; &nbsp;&nbsp; &nbsp;Releases</option>
+		
+			<option value="32">&nbsp; &nbsp;&nbsp; &nbsp;Standalones</option>
+		
+			<option value="38">&nbsp; &nbsp;&nbsp; &nbsp;Other Gaming Platforms</option>
+		
+			<option value="41">&nbsp; &nbsp;&nbsp; &nbsp;Temporarily Restricted Topics</option>
+		
+			<option value="14">&nbsp; &nbsp;Off Topic</option>
+		
+			<option value="20">&nbsp; &nbsp;Developer Forum</option>
+		
+			<option value="22">&nbsp; &nbsp;Steam Content Sharing</option>
+		
+			<option value="19">&nbsp; &nbsp;Foreign Languages Forum</option>
+		
+			<option value="15">&nbsp; &nbsp;Archive</option>
+		
+			<option value="31">&nbsp; &nbsp;&nbsp; &nbsp;Ancient Threads</option>
+		
+			<option value="24">&nbsp; &nbsp;Junk</option>
+		
+
+		</select>&nbsp;<input class="btnlite" type="submit" value="Go" /></td>
+	</tr>
+	</table>
+
+	</form>
+</div>
+
+<script type="text/javascript">
+// <![CDATA[
+	(function()
+	{
+		var elements = document.getElementsByName("username");
+		for (var i = 0; i < elements.length; ++i)
+		{
+			if (elements[i].tagName.toLowerCase() == 'input')
+			{
+				elements[i].focus();
+				break;
+			}
+		}
+	})();
+// ]]>
+</script>
+
+
+</div>
+
+<div id="wrapfooter">
+    <br><br><br>
+	
+	<span class="copyright">Powered by <a href="https://www.phpbb.com/">phpBB</a>&reg; Forum Software &copy; phpBB Group
+	</span>
+	<br><br>
+</div>
+	
+		</td>
+	</tr>
+	<br>
+</table>
+	<br>
+</body>
+</html>
