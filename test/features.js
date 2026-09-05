@@ -1405,6 +1405,43 @@ const CHECKS = [
         },
     },
 
+    {
+        name: "print: a folded signature opens on paper",
+        url: REPLIES,
+        media: "print",
+        run: () => {
+            const folded = Array.from(document.querySelectorAll('[data-rr-sig="collapsed"]'));
+            if (!folded.length) return "no folded signature on this page";
+            /* Quotes and short replies unfolded on paper; signatures were
+               the one fold that stayed shut, because theirs is
+               display:none rather than a clip. Every one has to be laid
+               out, and the control that would have opened it has to be
+               gone with the other controls. */
+            const shut = folded.filter((s) => getComputedStyle(s).display === "none");
+            if (shut.length) return shut.length + " of " + folded.length + " signatures still hidden in print";
+            const toggles = Array.from(document.querySelectorAll(".rr-sig-toggle"))
+                .filter((t) => getComputedStyle(t).display !== "none");
+            return toggles.length ? toggles.length + " signature control(s) printed" : null;
+        },
+    },
+    {
+        name: "print: nothing fixed is left to repeat on every sheet",
+        url: REPLIES,
+        media: "print",
+        run: () => {
+            const stuck = [];
+            for (const node of document.querySelectorAll("body *")) {
+                const style = getComputedStyle(node);
+                if (style.display === "none") continue;
+                if (style.position !== "fixed" && style.position !== "sticky") continue;
+                stuck.push(node.tagName + "." + String(node.className).split(" ")[0]);
+            }
+            // The skip link was position:fixed and translated off the top,
+            // which print media draws at the head of every page.
+            return stuck.length ? "still fixed or sticky in print: " + stuck.slice(0, 4).join(", ") : null;
+        },
+    },
+
     /* ---- The releases panel ---------------------------------------- */
     {
         name: "releases: both scopes are offered on a one page topic too",

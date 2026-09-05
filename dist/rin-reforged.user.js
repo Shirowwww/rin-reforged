@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.8.2
+// @version         0.8.3
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -3343,8 +3343,19 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
 
 /* Print: drop the script chrome entirely. */
 @media print {
-    .rr-nav, .rr-fab, .rr-toolbar, .rr-progress, .rr-toasts, .rr-posttools { display: none !important; }
+    /* The skip link too: it is position:fixed and translated off the
+       top of the viewport, and a fixed element in print media is drawn
+       on every sheet — a printed thread came out with an orange "Skip
+       to content" tab at the head of each page. */
+    .rr-nav, .rr-fab, .rr-toolbar, .rr-progress, .rr-toasts, .rr-posttools, .rr-skip,
+    .rr-sig-toggle { display: none !important; }
     html[data-rr] body { background: #fff; color: #000; }
+
+    /* A collapsed signature is the one fold that hides its content
+       outright rather than clipping it, and it was the one fold that
+       stayed shut on paper. It opens, and the control that would have
+       opened it goes with the rest of the controls. */
+    html[data-rr] [data-rr-sig="collapsed"] { display: block !important; }
 
     /* And unfold everything the screen folded.
 
@@ -11212,7 +11223,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.8.2";
+const RR_VERSION = "0.8.3";
 
 function injectStyles() {
     const host = document.head || document.documentElement;

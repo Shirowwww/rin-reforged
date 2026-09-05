@@ -49,6 +49,11 @@ const SAVE = process.argv.includes("--save");
        node test/sweep.js --settings '{"quietPosts":true,"foldQuotesLines":3}' */
 const WIDTH = Number(arg("width", 1440));
 const SETTINGS = arg("settings", null);
+/* One page rather than the tour: a shape the tour does not reach, such
+   as a search result page.
+
+       node test/sweep.js --url "search.php?search_id=active_topics" */
+const ONLY = arg("url", null);
 
 /* The board's English forums, off its own index, and the Russian
    general one so a page in the other language is in the sweep. */
@@ -328,11 +333,15 @@ async function main() {
         return findings;
     };
 
+    if (ONLY) {
+        for (const url of ONLY.split(",")) await visit(url.slice(0, 22), url.trim());
+    }
+
     /* The index, then a listing of each forum, discovering topics as
        it goes. */
-    await visit("index", "index.php");
+    if (!ONLY) await visit("index", "index.php");
     const topics = [];
-    for (const f of FORUMS) {
+    for (const f of ONLY ? [] : FORUMS) {
         await visit("forum f=" + f, "viewforum.php?f=" + f);
         try {
             const picked = await tab.evaluate(pickTopics);
@@ -340,7 +349,7 @@ async function main() {
         } catch { /* a login page has no listing */ }
     }
     // Page two of the main forum: rows the first page never shows.
-    await visit("forum f=10 p2", "viewforum.php?f=10&start=50");
+    if (!ONLY) await visit("forum f=10 p2", "viewforum.php?f=10&start=50");
 
     /* Topics: one of each prefix seen, the biggest few, the smallest
        few, and whatever is left up to the budget. */

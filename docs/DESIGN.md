@@ -521,6 +521,16 @@ the panel is the only route to the page that answered it. A one page
 topic with nothing on it still gets none: there, "nothing here reads as
 a release" is the whole answer.
 
+The sweep also takes `--url` for a shape the tour does not reach — the
+two search result pages a guest can open, run at three widths and on
+the light theme, came back clean — and a print probe found the two
+things the print stylesheet had left behind: the skip link, which is
+`position: fixed` and translated off the top, and which print media
+draws at the head of every sheet; and collapsed signatures, the one fold
+that hides its content outright rather than clipping it, and the one
+fold that stayed shut on paper. Both fixed; both now checked under
+`media: "print"` in the harness.
+
 `live.js` runs the built bundle against cs.rin.ru with `addInitScript`, which
 executes it at document-start the way a userscript manager does. It is
 read-only: it opens pages, reads the DOM and closes. It has already earned its
