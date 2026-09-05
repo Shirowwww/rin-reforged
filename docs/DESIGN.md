@@ -342,6 +342,16 @@ work had never looked.
   that a table full of attribute changes kept re-evaluating. The shapes
   those selectors found are now named once by the script, and the
   listing is back at 42ms.
+- **0.8.10** dressed the board's other code block. Besides the plain
+  `[code]` box the board runs a syntax highlighter, and its box was
+  painted #c9c9c9 with #ccc lines, in the middle of a dark post, with
+  tokens coloured for that light box: the sweep had been reporting an
+  olive link inside it at 1.9:1 on every run, "not lifted" — the lift
+  mixes toward the theme's light text colour and a light box cannot be
+  reached that way. The box now takes the sunken surface, its header
+  the raised one, the tokens the theme's palette; and the lift tries
+  the other direction when the theme's colour fails, so the same span
+  in a box this script does not know about would still be read.
 
 ### It reads Russian
 

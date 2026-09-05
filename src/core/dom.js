@@ -280,10 +280,18 @@ function readableInk(colour, behind, target, toward) {
     if (!colour || !behind) return null;
     if (contrastRatio(colour, behind) >= target) return null;
 
-    const end = toward || (relativeLuminance(behind) > 0.5
+    const auto = relativeLuminance(behind) > 0.5
         ? { r: 0, g: 0, b: 0, a: 1 }
-        : { r: 255, g: 255, b: 255, a: 1 });
+        : { r: 255, g: 255, b: 255, a: 1 };
+    const lifted = mixToward(colour, behind, target, toward || auto);
+    /* The theme's text colour is light, and a light box inside a dark
+       post — a code block the board paints #ccc — cannot be reached
+       that way. The other direction can. */
+    if (!lifted && toward) return mixToward(colour, behind, target, auto);
+    return lifted;
+}
 
+function mixToward(colour, behind, target, end) {
     for (let step = 1; step <= INK_STEPS; step += 1) {
         const mix = step / INK_STEPS;
         const blend = {

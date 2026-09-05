@@ -3386,6 +3386,23 @@ const CHECKS = [
         },
     },
     {
+        name: "code box: the highlighter's light box takes the theme",
+        url: REPLIES,
+        run: () => {
+            const box = document.querySelector(".codebox");
+            if (!box) return "no code box on the page";
+            const bg = getComputedStyle(box).backgroundColor;
+            if (/rgb\(20[0-9], 20[0-9], 20[0-9]\)/.test(bg)) return "the box is still the board's light grey: " + bg;
+            const line = box.querySelector("li.li1, li.li2, .text");
+            if (line && getComputedStyle(line).backgroundColor !== "rgba(0, 0, 0, 0)") return "a code line keeps its own background: " + getComputedStyle(line).backgroundColor;
+            const text = box.querySelector(".text");
+            if (text && !/mono|Consolas|Menlo|Courier|JetBrains|Cascadia|SFMono/i.test(getComputedStyle(text).fontFamily)) return "code is not in the monospace face: " + getComputedStyle(text).fontFamily.slice(0, 40);
+            const header = box.querySelector(".codeheader");
+            if (header && getComputedStyle(header).backgroundColor === bg) return "the header is not set off from the box";
+            return null;
+        },
+    },
+    {
         name: "one-result search: the page counter goes, the match count stays",
         url: SEARCH_ONE,
         run: () => {

@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.8.9
+// @version         0.8.10
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -1029,6 +1029,76 @@ html[data-rr] .code {
     padding: var(--rr-s4);
     overflow-x: auto;
 }
+
+/* The board's other code block: the syntax-highlighter one, written as
+   .codebox > .codeheader ("Code: Select all | Line number On/Off |
+   Expand/Contract") > .codeholder > .text > ol > li.li1. Its own
+   stylesheet paints it #c9c9c9 with #ccc lines — a light box in the
+   middle of a dark post — and colours the tokens for that light box, so
+   an olive link inside read at 1.9:1. The box takes the theme's sunken
+   surface; the tokens take the theme's colours. */
+html[data-rr] .postbody .codebox,
+html[data-rr] .codebox {
+    margin: var(--rr-s3) 0;
+    width: auto !important;
+    max-width: 100%;
+    background: var(--rr-bg-sunken) !important;
+    border: 1px solid var(--rr-line) !important;
+    border-radius: var(--rr-radius);
+    overflow: hidden;
+}
+html[data-rr] .codebox .codeheader {
+    /* surface-2, not surface-3: on the light theme surface-3 and the
+       sunken box are a shade apart and the header vanished into it. */
+    background: var(--rr-surface-2) !important;
+    color: var(--rr-muted) !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--rr-line) !important;
+    padding: var(--rr-s1) var(--rr-s3);
+    font: 600 var(--rr-fs-xs) / 1.6 var(--rr-font);
+}
+html[data-rr] .codebox .codeheader b { color: var(--rr-muted); font-weight: 600; }
+html[data-rr] .codebox .codeheader a { color: var(--rr-link); font-weight: 500; }
+html[data-rr] .codebox .codeholder,
+html[data-rr] .codebox .text {
+    background: transparent !important;
+    border: 0 !important;
+    color: var(--rr-text) !important;
+}
+html[data-rr] .codebox .text {
+    font-family: var(--rr-font-mono) !important;
+    font-size: var(--rr-fs-sm) !important;
+    line-height: 1.55;
+    padding: var(--rr-s2) var(--rr-s3);
+    overflow-x: auto;
+}
+html[data-rr] .codebox ol {
+    margin: 0;
+    padding-left: 3.2em;
+    color: var(--rr-faint);
+}
+html[data-rr] .codebox li,
+html[data-rr] .codebox li.li1,
+html[data-rr] .codebox li.li2 {
+    background: transparent !important;
+    color: var(--rr-text) !important;
+    border: 0 !important;
+    margin: 0;
+    padding: 0 0 0 var(--rr-s2);
+}
+html[data-rr] .codebox li::marker { color: var(--rr-faint); }
+/* GeSHi's token classes, in the theme's palette rather than the light
+   box's dark blues and browns. */
+html[data-rr] .codebox .kw1, html[data-rr] .codebox .kw2,
+html[data-rr] .codebox .kw3, html[data-rr] .codebox .kw4 { color: var(--rr-tag-info) !important; }
+html[data-rr] .codebox .st0, html[data-rr] .codebox .st_h { color: var(--rr-tag-release) !important; }
+html[data-rr] .codebox .co1, html[data-rr] .codebox .co2,
+html[data-rr] .codebox .coMULTI { color: var(--rr-faint) !important; font-style: italic; }
+html[data-rr] .codebox .nu0 { color: var(--rr-warn) !important; }
+html[data-rr] .codebox .sy0, html[data-rr] .codebox .sy1,
+html[data-rr] .codebox .br0 { color: var(--rr-text) !important; }
+html[data-rr] .codebox .re0, html[data-rr] .codebox .re1,
+html[data-rr] .codebox .me1 { color: var(--rr-tag-tutorial) !important; }
 
 html[data-rr] .username-coloured,
 html[data-rr] .postauthor a { font-weight: 600; }
@@ -4461,10 +4531,18 @@ function readableInk(colour, behind, target, toward) {
     if (!colour || !behind) return null;
     if (contrastRatio(colour, behind) >= target) return null;
 
-    const end = toward || (relativeLuminance(behind) > 0.5
+    const auto = relativeLuminance(behind) > 0.5
         ? { r: 0, g: 0, b: 0, a: 1 }
-        : { r: 255, g: 255, b: 255, a: 1 });
+        : { r: 255, g: 255, b: 255, a: 1 };
+    const lifted = mixToward(colour, behind, target, toward || auto);
+    /* The theme's text colour is light, and a light box inside a dark
+       post — a code block the board paints #ccc — cannot be reached
+       that way. The other direction can. */
+    if (!lifted && toward) return mixToward(colour, behind, target, auto);
+    return lifted;
+}
 
+function mixToward(colour, behind, target, end) {
     for (let step = 1; step <= INK_STEPS; step += 1) {
         const mix = step / INK_STEPS;
         const blend = {
@@ -12176,7 +12254,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.8.9";
+const RR_VERSION = "0.8.10";
 
 function injectStyles() {
     const host = document.head || document.documentElement;
