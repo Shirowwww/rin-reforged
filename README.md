@@ -44,7 +44,7 @@ checks this repository and offers new versions on its own.
   marketing copy folded away and lookups to SteamDB, the store, SteamCharts,
   ProtonDB and PCGamingWiki.
 - **Gets you around** — `Ctrl+K` command palette, keyboard shortcuts, a real
-  pager that links the last page, filter-as-you-type over a listing, coloured
+  pager that links the last page, filter-as-you-type over a listing (every word you type has to match, in any order), coloured
   topic tags, bookmarks and history kept in your browser.
 - **Optional Steam preview** on hover over a topic title: cover, review score,
   tags and the opening lines of the store description. This is the only thing

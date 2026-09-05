@@ -191,7 +191,7 @@ function openPalette() {
     let cursor = 0;
 
     const searchItem = (query) => ({
-        label: "Search the forum for " + query,
+        label: t("Search the forum for {q}", { q: query }),
         icon: "search",
         hint: SEARCH_DEPTH[settings.get("searchDepth")]?.hint || "Enter",
         href: boardSearchUrl(query),
@@ -202,16 +202,16 @@ function openPalette() {
         flat = [];
         const needle = query.trim().toLowerCase();
 
-        if (needle) list.append(renderGroup("Search", [searchItem(query.trim())], flat));
+        if (needle) list.append(renderGroup(t("Search"), [searchItem(query.trim())], flat));
 
         for (const group of groups) {
             const matches = needle
-                ? group.items.filter((item) => item.label.toLowerCase().includes(needle)).slice(0, 8)
+                ? group.items.filter((item) => matchesWords(item.label, needle)).slice(0, 8)
                 : group.items.slice(0, group.title === t("Boards") ? 7 : 6);
             if (matches.length) list.append(renderGroup(group.title, matches, flat));
         }
 
-        if (!flat.length) list.append(el("div.rr-palette__empty", {}, ["Nothing matches that"]));
+        if (!flat.length) list.append(el("div.rr-palette__empty", {}, [t("Nothing matches that")]));
         cursor = 0;
         highlight();
     };

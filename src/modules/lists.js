@@ -366,9 +366,8 @@ function buildToolbar(entries, prefixes, rich) {
 
     const apply = () => {
         let shown = 0;
-        const needle = state.text.toLowerCase();
         for (const entry of entries) {
-            const matchesText = !needle || entry.title.toLowerCase().includes(needle);
+            const matchesText = matchesWords(entry.title, state.text);
             const matchesTag = !state.tag || entry.row.getAttribute("data-rr-prefix") === state.tag;
             const visible = matchesText && matchesTag;
             entry.row.toggleAttribute("data-rr-hidden", !visible);

@@ -104,21 +104,78 @@
     html[data-rr] table.tablebg > tbody > tr > th { display: none; }
     html[data-rr] table.tablebg > tbody > tr:has(> th):not(:has(> td)) { display: none; }
 
-    /* Topic and forum rows: the title takes the line, the counters
-       become one muted meta line underneath. */
-    html[data-rr] td[data-rr-col="title"] { flex: 1 1 100%; order: 1; }
-    html[data-rr] td[data-rr-col="icon"] { order: 0; flex: none; }
-    html[data-rr] td[data-rr-col="replies"],
-    html[data-rr] td[data-rr-col="views"],
-    html[data-rr] td[data-rr-col="author"],
-    html[data-rr] td[data-rr-col="topics"],
-    html[data-rr] td[data-rr-col="posts"],
-    html[data-rr] td[data-rr-col="last"] {
-        order: 2;
+    /* Topic and forum rows as cards. The marker and the title share the
+       first line — the marker used to sit alone on a line of its own,
+       with the title forced under it — the description sits under the
+       title in the small muted face, the counters make one quiet line
+       with no boxes drawn around them, and the last post is a line of
+       text rather than a full-width bar. */
+    /* Written as table.tablebg > tbody > tr > td[...]: the generic cell
+       rules above are that specific, and a plain td[data-rr-col] lost
+       its min-width to their `min-width: 0`. */
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="icon"] {
+        order: 0;
+        flex: 0 0 auto;
+        width: auto !important;
+        display: flex !important;
+        align-items: center;
+        gap: 6px;
+        padding: 0 !important;
+        margin-top: 4px;
+    }
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="title"] {
+        order: 0;
+        /* The rest of the marker's line, and only that line: at four
+           fifths of the row nothing else fits beside it, so the counters
+           wrap under it whatever the marker's width. */
+        /* A zero basis, not auto: auto is the title's own width, and a
+           long title is the whole row, which put it under the marker
+           again. From zero it grows into what the marker leaves. */
+        flex: 1 1 0%;
+        min-width: 80%;
+    }
+    html[data-rr] td[data-rr-col="title"] a.topictitle,
+    html[data-rr] td[data-rr-col="title"] a.forumlink { font-weight: 600; line-height: 1.35; }
+    html[data-rr] td[data-rr-col="title"] p.forumdesc,
+    html[data-rr] td[data-rr-col="title"] p.gensmall,
+    html[data-rr] td[data-rr-col="title"] .rr-in {
+        display: block;
+        margin: 3px 0 0;
         font-size: var(--rr-fs-xs);
         color: var(--rr-muted);
+        line-height: 1.45;
     }
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="replies"],
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="views"],
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="author"],
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="topics"],
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="posts"] {
+        order: 2;
+        flex: 0 0 auto;
+        font-size: var(--rr-fs-xs);
+        color: var(--rr-muted);
+        background: none !important;
+        padding: 0 !important;
+        border-radius: 0;
+        margin-top: 2px;
+    }
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="last"] {
+        order: 3;
+        flex: 1 1 100%;
+        font-size: var(--rr-fs-xs);
+        color: var(--rr-faint);
+        background: none !important;
+        padding: 0 !important;
+        margin-top: 2px;
+    }
+    html[data-rr] td[data-rr-col="last"] .rr-lastpost { color: var(--rr-faint); }
     html[data-rr] td[data-rr-col] p { display: inline; margin: 0; }
+
+    /* Category rows and the bands with one link in them: a header, not
+       a card. The control that folds a category goes to the far end. */
+    html[data-rr] tr[data-rr-cat-row] { padding: 8px 14px !important; align-items: center !important; }
+    html[data-rr] tr[data-rr-cat-row] > td.catdiv { margin-left: auto; }
+    html[data-rr] tr[data-rr-cat-row] > td.cat[data-rr-cat="plain"] { margin-left: auto; font-size: var(--rr-fs-xs); }
     /* A message folder: the date and the checkbox had no order and led
        the card, before the subject. */
     html[data-rr] tr[data-rr-pm-row] > td[data-rr-col="date"] { order: 3; font-size: var(--rr-fs-xs); color: var(--rr-muted); }
@@ -136,7 +193,6 @@
     html[data-rr] td[data-rr-col="views"]::before { content: "views "; color: var(--rr-faint); }
     html[data-rr] td[data-rr-col="topics"]::before { content: "topics "; color: var(--rr-faint); }
     html[data-rr] td[data-rr-col="posts"]::before { content: "posts "; color: var(--rr-faint); }
-    html[data-rr] td[data-rr-col="last"] { flex: 1 1 100%; }
     html[data-rr] td[data-rr-col="last"] br { display: none; }
 
     /* Posts: the 150px author column becomes a header strip. */

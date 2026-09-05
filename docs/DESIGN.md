@@ -352,6 +352,18 @@ work had never looked.
   the raised one, the tokens the theme's palette; and the lift tries
   the other direction when the theme's colour fails, so the same span
   in a box this script does not know about would still be read.
+- **0.8.11** came from a photograph of a phone. The listing card had
+  its marker alone on a line, the description run into the title, the
+  counters in dark boxes and the last post in a bar the width of the
+  card; the marker and the title now share the first line, the
+  description sits under the title in the small face, the counters are
+  one quiet line and the last post another, and category rows are
+  headers rather than cards. And the filter box and the command palette
+  looked for what was typed as one run of characters: "cracks
+  hypervisor" found nothing in "Hypervisor cracks support", and a second
+  word narrowed the list to nothing rather than further. A query is
+  words; each has to be somewhere in the title, in any order, with case
+  and accents folded away.
 
 ### It reads Russian
 

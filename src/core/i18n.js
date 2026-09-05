@@ -142,6 +142,9 @@ const RU_WORDS = {
     "Recent": "Недавние",
     "Actions": "Действия",
     "Search the forum, or jump to a board": "Поиск по форуму или переход в раздел",
+    "Search the forum for {q}": "Искать на форуме: {q}",
+    "Search": "Поиск",
+    "Nothing matches that": "Ничего не найдено",
     "topic": "тема",
     "board": "раздел",
 };

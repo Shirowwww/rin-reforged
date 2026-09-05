@@ -570,3 +570,32 @@ async function copyText(text, okMessage) {
         return ok;
     }
 }
+
+/* ---- Matching what somebody typed ---------------------------------- */
+
+/* Case, accents and apostrophes folded away, so "dragons" finds
+   "Dragon's" and "denuvo" finds "DENUVO". */
+function foldText(text) {
+    return String(text || "")
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        // Apostrophes go altogether: "clancys" finds "Clancy's", and so
+        // does "clancy's" typed with either apostrophe.
+        .replace(/['\u2019\u02bc]/g, "");
+}
+
+/**
+ * Does `text` contain every word of `query`, in any order?
+ *
+ * The filter box and the command palette used to look for the whole
+ * query as one run of characters, so "cracks hypervisor" found nothing
+ * in "Hypervisor cracks support" and a second word typed after the first
+ * narrowed the list to nothing instead of narrowing it further. A
+ * query is words; each one has to be somewhere in the title.
+ */
+function matchesWords(text, query) {
+    const words = foldText(query).split(/\s+/).filter(Boolean);
+    if (!words.length) return true;
+    const hay = foldText(text);
+    return words.every((word) => hay.includes(word));
+}

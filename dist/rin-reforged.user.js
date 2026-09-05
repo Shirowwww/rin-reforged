@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.8.10
+// @version         0.8.11
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -3550,21 +3550,78 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
     html[data-rr] table.tablebg > tbody > tr > th { display: none; }
     html[data-rr] table.tablebg > tbody > tr:has(> th):not(:has(> td)) { display: none; }
 
-    /* Topic and forum rows: the title takes the line, the counters
-       become one muted meta line underneath. */
-    html[data-rr] td[data-rr-col="title"] { flex: 1 1 100%; order: 1; }
-    html[data-rr] td[data-rr-col="icon"] { order: 0; flex: none; }
-    html[data-rr] td[data-rr-col="replies"],
-    html[data-rr] td[data-rr-col="views"],
-    html[data-rr] td[data-rr-col="author"],
-    html[data-rr] td[data-rr-col="topics"],
-    html[data-rr] td[data-rr-col="posts"],
-    html[data-rr] td[data-rr-col="last"] {
-        order: 2;
+    /* Topic and forum rows as cards. The marker and the title share the
+       first line — the marker used to sit alone on a line of its own,
+       with the title forced under it — the description sits under the
+       title in the small muted face, the counters make one quiet line
+       with no boxes drawn around them, and the last post is a line of
+       text rather than a full-width bar. */
+    /* Written as table.tablebg > tbody > tr > td[...]: the generic cell
+       rules above are that specific, and a plain td[data-rr-col] lost
+       its min-width to their \`min-width: 0\`. */
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="icon"] {
+        order: 0;
+        flex: 0 0 auto;
+        width: auto !important;
+        display: flex !important;
+        align-items: center;
+        gap: 6px;
+        padding: 0 !important;
+        margin-top: 4px;
+    }
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="title"] {
+        order: 0;
+        /* The rest of the marker's line, and only that line: at four
+           fifths of the row nothing else fits beside it, so the counters
+           wrap under it whatever the marker's width. */
+        /* A zero basis, not auto: auto is the title's own width, and a
+           long title is the whole row, which put it under the marker
+           again. From zero it grows into what the marker leaves. */
+        flex: 1 1 0%;
+        min-width: 80%;
+    }
+    html[data-rr] td[data-rr-col="title"] a.topictitle,
+    html[data-rr] td[data-rr-col="title"] a.forumlink { font-weight: 600; line-height: 1.35; }
+    html[data-rr] td[data-rr-col="title"] p.forumdesc,
+    html[data-rr] td[data-rr-col="title"] p.gensmall,
+    html[data-rr] td[data-rr-col="title"] .rr-in {
+        display: block;
+        margin: 3px 0 0;
         font-size: var(--rr-fs-xs);
         color: var(--rr-muted);
+        line-height: 1.45;
     }
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="replies"],
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="views"],
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="author"],
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="topics"],
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="posts"] {
+        order: 2;
+        flex: 0 0 auto;
+        font-size: var(--rr-fs-xs);
+        color: var(--rr-muted);
+        background: none !important;
+        padding: 0 !important;
+        border-radius: 0;
+        margin-top: 2px;
+    }
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="last"] {
+        order: 3;
+        flex: 1 1 100%;
+        font-size: var(--rr-fs-xs);
+        color: var(--rr-faint);
+        background: none !important;
+        padding: 0 !important;
+        margin-top: 2px;
+    }
+    html[data-rr] td[data-rr-col="last"] .rr-lastpost { color: var(--rr-faint); }
     html[data-rr] td[data-rr-col] p { display: inline; margin: 0; }
+
+    /* Category rows and the bands with one link in them: a header, not
+       a card. The control that folds a category goes to the far end. */
+    html[data-rr] tr[data-rr-cat-row] { padding: 8px 14px !important; align-items: center !important; }
+    html[data-rr] tr[data-rr-cat-row] > td.catdiv { margin-left: auto; }
+    html[data-rr] tr[data-rr-cat-row] > td.cat[data-rr-cat="plain"] { margin-left: auto; font-size: var(--rr-fs-xs); }
     /* A message folder: the date and the checkbox had no order and led
        the card, before the subject. */
     html[data-rr] tr[data-rr-pm-row] > td[data-rr-col="date"] { order: 3; font-size: var(--rr-fs-xs); color: var(--rr-muted); }
@@ -3582,7 +3639,6 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
     html[data-rr] td[data-rr-col="views"]::before { content: "views "; color: var(--rr-faint); }
     html[data-rr] td[data-rr-col="topics"]::before { content: "topics "; color: var(--rr-faint); }
     html[data-rr] td[data-rr-col="posts"]::before { content: "posts "; color: var(--rr-faint); }
-    html[data-rr] td[data-rr-col="last"] { flex: 1 1 100%; }
     html[data-rr] td[data-rr-col="last"] br { display: none; }
 
     /* Posts: the 150px author column becomes a header strip. */
@@ -4822,6 +4878,35 @@ async function copyText(text, okMessage) {
     }
 }
 
+/* ---- Matching what somebody typed ---------------------------------- */
+
+/* Case, accents and apostrophes folded away, so "dragons" finds
+   "Dragon's" and "denuvo" finds "DENUVO". */
+function foldText(text) {
+    return String(text || "")
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        // Apostrophes go altogether: "clancys" finds "Clancy's", and so
+        // does "clancy's" typed with either apostrophe.
+        .replace(/['\u2019\u02bc]/g, "");
+}
+
+/**
+ * Does `text` contain every word of `query`, in any order?
+ *
+ * The filter box and the command palette used to look for the whole
+ * query as one run of characters, so "cracks hypervisor" found nothing
+ * in "Hypervisor cracks support" and a second word typed after the first
+ * narrowed the list to nothing instead of narrowing it further. A
+ * query is words; each one has to be somewhere in the title.
+ */
+function matchesWords(text, query) {
+    const words = foldText(query).split(/\s+/).filter(Boolean);
+    if (!words.length) return true;
+    const hay = foldText(text);
+    return words.every((word) => hay.includes(word));
+}
+
 /* ================= src/core/page.js ================= */
 /* ------------------------------------------------------------------
    Reading the page.
@@ -5371,6 +5456,9 @@ const RU_WORDS = {
     "Recent": "Недавние",
     "Actions": "Действия",
     "Search the forum, or jump to a board": "Поиск по форуму или переход в раздел",
+    "Search the forum for {q}": "Искать на форуме: {q}",
+    "Search": "Поиск",
+    "Nothing matches that": "Ничего не найдено",
     "topic": "тема",
     "board": "раздел",
 };
@@ -7241,9 +7329,8 @@ function buildToolbar(entries, prefixes, rich) {
 
     const apply = () => {
         let shown = 0;
-        const needle = state.text.toLowerCase();
         for (const entry of entries) {
-            const matchesText = !needle || entry.title.toLowerCase().includes(needle);
+            const matchesText = matchesWords(entry.title, state.text);
             const matchesTag = !state.tag || entry.row.getAttribute("data-rr-prefix") === state.tag;
             const visible = matchesText && matchesTag;
             entry.row.toggleAttribute("data-rr-hidden", !visible);
@@ -11817,7 +11904,7 @@ function openPalette() {
     let cursor = 0;
 
     const searchItem = (query) => ({
-        label: "Search the forum for " + query,
+        label: t("Search the forum for {q}", { q: query }),
         icon: "search",
         hint: SEARCH_DEPTH[settings.get("searchDepth")]?.hint || "Enter",
         href: boardSearchUrl(query),
@@ -11828,16 +11915,16 @@ function openPalette() {
         flat = [];
         const needle = query.trim().toLowerCase();
 
-        if (needle) list.append(renderGroup("Search", [searchItem(query.trim())], flat));
+        if (needle) list.append(renderGroup(t("Search"), [searchItem(query.trim())], flat));
 
         for (const group of groups) {
             const matches = needle
-                ? group.items.filter((item) => item.label.toLowerCase().includes(needle)).slice(0, 8)
+                ? group.items.filter((item) => matchesWords(item.label, needle)).slice(0, 8)
                 : group.items.slice(0, group.title === t("Boards") ? 7 : 6);
             if (matches.length) list.append(renderGroup(group.title, matches, flat));
         }
 
-        if (!flat.length) list.append(el("div.rr-palette__empty", {}, ["Nothing matches that"]));
+        if (!flat.length) list.append(el("div.rr-palette__empty", {}, [t("Nothing matches that")]));
         cursor = 0;
         highlight();
     };
@@ -12254,7 +12341,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.8.10";
+const RR_VERSION = "0.8.11";
 
 function injectStyles() {
     const host = document.head || document.documentElement;
