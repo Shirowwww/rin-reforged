@@ -478,7 +478,10 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
     padding: var(--rr-card-pad);
     border-bottom: 1px solid var(--rr-line);
 }
-.rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); }
+/* `html[data-rr] h3` outranks `.rr-releases__head h3` and kept its
+   bottom margin, which centred the box 6px above the icon, the count
+   and the controls beside it. */
+html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-height: 1.2; }
 /* What the panel is showing: how much of the topic, and whether the
    topic itself is filtered down to it. Two controls answering the same
    question, so they sit together rather than at opposite ends of the

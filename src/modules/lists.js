@@ -16,6 +16,22 @@ const COLUMN_NAMES = {
     replies: "replies",
     author: "author",
     views: "views",
+    /* The member list, the private message folders and the control
+       panel's own tables. Named so the same treatment reaches them —
+       a "Joined" or "Sent" column carries the same weekday date as a
+       listing's Last post column, and the "Rank" column carries the
+       same two-language rank as a post's profile. */
+    "#": "num",
+    username: "author",
+    joined: "date",
+    sent: "date",
+    "last updated": "date",
+    rank: "rank",
+    subject: "title",
+    mark: "mark",
+    message: "action",
+    "e-mail": "action",
+    website: "action",
 };
 
 /**
@@ -25,6 +41,13 @@ const COLUMN_NAMES = {
 function labelColumns(table) {
     const headRow = table.querySelector("tr:has(th)") || table.querySelector("th")?.parentElement;
     if (!headRow) return;
+
+    /* Only a listing reads a spanning header as the title column. A
+       profile's "User statistics" spans its label and value cells, and
+       read that way made the "Joined:" label an icon column and its
+       date a title. A message folder's title is a span with the link
+       inside, so that shape counts too. */
+    const listing = Boolean(table.querySelector("a.topictitle, a.forumlink, .topictitle a"));
 
     const columns = [];
     const heads = Array.from(headRow.querySelectorAll("th"));
@@ -53,6 +76,10 @@ function labelColumns(table) {
            The columns before the last are the marker and the spacer
            the template keeps beside it. */
         if (span > 1) {
+            if (!listing) {
+                for (let i = 0; i < span; i += 1) columns.push(null);
+                return;
+            }
             for (let i = 1; i < span; i += 1) columns.push(index === 0 && i === 1 ? "icon" : null);
             columns.push("title");
             return;
@@ -430,6 +457,16 @@ function buildForumBar() {
     // listing did not, and the sweep found the band on every forum.
     tidyBoardPagerStrip(bar, bar);
 
+    /* "Go to page 1, 2, 3, 4, 5 … 137  Next", right-aligned above the
+       table: the same journey as the pager in the bar, in a row of its
+       own. The topic page hides its copy above the posts and keeps the
+       one below; the listing does the same. */
+    if (settings.get("quickPager")) {
+        const strip = Array.from(document.querySelectorAll("#wrapcentre td.gensmall"))
+            .find((cell) => /^\s*Go to page/.test(cell.textContent) && cell.querySelector('a[onclick*="jumpto"]'));
+        if (strip) hideWithEmptyRow(strip);
+    }
+
     // The forum name led a line of its own directly above this bar,
     // repeating what the breadcrumb says two lines further up and
     // costing a band of the screen to do it. Inside the bar it labels
@@ -447,6 +484,139 @@ function buildForumBar() {
    nobody reads a weekday off. Kept on the title, dropped from the line
    so the date and the poster fit beside each other. */
 const WEEKDAY_RE = /^\s*(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day,\s*/i;
+
+/** Drop the weekday from the text nodes directly under `node`. Returns
+ *  whether anything changed, so the caller can keep the full date on
+ *  the title. */
+function dropWeekday(node) {
+    let changed = false;
+    for (const child of node.childNodes) {
+        if (child.nodeType === 3 && WEEKDAY_RE.test(child.textContent)) {
+            child.textContent = child.textContent.replace(WEEKDAY_RE, "");
+            changed = true;
+        } else if (child.nodeType === 1 && !child.children.length && /^(B|STRONG|SPAN|EM)$/.test(child.tagName)) {
+            // A profile's "Joined:" value is one tag down: <b>Thursday, …</b>.
+            if (dropWeekday(child)) changed = true;
+        }
+    }
+    return changed;
+}
+
+/* Hide a cell, and the row and table it leaves empty. */
+function hideWithEmptyRow(cell) {
+    cell.style.display = "none";
+    const row = cell.parentElement;
+    if (!row || row.tagName !== "TR") return;
+    const alive = Array.from(row.children).some((c) => c.style.display !== "none"
+        && (c.textContent.trim() || c.querySelector("img, a, input, form, select")));
+    if (alive) return;
+    row.style.display = "none";
+    const table = row.closest("table");
+    if (table && !Array.from(table.querySelectorAll("tr")).some((r) => r.style.display !== "none")) {
+        table.style.display = "none";
+    }
+}
+
+/* A date on its own in a cell — "Joined" on the member list, "Sent" in
+   a message folder, the announcement dates in the control panel. Same
+   weekday, same treatment as the Last post column; the cell is 144px
+   wide on the message list and the full date wrapped onto two lines
+   in every row. */
+function tightenDateCells() {
+    /* td.gen / td.genmed: "Joined:" in the control panel and on a
+       profile puts its label in one cell and the date in the next, so
+       the date cell's text starts with the weekday. A post's own date
+       cell never does — it starts with "Posted:" or is the topic
+       module's — and the anchor on the regex keeps them apart. */
+    const cells = document.querySelectorAll(
+        '#wrapcentre td[data-rr-col="date"], #wrapcentre p.topicdetails, #wrapcentre td.gen, #wrapcentre td.genmed, #wrapcentre b.gen, #wrapcentre b.genmed',
+    );
+    for (const cell of cells) {
+        if (cell.hasAttribute("data-rr-date")) continue;
+        const full = cell.textContent.replace(/\s+/g, " ").trim();
+        if (!WEEKDAY_RE.test(full)) continue;
+        if (!dropWeekday(cell)) continue;
+        cell.setAttribute("data-rr-date", "");
+        if (!cell.hasAttribute("title")) cell.setAttribute("title", full);
+    }
+}
+
+/* "Page 1 of 1" over a message folder or a subscriptions list: a page
+   counter for one page, on pages with no action bar to fold it into.
+   Nothing to navigate, nothing to say. Counters on other pages stay —
+   beside them is the only "Go to page" strip those pages have. */
+const LONE_PAGE_RE = /^\s*Page\s+1\s+of\s+1\s*$/;
+const LEADING_LONE_PAGE_RE = /^\s*Page\s+1\s+of\s+1\s+/;
+
+function dropLonePageCounters() {
+    // td.gensmall and span.nav: the search results page prints its
+    // counter in a span inside a floated div.
+    for (const cell of document.querySelectorAll("#wrapcentre td.nav, #wrapcentre td.gensmall, #wrapcentre span.nav")) {
+        if (cell.querySelector("a[href], form")) continue;
+        const text = cell.textContent.replace(/\s+/g, " ");
+        if (LONE_PAGE_RE.test(text)) { cell.style.display = "none"; continue; }
+
+        /* "Page 1 of 1 [ Search found 1 match ]" — the counter shares
+           its cell with a fact worth keeping. The counter is the run
+           of nodes up to the second number; that run goes, the rest
+           stays. */
+        if (!LEADING_LONE_PAGE_RE.test(text)) continue;
+        let seen = "";
+        for (const node of Array.from(cell.childNodes)) {
+            seen += node.textContent;
+            node.remove();
+            if (LONE_PAGE_RE.test(seen.replace(/\s+/g, " "))) break;
+        }
+        const first = cell.firstChild;
+        if (first && first.nodeType === 3) first.textContent = first.textContent.replace(/^\s+/, "");
+    }
+}
+
+/* A private message folder marks replied, marked, friend and foe
+   messages with a 10px spacer gif floated in front of the subject.
+   Invisible here — the board's colours never arrive — but still 10px
+   and a space wide, so the subjects on the rows that had one started
+   8px to the right of the others. The marker is drawn as a coloured
+   square with its meaning on the title, and the rows without one get
+   an empty one of the same size. */
+const PM_MARK = 'span[class^="pm_"][class$="_colour"]';
+
+function alignMessageMarkers() {
+    const cells = Array.from(document.querySelectorAll('#wrapcentre td[data-rr-col="title"]'));
+    if (!cells.some((cell) => cell.querySelector(PM_MARK))) return;
+    for (const cell of cells) {
+        const mark = cell.querySelector(PM_MARK);
+        if (mark) {
+            mark.classList.add("rr-pm-mark");
+            const kind = (mark.className.match(/pm_(\w+)_colour/) || [])[1];
+            if (kind) mark.setAttribute("title", kind[0].toUpperCase() + kind.slice(1) + " message");
+            continue;
+        }
+        // The board writes "&nbsp; " after its marker; the rows without one
+        // begin with whitespace the cell swallows, and a space here joins
+        // it rather than adding to it.
+        cell.prepend(el("span.rr-pm-mark", { "aria-hidden": "true" }), "\u00a0 ");
+    }
+}
+
+/* "Advanced forumer Завсегдатай" in the member list's Rank column: the
+   same bilingual rank a post's profile shows, on a page the post
+   module never looks at. The Russian half went on to the title. */
+function localiseRankCells() {
+    // td.postdetails[align=center]: the rank under the name on a profile.
+    const cells = document.querySelectorAll('td[data-rr-col="rank"], #wrapcentre td.postdetails[align="center"]');
+    for (const cell of cells) {
+        const full = cell.textContent.replace(/\s+/g, " ").trim();
+        const short = localiseRank(full);
+        // A rank with no Latin half is left as it is rather than emptied.
+        if (!short || short === full) continue;
+        for (const child of Array.from(cell.childNodes)) {
+            if (child.nodeType === 3) child.remove();
+        }
+        cell.prepend(short);
+        cell.setAttribute("title", full);
+    }
+}
 
 /**
  * Fold the Last post cell's two lines into one.
@@ -468,11 +638,7 @@ function tightenLastPost(cell) {
     const first = lines[0];
     const full = cell.textContent.replace(/\s+/g, " ").trim();
 
-    for (const node of first.childNodes) {
-        if (node.nodeType === 3 && WEEKDAY_RE.test(node.textContent)) {
-            node.textContent = node.textContent.replace(WEEKDAY_RE, "");
-        }
-    }
+    dropWeekday(first);
 
     for (const rest of lines.slice(1)) {
         if (!rest.textContent.trim() && !rest.querySelector("a, img")) { rest.remove(); continue; }
@@ -526,6 +692,14 @@ function initLists() {
     }
 
     dedupeSearchBoxes();
+
+    /* Before the page-kind gate: the member list, the message folders
+       and the control panel are none of those kinds and were getting
+       none of this. */
+    if (settings.get("tightRows")) tightenDateCells();
+    localiseRankCells();
+    dropLonePageCounters();
+    alignMessageMarkers();
 
     if (!PAGE.isForum && !PAGE.isIndex && !PAGE.isSearch) return;
 

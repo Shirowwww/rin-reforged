@@ -218,6 +218,23 @@ function buildTopicBar() {
         }
     }
 
+    /* The board's own "First unread post", printed for members in the
+       strip that also holds the reply button. It is the same journey
+       people.js builds a link for when the board prints none, so it is
+       taken as it is — the board's href carries the #unread anchor —
+       and people.js leaves the bar alone when it finds one here. */
+    const unread = document.querySelector('#wrapcentre td.nav > a[href*="view=unread"]');
+    if (unread) {
+        const cell = unread.closest("td");
+        unread.classList.add("rr-btn");
+        unread.setAttribute("data-variant", "quiet");
+        unread.setAttribute("title", "Jump to the first post you have not read");
+        unread.textContent = "";
+        unread.append(icon("arrowDown", 13), "First unread");
+        here.append(unread);
+        if (cell) cell.style.display = "none";
+    }
+
     // people.js drops "First unread" in here, in front of this.
     here.append(el("span.rr-topicbar__spacer"));
 
@@ -232,6 +249,7 @@ function buildTopicBar() {
     }
 
     adoptTopicNav(away);
+    adoptMemberActions(away);
     away.append(el("span.rr-topicbar__spacer"));
 
     const form = document.querySelector("#topic-search, #search-box form");
@@ -274,7 +292,11 @@ const PAGE_OF_RE = /^\s*Page\s+\d+\s+of\s+\d+\s*$/;
 const POST_COUNT_RE = /^\s*\[\s*([\d\s]+)\s+(posts?|topics?)\s*\]\s*$/i;
 
 function tidyBoardPagerStrip(bar, row) {
-    let counted = false;
+    // The listing bar lifts its own "[ N topics ]" before calling this,
+    // and the board prints the strip twice, above and below the table.
+    // Starting from "not yet counted" put a second count in the bar on
+    // every forum listing — "841 topics  841 topics".
+    let counted = Boolean(bar.querySelector(".rr-topicbar__count"));
 
     for (const cell of document.querySelectorAll("#wrapcentre td.nav, #wrapcentre td.gensmall")) {
         if (cell.querySelector("a[href], form, input, select")) continue;
@@ -293,15 +315,52 @@ function tidyBoardPagerStrip(bar, row) {
         cell.style.display = "none";
     }
 
-    // A row of a board strip with every cell hidden is still a row.
+    hideEmptyBoardStrips(bar);
+}
+
+/* Is anything between `node` and `root` hidden inline? The strips are
+   emptied cell by cell, and a cell inside a hidden cell is as gone as
+   its parent. */
+function hiddenWithin(node, root) {
+    for (let n = node; n && n !== root; n = n.parentElement) {
+        if (n.style && n.style.display === "none") return true;
+    }
+    return false;
+}
+
+/* A row of a board strip with every cell hidden is still a row: a 20px
+   band with a border and nothing in it, between the Releases panel and
+   the first post. textContent sees through display:none — the hidden
+   cells' "|" separators and the reply link they still hold counted as
+   life — so only what is not hidden counts. */
+function hideEmptyBoardStrips(bar) {
     for (const strip of document.querySelectorAll("#wrapcentre table.tablebg")) {
-        if (strip.contains(bar)) continue;
+        if (bar && strip.contains(bar)) continue;
+        if (strip.querySelector(".postbody, .rr-releases, form")) continue;
         const cells = Array.from(strip.querySelectorAll("td"));
         if (!cells.length) continue;
-        const alive = cells.some((cell) => cell.style.display !== "none"
-            && (cell.textContent.trim() || cell.querySelector("img, a, input, form")));
+        const alive = cells.some((cell) => {
+            if (hiddenWithin(cell, strip)) return false;
+            const own = Array.from(cell.childNodes)
+                .filter((n) => n.nodeType === 3).map((n) => n.textContent).join("")
+                .replace(/[\s\u00a0|]+/g, "");
+            if (own) return true;
+            return Array.from(cell.querySelectorAll("img, a, input, select, button"))
+                .some((node) => !hiddenWithin(node, strip));
+        });
         if (!alive) strip.style.display = "none";
     }
+}
+
+/* "Previous topic", "Subscribe topic", "E-mail friend": on a phone the
+   second row of the bar is three lines of these. The noun is the same
+   on every one and the row says it already, so it is marked optional
+   and the narrow layout drops it — "Previous · Next · Subscribe". */
+function labelWithOptionalTail(link, label) {
+    const m = label.match(/^(.*\S)(\s+(?:topic|friend))$/i);
+    link.textContent = "";
+    if (m) link.append(document.createTextNode(m[1]), el("span.rr-opt", {}, [m[2]]));
+    else link.append(document.createTextNode(label));
 }
 
 /* The board's forum-rules box, which subsilver2 writes with
@@ -344,13 +403,44 @@ function adoptTopicNav(bar) {
         link.classList.add("rr-btn", "rr-topicnav");
         link.setAttribute("data-variant", "quiet");
         link.setAttribute("title", label);
-        link.textContent = "";
-        link.append(document.createTextNode(label));
+        labelWithOptionalTail(link, label);
         if (glyph) link.append(icon(glyph, 12));
         bar.append(link);
     }
 
     if (!strip.querySelector("a[href], form, input")) strip.style.display = "none";
+}
+
+/**
+ * Subscribe topic, Bookmark topic and E-mail friend.
+ *
+ * The three things a member can do to a topic besides answering it.
+ * subsilver2 prints them for members only, in a `td.nav` of the same
+ * strip as the reply button — which buildTopicBar hides cell by cell
+ * precisely so these survive — and a second time under the posts. Left
+ * where they were they made a grey band of their own between the bar
+ * and the first post, with a "First unread post" at the far end that
+ * the bar already carries. They are topic actions; they join the
+ * others, once, with the words the board gave them ("Unsubscribe
+ * topic" when you already are).
+ */
+const MEMBER_ACTION = 'a[href*="watch=topic"], a[href*="bookmark="], a[href*="mode=email"]';
+
+function adoptMemberActions(bar) {
+    const cells = Array.from(document.querySelectorAll("#wrapcentre td.nav"))
+        .filter((cell) => cell.querySelector(MEMBER_ACTION));
+    if (!cells.length) return;
+
+    for (const link of cells[0].querySelectorAll(MEMBER_ACTION)) {
+        const label = link.textContent.replace(/\s+/g, " ").trim() || link.getAttribute("title") || "";
+        if (!label) continue;
+        link.classList.add("rr-btn", "rr-topicnav");
+        link.setAttribute("data-variant", "quiet");
+        link.setAttribute("title", label);
+        labelWithOptionalTail(link, label);
+        bar.append(link);
+    }
+    for (const cell of cells) cell.style.display = "none";
 }
 
 function buildPagerGroup(info) {
@@ -540,7 +630,9 @@ function modernisePost(post) {
         if (posted && posted.nextSibling) {
             const when = posted.nextSibling.textContent.trim();
             if (when) {
-                head.append(el("time.rr-posthead__date", {}, [when]));
+                // The weekday goes, as everywhere else; the full date
+                // stays on the title.
+                head.append(el("time.rr-posthead__date", { title: when }, [when.replace(WEEKDAY_RE, "")]));
                 posted.parentElement.style.display = "none";
             }
         }

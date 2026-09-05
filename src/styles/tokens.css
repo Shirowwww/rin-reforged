@@ -308,3 +308,12 @@ html[data-rr][data-rr-still] *::after {
     transition-duration: 1ms !important;
     scroll-behavior: auto !important;
 }
+
+/* A page short enough to need no scrollbar is 15px wider, and
+   everything centred in it moves 8px between one page and the next.
+   The gutter is reserved either way — on a desktop. The narrow layout
+   is fluid and centres nothing, and a classic scrollbar's 15px is a
+   quarter of a topic bar's spare room at 390px. */
+@media (min-width: 861px) {
+    html[data-rr] { scrollbar-gutter: stable; }
+}

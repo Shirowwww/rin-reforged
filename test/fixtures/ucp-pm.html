@@ -1,0 +1,583 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-gb" xml:lang="en-gb">
+<head>
+
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<meta http-equiv="content-language" content="en-gb" />
+<meta http-equiv="content-style-type" content="text/css" />
+<meta http-equiv="imagetoolbar" content="no" />
+<meta name="resource-type" content="document" />
+<meta name="distribution" content="global" />
+<meta name="keywords" content="" />
+<meta name="description" content="Cracking Steam and coding Steam related tools and emulators since 2003. Get all Steam games you want and play them the way you want to - for free!" />
+<meta name="robots" content="noindex,nofollow" />
+
+<title>CS RIN - Steam Underground &bull; View forum - Main Forum</title>
+
+<link rel="alternate" type="application/atom+xml" title="Feed - CS RIN - Steam Underground" href="https://cs.rin.ru/forum/feed.php" /><link rel="alternate" type="application/atom+xml" title="Feed - All forums" href="https://cs.rin.ru/forum/feed.php?mode=forums" /><link rel="alternate" type="application/atom+xml" title="Feed - New Topics" href="https://cs.rin.ru/forum/feed.php?mode=topics" /><link rel="alternate" type="application/atom+xml" title="Feed - Active Topics" href="https://cs.rin.ru/forum/feed.php?mode=topics_active" /><link rel="alternate" type="application/atom+xml" title="Feed - Forum - Main Forum" href="https://cs.rin.ru/forum/feed.php?f=10" />
+
+<link rel="stylesheet" href="./styles/rinDark/theme/stylesheet.css" type="text/css" />
+<!-- <script type="text/javascript" src="./mobiquo/tapatalkdetect.js"></script> -->
+<script type="text/javascript" src="./styles/subsilver2/template/forum_fn.js"></script>
+<!-- <script type="text/javascript" src="//yandex.st/share/share.js" charset="utf-8"></script>-->
+<script type="text/javascript">
+// <![CDATA[
+
+
+function popup(url, width, height, name)
+{
+	if (!name)
+	{
+		name = '_popup';
+	}
+
+	window.open(url.replace(/&amp;/g, '&'), name, 'height=' + height + ',resizable=yes,scrollbars=yes,width=' + width);
+	return false;
+}
+
+function jumpto()
+{
+	var page = prompt('Enter the page number you wish to go to:', '1');
+	var per_page = '100';
+	var base_url = './viewforum.php?f=10&amp;sid=50ead6db992b0c075b84241e1c78fc49';
+
+	if (page !== null && !isNaN(page) && page == Math.floor(page) && page > 0)
+	{
+		if (base_url.indexOf('?') == -1)
+		{
+			document.location.href = base_url + '?start=' + ((page - 1) * per_page);
+		}
+		else
+		{
+			document.location.href = base_url.replace(/&amp;/g, '&') + '&start=' + ((page - 1) * per_page);
+		}
+	}
+}
+
+/**
+* Find a member
+*/
+function find_username(url)
+{
+	popup(url, 760, 570, '_usersearch');
+	return false;
+}
+
+/**
+* Mark/unmark checklist
+* id = ID of parent container, name = name prefix, state = state [true/false]
+*/
+function marklist(id, name, state)
+{
+	var parent = document.getElementById(id);
+	if (!parent)
+	{
+		eval('parent = document.' + id);
+	}
+
+	if (!parent)
+	{
+		return;
+	}
+
+	var rb = parent.getElementsByTagName('input');
+	
+	for (var r = 0; r < rb.length; r++)
+	{
+		if (rb[r].name.substr(0, name.length) == name)
+		{
+			rb[r].checked = state;
+		}
+	}
+}
+
+
+
+// ]]>
+
+// RIN donation overlay
+//subsilver2
+window.onload = onloadFunction;
+//proSilver
+if (!(typeof onload_functions === 'undefined')) {
+	onload_functions.push('onloadFunction();');
+} 
+
+function overlayconfirm() {
+  document.getElementById("overlay").style.display = "none";
+  document.cookie = "csrin_overlay=0; path=/forum; max-age=31536000";
+}
+
+function onloadFunction()
+{
+    // RIN donation overlay
+    // if cookie NOT set, display
+    var decodedCookie = decodeURIComponent(document.cookie);
+    if (decodedCookie.search("csrin_overlay=0") === -1)
+    {
+        //document.getElementById("overlay").style.display = "block";
+    }
+}
+
+// RIN: load page in the background
+function loadAsync(page, returnTarget, returnText, returnClass) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onload = () => {
+        if (xhttp.readyState === XMLHttpRequest.DONE) {
+            if (xhttp.status === 200) {
+                console.log("yay");
+                var successText = document.createElement("span");
+                successText.innerHTML = returnText;
+                successText.className = returnClass;
+                returnTarget.replaceWith(successText);
+            } else {
+                console.error(xhttp.statusText);
+            }
+        }
+    };
+    xhttp.open("GET", page, true);
+    xhttp.send();
+}
+
+// RIN image resizer
+function resizeimg(img)
+{
+    if (img.style.maxHeight == 'none')
+        img.style.maxHeight = '250px';
+    else
+        img.style.maxHeight = 'none';
+}
+</script>
+
+<!-- Malicious filehosts -->
+<script type="text/javascript">
+function reveal_unsafe(e) {
+  e.style.display = "none";
+  e.parentElement.getElementsByClassName('link_unsafe')[0].style.display = "inline";
+}
+</script>
+<style></style>
+<style>
+.link_unsafe_overlay {
+  --warning-color: red;
+  border-style:dashed;
+  border-color: var(--warning-color);
+  border-width: thin;
+  width: fit-content;
+  display: inline-block;
+  color: var(--warning-color);
+}
+
+.link_unsafe_overlay2 {
+  --warning-color: orange;
+  border-style:dashed;
+  border-color: var(--warning-color);
+  border-width: thin;
+  width: fit-content;
+  display: inline-block;
+  color: var(--warning-color);
+}
+
+.link_unsafe_reveal {
+  cursor: pointer;
+  color: #AAAAAA;
+}
+
+.link_unsafe {
+  display: none;
+}
+
+.link_unsafe_note {
+  font-size: 0.8em;
+  vertical-align: super;
+  position: relative;
+}
+
+.tooltip {
+  border-bottom: 1px dotted green;
+  color: green;
+  cursor: pointer;
+}
+
+.tooltiptext {
+  visibility: hidden;
+  font-size: 1.3em;
+  width: 22em;
+  color: var(--warning-color);
+  background-color: black;
+  text-align: center;
+  padding: 0.5em 0.5em;
+  border-radius: 6px;
+  position: absolute;
+  cursor: default;
+  z-index: 1;
+  top: 100%;
+  left: -13em;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+</style>
+
+<!-- Donation overlay --><!-- duplicated here because of caching issues -->
+<style>
+#overlay {
+  position: fixed;
+  width: 40%;
+  height: 40%;
+  top: 50%;
+  left: 50%;
+  margin-right: -50%; 
+  right: 0;
+  bottom: 0;
+  min-width: 300px;
+  min-height: 300px;
+  background-color: rgba(0,0,0,0.9);
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  border: 1px solid #777777;
+  display: none;
+}
+
+#overlaytext {
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  font-size: 1.2em;
+  color: white;
+  transform: translate(-5%,-5%);
+  -ms-transform: translate(-5%,-5%);
+}
+
+#overlayconfirmbtn {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%); 
+  bottom: 0px;
+  font-size: 1.2em;
+  padding: 1px 5px;
+}
+</style>
+<!-- RIN: image resize and page stretch fix -->
+<style>
+.postbody img,
+.postbody ~ table img {
+  max-width: 95%;
+  max-height: 250px;
+}
+</style>
+
+</head>
+<body class="ltr">
+
+<!-- Donation overlay -->
+<div id="overlay">
+  <div id="overlaytext">
+  <p align="center">We need your help!</p>
+  <br /><br />
+  <p>For 17 years, this forum has served us as a platform for sharing games with each other, graciously hosted by the owner of RIN for all this time. Sadly, he can no longer afford our server.</p>
+  <br /><br />
+  <p>To keep this forum alive, we need your help with covering the hosting expenses.</p>
+  <br /><br />
+  <p>For more information, click <a href="../donate" target="_blank" onclick="overlayconfirm()">here</a>.</p>
+  
+  </div>
+  <a id="overlayconfirmbtn" onclick="overlayconfirm()" href="javascript:overlayconfirm();">Close</a>
+</div>
+
+<table align="center" width="100%" class="bodyline">
+	<tr>
+		<td>
+<a name="top"></a>		
+<div id="wrapheader">
+
+	<div id="logodesc">
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td><a href="./index.php?sid=50ead6db992b0c075b84241e1c78fc49"><img src="./styles/rinDark/imageset/site_logo-2.png" alt="Logo" title="Logo" /></a></td>
+			<td width="100%" align="center"><h1>CS RIN - Steam Underground</h1><span class="gen">cs.rin.ru | csrin.org | The password is usually one of these.</span></td>
+		</tr>
+		</table>
+	</div>
+
+	<div id="menubar">
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				<a href="./viewtopic.php?f=10&amp;t=44034&amp;sid=50ead6db992b0c075b84241e1c78fc49"><img src="./styles/rinDark/theme/images/icon_mini_rules.gif" width="14" height="14" alt="*" /> Forum rules</a>
+                &nbsp;:: &nbsp;<a href="../donate"><img src="./styles/rinDark/theme/images/icon_donate.gif" width="14" height="14" alt="*" /> Donate</a>
+			</td>
+			<td class="genmed" align="right">
+                <a href="chat.php"><img src="./styles/rinDark/theme/images/icon_mini_irc.gif" width="14" height="14" alt="*" /> Chat</a>
+				&nbsp;:: &nbsp;<a href="./viewtopic.php?f=10&amp;t=98158&amp;sid=50ead6db992b0c075b84241e1c78fc49"><img src="./styles/rinDark/theme/images/icon_mini_faq.gif" width="12" height="13" alt="*" /> FAQ</a><!--<sup style="color:#FF0000;"> new!</sup>-->
+				
+			</td>
+		</tr>
+		</table>
+		<br>
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				 &nbsp;<a href="./ucp.php?mode=register&amp;sid=50ead6db992b0c075b84241e1c78fc49"><img src="./styles/rinDark/theme/images/icon_mini_register.gif" width="12" height="13" alt="*" /> Register</a>
+					
+			</td>
+			<td class="genmed" align="right">
+				<a href="./search.php?sid=50ead6db992b0c075b84241e1c78fc49"><img src="./styles/rinDark/theme/images/icon_mini_search.gif" width="12" height="13" alt="*" /> Search</a>
+                        &nbsp;:: &nbsp;<a href="./ucp.php?mode=logout&amp;sid=50ead6db992b0c075b84241e1c78fc49"><img src="./styles/rinDark/theme/images/icon_mini_login.gif" width="12" height="13" alt="*" /> Logout</a>
+				
+			</td>
+		</tr>
+		</table>
+		
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				
+			</td>
+		</tr>
+		</table>
+	</div>
+
+	<div id="datebar">
+		<table width="100%" cellspacing="0">
+			<td class="gensmall"></td>
+            
+			<td class="gensmall" align="right">It is currently Friday, 04 Sep 2026, 00:37<br /></td>
+		</tr>
+		</table>
+	</div>
+
+	<div>
+		<table width="100%" cellspacing="0">
+		<br>
+		<tr>
+			<td class="genmed" align="right"><a href="index.php?lang=en"><img src="./styles/rinDark/theme/images/uk.png" width="16" height="11" alt="English" /></a> | <a href="index.php?lang=ru"><img src="./styles/rinDark/theme/images/ru.png" width="16" height="11" alt="Русский" /></a></td>
+		</tr>
+		</table>
+</div>
+</div>
+
+<div id="wrapcentre">
+
+	
+	<p class="searchbar">
+		<span style="float: left;"><a href="./search.php?search_id=unanswered&amp;sid=50ead6db992b0c075b84241e1c78fc49">View unanswered posts</a> | <a href="./search.php?search_id=active_topics&amp;sid=50ead6db992b0c075b84241e1c78fc49">View active topics</a></span>
+		
+	</p>
+	
+
+	<br style="clear: both;" />
+
+	<table class="tablebg" width="100%" cellspacing="1" cellpadding="0" style="margin-top: 5px;">
+	<tr>
+		<td class="row5">
+			<p class="breadcrumbs"><a class="breadcrumbs" href="./index.php?sid=50ead6db992b0c075b84241e1c78fc49">Board index</a> &#187; <a class="breadcrumbs" href="./viewforum.php?f=27&amp;sid=50ead6db992b0c075b84241e1c78fc49">English Forums</a> &#187; <a class="breadcrumbs" href="./viewforum.php?f=10&amp;sid=50ead6db992b0c075b84241e1c78fc49">Main Forum</a></p>
+			
+		<div id="search-box">
+			<form method="post" id="forum-search" action="./search.php?sid=50ead6db992b0c075b84241e1c78fc49">	
+				<input class="inputbox search tiny" type="text" name="keywords" id="search_keywords" size="22" value="Search this forum…" onclick="if (this.value == 'Search this forum…') this.value = '';" onblur="if (this.value == '') this.value = 'Search this forum…';" />
+				<input class="button1" type="submit" value="Search" />	
+				<input type="hidden" value="10" name="fid[]" />
+				<input type="hidden" name="sr" value="topics" />
+				<input type="hidden" value="titleonly" name="sf" />
+			</form>
+		</div>
+
+
+		</td>
+	</tr>
+	</table>
+
+	<br /><style>
+.ccopen{
+	background: #FFFFFF url("./styles/rinDark/theme/images/cc_down.gif") no-repeat center center;
+	width: 12px;
+	height:12px; 
+}
+.ccclose{
+	background: #FFFFFF url("./styles/rinDark/theme/images/cc_up.gif") no-repeat center center;
+	width: 12px;
+	height:12px;
+}
+</style> 
+<script type="text/javascript">
+// <![CDATA[
+function flipf(btn, thiscat)
+{
+	rnd = Math.random().toString().substring(2);
+    myurl = "./ajax_update_collapse.php?dummy=1&sid=50ead6db992b0c075b84241e1c78fc49" + "&rnd=" + rnd;
+	if (btn.className=="ccclose")
+	{
+		btn.className="ccopen";
+		document.getElementById('flist'+thiscat).style.display="none";
+		myurl = myurl + "&cset=" + thiscat;
+	}
+	else
+	{
+		btn.className="ccclose";
+		document.getElementById('flist'+thiscat).style.display="";
+		myurl = myurl + "&cunset=" + thiscat;
+	}
+	// alert (myurl);
+	var myajax=ajaxobject();
+	myajax.open('GET',myurl,true);
+	myajax.onreadystatechange = function()
+		{
+			if (myajax.readyState == 4)
+			{
+				if (myoutput = myajax.responseXML)
+					{
+						// Discard
+						return;
+					}
+			}		
+		}
+	myajax.send(null);
+}
+function ajaxobject()
+{
+	try
+	{
+		var http_request = false;
+		if (window.XMLHttpRequest)
+		{ // Mozilla, Safari,...
+			http_request = new XMLHttpRequest();
+			if (http_request.overrideMimeType)
+			{
+				http_request.overrideMimeType('text/xml');
+			}
+		}
+		else if (window.ActiveXObject)
+		{ // IE
+			try
+			{
+				http_request = new ActiveXObject('Msxml2.XMLHTTP');
+			}
+			catch (e)
+			{
+				try
+				{
+					http_request = new ActiveXObject('Microsoft.XMLHTTP');
+				}
+				catch (e)
+				{
+				}
+			}
+		}
+
+		if (!http_request)
+		{
+			 return false;
+		}
+		else
+		{
+			return http_request;
+	}	
+	}
+	catch (e)
+	{
+		handle(e);
+		return false;
+	}
+}
+
+//]]>
+</script>
+<div id="pagecontent">
+<table width="100%" cellspacing="0" cellpadding="0" border="0">
+<tr>
+	<td width="20%" valign="top">
+		<table class="tablebg" width="100%" cellspacing="1">
+		<tr><th>Options</th></tr>
+		<tr><td class="row1"><a class="nav" href="./ucp.php?i=163">Overview</a></td></tr>
+		<tr><td class="row2"><a class="nav" href="./ucp.php?i=164">Profile</a></td></tr>
+		<tr><td class="row1"><a class="nav" href="./ucp.php?i=165">Board preferences</a></td></tr>
+		<tr><td class="row2"><b class="nav">Private messages</b>
+			<ul class="nav" style="margin: 0; padding: 0;">
+				<li><b>&#187; </b><a href="./ucp.php?i=pm&amp;folder=inbox" style="font-weight: bold;">Inbox</a></li>
+				<li><b>&#187; </b><a href="./ucp.php?i=pm&amp;folder=outbox">Outbox</a></li>
+			</ul></td></tr>
+		</table>
+		<br />
+		<table class="tablebg" width="100%" cellspacing="1">
+		<tr><th>Message colours</th></tr>
+		<tr><td class="row1 pm_marked_colour"><span class="genmed">Marked message</span></td></tr>
+		<tr><td class="row1 pm_replied_colour"><span class="genmed">Replied to message</span></td></tr>
+		<tr><td class="row1 pm_friend_colour"><span class="genmed">Message from friend</span></td></tr>
+		<tr><td class="row1 pm_foe_colour"><span class="genmed">Message from foe</span></td></tr>
+		</table>
+	</td>
+	<td width="4">&nbsp;</td>
+	<td valign="top">
+		<form id="viewfolder" method="post" action="./ucp.php?i=pm&amp;folder=inbox">
+		<table class="tablebg" width="100%" cellspacing="1">
+		<tr><td class="cat"><span class="gensmall">[ <b>4</b> Messages ]</span></td></tr>
+		</table>
+		<br clear="all" />
+		<table class="tablebg" width="100%" cellspacing="1">
+		<tr>
+			<th colspan="2">Subject</th>
+			<th>Author</th>
+			<th>Sent</th>
+			<th>Mark</th>
+		</tr>
+<tr>
+	<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.gif" width="19" height="18" alt="No new messages" title="No new messages" /></td>
+	<td class="row1"><span class="pm_replied_colour" style="float: left;"><img src="images/spacer.gif" width="10" height="10" alt="" /></span>&nbsp; <span class="topictitle"><a href="./ucp.php?i=pm&amp;mode=view&amp;f=0&amp;p=900">Re: Topic removed</a></span></td>
+	<td class="row1" width="130" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=300">Valentine</a></p></td>
+	<td class="row1" width="130" align="center"><p class="topicdetails">Wednesday, 02 Sep 2026, 16:21</p></td>
+	<td class="row1" width="45" align="center"><input type="checkbox" class="radio" name="marked_msg_id[]" value="900" /></td>
+</tr>
+<tr>
+	<td class="row2" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.gif" width="19" height="18" alt="No new messages" title="No new messages" /></td>
+	<td class="row2"><span class="topictitle"><a href="./ucp.php?i=pm&amp;mode=view&amp;f=0&amp;p=901">AUTO REPLY</a></span></td>
+	<td class="row2" width="130" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=301">dead_bot</a></p></td>
+	<td class="row2" width="130" align="center"><p class="topicdetails">Friday, 20 Oct 2023, 09:44</p></td>
+	<td class="row2" width="45" align="center"><input type="checkbox" class="radio" name="marked_msg_id[]" value="901" /></td>
+</tr>
+<tr>
+	<td class="row1" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.gif" width="19" height="18" alt="No new messages" title="No new messages" /></td>
+	<td class="row1"><span class="topictitle"><a href="./ucp.php?i=pm&amp;mode=view&amp;f=0&amp;p=902">AUTO REPLY</a></span></td>
+	<td class="row1" width="130" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=302">dead_bot</a></p></td>
+	<td class="row1" width="130" align="center"><p class="topicdetails">Wednesday, 18 Oct 2023, 21:14</p></td>
+	<td class="row1" width="45" align="center"><input type="checkbox" class="radio" name="marked_msg_id[]" value="902" /></td>
+</tr>
+<tr>
+	<td class="row2" width="25" align="center"><img src="./styles/rinDark/imageset/topic_read.gif" width="19" height="18" alt="No new messages" title="No new messages" /></td>
+	<td class="row2"><span class="pm_marked_colour" style="float: left;"><img src="images/spacer.gif" width="10" height="10" alt="" /></span>&nbsp; <span class="topictitle"><a href="./ucp.php?i=pm&amp;mode=view&amp;f=0&amp;p=903">About that repack</a></span></td>
+	<td class="row2" width="130" align="center"><p class="topicauthor"><a href="./memberlist.php?mode=viewprofile&amp;u=303">someone</a></p></td>
+	<td class="row2" width="130" align="center"><p class="topicdetails">Tuesday, 17 Oct 2023, 21:00</p></td>
+	<td class="row2" width="45" align="center"><input type="checkbox" class="radio" name="marked_msg_id[]" value="903" /></td>
+</tr>
+		</table>
+		<table width="100%" cellspacing="1">
+		<tr>
+			<td class="nav" valign="middle" nowrap="nowrap">&nbsp;Page <strong>1</strong> of <strong>1</strong><br /></td>
+			<td class="gensmall" width="100%" align="right" nowrap="nowrap">&nbsp;</td>
+		</tr>
+		</table>
+		</form>
+	</td>
+</tr>
+</table>
+</div>
+
+	<br clear="all" />
+</div>
+
+<div id="wrapfooter">
+    <br><br><br>
+	
+	<span class="copyright">Powered by <a href="https://www.phpbb.com/">phpBB</a>&reg; Forum Software &copy; phpBB Group
+	</span>
+	<br><br>
+</div>
+	
+		</td>
+	</tr>
+	<br>
+</table>
+	<br>
+</body>
+</html>

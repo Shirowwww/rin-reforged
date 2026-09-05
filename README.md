@@ -53,6 +53,11 @@ checks this repository and offers new versions on its own.
 - **Better posting** — quick reply from the foot of the thread, quote what you
   select, an unsent reply kept in your browser, long quotes and low-value
   replies folded (never removed), images in a lightbox.
+- **Signed in, too.** The member list, the message folders, the control
+  panel, the posting form and profiles get the same treatment: labelled
+  columns, one-line dates, English ranks, subjects that line up, a colour
+  palette you can actually hit, and Subscribe / Bookmark / E-mail friend in
+  the topic bar rather than in a strip of their own.
 - **Readable, and measured.** Every colour this script paints meets WCAG AA on
   all four themes — 8 748 pieces of text checked across five pages, and the
   check fails the build if one slips. The board's own group-coloured usernames
@@ -98,6 +103,7 @@ attached, so changes are checked against the actual markup.
 ```sh
 npm i -D playwright-core
 node test/make-quotes-fixture.js   # regenerate the synthesised fixtures
+node test/make-member-fixtures.js  # the pages only a member sees, made up
 node test/prepare.js               # build test/pages from test/fixtures
 python test/serve.py &             # http://localhost:8731
 export RR_CHROME=/path/to/chrome

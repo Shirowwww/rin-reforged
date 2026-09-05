@@ -7,3 +7,4 @@ test/pages/
 # comparison. Not ours to redistribute.
 CS.RIN.RU Enhanced*.txt
 test/sweep/
+.playwright-mcp/

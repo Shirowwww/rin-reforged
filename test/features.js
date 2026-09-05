@@ -67,6 +67,10 @@ const SEARCH = "/forum/search/search.php?keywords=steam+api";
 /* The same page with a single result — the shape of "View your posts"
    for most accounts. */
 const SEARCH_ONE = "/forum/searchone/search.php?search_id=egosearch";
+/* The pages only a member sees — synthesised, see make-member-fixtures.js. */
+const MEMBERS = "/forum/members/memberlist.php";
+const PM = "/forum/ucp/ucp.php?i=pm&folder=inbox";
+const PROFILE_M = "/forum/profilem/memberlist.php?mode=viewprofile&u=1";
 /* Five pages of one topic. The middle page on purpose: the index has
    to read forwards and backwards from wherever it is started, and use
    the page already on screen rather than fetching it again. */
@@ -3308,6 +3312,89 @@ const CHECKS = [
             return foldedAfter === foldedBefore
                 ? null
                 : "restoring the post unfolded " + (foldedBefore - foldedAfter) + " quote(s) with it";
+        },
+    },
+    /* ---- The pages only a member sees ----------------------------- */
+    {
+        name: "member list: columns named, ranks in one language, dates on one line",
+        url: MEMBERS,
+        run: () => {
+            const heads = Array.from(document.querySelectorAll("th[data-rr-col]")).map((h) => h.getAttribute("data-rr-col"));
+            for (const want of ["num", "author", "date", "posts", "rank", "action"]) {
+                if (!heads.includes(want)) return "no column labelled " + want + " (got " + heads.join(",") + ")";
+            }
+            if (document.querySelector("table[data-rr-list]")) return "the member list was taken for a topic listing";
+
+            const ranks = Array.from(document.querySelectorAll('td[data-rr-col="rank"]'));
+            const first = ranks[0];
+            if (!first || first.textContent.trim() !== "Advanced forumer") return "rank reads " + JSON.stringify(first && first.textContent.trim());
+            if (!/Завсегдатай/.test(first.getAttribute("title") || "")) return "the Russian half is not kept on the title";
+            const donor = ranks.find((cell) => /Super-Donor/.test(cell.textContent));
+            if (!donor || donor.textContent.trim() !== "Super-Donor <3") return "a rank with no Russian half was changed: " + JSON.stringify(donor && donor.textContent.trim());
+
+            const date = document.querySelector('td[data-rr-col="date"]');
+            if (!date || date.textContent.trim() !== "15 Aug 2003, 05:06") return "date reads " + JSON.stringify(date && date.textContent.trim());
+            if (!/^Friday, 15 Aug 2003/.test(date.getAttribute("title") || "")) return "the weekday is not kept on the title";
+            if (getComputedStyle(date).whiteSpace !== "nowrap") return "a date cell may still wrap";
+
+            const lone = Array.from(document.querySelectorAll("td.nav")).find((cell) => /Page 1 of 1/.test(cell.textContent));
+            if (lone && lone.getBoundingClientRect().width > 0) return '"Page 1 of 1" still drawn over a one-page list';
+            return null;
+        },
+    },
+    {
+        name: "message folder: subjects line up, markers drawn, sent dates on one line",
+        url: PM,
+        run: () => {
+            const heads = Array.from(document.querySelectorAll("th[data-rr-col]")).map((h) => h.getAttribute("data-rr-col"));
+            for (const want of ["title", "author", "date", "mark"]) {
+                if (!heads.includes(want)) return "no column labelled " + want + " (got " + heads.join(",") + ")";
+            }
+            const subjects = Array.from(document.querySelectorAll('td[data-rr-col="title"] a[href*="mode=view"]'));
+            if (subjects.length !== 4) return subjects.length + " subject links";
+            const lefts = new Set(subjects.map((a) => Math.round(a.getBoundingClientRect().left)));
+            if (lefts.size !== 1) return "subjects start at " + Array.from(lefts).join(", ");
+
+            const marks = document.querySelectorAll('td[data-rr-col="title"] .rr-pm-mark');
+            if (marks.length !== 4) return marks.length + " markers for 4 rows";
+            const replied = document.querySelector(".pm_replied_colour.rr-pm-mark");
+            if (!replied || getComputedStyle(replied).backgroundColor === "rgba(0, 0, 0, 0)") return "the replied marker has no colour";
+            const legend = document.querySelector("td.pm_marked_colour");
+            if (!legend || getComputedStyle(legend).boxShadow === "none") return "the legend row carries no colour";
+
+            const sent = document.querySelector('td[data-rr-col="date"] p.topicdetails');
+            if (!sent || sent.textContent.trim() !== "02 Sep 2026, 16:21") return "sent reads " + JSON.stringify(sent && sent.textContent.trim());
+            if (getComputedStyle(sent).whiteSpace !== "nowrap") return "a sent date may still wrap";
+
+            const nav = document.querySelector("a.nav");
+            const body = getComputedStyle(document.body).color;
+            if (!nav || getComputedStyle(nav).color === body) return "the control panel's section links are painted as text";
+            return null;
+        },
+    },
+    {
+        name: "profile: spanning header is not a listing, joined date and rank read as elsewhere",
+        url: PROFILE_M,
+        run: () => {
+            if (document.querySelector("#wrapcentre td[data-rr-col]")) return "the profile table was labelled as a listing";
+            const joined = Array.from(document.querySelectorAll("#wrapcentre b.gen")).find((b) => /\d{4}, \d{2}:\d{2}/.test(b.textContent));
+            if (!joined || joined.textContent.trim() !== "13 Feb 2020, 13:38") return "joined reads " + JSON.stringify(joined && joined.textContent.trim());
+            const rank = document.querySelector('td.postdetails[align="center"]');
+            if (!rank || rank.textContent.trim() !== "Beginner") return "rank reads " + JSON.stringify(rank && rank.textContent.trim());
+            if (!/Без звания/.test(rank.getAttribute("title") || "")) return "the Russian half is not kept on the title";
+            return null;
+        },
+    },
+    {
+        name: "one-result search: the page counter goes, the match count stays",
+        url: SEARCH_ONE,
+        run: () => {
+            const strip = Array.from(document.querySelectorAll("#wrapcentre div.gensmall")).find((d) => /Search found/.test(d.textContent));
+            if (!strip) return "no match count on the page";
+            const shown = strip.innerText.replace(/\s+/g, " ").trim();
+            if (/Page 1 of 1/.test(shown)) return '"Page 1 of 1" still drawn beside the match count';
+            if (!/Search found 1 match/.test(shown)) return "match count reads " + JSON.stringify(shown);
+            return null;
         },
     },
 ];

@@ -58,10 +58,35 @@ function controlLink(img) {
     const label = (img.getAttribute("title") || img.getAttribute("alt") || "").trim();
     if (!label || label === "*") return false;
 
+    if (unreadJump(link, img, label)) return true;
+
     link.classList.add("rr-ctl");
     link.setAttribute("title", label);
     link.append(el("span.rr-ctl__label", {}, [label]));
     img.style.display = "none";
+    return true;
+}
+
+/**
+ * The little arrow beside an unread topic's title, "View first unread
+ * post". As a labelled control it was a 146px button in front of every
+ * title on "View new posts" — a hundred of them on the page, each
+ * louder than the title it belonged to. It is an arrow; it stays one,
+ * after the title, and the row that already sends its title to the
+ * first unread post (the unreadFromList setting) hides it.
+ */
+function unreadJump(link, img, label) {
+    if (!/view=unread/.test(link.getAttribute("href") || "")) return false;
+    const row = link.closest("tr");
+    const title = row && row.querySelector("a.topictitle");
+    if (!title) return false;
+
+    link.classList.add("rr-icon-btn", "rr-unread-jump");
+    link.setAttribute("title", label);
+    link.setAttribute("aria-label", label);
+    link.append(icon("arrowDown", 12));
+    img.style.display = "none";
+    title.after(link);
     return true;
 }
 

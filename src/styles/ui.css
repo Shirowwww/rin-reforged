@@ -51,6 +51,29 @@
    together in the top bar, two of them coloured as if they meant
    something different from the third. They do not. */
 html[data-rr] a.rr-icon-btn { color: var(--rr-muted); }
+
+/* Three heights in one strip — an 18px number, 25px text buttons, 30px
+   icon buttons — read as three different things. They are one row of
+   tools. */
+html[data-rr] .rr-posttools .rr-icon-btn { width: 26px; height: 26px; }
+
+/* The first-unread arrow after a listing title (icons.js). */
+html[data-rr] a.rr-unread-jump {
+    width: 22px;
+    height: 22px;
+    margin-left: 2px;
+    vertical-align: middle;
+    color: var(--rr-accent-text, var(--rr-accent));
+}
+html[data-rr] a.rr-unread-jump:hover { color: var(--rr-text-strong); background: var(--rr-surface-3); }
+html[data-rr] tr[data-rr-unread] a.rr-unread-jump { display: none; }
+html[data-rr] .rr-posttools .rr-postnum {
+    display: inline-flex;
+    align-items: center;
+    height: 25px;
+    padding: 0 6px;
+    box-sizing: border-box;
+}
 html[data-rr] a.rr-icon-btn:hover { color: var(--rr-text-strong); text-decoration: none; }
 
 /* ---- Skip link ---------------------------------------------------- */
@@ -161,8 +184,12 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     align-items: center;
     gap: var(--rr-s2) var(--rr-s3);
     flex-wrap: wrap;
-    margin: 0 0 var(--rr-s4);
-    padding-bottom: var(--rr-s3);
+    /* Clips the hairline of whichever group starts a line (see the
+       groups below). The 4px and 2px of padding, taken back by the
+       margins, keep focus rings inside the clip. */
+    margin: -2px -4px var(--rr-s4);
+    padding: 2px 4px var(--rr-s3);
+    overflow: hidden;
     border-bottom: 1px solid var(--rr-line);
     font-size: var(--rr-fs-sm);
 }
@@ -175,6 +202,10 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     min-width: 0;
 }
 .rr-boardbar__end { margin-left: auto; gap: var(--rr-s2); }
+/* Pulled left by exactly one divider — its hairline and its padding —
+   so the first group on every line puts its text where the row starts
+   and its hairline in the 4px the bar clips. */
+.rr-boardbar__main { column-gap: 0; margin-left: calc(-1px - var(--rr-s5)); }
 
 /* Ways of looking at threads, then what the board is, then you.
 
@@ -190,8 +221,15 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     flex-wrap: wrap;
     min-width: 0;
 }
-.rr-boardbar__group + .rr-boardbar__group {
+/* Every group carries the hairline on its left, not only the ones
+   after the first: logged in, the row is wider than the page and the
+   board group wraps, and a `+` rule drew its hairline at the start of
+   the second line, 25px before "Forum rules" and under nothing. The
+   bar's overflow clips the one that lands at a line start, so what
+   shows is a divider between groups and never a divider before one. */
+.rr-boardbar__group {
     padding-left: var(--rr-s5);
+    margin-right: var(--rr-s5);
     border-left: 1px solid var(--rr-line);
 }
 .rr-boardbar__link {

@@ -88,6 +88,13 @@ const PAGES = [
     { fixture: "viewtopic-thread-4.html", out: "forum/thread/viewtopic.start-18.php" },
     { fixture: "viewtopic-thread-5.html", out: "forum/thread/viewtopic.start-24.php" },
     { fixture: "profile.html", out: "forum/profile/memberlist.php" },
+    /* The pages only a member sees, synthesised by
+       make-member-fixtures.js: the member list, a message folder and a
+       member's profile, with the column shapes and the two-language
+       ranks the first signed-in pass found there. */
+    { fixture: "memberlist.html", out: "forum/members/memberlist.php" },
+    { fixture: "ucp-pm.html", out: "forum/ucp/ucp.php" },
+    { fixture: "profile-member.html", out: "forum/profilem/memberlist.php" },
     /* Search results, which are a listing the board draws with a
        template of its own: its own header row, its own refine box
        written into the page three times over, and a "Sort by" strip a

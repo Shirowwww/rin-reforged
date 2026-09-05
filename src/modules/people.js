@@ -165,6 +165,8 @@ function addHideControl(post) {
  */
 function addUnreadJump(bar) {
     if (!bar || !PAGE.topicId) return;
+    // The board printed one for this member and the bar already took it.
+    if (bar.querySelector('a[href*="view=unread"]')) return;
 
     const url = new URL("./viewtopic.php", location.href);
     if (PAGE.forumId) url.searchParams.set("f", String(PAGE.forumId));

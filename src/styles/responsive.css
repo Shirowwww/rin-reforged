@@ -10,6 +10,35 @@
    ------------------------------------------------------------------ */
 
 @media (max-width: 860px) {
+    /* The optional nouns on the topic bar's second row. */
+    html[data-rr] .rr-topicbar .rr-opt { display: none; }
+
+    /* A profile or control panel form puts its labels in cells aligned
+       right, against the value in the next cell. Stacked, the label sat
+       at the right edge above a value at the left: read as a column,
+       they belong on the same side. */
+    html[data-rr] #wrapcentre td[align="right"]:not([data-rr-col]) { text-align: left; }
+
+    /* A form row that is a checkbox in one cell and its words in the
+       next: stacked, the box sat on a line of its own above "Disable
+       BBCode". The row stays a row. */
+    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="checkbox"]:only-child),
+    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="radio"]:only-child) {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="checkbox"]:only-child) > td,
+    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="radio"]:only-child) > td {
+        display: block;
+        width: auto;
+        padding: 4px 0;
+    }
+
+    /* The colour palette flows to the width it has (forum.css lays it
+       out as a wrapped row of squares). */
+    html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) { width: auto; max-width: 100%; }
+
     /* Content width is a desktop setting; on a phone the window is the
        constraint whatever it says. */
     html[data-rr] { --rr-content-max: 100%; --rr-measure: none; }

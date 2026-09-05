@@ -385,6 +385,117 @@ html[data-rr] table[data-rr-list] tr > td[data-rr-col="last"][align] { text-alig
 html[data-rr] table[data-rr-list] td[data-rr-col="title"],
 html[data-rr] table[data-rr-list] th[data-rr-col="title"] { width: 100%; }
 
+/* The title column's 100% starves the Last post column on a search
+   results page, where the titles are long: 108px wide and three lines
+   tall on "View your posts". A floor wide enough for a date and a name
+   keeps it on one line and hands the rest to the title. */
+html[data-rr] table[data-rr-list] td[data-rr-col="last"] { min-width: 17ch; }
+@media (min-width: 861px) {
+    /* One line by construction; if the column is too narrow the table
+       hands it width off the title rather than breaking the arrow onto
+       a second line. */
+    html[data-rr] table[data-rr-list] .rr-lastpost { white-space: nowrap; }
+}
+
+/* A date on its own — "Joined", "Sent" — never has a reason to wrap once
+   the weekday is off it. */
+html[data-rr] [data-rr-date] { white-space: nowrap; }
+
+/* The control panel's section links carry .nav, which the size reset
+   above paints as body text: Profile, Board preferences and the rest
+   read as headings and nobody clicks a heading. They are links. */
+html[data-rr] a.nav { color: var(--rr-link); }
+html[data-rr] a.nav:hover { color: var(--rr-link-hover, var(--rr-link)); text-decoration: underline; }
+
+/* The posting form's filehost warning sits at 10.4px, under the floor
+   everything else in the interface keeps to. */
+html[data-rr] .link_unsafe_note,
+html[data-rr] .link_unsafe_note .tooltip { font-size: var(--rr-fs-xs); }
+
+/* The posting form's BBCode buttons: the template types `width: 30px`,
+   `40px`, `50px` into each tag, and the 16px of padding every button
+   here gets left "Quote" an 8px box to be drawn in — "Quot", "Coc",
+   "URI". Their width is their word's. */
+html[data-rr] input.btnbbcode[type="button"] {
+    width: auto !important;
+    min-width: 2.4em;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+/* The font colour palette beside the message box: 141 swatches, each
+   a 7×6px link around a spacer gif — a click target smaller than a
+   full stop. Twice the size on each side is four times the target,
+   and the column it makes is still narrower than its label was. */
+html[data-rr] td[bgcolor] > a[onclick*="bbfontstyle"] {
+    display: block;
+    width: 14px;
+    height: 14px;
+}
+html[data-rr] td[bgcolor] > a[onclick*="bbfontstyle"] > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+html[data-rr] td[bgcolor]:has(> a[onclick*="bbfontstyle"]) {
+    width: 14px !important;
+    height: 14px !important;
+    padding: 0 !important;
+    border-radius: 2px;
+}
+html[data-rr] td[bgcolor]:has(> a[onclick*="bbfontstyle"]):hover { outline: 2px solid var(--rr-text-strong); outline-offset: -1px; }
+/* The template lays the swatches out six to a row, 25 rows deep — at
+   14px that is taller than the message box beside it. Flowed nine to
+   a row it is 16 rows and the same height as the box. `:not(:has(
+   table))` because :has() reaches down through every level: without
+   it the layout tables around the palette matched too, and the whole
+   form became a 150px flex column. `#wrapcentre` because the narrow
+   layout's table rules carry it, and an id outranks any number of
+   classes: without it the phone stacked the swatches again. */
+html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    width: 150px;
+    margin: 0 auto;
+}
+html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) tbody,
+html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) tr { display: contents; }
+html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) td { display: block; flex: 0 0 auto; }
+
+/* The board's radios and checkboxes are 13px and typed flush against
+   their word — "Yes" with the button touching the Y on one row and a
+   space away on the next. One size, one gap, the accent for the mark. */
+html[data-rr] input[type="radio"],
+html[data-rr] input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    margin: 0 6px 0 0;
+    vertical-align: -3px;
+    accent-color: var(--rr-accent);
+}
+
+/* Private message markers: the coloured squares the folder's legend
+   describes. */
+html[data-rr] .rr-pm-mark {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    vertical-align: -1px;
+    float: none !important;
+    background: var(--rr-pm, transparent);
+}
+html[data-rr] .rr-pm-mark img { display: none; }
+html[data-rr] .pm_marked_colour { --rr-pm: var(--rr-warn); }
+html[data-rr] .pm_replied_colour { --rr-pm: var(--rr-tag-info); }
+html[data-rr] .pm_friend_colour { --rr-pm: var(--rr-ok); }
+html[data-rr] .pm_foe_colour { --rr-pm: var(--rr-danger); }
+html[data-rr] td.pm_marked_colour,
+html[data-rr] td.pm_replied_colour,
+html[data-rr] td.pm_friend_colour,
+html[data-rr] td.pm_foe_colour { box-shadow: inset 4px 0 0 var(--rr-pm); }
+
 html[data-rr] .forumlink,
 html[data-rr] .topictitle {
     color: var(--rr-text-strong);

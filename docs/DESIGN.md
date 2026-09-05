@@ -271,6 +271,46 @@ of the four reasons it is.
 
 ![A folded quote](screenshots/folded-quote.png)
 
+### It works signed in
+
+Nothing a fixture can show and nothing a sweep can reach: the member
+list, the message folders, the control panel, the posting form and a
+profile exist only for an account. A pass through them with one found
+the same board underneath, with the same habits, in places the earlier
+work had never looked.
+
+- **Columns have names there too.** "Joined", "Sent", "Rank", "Subject"
+  join the listing's column names, so a message folder's dates lose
+  their weekday and stop wrapping, the member list's ranks lose their
+  Russian half (kept on the title, as everywhere), and a profile's
+  "Joined: Thursday, …" reads like every other date on the site. A
+  spanning header means "the title column" only on a listing; a
+  profile's *User statistics* spans a label and a value and is left
+  alone.
+- **A member's topic actions are topic actions.** subsilver2 prints
+  Subscribe topic, Bookmark topic and E-mail friend for members in the
+  same strip as the reply button, with a second "First unread post" at
+  the far end. They join the bar's second row, once, and the strip
+  goes — properly: a hidden cell's `|` still shows up in `textContent`,
+  and the first attempt left a 20px band with nothing in it.
+- **The posting form.** The BBCode buttons had `width: 40px` typed into
+  them and 16px of padding on each side, so "Quote" was drawn in an 8px
+  box. The font colour palette was 141 links of 7×6px around spacer
+  gifs — a click target smaller than a full stop — now 14px squares
+  flowed nine to a row, the height of the message box beside them. On a
+  phone the narrow layout had stacked them into a 2 250px column.
+- **Alignment, measured.** The board bar's group divider was drawn
+  before the first group of a wrapped line, 25px before "Forum rules"
+  and under nothing; the *Releases* title sat 6px above its own row
+  because `html[data-rr] h3` outranks the panel's rule; a post's tools
+  came in three heights; a message folder's subjects started 8px apart
+  depending on an invisible marker; a page short enough for no
+  scrollbar moved everything 8px. Each of these is a number now, and
+  the number is zero.
+- **Radios and checkboxes** are 15px, a gap from their word, and take
+  the accent. The control panel's section links looked like headings;
+  they are links and are coloured as links.
+
 ### It is readable, and that is a measurement rather than an opinion
 
 Four themes and about forty colour tokens, every one of them chosen by
@@ -405,6 +445,7 @@ idealised version of it.
 
 ```sh
 node test/make-quotes-fixture.js   # regenerates the synthesised fixtures
+node test/make-member-fixtures.js  # the pages only a member sees, made up
 node test/prepare.js               # builds test/pages from test/fixtures
 python test/serve.py               # http://localhost:8731/forum/viewforum.php?f=10
 node test/check.js                 # headless pass over every page and setting
@@ -471,6 +512,14 @@ for cases none of the saved threads happens to contain:
   chip filtering the one row — and the heading `Topics`, which on the
   index names a *counting* column, was taking the marker gutter and the
   full-width title column off the page with nothing noticing.
+
+`test/make-member-fixtures.js` makes three more that no saved page could be:
+the member list, a private message folder and a member's profile, with
+made-up names and dates. They carry the shapes the first signed-in pass
+found — a two-language Rank column, a Sent column, a marker in front of some
+subjects and not others, a profile header spanning a label and a value — and
+nothing of anybody's account. A real member page is never saved as a
+fixture; it is somebody's inbox.
 
 `check.js` also measures the frame at 1280, 1600, 1920 and 2560: it has
 to reach 78% of the window or its ceiling, whichever comes first, may

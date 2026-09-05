@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.8.5
+// @version         0.8.6
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -342,6 +342,15 @@ html[data-rr][data-rr-still] *::after {
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
     scroll-behavior: auto !important;
+}
+
+/* A page short enough to need no scrollbar is 15px wider, and
+   everything centred in it moves 8px between one page and the next.
+   The gutter is reserved either way — on a desktop. The narrow layout
+   is fluid and centres nothing, and a classic scrollbar's 15px is a
+   quarter of a topic bar's spare room at 390px. */
+@media (min-width: 861px) {
+    html[data-rr] { scrollbar-gutter: stable; }
 }
 
 /* == forum.css == */
@@ -731,6 +740,117 @@ html[data-rr] table[data-rr-list] tr > td[data-rr-col="last"][align] { text-alig
    edge. */
 html[data-rr] table[data-rr-list] td[data-rr-col="title"],
 html[data-rr] table[data-rr-list] th[data-rr-col="title"] { width: 100%; }
+
+/* The title column's 100% starves the Last post column on a search
+   results page, where the titles are long: 108px wide and three lines
+   tall on "View your posts". A floor wide enough for a date and a name
+   keeps it on one line and hands the rest to the title. */
+html[data-rr] table[data-rr-list] td[data-rr-col="last"] { min-width: 17ch; }
+@media (min-width: 861px) {
+    /* One line by construction; if the column is too narrow the table
+       hands it width off the title rather than breaking the arrow onto
+       a second line. */
+    html[data-rr] table[data-rr-list] .rr-lastpost { white-space: nowrap; }
+}
+
+/* A date on its own — "Joined", "Sent" — never has a reason to wrap once
+   the weekday is off it. */
+html[data-rr] [data-rr-date] { white-space: nowrap; }
+
+/* The control panel's section links carry .nav, which the size reset
+   above paints as body text: Profile, Board preferences and the rest
+   read as headings and nobody clicks a heading. They are links. */
+html[data-rr] a.nav { color: var(--rr-link); }
+html[data-rr] a.nav:hover { color: var(--rr-link-hover, var(--rr-link)); text-decoration: underline; }
+
+/* The posting form's filehost warning sits at 10.4px, under the floor
+   everything else in the interface keeps to. */
+html[data-rr] .link_unsafe_note,
+html[data-rr] .link_unsafe_note .tooltip { font-size: var(--rr-fs-xs); }
+
+/* The posting form's BBCode buttons: the template types \`width: 30px\`,
+   \`40px\`, \`50px\` into each tag, and the 16px of padding every button
+   here gets left "Quote" an 8px box to be drawn in — "Quot", "Coc",
+   "URI". Their width is their word's. */
+html[data-rr] input.btnbbcode[type="button"] {
+    width: auto !important;
+    min-width: 2.4em;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+/* The font colour palette beside the message box: 141 swatches, each
+   a 7×6px link around a spacer gif — a click target smaller than a
+   full stop. Twice the size on each side is four times the target,
+   and the column it makes is still narrower than its label was. */
+html[data-rr] td[bgcolor] > a[onclick*="bbfontstyle"] {
+    display: block;
+    width: 14px;
+    height: 14px;
+}
+html[data-rr] td[bgcolor] > a[onclick*="bbfontstyle"] > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+html[data-rr] td[bgcolor]:has(> a[onclick*="bbfontstyle"]) {
+    width: 14px !important;
+    height: 14px !important;
+    padding: 0 !important;
+    border-radius: 2px;
+}
+html[data-rr] td[bgcolor]:has(> a[onclick*="bbfontstyle"]):hover { outline: 2px solid var(--rr-text-strong); outline-offset: -1px; }
+/* The template lays the swatches out six to a row, 25 rows deep — at
+   14px that is taller than the message box beside it. Flowed nine to
+   a row it is 16 rows and the same height as the box. \`:not(:has(
+   table))\` because :has() reaches down through every level: without
+   it the layout tables around the palette matched too, and the whole
+   form became a 150px flex column. \`#wrapcentre\` because the narrow
+   layout's table rules carry it, and an id outranks any number of
+   classes: without it the phone stacked the swatches again. */
+html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    width: 150px;
+    margin: 0 auto;
+}
+html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) tbody,
+html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) tr { display: contents; }
+html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) td { display: block; flex: 0 0 auto; }
+
+/* The board's radios and checkboxes are 13px and typed flush against
+   their word — "Yes" with the button touching the Y on one row and a
+   space away on the next. One size, one gap, the accent for the mark. */
+html[data-rr] input[type="radio"],
+html[data-rr] input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    margin: 0 6px 0 0;
+    vertical-align: -3px;
+    accent-color: var(--rr-accent);
+}
+
+/* Private message markers: the coloured squares the folder's legend
+   describes. */
+html[data-rr] .rr-pm-mark {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    vertical-align: -1px;
+    float: none !important;
+    background: var(--rr-pm, transparent);
+}
+html[data-rr] .rr-pm-mark img { display: none; }
+html[data-rr] .pm_marked_colour { --rr-pm: var(--rr-warn); }
+html[data-rr] .pm_replied_colour { --rr-pm: var(--rr-tag-info); }
+html[data-rr] .pm_friend_colour { --rr-pm: var(--rr-ok); }
+html[data-rr] .pm_foe_colour { --rr-pm: var(--rr-danger); }
+html[data-rr] td.pm_marked_colour,
+html[data-rr] td.pm_replied_colour,
+html[data-rr] td.pm_friend_colour,
+html[data-rr] td.pm_foe_colour { box-shadow: inset 4px 0 0 var(--rr-pm); }
 
 html[data-rr] .forumlink,
 html[data-rr] .topictitle {
@@ -1173,6 +1293,29 @@ html[data-rr] #overlayconfirmbtn {
    together in the top bar, two of them coloured as if they meant
    something different from the third. They do not. */
 html[data-rr] a.rr-icon-btn { color: var(--rr-muted); }
+
+/* Three heights in one strip — an 18px number, 25px text buttons, 30px
+   icon buttons — read as three different things. They are one row of
+   tools. */
+html[data-rr] .rr-posttools .rr-icon-btn { width: 26px; height: 26px; }
+
+/* The first-unread arrow after a listing title (icons.js). */
+html[data-rr] a.rr-unread-jump {
+    width: 22px;
+    height: 22px;
+    margin-left: 2px;
+    vertical-align: middle;
+    color: var(--rr-accent-text, var(--rr-accent));
+}
+html[data-rr] a.rr-unread-jump:hover { color: var(--rr-text-strong); background: var(--rr-surface-3); }
+html[data-rr] tr[data-rr-unread] a.rr-unread-jump { display: none; }
+html[data-rr] .rr-posttools .rr-postnum {
+    display: inline-flex;
+    align-items: center;
+    height: 25px;
+    padding: 0 6px;
+    box-sizing: border-box;
+}
 html[data-rr] a.rr-icon-btn:hover { color: var(--rr-text-strong); text-decoration: none; }
 
 /* ---- Skip link ---------------------------------------------------- */
@@ -1283,8 +1426,12 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     align-items: center;
     gap: var(--rr-s2) var(--rr-s3);
     flex-wrap: wrap;
-    margin: 0 0 var(--rr-s4);
-    padding-bottom: var(--rr-s3);
+    /* Clips the hairline of whichever group starts a line (see the
+       groups below). The 4px and 2px of padding, taken back by the
+       margins, keep focus rings inside the clip. */
+    margin: -2px -4px var(--rr-s4);
+    padding: 2px 4px var(--rr-s3);
+    overflow: hidden;
     border-bottom: 1px solid var(--rr-line);
     font-size: var(--rr-fs-sm);
 }
@@ -1297,6 +1444,10 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     min-width: 0;
 }
 .rr-boardbar__end { margin-left: auto; gap: var(--rr-s2); }
+/* Pulled left by exactly one divider — its hairline and its padding —
+   so the first group on every line puts its text where the row starts
+   and its hairline in the 4px the bar clips. */
+.rr-boardbar__main { column-gap: 0; margin-left: calc(-1px - var(--rr-s5)); }
 
 /* Ways of looking at threads, then what the board is, then you.
 
@@ -1312,8 +1463,15 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     flex-wrap: wrap;
     min-width: 0;
 }
-.rr-boardbar__group + .rr-boardbar__group {
+/* Every group carries the hairline on its left, not only the ones
+   after the first: logged in, the row is wider than the page and the
+   board group wraps, and a \`+\` rule drew its hairline at the start of
+   the second line, 25px before "Forum rules" and under nothing. The
+   bar's overflow clips the one that lands at a line start, so what
+   shows is a divider between groups and never a divider before one. */
+.rr-boardbar__group {
     padding-left: var(--rr-s5);
+    margin-right: var(--rr-s5);
     border-left: 1px solid var(--rr-line);
 }
 .rr-boardbar__link {
@@ -2885,7 +3043,10 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
     padding: var(--rr-card-pad);
     border-bottom: 1px solid var(--rr-line);
 }
-.rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); }
+/* \`html[data-rr] h3\` outranks \`.rr-releases__head h3\` and kept its
+   bottom margin, which centred the box 6px above the icon, the count
+   and the controls beside it. */
+html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-height: 1.2; }
 /* What the panel is showing: how much of the topic, and whether the
    topic itself is filtered down to it. Two controls answering the same
    question, so they sit together rather than at opposite ends of the
@@ -3146,6 +3307,35 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
    ------------------------------------------------------------------ */
 
 @media (max-width: 860px) {
+    /* The optional nouns on the topic bar's second row. */
+    html[data-rr] .rr-topicbar .rr-opt { display: none; }
+
+    /* A profile or control panel form puts its labels in cells aligned
+       right, against the value in the next cell. Stacked, the label sat
+       at the right edge above a value at the left: read as a column,
+       they belong on the same side. */
+    html[data-rr] #wrapcentre td[align="right"]:not([data-rr-col]) { text-align: left; }
+
+    /* A form row that is a checkbox in one cell and its words in the
+       next: stacked, the box sat on a line of its own above "Disable
+       BBCode". The row stays a row. */
+    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="checkbox"]:only-child),
+    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="radio"]:only-child) {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="checkbox"]:only-child) > td,
+    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="radio"]:only-child) > td {
+        display: block;
+        width: auto;
+        padding: 4px 0;
+    }
+
+    /* The colour palette flows to the width it has (forum.css lays it
+       out as a wrapped row of squares). */
+    html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) { width: auto; max-width: 100%; }
+
     /* Content width is a desktop setting; on a phone the window is the
        constraint whatever it says. */
     html[data-rr] { --rr-content-max: 100%; --rr-measure: none; }
@@ -5072,10 +5262,35 @@ function controlLink(img) {
     const label = (img.getAttribute("title") || img.getAttribute("alt") || "").trim();
     if (!label || label === "*") return false;
 
+    if (unreadJump(link, img, label)) return true;
+
     link.classList.add("rr-ctl");
     link.setAttribute("title", label);
     link.append(el("span.rr-ctl__label", {}, [label]));
     img.style.display = "none";
+    return true;
+}
+
+/**
+ * The little arrow beside an unread topic's title, "View first unread
+ * post". As a labelled control it was a 146px button in front of every
+ * title on "View new posts" — a hundred of them on the page, each
+ * louder than the title it belonged to. It is an arrow; it stays one,
+ * after the title, and the row that already sends its title to the
+ * first unread post (the unreadFromList setting) hides it.
+ */
+function unreadJump(link, img, label) {
+    if (!/view=unread/.test(link.getAttribute("href") || "")) return false;
+    const row = link.closest("tr");
+    const title = row && row.querySelector("a.topictitle");
+    if (!title) return false;
+
+    link.classList.add("rr-icon-btn", "rr-unread-jump");
+    link.setAttribute("title", label);
+    link.setAttribute("aria-label", label);
+    link.append(icon("arrowDown", 12));
+    img.style.display = "none";
+    title.after(link);
     return true;
 }
 
@@ -6298,6 +6513,22 @@ const COLUMN_NAMES = {
     replies: "replies",
     author: "author",
     views: "views",
+    /* The member list, the private message folders and the control
+       panel's own tables. Named so the same treatment reaches them —
+       a "Joined" or "Sent" column carries the same weekday date as a
+       listing's Last post column, and the "Rank" column carries the
+       same two-language rank as a post's profile. */
+    "#": "num",
+    username: "author",
+    joined: "date",
+    sent: "date",
+    "last updated": "date",
+    rank: "rank",
+    subject: "title",
+    mark: "mark",
+    message: "action",
+    "e-mail": "action",
+    website: "action",
 };
 
 /**
@@ -6307,6 +6538,13 @@ const COLUMN_NAMES = {
 function labelColumns(table) {
     const headRow = table.querySelector("tr:has(th)") || table.querySelector("th")?.parentElement;
     if (!headRow) return;
+
+    /* Only a listing reads a spanning header as the title column. A
+       profile's "User statistics" spans its label and value cells, and
+       read that way made the "Joined:" label an icon column and its
+       date a title. A message folder's title is a span with the link
+       inside, so that shape counts too. */
+    const listing = Boolean(table.querySelector("a.topictitle, a.forumlink, .topictitle a"));
 
     const columns = [];
     const heads = Array.from(headRow.querySelectorAll("th"));
@@ -6335,6 +6573,10 @@ function labelColumns(table) {
            The columns before the last are the marker and the spacer
            the template keeps beside it. */
         if (span > 1) {
+            if (!listing) {
+                for (let i = 0; i < span; i += 1) columns.push(null);
+                return;
+            }
             for (let i = 1; i < span; i += 1) columns.push(index === 0 && i === 1 ? "icon" : null);
             columns.push("title");
             return;
@@ -6712,6 +6954,16 @@ function buildForumBar() {
     // listing did not, and the sweep found the band on every forum.
     tidyBoardPagerStrip(bar, bar);
 
+    /* "Go to page 1, 2, 3, 4, 5 … 137  Next", right-aligned above the
+       table: the same journey as the pager in the bar, in a row of its
+       own. The topic page hides its copy above the posts and keeps the
+       one below; the listing does the same. */
+    if (settings.get("quickPager")) {
+        const strip = Array.from(document.querySelectorAll("#wrapcentre td.gensmall"))
+            .find((cell) => /^\s*Go to page/.test(cell.textContent) && cell.querySelector('a[onclick*="jumpto"]'));
+        if (strip) hideWithEmptyRow(strip);
+    }
+
     // The forum name led a line of its own directly above this bar,
     // repeating what the breadcrumb says two lines further up and
     // costing a band of the screen to do it. Inside the bar it labels
@@ -6729,6 +6981,139 @@ function buildForumBar() {
    nobody reads a weekday off. Kept on the title, dropped from the line
    so the date and the poster fit beside each other. */
 const WEEKDAY_RE = /^\s*(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day,\s*/i;
+
+/** Drop the weekday from the text nodes directly under `node`. Returns
+ *  whether anything changed, so the caller can keep the full date on
+ *  the title. */
+function dropWeekday(node) {
+    let changed = false;
+    for (const child of node.childNodes) {
+        if (child.nodeType === 3 && WEEKDAY_RE.test(child.textContent)) {
+            child.textContent = child.textContent.replace(WEEKDAY_RE, "");
+            changed = true;
+        } else if (child.nodeType === 1 && !child.children.length && /^(B|STRONG|SPAN|EM)$/.test(child.tagName)) {
+            // A profile's "Joined:" value is one tag down: <b>Thursday, …</b>.
+            if (dropWeekday(child)) changed = true;
+        }
+    }
+    return changed;
+}
+
+/* Hide a cell, and the row and table it leaves empty. */
+function hideWithEmptyRow(cell) {
+    cell.style.display = "none";
+    const row = cell.parentElement;
+    if (!row || row.tagName !== "TR") return;
+    const alive = Array.from(row.children).some((c) => c.style.display !== "none"
+        && (c.textContent.trim() || c.querySelector("img, a, input, form, select")));
+    if (alive) return;
+    row.style.display = "none";
+    const table = row.closest("table");
+    if (table && !Array.from(table.querySelectorAll("tr")).some((r) => r.style.display !== "none")) {
+        table.style.display = "none";
+    }
+}
+
+/* A date on its own in a cell — "Joined" on the member list, "Sent" in
+   a message folder, the announcement dates in the control panel. Same
+   weekday, same treatment as the Last post column; the cell is 144px
+   wide on the message list and the full date wrapped onto two lines
+   in every row. */
+function tightenDateCells() {
+    /* td.gen / td.genmed: "Joined:" in the control panel and on a
+       profile puts its label in one cell and the date in the next, so
+       the date cell's text starts with the weekday. A post's own date
+       cell never does — it starts with "Posted:" or is the topic
+       module's — and the anchor on the regex keeps them apart. */
+    const cells = document.querySelectorAll(
+        '#wrapcentre td[data-rr-col="date"], #wrapcentre p.topicdetails, #wrapcentre td.gen, #wrapcentre td.genmed, #wrapcentre b.gen, #wrapcentre b.genmed',
+    );
+    for (const cell of cells) {
+        if (cell.hasAttribute("data-rr-date")) continue;
+        const full = cell.textContent.replace(/\s+/g, " ").trim();
+        if (!WEEKDAY_RE.test(full)) continue;
+        if (!dropWeekday(cell)) continue;
+        cell.setAttribute("data-rr-date", "");
+        if (!cell.hasAttribute("title")) cell.setAttribute("title", full);
+    }
+}
+
+/* "Page 1 of 1" over a message folder or a subscriptions list: a page
+   counter for one page, on pages with no action bar to fold it into.
+   Nothing to navigate, nothing to say. Counters on other pages stay —
+   beside them is the only "Go to page" strip those pages have. */
+const LONE_PAGE_RE = /^\s*Page\s+1\s+of\s+1\s*$/;
+const LEADING_LONE_PAGE_RE = /^\s*Page\s+1\s+of\s+1\s+/;
+
+function dropLonePageCounters() {
+    // td.gensmall and span.nav: the search results page prints its
+    // counter in a span inside a floated div.
+    for (const cell of document.querySelectorAll("#wrapcentre td.nav, #wrapcentre td.gensmall, #wrapcentre span.nav")) {
+        if (cell.querySelector("a[href], form")) continue;
+        const text = cell.textContent.replace(/\s+/g, " ");
+        if (LONE_PAGE_RE.test(text)) { cell.style.display = "none"; continue; }
+
+        /* "Page 1 of 1 [ Search found 1 match ]" — the counter shares
+           its cell with a fact worth keeping. The counter is the run
+           of nodes up to the second number; that run goes, the rest
+           stays. */
+        if (!LEADING_LONE_PAGE_RE.test(text)) continue;
+        let seen = "";
+        for (const node of Array.from(cell.childNodes)) {
+            seen += node.textContent;
+            node.remove();
+            if (LONE_PAGE_RE.test(seen.replace(/\s+/g, " "))) break;
+        }
+        const first = cell.firstChild;
+        if (first && first.nodeType === 3) first.textContent = first.textContent.replace(/^\s+/, "");
+    }
+}
+
+/* A private message folder marks replied, marked, friend and foe
+   messages with a 10px spacer gif floated in front of the subject.
+   Invisible here — the board's colours never arrive — but still 10px
+   and a space wide, so the subjects on the rows that had one started
+   8px to the right of the others. The marker is drawn as a coloured
+   square with its meaning on the title, and the rows without one get
+   an empty one of the same size. */
+const PM_MARK = 'span[class^="pm_"][class$="_colour"]';
+
+function alignMessageMarkers() {
+    const cells = Array.from(document.querySelectorAll('#wrapcentre td[data-rr-col="title"]'));
+    if (!cells.some((cell) => cell.querySelector(PM_MARK))) return;
+    for (const cell of cells) {
+        const mark = cell.querySelector(PM_MARK);
+        if (mark) {
+            mark.classList.add("rr-pm-mark");
+            const kind = (mark.className.match(/pm_(\w+)_colour/) || [])[1];
+            if (kind) mark.setAttribute("title", kind[0].toUpperCase() + kind.slice(1) + " message");
+            continue;
+        }
+        // The board writes "&nbsp; " after its marker; the rows without one
+        // begin with whitespace the cell swallows, and a space here joins
+        // it rather than adding to it.
+        cell.prepend(el("span.rr-pm-mark", { "aria-hidden": "true" }), "\u00a0 ");
+    }
+}
+
+/* "Advanced forumer Завсегдатай" in the member list's Rank column: the
+   same bilingual rank a post's profile shows, on a page the post
+   module never looks at. The Russian half went on to the title. */
+function localiseRankCells() {
+    // td.postdetails[align=center]: the rank under the name on a profile.
+    const cells = document.querySelectorAll('td[data-rr-col="rank"], #wrapcentre td.postdetails[align="center"]');
+    for (const cell of cells) {
+        const full = cell.textContent.replace(/\s+/g, " ").trim();
+        const short = localiseRank(full);
+        // A rank with no Latin half is left as it is rather than emptied.
+        if (!short || short === full) continue;
+        for (const child of Array.from(cell.childNodes)) {
+            if (child.nodeType === 3) child.remove();
+        }
+        cell.prepend(short);
+        cell.setAttribute("title", full);
+    }
+}
 
 /**
  * Fold the Last post cell's two lines into one.
@@ -6750,11 +7135,7 @@ function tightenLastPost(cell) {
     const first = lines[0];
     const full = cell.textContent.replace(/\s+/g, " ").trim();
 
-    for (const node of first.childNodes) {
-        if (node.nodeType === 3 && WEEKDAY_RE.test(node.textContent)) {
-            node.textContent = node.textContent.replace(WEEKDAY_RE, "");
-        }
-    }
+    dropWeekday(first);
 
     for (const rest of lines.slice(1)) {
         if (!rest.textContent.trim() && !rest.querySelector("a, img")) { rest.remove(); continue; }
@@ -6808,6 +7189,14 @@ function initLists() {
     }
 
     dedupeSearchBoxes();
+
+    /* Before the page-kind gate: the member list, the message folders
+       and the control panel are none of those kinds and were getting
+       none of this. */
+    if (settings.get("tightRows")) tightenDateCells();
+    localiseRankCells();
+    dropLonePageCounters();
+    alignMessageMarkers();
 
     if (!PAGE.isForum && !PAGE.isIndex && !PAGE.isSearch) return;
 
@@ -7300,6 +7689,23 @@ function buildTopicBar() {
         }
     }
 
+    /* The board's own "First unread post", printed for members in the
+       strip that also holds the reply button. It is the same journey
+       people.js builds a link for when the board prints none, so it is
+       taken as it is — the board's href carries the #unread anchor —
+       and people.js leaves the bar alone when it finds one here. */
+    const unread = document.querySelector('#wrapcentre td.nav > a[href*="view=unread"]');
+    if (unread) {
+        const cell = unread.closest("td");
+        unread.classList.add("rr-btn");
+        unread.setAttribute("data-variant", "quiet");
+        unread.setAttribute("title", "Jump to the first post you have not read");
+        unread.textContent = "";
+        unread.append(icon("arrowDown", 13), "First unread");
+        here.append(unread);
+        if (cell) cell.style.display = "none";
+    }
+
     // people.js drops "First unread" in here, in front of this.
     here.append(el("span.rr-topicbar__spacer"));
 
@@ -7314,6 +7720,7 @@ function buildTopicBar() {
     }
 
     adoptTopicNav(away);
+    adoptMemberActions(away);
     away.append(el("span.rr-topicbar__spacer"));
 
     const form = document.querySelector("#topic-search, #search-box form");
@@ -7356,7 +7763,11 @@ const PAGE_OF_RE = /^\s*Page\s+\d+\s+of\s+\d+\s*$/;
 const POST_COUNT_RE = /^\s*\[\s*([\d\s]+)\s+(posts?|topics?)\s*\]\s*$/i;
 
 function tidyBoardPagerStrip(bar, row) {
-    let counted = false;
+    // The listing bar lifts its own "[ N topics ]" before calling this,
+    // and the board prints the strip twice, above and below the table.
+    // Starting from "not yet counted" put a second count in the bar on
+    // every forum listing — "841 topics  841 topics".
+    let counted = Boolean(bar.querySelector(".rr-topicbar__count"));
 
     for (const cell of document.querySelectorAll("#wrapcentre td.nav, #wrapcentre td.gensmall")) {
         if (cell.querySelector("a[href], form, input, select")) continue;
@@ -7375,15 +7786,52 @@ function tidyBoardPagerStrip(bar, row) {
         cell.style.display = "none";
     }
 
-    // A row of a board strip with every cell hidden is still a row.
+    hideEmptyBoardStrips(bar);
+}
+
+/* Is anything between `node` and `root` hidden inline? The strips are
+   emptied cell by cell, and a cell inside a hidden cell is as gone as
+   its parent. */
+function hiddenWithin(node, root) {
+    for (let n = node; n && n !== root; n = n.parentElement) {
+        if (n.style && n.style.display === "none") return true;
+    }
+    return false;
+}
+
+/* A row of a board strip with every cell hidden is still a row: a 20px
+   band with a border and nothing in it, between the Releases panel and
+   the first post. textContent sees through display:none — the hidden
+   cells' "|" separators and the reply link they still hold counted as
+   life — so only what is not hidden counts. */
+function hideEmptyBoardStrips(bar) {
     for (const strip of document.querySelectorAll("#wrapcentre table.tablebg")) {
-        if (strip.contains(bar)) continue;
+        if (bar && strip.contains(bar)) continue;
+        if (strip.querySelector(".postbody, .rr-releases, form")) continue;
         const cells = Array.from(strip.querySelectorAll("td"));
         if (!cells.length) continue;
-        const alive = cells.some((cell) => cell.style.display !== "none"
-            && (cell.textContent.trim() || cell.querySelector("img, a, input, form")));
+        const alive = cells.some((cell) => {
+            if (hiddenWithin(cell, strip)) return false;
+            const own = Array.from(cell.childNodes)
+                .filter((n) => n.nodeType === 3).map((n) => n.textContent).join("")
+                .replace(/[\s\u00a0|]+/g, "");
+            if (own) return true;
+            return Array.from(cell.querySelectorAll("img, a, input, select, button"))
+                .some((node) => !hiddenWithin(node, strip));
+        });
         if (!alive) strip.style.display = "none";
     }
+}
+
+/* "Previous topic", "Subscribe topic", "E-mail friend": on a phone the
+   second row of the bar is three lines of these. The noun is the same
+   on every one and the row says it already, so it is marked optional
+   and the narrow layout drops it — "Previous · Next · Subscribe". */
+function labelWithOptionalTail(link, label) {
+    const m = label.match(/^(.*\S)(\s+(?:topic|friend))$/i);
+    link.textContent = "";
+    if (m) link.append(document.createTextNode(m[1]), el("span.rr-opt", {}, [m[2]]));
+    else link.append(document.createTextNode(label));
 }
 
 /* The board's forum-rules box, which subsilver2 writes with
@@ -7426,13 +7874,44 @@ function adoptTopicNav(bar) {
         link.classList.add("rr-btn", "rr-topicnav");
         link.setAttribute("data-variant", "quiet");
         link.setAttribute("title", label);
-        link.textContent = "";
-        link.append(document.createTextNode(label));
+        labelWithOptionalTail(link, label);
         if (glyph) link.append(icon(glyph, 12));
         bar.append(link);
     }
 
     if (!strip.querySelector("a[href], form, input")) strip.style.display = "none";
+}
+
+/**
+ * Subscribe topic, Bookmark topic and E-mail friend.
+ *
+ * The three things a member can do to a topic besides answering it.
+ * subsilver2 prints them for members only, in a `td.nav` of the same
+ * strip as the reply button — which buildTopicBar hides cell by cell
+ * precisely so these survive — and a second time under the posts. Left
+ * where they were they made a grey band of their own between the bar
+ * and the first post, with a "First unread post" at the far end that
+ * the bar already carries. They are topic actions; they join the
+ * others, once, with the words the board gave them ("Unsubscribe
+ * topic" when you already are).
+ */
+const MEMBER_ACTION = 'a[href*="watch=topic"], a[href*="bookmark="], a[href*="mode=email"]';
+
+function adoptMemberActions(bar) {
+    const cells = Array.from(document.querySelectorAll("#wrapcentre td.nav"))
+        .filter((cell) => cell.querySelector(MEMBER_ACTION));
+    if (!cells.length) return;
+
+    for (const link of cells[0].querySelectorAll(MEMBER_ACTION)) {
+        const label = link.textContent.replace(/\s+/g, " ").trim() || link.getAttribute("title") || "";
+        if (!label) continue;
+        link.classList.add("rr-btn", "rr-topicnav");
+        link.setAttribute("data-variant", "quiet");
+        link.setAttribute("title", label);
+        labelWithOptionalTail(link, label);
+        bar.append(link);
+    }
+    for (const cell of cells) cell.style.display = "none";
 }
 
 function buildPagerGroup(info) {
@@ -7622,7 +8101,9 @@ function modernisePost(post) {
         if (posted && posted.nextSibling) {
             const when = posted.nextSibling.textContent.trim();
             if (when) {
-                head.append(el("time.rr-posthead__date", {}, [when]));
+                // The weekday goes, as everywhere else; the full date
+                // stays on the title.
+                head.append(el("time.rr-posthead__date", { title: when }, [when.replace(WEEKDAY_RE, "")]));
                 posted.parentElement.style.display = "none";
             }
         }
@@ -10610,6 +11091,8 @@ function addHideControl(post) {
  */
 function addUnreadJump(bar) {
     if (!bar || !PAGE.topicId) return;
+    // The board printed one for this member and the bar already took it.
+    if (bar.querySelector('a[href*="view=unread"]')) return;
 
     const url = new URL("./viewtopic.php", location.href);
     if (PAGE.forumId) url.searchParams.set("f", String(PAGE.forumId));
@@ -11279,7 +11762,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.8.5";
+const RR_VERSION = "0.8.6";
 
 function injectStyles() {
     const host = document.head || document.documentElement;
