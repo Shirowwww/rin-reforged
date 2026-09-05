@@ -249,7 +249,19 @@ function initCompose() {
         // got a reply box that could only ever be refused on submit.
         const canReply = Boolean(document.querySelector('a[href*="mode=reply"]'));
         const anchor = document.querySelector("#pagecontent") || document.querySelector("#wrapcentre");
-        if (anchor && canReply) anchor.append(buildQuickReply());
+        if (anchor && canReply) {
+            anchor.append(buildQuickReply());
+            /* The board's own "Reply to topic" button sits 40px above
+               this card, and the bar at the top of the page has one
+               too. Two orange buttons that say the same thing, one over
+               the other. The cell goes; the link stays in the page for
+               the fallback below. */
+            for (const link of document.querySelectorAll('a[href*="mode=reply"]')) {
+                if (link.closest(".rr-topicbar, .rr-reply")) continue;
+                const cell = link.closest("td");
+                if (cell) cell.style.display = "none";
+            }
+        }
     }
 
     if (settings.get("selectionQuote")) initSelectionQuote();

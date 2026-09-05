@@ -359,6 +359,8 @@ function hideEmptyBoardStrips(bar) {
 function labelWithOptionalTail(link, label) {
     const m = label.match(/^(.*\S)(\s+(?:topic|friend))$/i);
     link.textContent = "";
+    // The noun keeps its own space and the stylesheet takes the flex
+    // gap off it: a word space, not a 6px slot.
     if (m) link.append(document.createTextNode(m[1]), el("span.rr-opt", {}, [m[2]]));
     else link.append(document.createTextNode(label));
 }
@@ -611,12 +613,13 @@ function modernisePost(post) {
     head.append(identity);
 
     if (meta.length) {
-        // The template runs "Joined: ...Posts: 2180" together in one
-        // block often enough that a separator has to be put back.
+        // The template runs "Joined: ...Posts: 2180Location: here"
+        // together in one block often enough that the separators have
+        // to be put back — before every label, not only Posts.
         const summary = meta
             .map((node) => node.textContent.replace(/\s+/g, " ").trim())
             .join(" · ")
-            .replace(/(\S)\s*(Posts:)/g, "$1 · $2");
+            .replace(/(\S)\s*((?:Posts|Location|Gender|Age|Occupation|Interests|Website):)/g, "$1 · $2");
         head.append(el("span.rr-posthead__meta", { title: summary }, [shortenPostMeta(summary)]));
     }
 
@@ -954,6 +957,9 @@ function markExternalLinks() {
         try { host = new URL(link.href).hostname; } catch { continue; }
         if (host === here || host.endsWith(".rin.ru")) continue;
         if (link.querySelector(".rr-host")) continue;
+        // "https://store.steampowered.com/app/… store.steampowered.com":
+        // a link whose text is the address already says where it goes.
+        if (link.textContent.toLowerCase().includes(host.replace(/^www\./, "").toLowerCase())) continue;
 
         link.append(el("span.rr-host", {
             style: {

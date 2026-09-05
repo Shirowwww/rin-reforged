@@ -310,6 +310,19 @@ work had never looked.
 - **Radios and checkboxes** are 15px, a gap from their word, and take
   the accent. The control panel's section links looked like headings;
   they are links and are coloured as links.
+- **A second reading of every screenshot** (0.8.7) found what the first
+  had passed over: a closed spoiler kept 50px of box under its header;
+  a profile line read "Posts: 2 865Location: preparing for WW3"; the
+  board's "Reply to topic" sat 40px above the card that replies; a
+  link whose text was its own address wore a host chip saying the
+  address again; a closed category pointed right and an open one up;
+  "Mark forums read" alone in a band carried a section head's accent;
+  on a phone the original profile cell came back under the header that
+  had replaced it, every post ended in a "Top" link, the folded board
+  bar clipped the first letters of its groups, and a message folder's
+  card led with the date; on the light theme the original stylesheet's
+  `th a { color: #ccc }` and `li.row2 { background: #232323 }` were
+  still being painted. Each of these is one rule or one line now.
 
 ### It is readable, and that is a measurement rather than an opinion
 

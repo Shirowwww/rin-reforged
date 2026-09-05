@@ -126,6 +126,15 @@ html[data-rr] table.forumline {
     width: 100%;
 }
 
+/* The original stylesheet paints `th a` #CCCCCC: on the light theme the
+   member list's sortable headers were pale grey on paler grey while
+   the two headers without a link read fine. */
+/* The board's rule is `th a, th a:visited { color: #CCCCCC !important }`
+   and its sheet loads after this one, so nothing short of the same
+   flag reaches it. */
+html[data-rr] th a,
+html[data-rr] th a:visited { color: inherit !important; }
+html[data-rr] th a:hover { color: var(--rr-text-strong) !important; text-decoration: none; }
 html[data-rr] th {
     background: var(--rr-surface-2);
     color: var(--rr-muted);
@@ -208,7 +217,12 @@ html[data-rr] input.ccclose[type="button"]:hover { background-color: var(--rr-su
    form controls is not one. */
 html[data-rr] td.cat:has(> table),
 html[data-rr] td.cat:has(select),
-html[data-rr] td.cat:has(input[type="submit"]) {
+html[data-rr] td.cat:has(input[type="submit"]),
+/* "Mark forums read" alone at the right of an otherwise empty band:
+   the index wrote it straight into the cell and got the section-head
+   accent, the listing wrapped it in a table and did not. Neither is a
+   heading. */
+html[data-rr] td.cat[align="right"]:not(:has(h4)) {
     background: var(--rr-surface-2);
     box-shadow: none;
     font-weight: 400;
@@ -593,6 +607,12 @@ html[data-rr] .spoiler {
     padding: var(--rr-s3) var(--rr-s4);
     margin: var(--rr-s4) 0;
 }
+/* The content box keeps its padding and its 16px margin when the
+   board hides the text inside it: every closed spoiler was a header
+   over 50px of nothing. The box goes with its text and comes back with
+   it — the board toggles the inner div between inline and none. */
+html[data-rr] .spoiler > div.quotecontent:not(:has(> div[style*="inline"])) { display: none; }
+html[data-rr] .spoiler > div[style*="margin-bottom"]:last-child { margin-bottom: 0 !important; }
 html[data-rr] .spoiler input[type="button"] {
     width: auto !important;
     font-size: var(--rr-fs-xs) !important;
@@ -882,3 +902,22 @@ html[data-rr] #overlayconfirmbtn {
     border-radius: var(--rr-radius);
     font-weight: 600;
 }
+
+/* The control panel marks the current folder with <li class="row2">,
+   which only the board's stylesheet coloured — #232323 on the light
+   theme, a black bar with dark-blue text in it. */
+html[data-rr] li.row1,
+html[data-rr] li.row2 {
+    background: var(--rr-surface-2);
+    border-radius: 4px;
+    padding: 1px 6px !important;
+    margin: 0 -6px;
+}
+
+/* A multi-select drawn five rows tall for a list of thirty forums. */
+html[data-rr] select[multiple] { min-height: 12em; }
+
+/* "Top", a link back to the header under every post, hidden with the
+   post footer on a desktop and back on a phone, where the footer row
+   is a flex row. The floating button does this job on every width. */
+html[data-rr] a[href="#wrapheader"] { display: none; }

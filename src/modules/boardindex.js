@@ -143,8 +143,11 @@ function tidyCategoryToggles() {
             toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
             toggle.setAttribute("title", name);
             toggle.setAttribute("aria-label", name);
-            // Decorative: aria-label above is what is read out.
-            const glyph = collapsed ? "\u25BE" : "\u25B4";
+            // Decorative: aria-label above is what is read out. The same
+            // glyph either way; the stylesheet turns the closed one to
+            // point right, so the pair reads closed ▸ / open ▾ rather
+            // than ▸ / ▴, which pointed two ways at once.
+            const glyph = "\u25BE";
             if (toggle.tagName === "INPUT") toggle.value = glyph;
             else toggle.textContent = glyph;
         };

@@ -1319,3 +1319,17 @@ html[data-rr] a.rr-postnum:hover {
     line-height: var(--rr-lh-meta);
     color: var(--rr-faint);
 }
+
+/* On a phone the groups stack and lose their hairline; the pull to the
+   left that hides a desktop hairline then cut the first letters off
+   "User Control Panel" and "Forum rules". */
+@media (max-width: 720px) {
+    .rr-boardbar__main { margin-left: 0; }
+    .rr-boardbar__group { padding-left: 0; border-left: 0; margin-right: 0; }
+}
+
+/* The optional noun on a topic-bar link (" topic", " friend") is a flex
+   item like the word before it, so the button's 6px gap sat between
+   them on top of the noun's own space. The gap is taken back and the
+   space kept, so "Previous topic" is spaced like two words. */
+.rr-topicbar .rr-opt { margin-left: -6px; white-space: pre; }

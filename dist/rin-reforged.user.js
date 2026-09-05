@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.8.6
+// @version         0.8.7
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -482,6 +482,15 @@ html[data-rr] table.forumline {
     width: 100%;
 }
 
+/* The original stylesheet paints \`th a\` #CCCCCC: on the light theme the
+   member list's sortable headers were pale grey on paler grey while
+   the two headers without a link read fine. */
+/* The board's rule is \`th a, th a:visited { color: #CCCCCC !important }\`
+   and its sheet loads after this one, so nothing short of the same
+   flag reaches it. */
+html[data-rr] th a,
+html[data-rr] th a:visited { color: inherit !important; }
+html[data-rr] th a:hover { color: var(--rr-text-strong) !important; text-decoration: none; }
 html[data-rr] th {
     background: var(--rr-surface-2);
     color: var(--rr-muted);
@@ -564,7 +573,12 @@ html[data-rr] input.ccclose[type="button"]:hover { background-color: var(--rr-su
    form controls is not one. */
 html[data-rr] td.cat:has(> table),
 html[data-rr] td.cat:has(select),
-html[data-rr] td.cat:has(input[type="submit"]) {
+html[data-rr] td.cat:has(input[type="submit"]),
+/* "Mark forums read" alone at the right of an otherwise empty band:
+   the index wrote it straight into the cell and got the section-head
+   accent, the listing wrapped it in a table and did not. Neither is a
+   heading. */
+html[data-rr] td.cat[align="right"]:not(:has(h4)) {
     background: var(--rr-surface-2);
     box-shadow: none;
     font-weight: 400;
@@ -949,6 +963,12 @@ html[data-rr] .spoiler {
     padding: var(--rr-s3) var(--rr-s4);
     margin: var(--rr-s4) 0;
 }
+/* The content box keeps its padding and its 16px margin when the
+   board hides the text inside it: every closed spoiler was a header
+   over 50px of nothing. The box goes with its text and comes back with
+   it — the board toggles the inner div between inline and none. */
+html[data-rr] .spoiler > div.quotecontent:not(:has(> div[style*="inline"])) { display: none; }
+html[data-rr] .spoiler > div[style*="margin-bottom"]:last-child { margin-bottom: 0 !important; }
 html[data-rr] .spoiler input[type="button"] {
     width: auto !important;
     font-size: var(--rr-fs-xs) !important;
@@ -1238,6 +1258,25 @@ html[data-rr] #overlayconfirmbtn {
     border-radius: var(--rr-radius);
     font-weight: 600;
 }
+
+/* The control panel marks the current folder with <li class="row2">,
+   which only the board's stylesheet coloured — #232323 on the light
+   theme, a black bar with dark-blue text in it. */
+html[data-rr] li.row1,
+html[data-rr] li.row2 {
+    background: var(--rr-surface-2);
+    border-radius: 4px;
+    padding: 1px 6px !important;
+    margin: 0 -6px;
+}
+
+/* A multi-select drawn five rows tall for a list of thirty forums. */
+html[data-rr] select[multiple] { min-height: 12em; }
+
+/* "Top", a link back to the header under every post, hidden with the
+   post footer on a desktop and back on a phone, where the footer row
+   is a flex row. The floating button does this job on every width. */
+html[data-rr] a[href="#wrapheader"] { display: none; }
 
 /* == ui.css == */
 /* ------------------------------------------------------------------
@@ -2562,6 +2601,20 @@ html[data-rr] a.rr-postnum:hover {
     color: var(--rr-faint);
 }
 
+/* On a phone the groups stack and lose their hairline; the pull to the
+   left that hides a desktop hairline then cut the first letters off
+   "User Control Panel" and "Forum rules". */
+@media (max-width: 720px) {
+    .rr-boardbar__main { margin-left: 0; }
+    .rr-boardbar__group { padding-left: 0; border-left: 0; margin-right: 0; }
+}
+
+/* The optional noun on a topic-bar link (" topic", " friend") is a flex
+   item like the word before it, so the button's 6px gap sat between
+   them on top of the noun's own space. The gap is taken back and the
+   space kept, so "Previous topic" is spaced like two words. */
+.rr-topicbar .rr-opt { margin-left: -6px; white-space: pre; }
+
 /* == features.css == */
 /* ------------------------------------------------------------------
    Styles for what v0.4 added: folded quotes, folded chatter, the Steam
@@ -3416,6 +3469,10 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
         color: var(--rr-muted);
     }
     html[data-rr] td[data-rr-col] p { display: inline; margin: 0; }
+    /* A message folder: the date and the checkbox had no order and led
+       the card, before the subject. */
+    html[data-rr] tr:has(> td[data-rr-col="mark"]) > td[data-rr-col="date"] { order: 3; font-size: var(--rr-fs-xs); color: var(--rr-muted); }
+    html[data-rr] td[data-rr-col="mark"] { order: 4; }
 
     /* The template pins several cells with nowrap="nowrap" and the
        original stylesheet adds more. On a 390px screen a single
@@ -3433,7 +3490,11 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
     html[data-rr] td[data-rr-col="last"] br { display: none; }
 
     /* Posts: the 150px author column becomes a header strip. */
-    html[data-rr] td.profile { display: flex !important; align-items: center; gap: var(--rr-s2); }
+    /* Only where the post header has not replaced it (forum.css hides
+       it under data-rr-posts="modern"); the !important here was
+       bringing it back under the header, with the two-language rank
+       and the weekday date the header had already dealt with. */
+    html[data-rr]:not([data-rr-posts="modern"]) td.profile { display: flex !important; align-items: center; gap: var(--rr-s2); }
     html[data-rr] td.profile table { width: auto !important; }
     html[data-rr] td.profile img[src*="/avatars/"],
     html[data-rr] td.profile img.avatar { width: 32px !important; height: 32px !important; border-radius: 50%; }
@@ -7413,8 +7474,11 @@ function tidyCategoryToggles() {
             toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
             toggle.setAttribute("title", name);
             toggle.setAttribute("aria-label", name);
-            // Decorative: aria-label above is what is read out.
-            const glyph = collapsed ? "\u25BE" : "\u25B4";
+            // Decorative: aria-label above is what is read out. The same
+            // glyph either way; the stylesheet turns the closed one to
+            // point right, so the pair reads closed ▸ / open ▾ rather
+            // than ▸ / ▴, which pointed two ways at once.
+            const glyph = "\u25BE";
             if (toggle.tagName === "INPUT") toggle.value = glyph;
             else toggle.textContent = glyph;
         };
@@ -7830,6 +7894,8 @@ function hideEmptyBoardStrips(bar) {
 function labelWithOptionalTail(link, label) {
     const m = label.match(/^(.*\S)(\s+(?:topic|friend))$/i);
     link.textContent = "";
+    // The noun keeps its own space and the stylesheet takes the flex
+    // gap off it: a word space, not a 6px slot.
     if (m) link.append(document.createTextNode(m[1]), el("span.rr-opt", {}, [m[2]]));
     else link.append(document.createTextNode(label));
 }
@@ -8082,12 +8148,13 @@ function modernisePost(post) {
     head.append(identity);
 
     if (meta.length) {
-        // The template runs "Joined: ...Posts: 2180" together in one
-        // block often enough that a separator has to be put back.
+        // The template runs "Joined: ...Posts: 2180Location: here"
+        // together in one block often enough that the separators have
+        // to be put back — before every label, not only Posts.
         const summary = meta
             .map((node) => node.textContent.replace(/\s+/g, " ").trim())
             .join(" · ")
-            .replace(/(\S)\s*(Posts:)/g, "$1 · $2");
+            .replace(/(\S)\s*((?:Posts|Location|Gender|Age|Occupation|Interests|Website):)/g, "$1 · $2");
         head.append(el("span.rr-posthead__meta", { title: summary }, [shortenPostMeta(summary)]));
     }
 
@@ -8425,6 +8492,9 @@ function markExternalLinks() {
         try { host = new URL(link.href).hostname; } catch { continue; }
         if (host === here || host.endsWith(".rin.ru")) continue;
         if (link.querySelector(".rr-host")) continue;
+        // "https://store.steampowered.com/app/… store.steampowered.com":
+        // a link whose text is the address already says where it goes.
+        if (link.textContent.toLowerCase().includes(host.replace(/^www\./, "").toLowerCase())) continue;
 
         link.append(el("span.rr-host", {
             style: {
@@ -10917,7 +10987,19 @@ function initCompose() {
         // got a reply box that could only ever be refused on submit.
         const canReply = Boolean(document.querySelector('a[href*="mode=reply"]'));
         const anchor = document.querySelector("#pagecontent") || document.querySelector("#wrapcentre");
-        if (anchor && canReply) anchor.append(buildQuickReply());
+        if (anchor && canReply) {
+            anchor.append(buildQuickReply());
+            /* The board's own "Reply to topic" button sits 40px above
+               this card, and the bar at the top of the page has one
+               too. Two orange buttons that say the same thing, one over
+               the other. The cell goes; the link stays in the page for
+               the fallback below. */
+            for (const link of document.querySelectorAll('a[href*="mode=reply"]')) {
+                if (link.closest(".rr-topicbar, .rr-reply")) continue;
+                const cell = link.closest("td");
+                if (cell) cell.style.display = "none";
+            }
+        }
     }
 
     if (settings.get("selectionQuote")) initSelectionQuote();
@@ -11762,7 +11844,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.8.6";
+const RR_VERSION = "0.8.7";
 
 function injectStyles() {
     const host = document.head || document.documentElement;
