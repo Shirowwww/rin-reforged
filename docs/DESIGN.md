@@ -543,6 +543,17 @@ that hides its content outright rather than clipping it, and the one
 fold that stayed shut on paper. Both fixed; both now checked under
 `media: "print"` in the harness.
 
+A last pass over the saved pages looked for what was left of the 2003
+template in the rendered DOM. Most of it is invisible — `&nbsp;`
+indentation inside a `<select>`, 150px tables inside a cell the modern
+layout hides — but the board's spoiler *Show* button is `font-size:
+10px` typed into the tag, under the 11px floor everything else on the
+page is held to, and it had gone unreported through four sweeps because
+the question about small text asked td, p, span and a, and this is an
+input. Lifted with an inline style, which is the one thing that wins
+against the `<style>` the board injects for those controls; the sweep
+asks about inputs and buttons now.
+
 `live.js` runs the built bundle against cs.rin.ru with `addInitScript`, which
 executes it at document-start the way a userscript manager does. It is
 read-only: it opens pages, reads the DOM and closes. It has already earned its

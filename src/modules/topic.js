@@ -814,6 +814,21 @@ function spoilerButtons() {
         .filter((input) => (input.value || "").trim().toLowerCase() === "show");
 }
 
+/* The board draws every spoiler's Show button with `font-size: 10px`
+   typed into the tag, under the 11px floor everything else on the page
+   is held to — and it stayed there through four sweeps, because a sweep
+   that asks about small text asks td, p, span and a, and this is an
+   input. The board also injects a <style> for these controls, so a
+   stylesheet rule loses; an inline style from here is the one thing
+   that reliably wins (see csrin-css-cascade). */
+function liftSpoilerButtons() {
+    for (const input of document.querySelectorAll('.spoiler input[type="button"]')) {
+        input.style.fontSize = "var(--rr-fs-xs)";
+        input.style.width = "auto";
+        input.style.padding = "2px 8px";
+    }
+}
+
 /* ---- Images -------------------------------------------------------- */
 
 function initLightbox() {
@@ -915,6 +930,7 @@ function initTopic() {
     decorateHeading();
     buildTopicBar();
     spaceForumRules();
+    liftSpoilerButtons();
 
     all.forEach((post, index) => {
         if (settings.get("postTools")) addPostTools(post, index);

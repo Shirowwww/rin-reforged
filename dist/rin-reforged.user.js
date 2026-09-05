@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.8.4
+// @version         0.8.5
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -7896,6 +7896,21 @@ function spoilerButtons() {
         .filter((input) => (input.value || "").trim().toLowerCase() === "show");
 }
 
+/* The board draws every spoiler's Show button with `font-size: 10px`
+   typed into the tag, under the 11px floor everything else on the page
+   is held to — and it stayed there through four sweeps, because a sweep
+   that asks about small text asks td, p, span and a, and this is an
+   input. The board also injects a <style> for these controls, so a
+   stylesheet rule loses; an inline style from here is the one thing
+   that reliably wins (see csrin-css-cascade). */
+function liftSpoilerButtons() {
+    for (const input of document.querySelectorAll('.spoiler input[type="button"]')) {
+        input.style.fontSize = "var(--rr-fs-xs)";
+        input.style.width = "auto";
+        input.style.padding = "2px 8px";
+    }
+}
+
 /* ---- Images -------------------------------------------------------- */
 
 function initLightbox() {
@@ -7997,6 +8012,7 @@ function initTopic() {
     decorateHeading();
     buildTopicBar();
     spaceForumRules();
+    liftSpoilerButtons();
 
     all.forEach((post, index) => {
         if (settings.get("postTools")) addPostTools(post, index);
@@ -11263,7 +11279,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.8.4";
+const RR_VERSION = "0.8.5";
 
 function injectStyles() {
     const host = document.head || document.documentElement;

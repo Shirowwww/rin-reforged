@@ -92,8 +92,11 @@ function askThePage(COLOUR_CODE) {
 
     /* 3. Text under the floor. */
     let tiny = 0;
-    for (const node of document.querySelectorAll("#wrapcentre td, #wrapcentre p, #wrapcentre span, #wrapcentre a")) {
-        if (!node.textContent.trim() || !visible(node)) continue;
+    /* Inputs and buttons too: the board's spoiler Show button is
+       `font-size: 10px` inline and went unreported for four sweeps. */
+    for (const node of document.querySelectorAll("#wrapcentre td, #wrapcentre p, #wrapcentre span, #wrapcentre a, #wrapcentre input, #wrapcentre button")) {
+        const text = node.value || node.textContent;
+        if (!String(text).trim() || !visible(node)) continue;
         if (parseFloat(getComputedStyle(node).fontSize) < 11) tiny += 1;
     }
     if (tiny) note("tiny-text", tiny + " visible elements under 11px");
