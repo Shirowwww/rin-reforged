@@ -1215,6 +1215,40 @@ const CHECKS = [
         },
     },
     {
+        name: "releases: a bare number in a changelog does not become the game's version",
+        url: HV,
+        settle: 500,
+        fresh: true,
+        run: () => {
+            const control = Array.from(document.querySelectorAll(".rr-releases__tab"))
+                .find((n) => /All \d+ page/.test(n.textContent));
+            control.click();
+            return new Promise((resolve) => {
+                const deadline = Date.now() + 30000;
+                const look = () => {
+                    const tab = Array.from(document.querySelectorAll(".rr-releases__tab"))
+                        .find((n) => /All \d+ page|Reading /.test(n.textContent));
+                    if (!tab || tab.disabled) {
+                        if (Date.now() > deadline) return resolve("the walk never finished");
+                        return void setTimeout(look, 150);
+                    }
+                    const said = (document.querySelector(".rr-releases__latest") || {}).textContent || "";
+                    /* "Updated TestGameFix to 2.8.3!" — a mod's version,
+                       read as a bare three-part number. It is on its row
+                       and it is not the headline. */
+                    if (/2\.8\.3/.test(said)) return resolve("a mod's changelog number became the headline: " + said);
+                    if (!/1\.0\.7/.test(said)) return resolve("the headline says " + said);
+                    const row = Array.from(document.querySelectorAll(".rr-releases__row"))
+                        .find((r) => (r.querySelector(".rr-releases__who") || {}).textContent === "Lumi_");
+                    if (!row) return resolve("the changelog post was dropped");
+                    const shown = row.querySelector(".rr-releases__version").textContent.trim();
+                    return resolve(shown === "v2.8.3" ? null : "its row shows " + shown + ", wanted v2.8.3");
+                };
+                setTimeout(look, 150);
+            });
+        },
+    },
+    {
         name: "releases: 1.06 and 1.0.6 are the same release",
         url: HV,
         settle: 500,
@@ -1338,10 +1372,15 @@ const CHECKS = [
                     }
                     if (!/1\.0\.7/.test(said)) return resolve("the headline says " + said + ", wanted v1.0.7");
 
-                    // The tool is still listed, with its own version on
-                    // it. Only the one line is decided differently.
+                    /* The tool is still listed. Only the one line is
+                       decided differently. It is found by who posted it
+                       rather than by the 9.9.9: the same post also says
+                       "cheat tables for 1.0.4", and a bare three-part
+                       number now reads as a version, so the row carries
+                       the game version the tables are for — which is the
+                       better reading of that post. */
                     const rows = Array.from(document.querySelectorAll(".rr-releases__row"));
-                    const tool = rows.find((r) => /9\.9\.9/.test(r.textContent));
+                    const tool = rows.find((r) => (r.querySelector(".rr-releases__who") || {}).textContent === "ant_sh");
                     return resolve(tool ? null : "the tool post was dropped from the list instead");
                 };
                 setTimeout(look, 150);

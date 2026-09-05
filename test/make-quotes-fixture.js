@@ -394,6 +394,22 @@ const HYPERVISOR_POSTS = [
             HIDDEN_LINK("Download"),
     },
     {
+        id: "940008",
+        author: "Lumi_",
+        colour: "#5C8FBF",
+        rank: "Advanced Member",
+        posted: "Monday, 04 May 2026, 12:10",
+        subject: "Re: [Info] Test Game Resynced [CRACKED]",
+        /* A mod's changelog, in a post that also talks about the
+           hypervisor crack. "Updated ACBlackFlagFix to 2.8.3!" on the
+           live board: a product name between the label and the number,
+           so no labelled form matches and the bare one does — and
+           2.8.3 beat 1.0.7 to the headline. A bare number is shown on
+           its row and never sets the line. */
+        body: "Updated TestGameFix to 2.8.3!<br />Changelog: new AimTransitionDurationMs option; " +
+            "works with the hypervisor crack.<br />" + HIDDEN_LINK("Download"),
+    },
+    {
         id: "940005",
         author: "Ordas_Farkas",
         colour: "#5C8FBF",

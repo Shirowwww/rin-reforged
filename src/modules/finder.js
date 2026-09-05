@@ -62,6 +62,12 @@ const VERSION_RE = new RegExp([
     "\\b(?:v(?:er(?:sion)?)?\\.?\\s?)(\\d+(?:\\.\\d+){1,3}" + VERSION_SUFFIX + ")",
     "\\bbuild\\s+(\\d{5,9})\\b",
     "\\b(?:title[\\s.]+update|update|patch|tu)d?[\\s.]+(?:to[\\s.]+)?v?(\\d+(?:\\.\\d+){1,3}" + VERSION_SUFFIX + ")",
+    /* A bare three-part number: "Deluxe Edition 1.2.3 GOG". Nothing but
+       a version is written that way — a date has a year in front, an IP
+       has four parts, a price has two — and release titles on this
+       board carry one without a v more often than with. Two parts alone
+       is left to the labelled forms: 2.5 is also a price and a score. */
+    "(?<![\\w.])(\\d{1,4}\\.\\d{1,3}\\.\\d{1,4}" + VERSION_SUFFIX + ")(?![\\w.])",
 ].join("|"), "i");
 
 /* A date is not a version.
@@ -84,9 +90,15 @@ const VERSION_RE = new RegExp([
 function looksLikeDate(version) {
     const parts = version.split(".").map((part) => parseInt(part, 10));
     if (parts.length < 2 || parts.length > 3) return false;
-    if (!(parts[0] >= 1990 && parts[0] <= 2099)) return false;
-    if (!(parts[1] >= 1 && parts[1] <= 12)) return false;
-    return parts.length === 2 || (parts[2] >= 1 && parts[2] <= 31);
+    const year = (n) => n >= 1990 && n <= 2099;
+    const month = (n) => n >= 1 && n <= 12;
+    const day = (n) => n >= 1 && n <= 31;
+    // 2026.09.02, and 2026.09
+    if (year(parts[0]) && month(parts[1]) && (parts.length === 2 || day(parts[2]))) return true;
+    // 12.09.2026 — the other way round, which is how half this board
+    // writes a date and which the bare three-part form let straight
+    // through as version twelve.
+    return parts.length === 3 && day(parts[0]) && month(parts[1]) && year(parts[2]);
 }
 
 /**
@@ -100,16 +112,26 @@ function looksLikeDate(version) {
  */
 function versionsIn(text) {
     const all = new RegExp(VERSION_RE.source, "gi");
-    const found = { version: null, build: null };
+    const found = { version: null, build: null, named: false };
     let match;
     while ((match = all.exec(text)) !== null) {
         if (match[2]) {
             if (!found.build) found.build = match[2];
             continue;
         }
-        const number = match[1] || match[3];
+        const number = match[1] || match[3] || match[4];
         if (!number || looksLikeDate(number)) continue;
-        if (!found.version) found.version = number;
+        if (!found.version) {
+            found.version = number;
+            /* Whether the post *called* it a version — a v in front, or
+               "Title Update" / "updated to" leading in — or whether it
+               is a bare three-part number read off the prose. Both go
+               on the row. Only the first is evidence about the game:
+               "Updated ACBlackFlagFix to 2.8.3!" is a mod's changelog,
+               and off the live board 2.8.3 beat 1.0.7 to the headline
+               the moment bare numbers started to count. */
+            found.named = Boolean(match[1] || match[3]);
+        }
     }
     return found;
 }
@@ -216,6 +238,7 @@ function describePost(post) {
         links: links.length + hidden,
         words,
         version: named.version,
+        versionNamed: named.named,
         build: named.build,
         score,
         date: postDate(post),

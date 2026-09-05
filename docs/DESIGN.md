@@ -102,6 +102,18 @@ so: you open a thread with hundreds of replies and hunt with Ctrl+F.
   are recognised and it is coloured as what it is: something that makes
   the game run, beside Crack rather than beside Trainer.
 
+  **A bare number is shown and never believed.** "Deluxe Edition
+  1.2.3 GOG" names its version with no v and no label, and release
+  titles on this board do that more often than not, so a bare
+  three-part number now reads as a version — with a date in either
+  order, an IP, a price and a Windows build all refused. It goes on
+  the row. It does not set the headline: "Updated ACBlackFlagFix to
+  2.8.3!" is a mod's changelog with a product name between the label
+  and the number, and 2.8.3 beat 1.0.7 to the top of the panel the
+  moment bare numbers started to count. Only a version the post
+  *called* one — a v, "Title Update", "updated to" — is evidence about
+  the game.
+
   **And somebody else's version is not the game's.** A post explaining
   how to get achievement popups mentions "Download v1.6.0 or later
   lightweight AchievementOverlay"; read as the game's, that beat 1.0.7

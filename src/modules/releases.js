@@ -263,6 +263,19 @@ function describeRelease(post, page) {
     const known = kinds.length > 0 && scored.links > 0;
     if (scored.score < 4 && !known) return null;
 
+    /* Links alone are never enough either.
+
+       Two off-site links score six against a bar of four, so a post
+       that says "I'm also having this exact problem" and links to two
+       screenshots was listed as a release, tagged "2 links". Across
+       thirty real topics, nine rows were tagged by link count alone and
+       eight of those were conversation: a Reddit thread, a hosting
+       recommendation, a thank-you. The one real release among them
+       named no version and used none of the words — thin evidence for
+       a panel whose stated preference is to miss a release rather than
+       list a conversation. */
+    if (!kinds.length && !scored.version && !scored.build) return null;
+
     /* Words alone are never enough.
      *
      * The bar is a score, and a score can be reached by vocabulary: two
@@ -283,6 +296,7 @@ function describeRelease(post, page) {
         author: authorName(post),
         date: postDate(post),
         version: scored.version,
+        versionNamed: scored.versionNamed,
         build: scored.build,
         links: scored.links,
         kinds: kinds.map((kind) => kind.id),
@@ -723,6 +737,9 @@ function latestVersion(rows) {
     let best = null;
     for (const row of rows) {
         if (!row.version || !saysGameVersion(row)) continue;
+        // A bare number read off the prose is shown on its row and is
+        // not evidence about the game; see versionsIn().
+        if (row.versionNamed === false) continue;
         if (versionNewer(row.version, best)) best = row.version;
     }
     return best;
