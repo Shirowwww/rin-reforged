@@ -41,7 +41,7 @@ const SHOTS = [
         url: FORUM,
         viewport: [1440, 900],
         clip: [720, 0, 720, 900],
-        before: () => document.querySelector(".rr-nav__actions button[title*='settings']").click(),
+        before: () => document.querySelector(".rr-nav__actions button[aria-label*='settings']").click(),
     },
     {
         name: "palette",

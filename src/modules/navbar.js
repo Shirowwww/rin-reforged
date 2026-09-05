@@ -468,15 +468,15 @@ function buildBoardBar() {
 /**
  * Give a control a name, said three ways.
  *
- * These are glyphs with nothing beside them. `title` is the browser's
- * own tooltip and takes about a second of hovering to appear, which is
- * a second of not knowing what a button does; `aria-label` is what a
+ * These are glyphs with nothing beside them. `aria-label` is what a
  * screen reader announces; `data-rr-tip` is what the stylesheet draws
- * on hover and on focus, straight away. All three say the same words,
- * from one argument, so they cannot drift apart.
+ * on hover and on focus, straight away. Both say the same words, from
+ * one argument, so they cannot drift apart. There is deliberately no
+ * `title`: the browser's own tooltip arrived a second after the drawn
+ * one and sat on top of it, the same words twice.
  */
 function labelled(node, text) {
-    node.setAttribute("title", text);
+    node.removeAttribute("title");
     node.setAttribute("aria-label", text);
     node.setAttribute("data-rr-tip", text);
     return node;
@@ -484,9 +484,15 @@ function labelled(node, text) {
 
 function buildNavbar() {
     const bar = el("header.rr-nav", { role: "banner" });
-    bar.append(buildBrand());
+    /* The bar runs edge to edge; its contents keep to the content
+       column, so the brand and the icons line up with the board bar and
+       the listing under them on a wide monitor instead of sitting at
+       the screen's edges half a metre from either. */
+    const inner = el("div.rr-nav__inner");
+    bar.append(inner);
+    inner.append(buildBrand());
 
-    bar.append(buildCrumbs());
+    inner.append(buildCrumbs());
 
     const actions = el("div.rr-nav__actions");
 
@@ -497,11 +503,11 @@ function buildNavbar() {
             el("span.rr-kbd.rr-nav__kbd", {}, [navigator.platform.startsWith("Mac") ? "⌘K" : "Ctrl K"]),
         ]);
         search.addEventListener("click", () => openPalette());
-        bar.append(search);
+        inner.append(search);
     } else {
         const searchHref = findHeaderLink("search.php");
         if (searchHref) {
-            actions.append(el("a.rr-icon-btn", { href: searchHref, title: "Search" }, [icon("search")]));
+            actions.append(labelled(el("a.rr-icon-btn", { href: searchHref }, [icon("search")]), t("Search")));
         }
     }
 
@@ -538,7 +544,7 @@ function buildNavbar() {
     settingsButton.addEventListener("click", () => openSettings());
     actions.append(settingsButton);
 
-    bar.append(actions);
+    inner.append(actions);
     return bar;
 }
 

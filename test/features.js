@@ -661,7 +661,7 @@ const CHECKS = [
         url: FORUM,
         run: () => {
             const cog = Array.from(document.querySelectorAll(".rr-nav__actions button"))
-                .find((b) => /settings/i.test(b.getAttribute("title") || ""));
+                .find((b) => /settings/i.test(b.getAttribute("aria-label") || ""));
             if (!cog) return "no settings button";
             cog.click();
             const panel = document.querySelector(".rr-panel");
@@ -2042,11 +2042,15 @@ const CHECKS = [
             const buttons = Array.from(actions.querySelectorAll("a, button"));
             if (buttons.length < 2) return "only " + buttons.length + " control(s) to compare";
 
+            // aria-label for the screen reader, data-rr-tip for the drawn
+            // tooltip — and no title, which drew the browser's own tooltip
+            // over the drawn one a second later: the same words twice.
             const nameless = buttons.filter((node) =>
                 !(node.getAttribute("aria-label") || "").trim()
-                || !(node.getAttribute("title") || "").trim()
                 || !(node.getAttribute("data-rr-tip") || "").trim());
-            if (nameless.length) return nameless.length + " icon(s) without all three names";
+            if (nameless.length) return nameless.length + " icon(s) without both names";
+            const doubled = buttons.filter((node) => node.hasAttribute("title"));
+            if (doubled.length) return doubled.length + " icon(s) carry a title as well, so two tooltips";
 
             // One colour. `html[data-rr] a` is (0,1,1) and .rr-icon-btn
             // is (0,1,0), so the ones built as links used to come out
@@ -2276,7 +2280,7 @@ const CHECKS = [
         url: FORUM,
         arg: SCHEMA_IDS,
         run: (ids) => {
-            document.querySelector(".rr-nav__actions button[title*='settings']").click();
+            document.querySelector(".rr-nav__actions button[aria-label*='settings']").click();
             const panel = document.querySelector(".rr-panel");
             if (!panel) return "the panel did not open";
             const missing = ids.filter((id) => !panel.querySelector('[data-field="' + id + '"]'));
@@ -2290,7 +2294,7 @@ const CHECKS = [
         fresh: true,
         url: FORUM,
         run: () => {
-            document.querySelector(".rr-nav__actions button[title*='settings']").click();
+            document.querySelector(".rr-nav__actions button[aria-label*='settings']").click();
             const tabs = Array.from(document.querySelectorAll(".rr-panel__tab"));
             if (tabs.length < 6) return "only " + tabs.length + " categories";
 
@@ -2311,7 +2315,7 @@ const CHECKS = [
         fresh: true,
         url: FORUM,
         run: () => {
-            document.querySelector(".rr-nav__actions button[title*='settings']").click();
+            document.querySelector(".rr-nav__actions button[aria-label*='settings']").click();
             const box = document.querySelector(".rr-panel__search");
             box.value = "quote";
             box.dispatchEvent(new Event("input", { bubbles: true }));
@@ -2334,7 +2338,7 @@ const CHECKS = [
         fresh: true,
         url: FORUM,
         run: () => {
-            document.querySelector(".rr-nav__actions button[title*='settings']").click();
+            document.querySelector(".rr-nav__actions button[aria-label*='settings']").click();
             const panel = document.querySelector(".rr-panel");
             // The pair lives under Reading, and the panel opens on
             // Appearance: a control in a category nobody opened is
@@ -3271,7 +3275,7 @@ const CHECKS = [
             // while its own switch still said it was on.
             const posts = document.querySelectorAll('a[name^="p"]').length;
             const controls = Array.from(document.querySelectorAll(".rr-posttools button[aria-pressed]"))
-                .filter((b) => /posts by/i.test(b.getAttribute("title") || ""));
+                .filter((b) => /posts by/i.test(b.getAttribute("aria-label") || b.getAttribute("title") || ""));
             if (controls.length < posts) return controls.length + " hide controls for " + posts + " posts";
             const invisible = controls.filter((b) => !b.getBoundingClientRect().width);
             return invisible.length ? invisible.length + " of them are invisible" : null;
@@ -3323,7 +3327,13 @@ const CHECKS = [
             for (const want of ["num", "author", "date", "posts", "rank", "action"]) {
                 if (!heads.includes(want)) return "no column labelled " + want + " (got " + heads.join(",") + ")";
             }
-            if (document.querySelector("table[data-rr-list]")) return "the member list was taken for a topic listing";
+            // A listing — striped, aligned, its numbers grouped — but not a
+            // topic listing: no whole-cell click, no filter toolbar.
+            const roster = document.querySelector("table[data-rr-list]");
+            if (!roster) return "the member list is not treated as a listing";
+            if (roster.hasAttribute("data-rr-rowclick") || document.querySelector(".rr-toolbar")) {
+                return "the member list was taken for a topic listing";
+            }
 
             const ranks = Array.from(document.querySelectorAll('td[data-rr-col="rank"]'));
             const first = ranks[0];
@@ -3412,6 +3422,197 @@ const CHECKS = [
             if (/Page 1 of 1/.test(shown)) return '"Page 1 of 1" still drawn beside the match count';
             if (!/Search found 1 match/.test(shown)) return "match count reads " + JSON.stringify(shown);
             return null;
+        },
+    },
+    /* ---- The desktop pass (0.9.0) ---------------------------------- */
+    {
+        name: "nav: the bar's content keeps to the content column on a wide screen",
+        width: 2560,
+        url: FORUM,
+        run: () => {
+            const inner = document.querySelector(".rr-nav__inner");
+            const wrap = document.querySelector("#wrapcentre");
+            if (!inner || !wrap) return "no .rr-nav__inner or no #wrapcentre";
+            const a = inner.getBoundingClientRect();
+            const b = wrap.getBoundingClientRect();
+            const off = Math.max(Math.abs(a.left - b.left), Math.abs(a.right - b.right));
+            return off > 24 ? "the bar's content is " + Math.round(off) + "px off the content column at 2560px" : null;
+        },
+    },
+    {
+        name: "member list: the roster is a listing (zebra, aligned numbers, grouped counts)",
+        url: MEMBERS,
+        run: () => {
+            const table = Array.from(document.querySelectorAll("table[data-rr-list]"))
+                .find((t) => t.querySelector('a[href*="mode=viewprofile"]'));
+            if (!table) return "the member table has no data-rr-list";
+            const posts = Array.from(table.querySelectorAll('td[data-rr-col="posts"]')).map((c) => c.textContent.trim());
+            const big = posts.find((text) => text.replace(/\D/g, "").length >= 4);
+            if (big && /^\d+$/.test(big)) return "a four-digit post count is not grouped: " + big;
+            const th = table.querySelector('th[data-rr-col="posts"]');
+            const td = table.querySelector('td[data-rr-col="posts"]');
+            if (th && td && getComputedStyle(th).textAlign !== getComputedStyle(td).textAlign) {
+                return "the Posts header is aligned " + getComputedStyle(th).textAlign + " over cells aligned " + getComputedStyle(td).textAlign;
+            }
+            return null;
+        },
+    },
+    {
+        name: "message folder: the message table is a listing",
+        url: PM,
+        run: () => {
+            const table = Array.from(document.querySelectorAll("table[data-rr-list]")).find((t) => t.querySelector(".topictitle a"));
+            return table ? null : "the message folder's table has no data-rr-list";
+        },
+    },
+    {
+        name: "profile: a row with nothing after the colon is not shown",
+        url: PROFILE_M,
+        run: () => {
+            const shown = Array.from(document.querySelectorAll("#wrapcentre table.tablebg tr")).filter((row) => {
+                if (row.hidden) return false;
+                const cells = Array.from(row.children).filter((n) => n.tagName === "TD");
+                if (cells.length !== 2) return false;
+                if (!/:$/.test(cells[0].textContent.trim())) return false;
+                return !cells[1].querySelector("a, img, input") && !cells[1].textContent.replace(/[\s\u00a0]+/g, "");
+            });
+            return shown.length ? shown.length + " empty row(s) still shown" : null;
+        },
+    },
+    {
+        name: "rows: the whole title cell opens the topic",
+        url: FORUM,
+        run: () => (document.querySelector("table[data-rr-list][data-rr-rowclick]") ? null : "no listing is marked for the row click"),
+    },
+    {
+        name: "toasts: the host is a live region",
+        url: TOPIC,
+        run: () => {
+            const button = document.querySelector('[data-rr-tip*="Copy link"], [aria-label*="Copy link"]');
+            if (!button) return "no copy-link control to raise a toast with";
+            button.click();
+            return new Promise((done) => setTimeout(() => {
+                const host = document.querySelector(".rr-toasts");
+                if (!host) return done("no toast host after the click");
+                done(host.getAttribute("role") === "status" && host.getAttribute("aria-live") === "polite"
+                    ? null : "the toast host is not a polite live region");
+            }, 300));
+        },
+    },
+    {
+        name: "settings: the footer says what its buttons do",
+        fresh: true,
+        url: FORUM,
+        run: () => {
+            document.querySelector(".rr-nav__actions button[aria-label*='settings']").click();
+            const labels = Array.from(document.querySelectorAll(".rr-panel__foot .rr-btn")).map((b) => b.textContent.trim());
+            for (const want of ["Copy settings", "Paste settings", "Clear data", "Reset"]) {
+                if (!labels.includes(want)) return "no \"" + want + "\" in the footer: " + labels.join(" / ");
+            }
+            return null;
+        },
+    },
+    {
+        name: "settings: a search hit under a switched-off parent is still shown",
+        fresh: true,
+        url: FORUM,
+        settings: { foldQuotes: false },
+        run: () => {
+            document.querySelector(".rr-nav__actions button[aria-label*='settings']").click();
+            const search = document.querySelector(".rr-panel__search");
+            search.value = "fold a quote over";
+            search.dispatchEvent(new Event("input", { bubbles: true }));
+            return new Promise((done) => setTimeout(() => {
+                const row = document.querySelector('.rr-field[data-field="foldQuotesLines"]');
+                if (!row) return done("no row for foldQuotesLines");
+                if (!row.hasAttribute("data-rr-dep-off")) return done("the row is not marked dependent-off, so the case is not exercised");
+                done(row.getBoundingClientRect().height > 0 ? null : "the matching row is counted but not shown");
+            }, 250));
+        },
+    },
+    {
+        name: "width: Full keeps a measure on a post",
+        url: TOPIC,
+        settings: { width: "full" },
+        run: () => {
+            const body = document.querySelector(".postbody");
+            if (!body) return "no post";
+            const max = getComputedStyle(body).maxWidth;
+            return max === "none" ? "Full mode leaves a post's lines uncapped" : null;
+        },
+    },
+    {
+        name: "width: Reading narrows the frame on a topic page, not on a listing",
+        width: 1920,
+        url: TOPIC,
+        settings: { width: "reading" },
+        run: () => {
+            const wrap = document.querySelector("#wrapcentre");
+            const width = wrap.getBoundingClientRect().width;
+            // 1440 is the ceiling: the narrowest at which the board bar's
+            // two groups of links still share one line.
+            return width > 1450 ? "the topic frame is " + Math.round(width) + "px wide in Reading mode at 1920px" : null;
+        },
+    },
+    {
+        name: "colour: the accent as text on its soft wash reads at AA, on paper too",
+        url: FORUM,
+        settings: { theme: "paper", accent: "brass" },
+        run: () => {
+            const cs = getComputedStyle(document.documentElement);
+            const parse = (text) => {
+                const t = text.trim();
+                const hex = t.match(/^#([0-9a-f]{6})$/i);
+                if (hex) return [0, 2, 4].map((i) => parseInt(hex[1].slice(i, i + 2), 16));
+                const parts = t.match(/[\d.]+/g);
+                return parts ? parts.slice(0, 3).map(Number) : null;
+            };
+            const lum = ([r, g, b]) => {
+                const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+                return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+            };
+            const ink = parse(cs.getPropertyValue("--rr-accent-on-soft"));
+            const soft = parse(cs.getPropertyValue("--rr-accent-soft"));
+            if (!ink || !soft) return "could not read --rr-accent-on-soft / --rr-accent-soft";
+            const a = lum(ink), b = lum(soft);
+            const ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+            return ratio < 4.5 ? "accent on its soft wash reads at " + ratio.toFixed(2) + ":1" : null;
+        },
+    },
+    {
+        name: "palette: on a topic page the actions come first",
+        url: TOPIC,
+        run: () => {
+            document.querySelector(".rr-nav__search").click();
+            const first = document.querySelector(".rr-palette__group");
+            if (!first) return "the palette has no groups";
+            return first.textContent.trim() === "Actions" ? null : "the first group is " + first.textContent.trim();
+        },
+    },
+    {
+        name: "palette: the search row names the board it will look in",
+        url: FORUM,
+        run: () => {
+            document.querySelector(".rr-nav__search").click();
+            const input = document.querySelector(".rr-palette__input");
+            input.value = "denuvo";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            return new Promise((done) => setTimeout(() => {
+                const item = document.querySelector(".rr-palette__item");
+                const text = item ? item.textContent : "";
+                if (!/^Search /.test(text.trim())) return done("the first row is not the search: " + text.trim().slice(0, 60));
+                done(/Search the forum for/.test(text) ? "the row says \"the forum\" for a search scoped to one board" : null);
+            }, 150));
+        },
+    },
+    {
+        name: "signatures: every signature is set apart, long or short",
+        url: REPLIES,
+        run: () => {
+            const all = document.querySelectorAll(".rr-signature").length;
+            if (!all) return "no signature on a page of 25 posts";
+            const rules = Array.from(document.querySelectorAll(".postbody, .rr-post__body")).filter((n) => /_{5,}/.test(n.textContent));
+            return rules.length ? rules.length + " post(s) still show the underscore divider" : null;
         },
     },
 ];

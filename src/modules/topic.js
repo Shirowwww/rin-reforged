@@ -206,13 +206,26 @@ function buildTopicBar() {
     if (settings.get("spoilerAll")) {
         const buttons = spoilerButtons();
         if (buttons.length >= 2) {
-            const control = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
-                icon("chevronD", 13),
-                t("Open all {n} spoilers", { n: buttons.length }),
-            ]);
+            /* It stays, and closes them again on the second press. It
+               used to remove itself once pressed, which took the focus
+               with it and left a reader with thirty open spoilers and
+               no way back. */
+            const count = buttons.length;
+            let open = false;
+            const control = el("button.rr-btn", { type: "button", "data-variant": "quiet", "aria-pressed": "false" });
+            const relabel = () => {
+                control.replaceChildren(icon("chevronD", 13), t(open ? "Close all {n} spoilers" : "Open all {n} spoilers", { n: count }));
+                control.setAttribute("aria-pressed", open ? "true" : "false");
+                control.toggleAttribute("data-rr-open", open);
+            };
+            relabel();
             control.addEventListener("click", () => {
-                for (const button of spoilerButtons()) button.click();
-                control.remove();
+                const want = open ? "hide" : "show";
+                for (const input of document.querySelectorAll('.spoiler input[type="button"]')) {
+                    if ((input.value || "").trim().toLowerCase() === want) input.click();
+                }
+                open = !open;
+                relabel();
             });
             here.append(control);
         }
@@ -893,21 +906,24 @@ function addPostTools(post, index) {
 function collapseSignature(post) {
     if (!post.signature) return;
 
-    // Signatures are one text node broken by <br>, so counting newlines
-    // finds nothing; the line breaks and the length are the signal.
-    const breaks = post.signature.querySelectorAll("br").length;
-    const length = post.signature.textContent.trim().length;
-    if (breaks <= 4 && length <= 220) return;
-
+    // Every signature is set apart the same way — the small muted face,
+    // a rule instead of the board's row of underscores. A short one
+    // used to keep the underscores and the post's own type, so two
+    // posts in a row ended in two different ways.
     post.signature.classList.add("rr-signature");
-    post.signature.setAttribute("data-rr-sig", "collapsed");
-
-    // Drop the row of underscores the board uses as a divider; the
-    // stylesheet draws a rule instead.
     for (const node of Array.from(post.signature.childNodes).slice(0, 3)) {
         if (node.nodeType === 3 && /^\s*_{5,}\s*$/.test(node.textContent)) node.remove();
         else if (node.nodeType === 1 && node.tagName === "BR" && !post.signature.textContent.trim()) node.remove();
     }
+
+    // Signatures are one text node broken by <br>, so counting newlines
+    // finds nothing; the line breaks and the length are the signal.
+    // Only a long one is folded.
+    const breaks = post.signature.querySelectorAll("br").length;
+    const length = post.signature.textContent.trim().length;
+    if (breaks <= 4 && length <= 220) return;
+
+    post.signature.setAttribute("data-rr-sig", "collapsed");
     const toggle = el("button.rr-sig-toggle", { type: "button" }, [t("Show signature")]);
     toggle.addEventListener("click", () => {
         const collapsed = post.signature.getAttribute("data-rr-sig") === "collapsed";
@@ -955,14 +971,31 @@ function initLightbox() {
         event.preventDefault();
         event.stopPropagation();
 
-        const box = el("div.rr-lightbox", { role: "dialog", "aria-modal": "true" }, [
+        /* A dialog, not a backdrop with an image on it: a control that
+           closes it, the keyboard kept inside while it is open, and the
+           focus given back to the image's post when it goes. */
+        const previous = document.activeElement;
+        const closeButton = el("button.rr-icon-btn.rr-lightbox__close", {
+            type: "button",
+            "aria-label": t("Close the image"),
+        }, [icon("close")]);
+        const box = el("div.rr-lightbox", {
+            role: "dialog",
+            "aria-modal": "true",
+            "aria-label": img.alt || t("Image"),
+            tabindex: "-1",
+        }, [
             el("img", { src: img.currentSrc || img.src, alt: img.alt || "" }),
+            closeButton,
         ]);
-        const close = () => { box.remove(); document.removeEventListener("keydown", onKey); };
+        let release = () => {};
+        const close = () => { box.remove(); document.removeEventListener("keydown", onKey); release(); };
         const onKey = (e) => { if (e.key === "Escape") close(); };
         box.addEventListener("click", close);
         document.addEventListener("keydown", onKey);
         document.body.append(box);
+        release = trapFocus(box, previous instanceof HTMLElement ? previous : null);
+        closeButton.focus();
     }, true);
 }
 
@@ -970,11 +1003,22 @@ function initLightbox() {
 
 function markExternalLinks() {
     const here = location.hostname;
+    const confirmFirst = settings.get("confirmExternal");
     for (const link of document.querySelectorAll(".postbody a[href^='http']")) {
         let host;
         try { host = new URL(link.href).hostname; } catch { continue; }
         if (host === here || host.endsWith(".rin.ru")) continue;
         if (link.querySelector(".rr-host")) continue;
+        /* The setting that existed and did nothing: with it on, an
+           off-site link asks first and shows the whole address, which
+           a shortened or a disguised link otherwise never does. */
+        if (confirmFirst && !link.rrConfirms) {
+            link.rrConfirms = true;
+            link.addEventListener("click", (event) => {
+                if (event.defaultPrevented) return;
+                if (!window.confirm(t("Leave the forum for this address?") + "\n\n" + link.href)) event.preventDefault();
+            });
+        }
         // "https://store.steampowered.com/app/… store.steampowered.com":
         // a link whose text is the address already says where it goes.
         if (link.textContent.toLowerCase().includes(host.replace(/^www\./, "").toLowerCase())) continue;
@@ -1023,7 +1067,11 @@ function initTopic() {
         all.forEach(modernisePost);
     }
 
-    if (settings.get("gameCard") && all.length && PAGE.start === 0) {
+    // The Enhanced script builds a Steam header of its own over the
+    // first post; with it present and the setting on, this one stands
+    // down (see detectEnhanced).
+    const coexisting = document.documentElement.hasAttribute("data-rr-coexist");
+    if (settings.get("gameCard") && !coexisting && all.length && PAGE.start === 0) {
         const info = parseGameInfo(all[0].body);
         if (info && (info.appId || Object.keys(info.fields).length >= 3)) {
             // Written down whether or not the preview is switched on:

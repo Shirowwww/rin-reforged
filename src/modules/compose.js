@@ -95,6 +95,10 @@ function slimReplyForm(form) {
 
     message.classList.add("rr-reply__text");
     message.setAttribute("rows", "6");
+    // The template wires the box to editor.js — storeCaret(this) on
+    // select, click and keyup, initInsertions() on focus — and that
+    // script is not loaded on a topic page. Every keystroke threw.
+    for (const handler of ["onselect", "onclick", "onkeyup", "onfocus", "onblur", "onchange"]) message.removeAttribute(handler);
     message.setAttribute("placeholder", t("Write a reply"));
 
     // What was being written last time, if anything. The board's own
@@ -108,6 +112,7 @@ function slimReplyForm(form) {
     // Submitted is the one thing that means "done with this".
     slim.addEventListener("submit", () => clearDraft(PAGE.topicId));
 
+    slim.append(buildReplyTools(message));
     slim.append(message);
 
     const submit = form.querySelector('input[name="post"]');
@@ -121,6 +126,47 @@ function slimReplyForm(form) {
     ]);
     slim.append(actions);
     return { slim, message };
+}
+
+/* The tags a reply most often needs, one press each. The full editor
+   has the whole toolbar; the quick reply had none, and a quote or a
+   spoiler meant typing the tags by hand. Face, name, opening, closing. */
+const REPLY_TOOLS = [
+    ["B", "Bold", "[b]", "[/b]"],
+    ["I", "Italic", "[i]", "[/i]"],
+    ["U", "Underline", "[u]", "[/u]"],
+    ["Quote", "Quote", "[quote]", "[/quote]"],
+    ["Code", "Code", "[code]", "[/code]"],
+    ["URL", "Link", "[url]", "[/url]"],
+    ["Img", "Image", "[img]", "[/img]"],
+    ["Spoiler", "Spoiler", "[spoiler]", "[/spoiler]"],
+];
+
+function buildReplyTools(message) {
+    const bar = el("div.rr-reply__tools", { role: "toolbar", "aria-label": t("Formatting") });
+    for (const [face, name, open, close] of REPLY_TOOLS) {
+        const button = el("button.rr-btn", {
+            type: "button",
+            "data-variant": "quiet",
+            "data-tool": open.slice(1, -1),
+            "aria-label": t(name),
+            "data-rr-tip": t(name),
+        }, [face]);
+        button.addEventListener("click", () => wrapSelection(message, open, close));
+        bar.append(button);
+    }
+    return bar;
+}
+
+/** Wrap what is selected in the field, or leave the caret between the tags. */
+function wrapSelection(field, open, close) {
+    const start = field.selectionStart;
+    const end = field.selectionEnd;
+    const inner = field.value.slice(start, end);
+    field.setRangeText(open + inner + close, start, end, "end");
+    if (!inner) field.setSelectionRange(start + open.length, start + open.length);
+    field.focus();
+    field.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function buildQuickReply() {

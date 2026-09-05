@@ -43,21 +43,26 @@ checks this repository and offers new versions on its own.
   developer, publisher, release date, genres and languages, with the Steam
   marketing copy folded away and lookups to SteamDB, the store, SteamCharts,
   ProtonDB and PCGamingWiki.
-- **Gets you around** — `Ctrl+K` command palette, keyboard shortcuts, a real
-  pager that links the last page, filter-as-you-type over a listing (every word you type has to match, in any order), coloured
-  topic tags, bookmarks and history kept in your browser.
+- **Gets you around** — `Ctrl+K` command palette, keyboard shortcuts (`j`/`k`
+  walk the posts of a topic or the rows of a listing), a real pager that
+  links the last page, filter-as-you-type over a listing (every word you
+  type has to match, in any order), coloured topic tags, a whole title cell
+  that opens its topic, bookmarks and history kept in your browser.
 - **Optional Steam preview** on hover over a topic title: cover, review score,
   tags and the opening lines of the store description. This is the only thing
   in the script that talks to a server other than the forum, so it is **off
   until you turn it on**, and refused outright on the Tor mirror.
-- **Better posting** — quick reply from the foot of the thread, quote what you
-  select, an unsent reply kept in your browser, long quotes and low-value
-  replies folded (never removed), images in a lightbox.
-- **Signed in, too.** The member list, the message folders, the control
-  panel, the posting form and profiles get the same treatment: labelled
-  columns, one-line dates, English ranks, subjects that line up, a colour
-  palette you can actually hit, and Subscribe / Bookmark / E-mail friend in
-  the topic bar rather than in a strip of their own.
+- **Better posting** — quick reply from the foot of the thread with a small
+  BBCode toolbar, quote what you select, an unsent reply kept in your
+  browser, long quotes and low-value replies folded (never removed), images
+  in a lightbox you can close and leave by keyboard.
+- **Signed in, too.** The member list, the message folders, Who is online,
+  the control panel, the posting form and profiles get the same treatment:
+  they are listings, with labelled and aligned columns, striped rows,
+  grouped numbers, one-line dates, English ranks, a colour palette you can
+  actually hit, profile rows that say nothing hidden, and Subscribe /
+  Bookmark / E-mail friend in the topic bar rather than in a strip of their
+  own.
 - **Works on the Russian interface too.** Half the board reads it. Column
   names, page counters, weekdays, "Joined / Posts" and "Posted" are read in
   both languages, so a Russian page gets the same grouped numbers, one-line

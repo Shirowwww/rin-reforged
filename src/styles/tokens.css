@@ -213,7 +213,6 @@ html[data-rr][data-rr-theme="native"] {
     --rr-danger:        #cf6152;
 
     --rr-selection:     #45211c;
-    --rr-mark:          #4e0707;
 }
 
 /* Carbon - neutral grey for anyone who finds the blue cast distracting. */
@@ -230,6 +229,12 @@ html[data-rr][data-rr-theme="carbon"] {
     --rr-muted:       #949494;
     --rr-faint:       #8a8a8a;
     --rr-selection:   #3d3d3d;
+    /* "No blue cast" has to include the links, which stayed Slate's
+       blue: a warm, desaturated tone for them. The tags keep their
+       hues — Info is blue on every theme, and that is what makes it
+       readable as Info. */
+    --rr-link:          #d6b98a;
+    --rr-link-visited:  #b3a48c;
 }
 
 /* Paper - a real light theme, warm enough not to glare at night. */
@@ -290,7 +295,17 @@ html[data-rr][data-rr-density="roomy"] {
 /* Wide keeps the same slope and lifts the ceiling; Full drops both.
    Reading is the fluid default above. */
 html[data-rr][data-rr-width="wide"]  { --rr-content-max: min(1980px, 97vw); --rr-measure: 92ch; }
-html[data-rr][data-rr-width="full"]  { --rr-content-max: none;              --rr-measure: none; }
+/* Full lifts the frame's ceiling — a listing wants the whole window —
+   but a post is still prose: 120ch is half again Wide's measure, and
+   short of the 300-character lines `none` gave a 2560px screen. */
+html[data-rr][data-rr-width="full"]  { --rr-content-max: none;              --rr-measure: 120ch; }
+
+/* Reading, on a topic page: the frame closes in on the text. At 1560px
+   a post card was 1180px wide around 730px of prose, a two-fifths dead
+   strip beside every post on a 1920 or 2560 monitor. 1440 is the
+   narrowest the board bar's two groups of links still share one line.
+   A listing keeps the full frame; it has columns to fill it with. */
+html[data-rr][data-rr-width="reading"][data-rr-page="topic"] { --rr-content-max: min(1440px, 95vw); }
 
 /* No bar, no edge to sit on. */
 html[data-rr][data-rr-nav="off"] { --rr-nav-h: 0px; }

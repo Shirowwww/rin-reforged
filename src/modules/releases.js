@@ -453,7 +453,7 @@ function planWalk(topicId, info, total) {
     };
 
     const reuse = [];
-    const fetch_ = [];
+    let fetch_ = [];
     for (let page = 1; page <= total; page += 1) {
         if (page === current) continue;
         if (kept && reusable(page)) reuse.push(page);
@@ -467,7 +467,20 @@ function planWalk(topicId, info, total) {
     if (canary !== null) fetch_.push(canary);
     fetch_.sort((a, b) => a - b);
 
-    return { reuse: reuse, fetch: fetch_, known: known, canary: canary };
+    /* The cap is on what is asked of the board, not on how far the
+       topic goes. A topic of 120 pages used to be read to page 80 and
+       stopped, and the newest forty — where the latest release is —
+       were the ones never looked at. The oldest pages are dropped
+       instead, and the panel says how many. */
+    let skipped = 0;
+    if (fetch_.length > RELEASE_MAX_PAGES) {
+        const keep = new Set(fetch_.slice(fetch_.length - RELEASE_MAX_PAGES));
+        if (canary !== null) keep.add(canary);
+        skipped = fetch_.filter((page) => !keep.has(page)).length;
+        fetch_ = fetch_.filter((page) => keep.has(page));
+    }
+
+    return { reuse: reuse, fetch: fetch_, known: known, canary: canary, skipped: skipped };
 }
 
 /* ---- Asking, a few at a time -------------------------------------- */
@@ -530,7 +543,7 @@ async function pacedPool(items, worker, state, pace) {
  * have moved. What is left goes to the pool above, a few at a time.
  */
 async function walkTopic(info, state, onProgress) {
-    const total = Math.min(info.total || 1, RELEASE_MAX_PAGES);
+    const total = info.total || 1;
     const current = info.current || 1;
     const plan = planWalk(PAGE.topicId, info, total);
     const pace = makePace();
@@ -539,7 +552,8 @@ async function walkTopic(info, state, onProgress) {
     read.set(current, readTopicPage(posts(), current));
 
     let done = 0;
-    const say = () => onProgress(Math.min(total, done + plan.reuse.length + 1), total);
+    const target = total - plan.skipped;
+    const say = () => onProgress(Math.min(target, done + plan.reuse.length + 1), target);
     say();
 
     const fetchOne = async (page) => {
@@ -614,13 +628,16 @@ async function walkTopic(info, state, onProgress) {
     }
     found.sort((a, b) => (b.page - a.page) || (Number(b.id) - Number(a.id)));
 
-    const complete = !state.cancelled && !state.stopped && scanned >= total;
+    const complete = !state.cancelled && !state.stopped && scanned + plan.skipped >= total;
     if (PAGE.topicId && complete) rememberPages(PAGE.topicId, pages, total);
 
     return {
         rows: dedupeReleases(found),
         done: complete,
         scanned: scanned,
+        // Oldest pages left unread because the topic is longer than the
+        // cap on requests; the panel says so.
+        skipped: plan.skipped,
         newest: newest,
         // How much of this answer came out of this browser rather than
         // off the board, which is the whole point of keeping it.
@@ -657,12 +674,17 @@ function rememberIndex(topicId, payload) {
 /** "3 minutes ago", roughly, for the line under the heading. */
 function agoText(at) {
     const seconds = Math.max(0, Math.round((Date.now() - at) / 1000));
-    if (seconds < 90) return "just now";
+    if (seconds < 90) return t("just now");
     const minutes = Math.round(seconds / 60);
-    if (minutes < 60) return minutes + " minutes ago";
+    if (minutes < 60) return t("{n} minutes ago", { n: minutes });
     const hours = Math.round(minutes / 60);
-    if (hours < 36) return hours + (hours === 1 ? " hour ago" : " hours ago");
-    return Math.round(hours / 24) + " days ago";
+    if (hours < 36) return hours === 1 ? t("1 hour ago") : t("{n} hours ago", { n: hours });
+    return t("{n} days ago", { n: Math.round(hours / 24) });
+}
+
+/** "12 pages read", in the page's language and number. */
+function pagesReadText(n) {
+    return n === 1 ? t("1 page read") : t("{n} pages read", { n });
 }
 
 /* ---- Versions ------------------------------------------------------ */
@@ -826,7 +848,7 @@ function releaseRow(row, latest) {
         table.scrollIntoView({ behavior: scrollBehaviour(), block: "start" });
         flash(table);
     });
-    return el("li.rr-releases__row", { "data-kinds": row.kinds.join(" ") }, [link]);
+    return el("li.rr-releases__row", { "data-kinds": row.kinds.join(" "), "data-links": String(row.links || 0) }, [link]);
 }
 
 /**
@@ -926,11 +948,11 @@ function initReleases() {
     /* The list is rebuilt when the scope changes rather than kept in
        two copies: the rows, the filters and the counts all differ, and
        a hidden second list is a second thing to keep in step. */
-    const panel = el("section.rr-releases", { "aria-label": "Releases in this topic" });
+    const panel = el("section.rr-releases", { "aria-label": t("Releases in this topic") });
     const state = { cancelled: false, stopped: null, scope: "page", topic: kept };
 
     const count = el("span.rr-releases__count");
-    const scope = el("div.rr-releases__scope", { role: "tablist", "aria-label": "How much to look at" });
+    const scope = el("div.rr-releases__scope", { role: "tablist", "aria-label": t("How much to look at") });
 
     /* Both options, always.
      *
@@ -1025,7 +1047,7 @@ function initReleases() {
 
         if (scoped && state.topic) {
             const again = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
-                icon("layers", 12), "Read it again",
+                icon("layers", 12), t("Read it again"),
             ]);
             again.addEventListener("click", walk);
             /* One sentence, not three spans run together. Read by eye
@@ -1034,11 +1056,12 @@ function initReleases() {
                "Latest posted: v1.10.05 pages read". */
             const said = [
                 latest ? t("Latest posted: version {v}", { v: latest }) : null,
-                state.topic.scanned + (state.topic.scanned === 1 ? " page" : " pages") + " read",
-                state.topic.done ? null : "stopped early",
-                state.topic.eased ? "the board was busy, so this was read slowly" : null,
-                "read " + agoText(state.topic.at || Date.now()),
-                staleBy ? staleBy + " new since" : null,
+                pagesReadText(state.topic.scanned),
+                state.topic.skipped ? t("the oldest {n} pages were not read", { n: state.topic.skipped }) : null,
+                state.topic.done ? null : t("stopped early"),
+                state.topic.eased ? t("the board was busy, so this was read slowly") : null,
+                t("read {ago}", { ago: agoText(state.topic.at || Date.now()) }),
+                staleBy ? t("{n} new since", { n: staleBy }) : null,
             ].filter(Boolean).join(". ");
 
             /* When it was read, whether it has moved on, and the
@@ -1050,8 +1073,9 @@ function initReleases() {
                 el("span.rr-spacer"),
                 el("div.rr-releases__read", {}, [
                     el("span", { "aria-hidden": "true" }, [
-                        state.topic.scanned + (state.topic.scanned === 1 ? " page" : " pages") + " read",
-                        state.topic.done ? "" : " · stopped early",
+                        pagesReadText(state.topic.scanned),
+                        state.topic.skipped ? " · " + t("oldest {n} skipped", { n: state.topic.skipped }) : "",
+                        state.topic.done ? "" : " · " + t("stopped early"),
                         " · " + agoText(state.topic.at || Date.now()),
                     ].join("")),
                     /* Why it took as long as it did. A walk that drops
@@ -1062,12 +1086,12 @@ function initReleases() {
                     state.topic.eased
                         ? el("span.rr-releases__eased", {
                             "aria-hidden": "true",
-                            title: "The board was answering slowly, so this was read one page at a time",
-                        }, ["read gently"])
+                            title: t("The board was answering slowly, so this was read one page at a time"),
+                        }, [t("read gently")])
                         : null,
                     staleBy
                         ? el("span.rr-releases__stale", { "aria-hidden": "true" }, [
-                            staleBy + (staleBy === 1 ? " newer post" : " newer posts") + " since",
+                            staleBy === 1 ? t("1 newer post since") : t("{n} newer posts since", { n: staleBy }),
                         ])
                         : null,
                     again,

@@ -7,7 +7,8 @@
 
 const SHORTCUTS = [
     { keys: "Ctrl K", what: "Search or jump to anything" },
-    { keys: "j / k", what: "Next / previous post" },
+    { keys: "j / k", what: "Next / previous post, or row of a listing" },
+    { keys: "Enter", what: "Open the row under the cursor" },
     { keys: "n / p", what: "Next / previous page of the topic" },
     { keys: "g then i", what: "Board index" },
     { keys: "g then f", what: "The forum this topic is in" },
@@ -32,16 +33,42 @@ function scrollToPost(direction) {
     if (!anchors.length) return;
 
     const top = window.scrollY + 70;
+    // Each anchor's position is read once and kept with it.
+    const placed = anchors.map((node) => ({ node, at: node.getBoundingClientRect().top + window.scrollY }));
     let target = null;
     if (direction > 0) {
-        target = anchors.find((node) => node.getBoundingClientRect().top + window.scrollY > top + 10);
+        target = placed.find((entry) => entry.at > top + 10);
     } else {
-        for (const node of anchors) {
-            if (node.getBoundingClientRect().top + window.scrollY < top - 10) target = node;
+        for (const entry of placed) {
+            if (entry.at < top - 10) target = entry;
         }
     }
-    if (!target) target = direction > 0 ? anchors[anchors.length - 1] : anchors[0];
-    window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 60, behavior: scrollBehaviour() });
+    if (!target) target = direction > 0 ? placed[placed.length - 1] : placed[0];
+    window.scrollTo({ top: target.at - 60, behavior: scrollBehaviour() });
+}
+
+/**
+ * j and k on a listing: the cursor walks the rows the way it walks the
+ * posts of a topic, and Enter opens the one it is on, because the row's
+ * title link is what gets the focus. Returns false where there is no
+ * listing, so the caller falls back to posts.
+ */
+function moveListCursor(direction) {
+    const pick = 'td[data-rr-col="title"] a.topictitle, td[data-rr-col="title"] a.forumlink';
+    const rows = Array.from(document.querySelectorAll("table[data-rr-list] tr"))
+        .filter((row) => row.querySelector(pick) && row.offsetParent !== null);
+    if (!rows.length) return false;
+
+    const at = rows.findIndex((row) => row.hasAttribute("data-rr-cursor"));
+    let next;
+    if (at < 0) next = direction > 0 ? 0 : rows.length - 1;
+    else next = Math.min(rows.length - 1, Math.max(0, at + direction));
+    if (at >= 0) rows[at].removeAttribute("data-rr-cursor");
+    rows[next].setAttribute("data-rr-cursor", "");
+    rows[next].scrollIntoView({ block: "nearest", behavior: scrollBehaviour() });
+    const link = rows[next].querySelector(pick);
+    if (link) link.focus({ preventScroll: true });
+    return true;
 }
 
 function goPage(direction) {
@@ -140,11 +167,21 @@ function initShortcuts() {
                 awaitingG = true;
                 gTimer = setTimeout(() => { awaitingG = false; }, 900);
                 break;
-            case "j": event.preventDefault(); scrollToPost(1); break;
-            case "k": event.preventDefault(); scrollToPost(-1); break;
+            case "j": event.preventDefault(); if (!moveListCursor(1)) scrollToPost(1); break;
+            case "k": event.preventDefault(); if (!moveListCursor(-1)) scrollToPost(-1); break;
             case "n": goPage(1); break;
             case "p": goPage(-1); break;
             case "r": {
+                /* The quick reply first, when there is one: "r" used to
+                   leave for the full posting page past the form that was
+                   already on this one. */
+                const quick = document.querySelector(".rr-reply textarea, .rr-reply > button.rr-btn");
+                if (quick) {
+                    event.preventDefault();
+                    if (quick.tagName === "BUTTON") quick.click();
+                    else quick.focus();
+                    break;
+                }
                 const reply = document.querySelector('a[href*="mode=reply"]');
                 if (reply) reply.click();
                 break;

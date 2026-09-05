@@ -68,7 +68,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "width", label: "Content width", type: "seg", default: "reading",
-                desc: "The frame follows the window either way. Reading also caps the line length of a post at about 78 characters, which is where long ones stop being tiring; Wide lets the frame grow further and Full removes both limits.",
+                desc: "The frame follows the window either way. Reading also caps the line length of a post at about 78 characters, which is where long ones stop being tiring; Wide lets the frame grow further and Full lifts the frame's limit altogether, keeping a post's lines under about 120 characters.",
                 options: [
                     { value: "reading", label: "Reading" },
                     { value: "wide", label: "Wide" },
@@ -180,6 +180,10 @@ const SETTINGS_SCHEMA = [
             {
                 id: "bookmarks", label: "Bookmark topics", type: "toggle", default: true,
                 desc: "A star on every topic. Bookmarks are listed in the command palette.",
+            },
+            {
+                id: "rowClick", label: "The whole title cell opens the topic", type: "toggle", default: true,
+                desc: "Not only the words of the title. Ctrl-click opens it in a new tab; selecting text does nothing.",
             },
             {
                 id: "foldWhoIsOnline", label: "Fold Who is online", type: "toggle", default: true,
@@ -356,12 +360,12 @@ const SETTINGS_SCHEMA = [
                 when: "history",
             },
             {
-                id: "confirmExternal", label: "Confirm before leaving to a filehost", type: "toggle", default: false,
-                desc: "Shows the full destination first. Off by default because it adds a click.",
+                id: "confirmExternal", label: "Confirm before leaving to another site", type: "toggle", default: false,
+                desc: "Asks first, showing the full address, when a link in a post leads off the forum. Off by default because it adds a click.",
             },
             {
                 id: "coexist", label: "Stand down for CS.RIN.RU Enhanced", type: "toggle", default: true,
-                desc: "If the Enhanced userscript is running, skip the features it already provides instead of doubling them up.",
+                desc: "If the Enhanced userscript is running, leave the Steam header on a game topic to it instead of drawing a second one. The hover preview stays: Enhanced's previews a post, this one previews the game.",
             },
         ],
     },

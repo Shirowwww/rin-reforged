@@ -40,8 +40,13 @@ function quoteHeading(quote) {
     return null;
 }
 
-function foldQuote(quote, lines) {
-    if (quote.hasAttribute("data-rr-quote")) return false;
+/**
+ * How tall the fold would be for this quote, or null when it fits
+ * within `lines` and is left alone. Reads only — see initQuotes for
+ * why the reads and the writes are kept apart.
+ */
+function measureQuote(quote, lines) {
+    if (quote.hasAttribute("data-rr-quote")) return null;
 
     // Measured, not guessed: a quote of two long lines and a quote of
     // six short ones are the same number of characters and only one of
@@ -60,8 +65,12 @@ function foldQuote(quote, lines) {
     const limit = lineHeight * lines;
     // Half a line of slack, so a quote that spills by a word is left
     // alone rather than folded to save four pixels.
-    if (content <= limit + lineHeight * 0.5) return false;
+    if (content <= limit + lineHeight * 0.5) return null;
+    return limit;
+}
 
+/** Fold one quote to `limit` pixels, with the control to open it. Writes only. */
+function foldQuote(quote, limit) {
     quote.setAttribute("data-rr-quote", "folded");
     quote.style.setProperty("--rr-quote-max", limit + "px");
 
@@ -104,13 +113,24 @@ function initQuotes() {
     if (!PAGE.isTopic || !settings.get("foldQuotes")) return;
 
     const lines = clamp(Number(settings.get("foldQuotesLines")) || 6, 3, 16);
+
+    /* Every quote is measured first and only then is any of them
+       changed. Reading a height after writing to the page forces a
+       layout, one per quote when the two are interleaved; read
+       together they cost one. */
+    const plan = quoteBlocks().map((quote) => ({ quote, limit: measureQuote(quote, lines) }));
+
     let folded = 0;
-    for (const quote of quoteBlocks()) {
+    for (const { quote, limit } of plan) {
+        if (limit === null) continue;
         // A quote nested inside one that is already folded would draw a
         // control nobody can reach until the outer one opens, and the
-        // outer fold already hides it.
+        // outer fold already hides it. Outermost come first in document
+        // order, so the outer fold is in place by the time the inner
+        // one is asked about.
         if (quote.parentElement && quote.parentElement.closest('[data-rr-quote="folded"]')) continue;
-        if (foldQuote(quote, lines)) folded += 1;
+        foldQuote(quote, limit);
+        folded += 1;
     }
     return folded;
 }

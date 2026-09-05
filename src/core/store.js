@@ -122,8 +122,9 @@ const store = {
 /* ---- Schema access ------------------------------------------------ */
 
 let schemaRef = [];
+let defaults = null;
 
-function registerSchema(groups) { schemaRef = groups; }
+function registerSchema(groups) { schemaRef = groups; defaults = null; }
 function schema() { return schemaRef; }
 
 function allFields() {
@@ -132,7 +133,13 @@ function allFields() {
     return out;
 }
 
+/* settings.get() is asked about a hundred times on a listing page and
+   most of those fall through to the default; rebuilding the flat field
+   list and scanning it for each one was the whole of that cost. */
 function defaultFor(id) {
-    const field = allFields().find((f) => f.id === id);
-    return field ? field.default : undefined;
+    if (defaults === null) {
+        defaults = new Map();
+        for (const field of allFields()) defaults.set(field.id, field.default);
+    }
+    return defaults.get(id);
 }

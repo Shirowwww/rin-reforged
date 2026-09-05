@@ -80,6 +80,10 @@ function applyHidden(post, name) {
         for (const child of covered) child.hidden = false;
         note.remove();
         delete post.table.rrReveal;
+        /* The control that was focused is gone with the note; the
+           keyboard lands on the post it revealed, not on the page. */
+        cell.setAttribute("tabindex", "-1");
+        cell.focus({ preventScroll: true });
     };
     restore.addEventListener("click", reveal);
     // Kept on the node rather than in a map: the post objects are

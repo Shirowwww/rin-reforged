@@ -39,6 +39,18 @@ const SEARCH_DEPTH = {
  * Scoped to the current board when there is one, the way the board's
  * own "Search this forum" box is.
  */
+/** Whether a search from here is scoped to the board the reader is in. */
+function searchScoped() {
+    return Boolean((PAGE.isForum || PAGE.isTopic) && PAGE.forumId);
+}
+
+/** The board's name off the breadcrumbs, when the page has them. */
+function currentBoardName() {
+    const crumb = Array.from(document.querySelectorAll("a.breadcrumbs, .rr-nav__crumbs a")).pop();
+    const name = crumb ? crumb.textContent.trim() : "";
+    return name && name.length <= 60 ? name : null;
+}
+
 function boardSearchUrl(query) {
     const depth = SEARCH_DEPTH[settings.get("searchDepth")] || SEARCH_DEPTH.titles;
     const url = new URL("./search.php", location.href);
@@ -46,9 +58,7 @@ function boardSearchUrl(query) {
     url.searchParams.set("terms", "all");
     url.searchParams.set("sf", depth.sf);
     url.searchParams.set("sr", "topics");
-    if ((PAGE.isForum || PAGE.isTopic) && PAGE.forumId) {
-        url.searchParams.set("fid[]", String(PAGE.forumId));
-    }
+    if (searchScoped()) url.searchParams.set("fid[]", String(PAGE.forumId));
     return url.toString();
 }
 
@@ -156,7 +166,12 @@ function collectItems() {
         });
     }
 
-    groups.push({ title: t("Actions"), items: paletteActions() });
+    /* On a topic page the actions are about this topic — copy its
+       link, jump to its last page — and were under seven boards and six
+       recent topics, below the fold of the palette. First, there. */
+    const actions = { title: t("Actions"), items: paletteActions() };
+    if (PAGE.isTopic) groups.unshift(actions);
+    else groups.push(actions);
     return groups;
 }
 
@@ -191,7 +206,13 @@ function openPalette() {
     let cursor = 0;
 
     const searchItem = (query) => ({
-        label: t("Search the forum for {q}", { q: query }),
+        /* It says where it will look. The row said "the forum" and
+           searched the board the reader was in. */
+        label: searchScoped()
+            ? (currentBoardName()
+                ? t("Search {forum} for {q}", { forum: currentBoardName(), q: query })
+                : t("Search this board for {q}", { q: query }))
+            : t("Search the forum for {q}", { q: query }),
         icon: "search",
         hint: SEARCH_DEPTH[settings.get("searchDepth")]?.hint || "Enter",
         href: boardSearchUrl(query),

@@ -364,6 +364,37 @@ work had never looked.
   word narrowed the list to nothing rather than further. A query is
   words; each has to be somewhere in the title, in any order, with case
   and accents folded away.
+- **0.9.0** is the desktop pass: an audit of the script on monitors from
+  1280 to 2560 pixels wide, every finding checked against the live board
+  before it was acted on, and the ones that survived done together. The
+  top bar ran edge to edge while everything under it kept to the content
+  column, so on a 2560px screen the brand sat half a metre left of the
+  board bar; its contents now follow the column. The member list, the
+  message folders and Who is online had none of a listing's treatment —
+  no stripes, ragged numbers, headers aligned against their own cells —
+  because "is this a listing" was asked as "does it hold a topic link";
+  it is asked as a shape now. A form field was as wide as `size="25"`
+  said in 2003. The accent used as text on its own soft wash read at
+  3.3:1 on Paper; it is lifted until it passes, per accent, per theme.
+  Full width capped nothing at all and gave 300-character lines. The
+  Releases panel read a long topic up to page 80 and stopped, which on
+  a 120-page topic meant the forty newest pages — where the latest
+  release is — were the ones never read; the cap is on requests now,
+  the oldest pages are the ones dropped, and the panel says so.
+  "Updated from 1.0.5 to 1.0.7" was read as 1.0.5. Carbon kept Slate's
+  blue links. The whole title cell opens its topic, since the whole row
+  already lit up as if it would. `j`/`k` walk the rows of a listing.
+  The lightbox has a close control and holds the keyboard. Every
+  signature is set apart, not only the long ones. Toasts are announced.
+  The quick reply has a toolbar. "Export" said settings and copied the
+  drafts too. Two settings that did nothing now do what they said, and
+  the Releases panel speaks Russian to the end. Not done, on purpose:
+  post media stays capped at the prose measure, because a post's text
+  is bare text nodes and the measure has to sit on the body that holds
+  them; Reading mode instead closes the frame in on a topic page, and
+  Wide and Full let the images grow with the text. Native keeps the
+  board's red on both Important and Problem, and Info stays blue on
+  every theme; those are the identity, not oversights.
 
 ### It reads Russian
 

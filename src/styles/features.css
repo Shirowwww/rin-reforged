@@ -280,8 +280,11 @@ html[data-rr] .rr-boardbar__donate svg {
     background: var(--rr-surface-3);
     color: var(--rr-muted);
 }
-.rr-steam__score[data-band="good"]  { background: color-mix(in srgb, var(--rr-ok) 20%, transparent);     color: var(--rr-ok); }
-.rr-steam__score[data-band="mixed"] { background: color-mix(in srgb, var(--rr-warn) 20%, transparent);   color: var(--rr-warn); }
+/* The text is the status colour lifted toward the strong text, not
+   the raw token: on the dark themes the raw red read at under 4:1 on
+   its own wash. */
+.rr-steam__score[data-band="good"]  { background: color-mix(in srgb, var(--rr-ok) 20%, transparent);     color: color-mix(in srgb, var(--rr-ok) 70%, var(--rr-text-strong)); }
+.rr-steam__score[data-band="mixed"] { background: color-mix(in srgb, var(--rr-warn) 20%, transparent);   color: color-mix(in srgb, var(--rr-warn) 70%, var(--rr-text-strong)); }
 .rr-steam__score[data-band="poor"]  { background: color-mix(in srgb, var(--rr-danger) 20%, transparent); color: var(--rr-danger); }
 
 .rr-steam__facts {
@@ -617,7 +620,7 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
 .rr-releases__chip[aria-pressed="true"] {
     background: var(--rr-accent-soft);
     border-color: var(--rr-accent);
-    color: var(--rr-accent);
+    color: var(--rr-accent-on-soft, var(--rr-accent));
 }
 .rr-releases__chip[data-family][aria-pressed="true"] {
     background: color-mix(in srgb, var(--rr-family) 22%, transparent);
@@ -728,3 +731,6 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
     .rr-releases__tab { flex: 1; }
     .rr-releases__read { flex-basis: 100%; }
 }
+
+/* "Only posts with links" (finder.js) reaches the panel's rows too. */
+.rr-releases__row[data-rr-nolink] { display: none; }

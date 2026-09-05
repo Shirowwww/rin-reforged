@@ -11,7 +11,7 @@
    because other userscripts look for it.
    ------------------------------------------------------------------ */
 
-const STATUS_RE = /(global|announce|sticky|topic|forum)_(un)?read/;
+const STATUS_RE = /(global|announce|sticky|topic|forum)_(un)?read|topic_moved/;
 
 /* Images that sit beside a label saying the same thing, or that draw
    nothing at all: the 12px menu bullets, the page-jump target, the
@@ -22,10 +22,14 @@ function statusDot(img) {
     const src = img.getAttribute("src") || "";
     const unread = /_unread/.test(src);
     const locked = /locked/.test(src);
+    /* The one GIF the first pass left behind: a moved topic's shadow
+       row, which kept the template's beveled arrow beside rows that had
+       all been redrawn. */
+    const moved = /topic_moved/.test(src);
 
     const dot = el("span.rr-dot", {
         title: img.getAttribute("title") || img.getAttribute("alt") || "",
-        "data-state": unread ? "unread" : "read",
+        "data-state": moved ? "moved" : unread ? "unread" : "read",
         "data-locked": locked ? "1" : null,
         "aria-hidden": "true",
     });

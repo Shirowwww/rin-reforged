@@ -110,8 +110,11 @@ function looksLikeDate(version) {
  * build date had no version at all rather than the one three lines
  * further down.
  */
+const VERSION_RE_ALL = new RegExp(VERSION_RE.source, "gi");
+
 function versionsIn(text) {
-    const all = new RegExp(VERSION_RE.source, "gi");
+    const all = VERSION_RE_ALL;
+    all.lastIndex = 0;
     const found = { version: null, build: null, named: false };
     let match;
     while ((match = all.exec(text)) !== null) {
@@ -121,19 +124,41 @@ function versionsIn(text) {
         }
         const number = match[1] || match[3] || match[4];
         if (!number || looksLikeDate(number)) continue;
+        /* Whether the post *called* it a version — a v in front, or
+           "Title Update" / "updated to" leading in — or whether it is
+           a bare three-part number read off the prose. Both go on the
+           row. Only the first is evidence about the game: "Updated
+           ACBlackFlagFix to 2.8.3!" is a mod's changelog, and off the
+           live board 2.8.3 beat 1.0.7 to the headline the moment bare
+           numbers started to count. */
         if (!found.version) {
             found.version = number;
-            /* Whether the post *called* it a version — a v in front, or
-               "Title Update" / "updated to" leading in — or whether it
-               is a bare three-part number read off the prose. Both go
-               on the row. Only the first is evidence about the game:
-               "Updated ACBlackFlagFix to 2.8.3!" is a mod's changelog,
-               and off the live board 2.8.3 beat 1.0.7 to the headline
-               the moment bare numbers started to count. */
             found.named = Boolean(match[1] || match[3]);
         }
     }
+    /* "Updated from 1.0.5 to 1.0.7": the first version in the post is
+       the one it left behind. Only this wording moves the answer — a
+       later "v2.8.3" on its own is still a mod's changelog. */
+    const step = FROM_TO_RE.exec(text);
+    if (step && !looksLikeDate(step[2]) && compareVersions(step[2], step[1]) > 0) {
+        found.version = step[2];
+        found.named = true;
+    }
     return found;
+}
+
+const FROM_TO_RE = /\bfrom\s+v?\.?\s?(\d+(?:\.\d+){1,3}[a-z]?)\s+to\s+v?\.?\s?(\d+(?:\.\d+){1,3}[a-z]?)\b/i;
+
+/** Numeric, part by part: 1.0.10 is newer than 1.0.9. */
+function compareVersions(a, b) {
+    const left = String(a).split(/[.\-_]/).map((part) => parseInt(part, 10) || 0);
+    const right = String(b).split(/[.\-_]/).map((part) => parseInt(part, 10) || 0);
+    const length = Math.max(left.length, right.length);
+    for (let index = 0; index < length; index += 1) {
+        const diff = (left[index] || 0) - (right[index] || 0);
+        if (diff) return diff;
+    }
+    return 0;
 }
 
 /** Hosts that are the forum itself rather than somewhere to download. */
@@ -297,7 +322,7 @@ function buildLinkFilter(all, rows) {
 
     const button = el("button.rr-btn", { type: "button", "aria-pressed": "false" }, [
         icon("filter", 13),
-        "Only posts with links",
+        t("Only posts with links"),
     ]);
     button.addEventListener("click", () => {
         on = !on;
@@ -306,7 +331,13 @@ function buildLinkFilter(all, rows) {
             const keep = !on || flagged.has(post.id);
             post.table.style.display = keep ? "" : "none";
         }
-        toast(on ? rows.length + " posts shown" : "All posts shown");
+        /* The Releases list, when it is showing the whole topic, holds
+           rows for posts that are not on this page; the filter used to
+           hide the page's posts and leave that list as it was. */
+        for (const row of document.querySelectorAll(".rr-releases__row")) {
+            row.toggleAttribute("data-rr-nolink", on && row.getAttribute("data-links") === "0");
+        }
+        toast(on ? t("{n} posts shown", { n: rows.length }) : t("All posts shown"));
     });
     return button;
 }

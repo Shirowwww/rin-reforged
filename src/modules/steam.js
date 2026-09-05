@@ -270,7 +270,9 @@ const STEAM_EXCUSES = {
 /* ---- The card ----------------------------------------------------- */
 
 function steamCard(game, term) {
-    const card = el("div.rr-steam", { role: "tooltip" });
+    /* Not role=tooltip: a tooltip is text, and this holds the Store and
+       SteamDB links. A group named after the game says what it is. */
+    const card = el("div.rr-steam", { role: "group", "aria-label": game.name || "Steam" });
 
     if (game.header) {
         card.append(el("img.rr-steam__art", {

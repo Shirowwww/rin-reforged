@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.8.11
+// @version         0.9.0
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -248,7 +248,6 @@ html[data-rr][data-rr-theme="native"] {
     --rr-danger:        #cf6152;
 
     --rr-selection:     #45211c;
-    --rr-mark:          #4e0707;
 }
 
 /* Carbon - neutral grey for anyone who finds the blue cast distracting. */
@@ -265,6 +264,12 @@ html[data-rr][data-rr-theme="carbon"] {
     --rr-muted:       #949494;
     --rr-faint:       #8a8a8a;
     --rr-selection:   #3d3d3d;
+    /* "No blue cast" has to include the links, which stayed Slate's
+       blue: a warm, desaturated tone for them. The tags keep their
+       hues — Info is blue on every theme, and that is what makes it
+       readable as Info. */
+    --rr-link:          #d6b98a;
+    --rr-link-visited:  #b3a48c;
 }
 
 /* Paper - a real light theme, warm enough not to glare at night. */
@@ -325,7 +330,17 @@ html[data-rr][data-rr-density="roomy"] {
 /* Wide keeps the same slope and lifts the ceiling; Full drops both.
    Reading is the fluid default above. */
 html[data-rr][data-rr-width="wide"]  { --rr-content-max: min(1980px, 97vw); --rr-measure: 92ch; }
-html[data-rr][data-rr-width="full"]  { --rr-content-max: none;              --rr-measure: none; }
+/* Full lifts the frame's ceiling — a listing wants the whole window —
+   but a post is still prose: 120ch is half again Wide's measure, and
+   short of the 300-character lines \`none\` gave a 2560px screen. */
+html[data-rr][data-rr-width="full"]  { --rr-content-max: none;              --rr-measure: 120ch; }
+
+/* Reading, on a topic page: the frame closes in on the text. At 1560px
+   a post card was 1180px wide around 730px of prose, a two-fifths dead
+   strip beside every post on a 1920 or 2560 monitor. 1440 is the
+   narrowest the board bar's two groups of links still share one line.
+   A listing keeps the full frame; it has columns to fill it with. */
+html[data-rr][data-rr-width="reading"][data-rr-page="topic"] { --rr-content-max: min(1440px, 95vw); }
 
 /* No bar, no edge to sit on. */
 html[data-rr][data-rr-nav="off"] { --rr-nav-h: 0px; }
@@ -621,10 +636,29 @@ html[data-rr] td.row5 { background: var(--rr-surface-2); }
    the same two classes wrap whole posts and striping those would band
    the thread rather than the rows. */
 html[data-rr] table[data-rr-list] td.row2 { background: var(--rr-surface-2); }
+/* On the member list the post count sits right-aligned against the
+   rank's left edge — "147 Advanced forumer" read as one string. A
+   gutter after the numbers, on the header too so they stay aligned. */
+html[data-rr] table[data-rr-list] th[data-rr-col="posts"],
+html[data-rr] table[data-rr-list] td[data-rr-col="posts"] { padding-right: 28px; }
+
+/* The member list stripes its rows, not its cells: <tr class="row2">
+   over plain td.gen. The same shade, read off the row. */
+html[data-rr] table[data-rr-list] > tbody > tr.row2 > td { background: var(--rr-surface-2); }
+html[data-rr] table[data-rr-list] > tbody > tr.row1:hover > td,
+html[data-rr] table[data-rr-list] > tbody > tr.row2:hover > td { background: var(--rr-surface-3); }
 
 /* Whole-row hover, which the table markup cannot express by itself. */
 html[data-rr] tr:hover > td.row1,
 html[data-rr] tr:hover > td.row2 { background: var(--rr-surface-3); }
+/* And a whole-row click (lists.js): the title cell's empty three
+   quarters open the topic too, so the hover is not a promise the row
+   fails to keep. */
+html[data-rr] table[data-rr-list][data-rr-rowclick] td[data-rr-col="title"] { cursor: pointer; }
+html[data-rr] table[data-rr-list][data-rr-rowclick] td[data-rr-col="title"] a,
+html[data-rr] table[data-rr-list][data-rr-rowclick] td[data-rr-col="title"] button { cursor: pointer; }
+/* The words beside a lone checkbox toggle it (lists.js). */
+html[data-rr] td[data-rr-check-label] { cursor: pointer; }
 
 html[data-rr] tr:last-child > td { border-bottom: 0; }
 
@@ -990,7 +1024,8 @@ html[data-rr] .quotecontent {
     color: var(--rr-muted);
     font-size: var(--rr-fs-sm);
 }
-html[data-rr] blockquote blockquote { background: var(--rr-surface-3); }
+html[data-rr] blockquote blockquote,
+html[data-rr] .quotecontent .quotecontent { background: var(--rr-surface-3); }
 html[data-rr] .quotetitle,
 html[data-rr] blockquote > cite {
     display: block;
@@ -1129,6 +1164,17 @@ html[data-rr] .post {
 }
 html[data-rr] textarea,
 html[data-rr] textarea.post { font-family: var(--rr-font); line-height: var(--rr-lh); }
+/* The template sizes every text field with size="25", size="45": a
+   fixed count of characters from 2003, cramped on a fluid frame. The
+   board's own fields get a floor in ems and the room they have; the
+   script's own controls size themselves. */
+html[data-rr] #wrapcentre input[type="text"]:not([class*="rr-"]):not([size="1"]):not([size="2"]):not([size="3"]):not([size="4"]):not([size="5"]):not([size="6"]),
+html[data-rr] #wrapcentre input[type="search"]:not([class*="rr-"]),
+html[data-rr] #wrapcentre input[type="password"]:not([class*="rr-"]),
+html[data-rr] #wrapcentre input[type="email"]:not([class*="rr-"]) {
+    width: auto;
+    min-width: min(100%, 22em);
+}
 html[data-rr] input:hover,
 html[data-rr] select:hover,
 html[data-rr] textarea:hover { border-color: var(--rr-faint); }
@@ -1370,6 +1416,24 @@ html[data-rr] .postbody iframe[src*="vimeo"] {
     border-radius: var(--rr-radius);
 }
 
+/* A moved topic: the template's beveled GIF was the one marker the
+   icon pass left as it was. A hollow diamond, the dot's size. */
+html[data-rr] .rr-dot[data-state="moved"] {
+    background: transparent;
+    border: 2px solid var(--rr-faint);
+    border-radius: 2px;
+    transform: rotate(45deg) scale(.85);
+}
+
+/* A roster prints "Send private message" on every one of its forty
+   rows; drawn as full buttons they were the loudest thing on the page.
+   Smaller and quieter there, still a control. */
+html[data-rr] table[data-rr-list] td .rr-ctl {
+    padding: 1px 8px;
+    font-size: var(--rr-fs-xs);
+    background: transparent;
+}
+
 /* == ui.css == */
 /* ------------------------------------------------------------------
    Components the script injects. Everything here is prefixed .rr- and
@@ -1396,7 +1460,8 @@ html[data-rr] .postbody iframe[src*="vimeo"] {
 .rr-btn[data-variant="primary"]:hover { filter: brightness(1.08); }
 .rr-btn[data-variant="quiet"] { background: transparent; border-color: transparent; color: var(--rr-muted); }
 .rr-btn[data-variant="quiet"]:hover { background: var(--rr-surface-2); color: var(--rr-text); }
-.rr-btn[aria-pressed="true"] { background: var(--rr-accent-soft); border-color: var(--rr-accent); color: var(--rr-accent); }
+.rr-btn[aria-pressed="true"] { background: var(--rr-accent-soft); border-color: var(--rr-accent); color: var(--rr-accent-on-soft, var(--rr-accent)); }
+.rr-btn:disabled, .rr-btn[aria-busy="true"] { opacity: .6; cursor: progress; }
 .rr-btn svg { width: 14px; height: 14px; flex: none; }
 
 .rr-icon-btn {
@@ -1493,14 +1558,26 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     position: sticky;
     top: 0;
     z-index: 900;
-    display: flex;
-    align-items: center;
-    gap: var(--rr-s3);
     height: var(--rr-nav-h);
     padding: 0 var(--rr-s4);
     background: color-mix(in srgb, var(--rr-bg) 88%, transparent);
     backdrop-filter: blur(10px) saturate(140%);
     border-bottom: 1px solid var(--rr-line);
+}
+/* The bar is full-bleed; what is in it follows the content column.
+   Without this the brand sat at x=16 and the icons at the screen's
+   edge while the board bar and the listing under them were indented
+   half a metre on a 2560px monitor — two stacked header rows with a
+   500px zig-zag between them. */
+.rr-nav__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s3);
+    height: 100%;
+    width: 100%;
+    max-width: var(--rr-content-max);
+    margin: 0 auto;
+    min-width: 0;
 }
 .rr-nav__brand {
     display: flex;
@@ -2175,10 +2252,14 @@ tr[data-rr-hidden] { display: none; }
 }
 .rr-game__meta {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: max-content minmax(0, 1fr);
     gap: 6px var(--rr-s4);
     margin: var(--rr-s4) 0 0;
     font-size: var(--rr-fs-sm);
+    /* Short values — a developer, a date — sat by their label with a
+       metre of nothing to their right on a wide card. The grid is as
+       wide as a long line needs and no wider. */
+    max-width: 72ch;
 }
 .rr-game__meta dt { color: var(--rr-faint); white-space: nowrap; }
 .rr-game__meta dd { margin: 0; color: var(--rr-text); }
@@ -2443,7 +2524,7 @@ html[data-rr] a.rr-postnum:hover {
     padding: 1px 5px;
     border-radius: var(--rr-radius-pill);
     background: var(--rr-accent-soft);
-    color: var(--rr-accent);
+    color: var(--rr-accent-on-soft, var(--rr-accent));
     font: 700 var(--rr-fs-xs) / 1.5 var(--rr-font-mono);
     text-align: center;
 }
@@ -2492,6 +2573,9 @@ html[data-rr] a.rr-postnum:hover {
 .rr-field[hidden],
 .rr-field[data-rr-dep-off],
 .rr-field[data-rr-nomatch] { display: none; }
+/* A search hit under a parent that is switched off is still a hit:
+   shown, dimmed, rather than counted on the tab and then not there. */
+.rr-group[data-rr-searching] .rr-field[data-rr-dep-off]:not([data-rr-nomatch]) { display: flex; opacity: .6; }
 /* A field that depends on another is stepped in under it, so "off
    because the thing above is off" is visible rather than inferred. */
 .rr-field[data-rr-dep] { padding-left: var(--rr-s3); }
@@ -2563,6 +2647,18 @@ html[data-rr] a.rr-postnum:hover {
     border-radius: var(--rr-radius);
     box-shadow: var(--rr-shadow-pop);
 }
+.rr-lightbox__close {
+    position: fixed;
+    top: 14px;
+    right: 18px;
+    width: 40px;
+    height: 40px;
+    color: #f0f0f0;
+    background: rgba(20, 22, 26, .7);
+    border: 1px solid rgba(255, 255, 255, .18);
+}
+.rr-lightbox__close:hover { background: rgba(40, 42, 48, .9); color: #fff; }
+.rr-lightbox__close:focus-visible { outline: 2px solid var(--rr-accent); outline-offset: 2px; }
 
 /* ---- Floating actions -------------------------------------------- */
 
@@ -2710,6 +2806,22 @@ html[data-rr] a.rr-postnum:hover {
 /* A crumb that is a place, not a link: the control panel section the
    window title named. */
 .rr-nav__here { color: var(--rr-text-strong); font-weight: 600; white-space: nowrap; }
+
+/* ---- Quick reply toolbar ------------------------------------------ */
+
+.rr-reply__tools { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 6px; }
+.rr-reply__tools .rr-btn { padding: 3px 9px; font-size: var(--rr-fs-xs); min-width: 30px; }
+.rr-reply__tools .rr-btn[data-tool="b"] { font-weight: 700; }
+.rr-reply__tools .rr-btn[data-tool="i"] { font-style: italic; }
+.rr-reply__tools .rr-btn[data-tool="u"] { text-decoration: underline; }
+
+/* ---- Keyboard cursor on a listing ---------------------------------- */
+
+/* j/k walk the rows the way they walk the posts of a topic; the row
+   under the cursor is marked the way a hovered row is, plus a hairline
+   in the accent so a hovered row and the chosen one read differently. */
+html[data-rr] table[data-rr-list] tr[data-rr-cursor] > td { background: var(--rr-surface-3); }
+html[data-rr] table[data-rr-list] tr[data-rr-cursor] > td:first-child { box-shadow: inset 3px 0 0 var(--rr-accent); }
 
 /* == features.css == */
 /* ------------------------------------------------------------------
@@ -2994,8 +3106,11 @@ html[data-rr] .rr-boardbar__donate svg {
     background: var(--rr-surface-3);
     color: var(--rr-muted);
 }
-.rr-steam__score[data-band="good"]  { background: color-mix(in srgb, var(--rr-ok) 20%, transparent);     color: var(--rr-ok); }
-.rr-steam__score[data-band="mixed"] { background: color-mix(in srgb, var(--rr-warn) 20%, transparent);   color: var(--rr-warn); }
+/* The text is the status colour lifted toward the strong text, not
+   the raw token: on the dark themes the raw red read at under 4:1 on
+   its own wash. */
+.rr-steam__score[data-band="good"]  { background: color-mix(in srgb, var(--rr-ok) 20%, transparent);     color: color-mix(in srgb, var(--rr-ok) 70%, var(--rr-text-strong)); }
+.rr-steam__score[data-band="mixed"] { background: color-mix(in srgb, var(--rr-warn) 20%, transparent);   color: color-mix(in srgb, var(--rr-warn) 70%, var(--rr-text-strong)); }
 .rr-steam__score[data-band="poor"]  { background: color-mix(in srgb, var(--rr-danger) 20%, transparent); color: var(--rr-danger); }
 
 .rr-steam__facts {
@@ -3331,7 +3446,7 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
 .rr-releases__chip[aria-pressed="true"] {
     background: var(--rr-accent-soft);
     border-color: var(--rr-accent);
-    color: var(--rr-accent);
+    color: var(--rr-accent-on-soft, var(--rr-accent));
 }
 .rr-releases__chip[data-family][aria-pressed="true"] {
     background: color-mix(in srgb, var(--rr-family) 22%, transparent);
@@ -3442,6 +3557,9 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
     .rr-releases__tab { flex: 1; }
     .rr-releases__read { flex-basis: 100%; }
 }
+
+/* "Only posts with links" (finder.js) reaches the panel's rows too. */
+.rr-releases__row[data-rr-nolink] { display: none; }
 
 /* == responsive.css == */
 /* ------------------------------------------------------------------
@@ -3919,8 +4037,9 @@ const store = {
 /* ---- Schema access ------------------------------------------------ */
 
 let schemaRef = [];
+let defaults = null;
 
-function registerSchema(groups) { schemaRef = groups; }
+function registerSchema(groups) { schemaRef = groups; defaults = null; }
 function schema() { return schemaRef; }
 
 function allFields() {
@@ -3929,9 +4048,15 @@ function allFields() {
     return out;
 }
 
+/* settings.get() is asked about a hundred times on a listing page and
+   most of those fall through to the default; rebuilding the flat field
+   list and scanning it for each one was the whole of that cost. */
 function defaultFor(id) {
-    const field = allFields().find((f) => f.id === id);
-    return field ? field.default : undefined;
+    if (defaults === null) {
+        defaults = new Map();
+        for (const field of allFields()) defaults.set(field.id, field.default);
+    }
+    return defaults.get(id);
 }
 
 /* ================= src/core/schema.js ================= */
@@ -4005,7 +4130,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "width", label: "Content width", type: "seg", default: "reading",
-                desc: "The frame follows the window either way. Reading also caps the line length of a post at about 78 characters, which is where long ones stop being tiring; Wide lets the frame grow further and Full removes both limits.",
+                desc: "The frame follows the window either way. Reading also caps the line length of a post at about 78 characters, which is where long ones stop being tiring; Wide lets the frame grow further and Full lifts the frame's limit altogether, keeping a post's lines under about 120 characters.",
                 options: [
                     { value: "reading", label: "Reading" },
                     { value: "wide", label: "Wide" },
@@ -4117,6 +4242,10 @@ const SETTINGS_SCHEMA = [
             {
                 id: "bookmarks", label: "Bookmark topics", type: "toggle", default: true,
                 desc: "A star on every topic. Bookmarks are listed in the command palette.",
+            },
+            {
+                id: "rowClick", label: "The whole title cell opens the topic", type: "toggle", default: true,
+                desc: "Not only the words of the title. Ctrl-click opens it in a new tab; selecting text does nothing.",
             },
             {
                 id: "foldWhoIsOnline", label: "Fold Who is online", type: "toggle", default: true,
@@ -4293,12 +4422,12 @@ const SETTINGS_SCHEMA = [
                 when: "history",
             },
             {
-                id: "confirmExternal", label: "Confirm before leaving to a filehost", type: "toggle", default: false,
-                desc: "Shows the full destination first. Off by default because it adds a click.",
+                id: "confirmExternal", label: "Confirm before leaving to another site", type: "toggle", default: false,
+                desc: "Asks first, showing the full address, when a link in a post leads off the forum. Off by default because it adds a click.",
             },
             {
                 id: "coexist", label: "Stand down for CS.RIN.RU Enhanced", type: "toggle", default: true,
-                desc: "If the Enhanced userscript is running, skip the features it already provides instead of doubling them up.",
+                desc: "If the Enhanced userscript is running, leave the Steam header on a game topic to it instead of drawing a second one. The hover preview stays: Enhanced's previews a post, this one previews the game.",
             },
         ],
     },
@@ -4846,7 +4975,8 @@ let toastHost = null;
 
 function toast(message) {
     if (!toastHost) {
-        toastHost = el("div.rr-toasts");
+        /* A live region, so "Link copied" is said as well as shown. */
+        toastHost = el("div.rr-toasts", { role: "status", "aria-live": "polite" });
         document.body.append(toastHost);
     }
     const node = el("div.rr-toast", {}, [message]);
@@ -5221,7 +5351,7 @@ function pageLinkMap(root = document) {
         const label = link.textContent.trim();
         if (!/^\d+$/.test(label)) continue;              // skip Go, Next, Previous
         const href = link.getAttribute("href");
-        if (!href || !/viewtopic|viewforum|search/.test(href)) continue;
+        if (!href || !/viewtopic|viewforum|search|memberlist|viewonline|ucp\.php/.test(href)) continue;
 
         const page = parseInt(label, 10);
         if (map.has(page)) continue;                     // first occurrence wins
@@ -5371,6 +5501,13 @@ const RU_WORDS = {
     "the original post": "исходное сообщение",
     "the full Steam description": "полное описание Steam",
     "this category": "этот раздел",
+    "Close all {n} spoilers": ({ n }) => "Скрыть все " + n + " " + ruPlural(n, "спойлер", "спойлера", "спойлеров"),
+    "Close the image": "Закрыть изображение",
+    "Image": "Изображение",
+    "Leave the forum for this address?": "Перейти с форума по этому адресу?",
+    "Only posts with links": "Только сообщения со ссылками",
+    "{n} posts shown": ({ n }) => "Показано " + n + " " + ruPlural(n, "сообщение", "сообщения", "сообщений"),
+    "All posts shown": "Показаны все сообщения",
     "Post by {name} is hidden": "Сообщение {name} скрыто",
     "Show posts by {name}": "Показать сообщения {name}",
     "Hide posts by {name}": "Скрыть сообщения {name}",
@@ -5415,6 +5552,24 @@ const RU_WORDS = {
     "p.": "с.",
     "{n} link": "{n} ссылка",
     "{n} links": ({ n }) => n + " " + ruPlural(n, "ссылка", "ссылки", "ссылок"),
+    "Read it again": "Прочитать заново",
+    "1 page read": "Прочитана 1 страница",
+    "{n} pages read": ({ n }) => "Прочитано " + n + " " + ruPlural(n, "страница", "страницы", "страниц"),
+    "the oldest {n} pages were not read": ({ n }) => "Первые " + n + " " + ruPlural(n, "страница", "страницы", "страниц") + " не прочитаны",
+    "oldest {n} skipped": "первые {n} пропущены",
+    "stopped early": "остановлено раньше",
+    "the board was busy, so this was read slowly": "форум был занят, поэтому чтение шло медленно",
+    "The board was answering slowly, so this was read one page at a time": "Форум отвечал медленно, поэтому страницы читались по одной",
+    "read gently": "читалось бережно",
+    "read {ago}": "прочитано {ago}",
+    "{n} new since": ({ n }) => n + " " + ruPlural(n, "новое", "новых", "новых") + " с тех пор",
+    "1 newer post since": "1 новое сообщение с тех пор",
+    "{n} newer posts since": ({ n }) => n + " " + ruPlural(n, "новое сообщение", "новых сообщения", "новых сообщений") + " с тех пор",
+    "just now": "только что",
+    "{n} minutes ago": ({ n }) => n + " " + ruPlural(n, "минуту", "минуты", "минут") + " назад",
+    "1 hour ago": "1 час назад",
+    "{n} hours ago": ({ n }) => n + " " + ruPlural(n, "час", "часа", "часов") + " назад",
+    "{n} days ago": ({ n }) => n + " " + ruPlural(n, "день", "дня", "дней") + " назад",
     "Latest posted: version {v}": "Последняя версия в теме: {v}",
     "Latest posted: v{v}": "Последняя: v{v}",
     "Clean Steam files": "Чистые файлы Steam",
@@ -5437,6 +5592,14 @@ const RU_WORDS = {
     "Preview, attachments and the full toolbar": "Предпросмотр, вложения и полная панель",
     "Could not load the reply form. Opening the full editor instead.": "Не удалось загрузить форму. Открываю полный редактор.",
     "Added to your reply": "Добавлено в ответ",
+    "Formatting": "Форматирование",
+    "Bold": "Жирный",
+    "Italic": "Курсив",
+    "Underline": "Подчёркнутый",
+    "Quote": "Цитата",
+    "Code": "Код",
+    "Link": "Ссылка",
+    "Spoiler": "Спойлер",
 
     // The top bar
     "More": "Ещё",
@@ -5457,6 +5620,10 @@ const RU_WORDS = {
     "Actions": "Действия",
     "Search the forum, or jump to a board": "Поиск по форуму или переход в раздел",
     "Search the forum for {q}": "Искать на форуме: {q}",
+    "Search this board for {q}": "Искать в этом разделе: {q}",
+    "Search {forum} for {q}": "Искать в «{forum}»: {q}",
+    "Releases in this topic": "Релизы в этой теме",
+    "How much to look at": "Сколько смотреть",
     "Search": "Поиск",
     "Nothing matches that": "Ничего не найдено",
     "topic": "тема",
@@ -5515,6 +5682,7 @@ function applyTheme() {
     root.setAttribute("data-rr-theme", theme);
     root.setAttribute("data-rr-density", settings.get("density"));
     root.setAttribute("data-rr-width", settings.get("width"));
+    root.setAttribute("data-rr-page", PAGE.isTopic ? "topic" : PAGE.isForum ? "forum" : PAGE.isIndex ? "index" : PAGE.isSearch ? "search" : "other");
     root.setAttribute("data-rr-icons", settings.get("modernIcons") ? "on" : "off");
     root.setAttribute("data-rr-nav", settings.get("navbar") ? "on" : "off");
     root.toggleAttribute("data-rr-still", Boolean(settings.get("reduceMotion")));
@@ -5522,9 +5690,17 @@ function applyTheme() {
     root.style.setProperty("--rr-fs", settings.get("fontSize") + "px");
 
     const accent = ACCENTS[settings.get("accent")] || ACCENTS.brass;
-    root.style.setProperty("--rr-accent", isLight ? accent.light : accent.accent);
-    root.style.setProperty("--rr-accent-soft", isLight ? accent.lightSoft : accent.soft);
+    const ink = isLight ? accent.light : accent.accent;
+    const soft = isLight ? accent.lightSoft : accent.soft;
+    root.style.setProperty("--rr-accent", ink);
+    root.style.setProperty("--rr-accent-soft", soft);
     root.style.setProperty("--rr-accent-text", isLight ? accent.lightText : accent.text);
+    /* The accent used as text on its own soft wash — a pressed filter
+       chip, the count on a settings tab. On the light theme the raw
+       accent read at 3.3:1 there; it is lifted toward black or white
+       until it clears 4.5, and left as it is where it already does. */
+    const lifted = readableInk(parseColour(ink), parseColour(soft), 4.5);
+    root.style.setProperty("--rr-accent-on-soft", lifted ? rgbText(lifted) : ink);
     root.style.setProperty("color-scheme", isLight ? "light" : "dark");
 }
 
@@ -5625,6 +5801,11 @@ function readableBoardInk() {
     }
 }
 
+/** A parsed colour back as CSS. */
+function rgbText(colour) {
+    return "rgb(" + Math.round(colour.r) + ", " + Math.round(colour.g) + ", " + Math.round(colour.b) + ")";
+}
+
 /* ================= src/modules/icons.js ================= */
 /* ------------------------------------------------------------------
    Legacy imagery.
@@ -5639,7 +5820,7 @@ function readableBoardInk() {
    because other userscripts look for it.
    ------------------------------------------------------------------ */
 
-const STATUS_RE = /(global|announce|sticky|topic|forum)_(un)?read/;
+const STATUS_RE = /(global|announce|sticky|topic|forum)_(un)?read|topic_moved/;
 
 /* Images that sit beside a label saying the same thing, or that draw
    nothing at all: the 12px menu bullets, the page-jump target, the
@@ -5650,10 +5831,14 @@ function statusDot(img) {
     const src = img.getAttribute("src") || "";
     const unread = /_unread/.test(src);
     const locked = /locked/.test(src);
+    /* The one GIF the first pass left behind: a moved topic's shadow
+       row, which kept the template's beveled arrow beside rows that had
+       all been redrawn. */
+    const moved = /topic_moved/.test(src);
 
     const dot = el("span.rr-dot", {
         title: img.getAttribute("title") || img.getAttribute("alt") || "",
-        "data-state": unread ? "unread" : "read",
+        "data-state": moved ? "moved" : unread ? "unread" : "read",
         "data-locked": locked ? "1" : null,
         "aria-hidden": "true",
     });
@@ -5937,9 +6122,21 @@ function exportSettings() {
         version: RR_VERSION,
         exported: new Date().toISOString(),
         settings: settings.all(),
-        data: store.all(),
+        // Bookmarks, history, hidden members — what a move to another
+        // browser wants. Not the drafts: an unsent reply is not settings
+        // and has no business on a clipboard.
+        data: Object.fromEntries(Object.entries(store.all()).filter(([key]) => key !== "drafts")),
     };
-    copyText(JSON.stringify(payload, null, 2), "Settings copied as JSON");
+    copyText(JSON.stringify(payload, null, 2), "Settings and data copied as JSON");
+}
+
+/* Bookmarks, history, hidden members, the Releases cache: the data the
+   script keeps for itself, gone in one step. The settings stay. */
+function clearData() {
+    if (!window.confirm("Forget bookmarks, reading history, hidden members and the Releases cache? Your settings stay.")) return;
+    store.replace({});
+    toast("Data cleared");
+    setTimeout(() => location.reload(), 1000);
 }
 
 async function importSettings() {
@@ -5955,7 +6152,7 @@ async function importSettings() {
         if (payload.settings) settings.replace(payload.settings);
         if (payload.data) store.replace(payload.data);
         toast("Settings imported. Reloading.");
-        setTimeout(() => location.reload(), 600);
+        setTimeout(() => location.reload(), 1000);
     } catch {
         toast("That is not valid exported JSON");
     }
@@ -6108,8 +6305,20 @@ function openSettings() {
         ]),
         body,
         el("div.rr-panel__foot", {}, [
-            el("button.rr-btn", { type: "button", onclick: exportSettings }, [icon("copy"), "Export"]),
-            el("button.rr-btn", { type: "button", onclick: importSettings }, ["Import"]),
+            /* "Export" copied to the clipboard and took bookmarks and
+               history with it, and said neither. */
+            el("button.rr-btn", {
+                type: "button", onclick: exportSettings,
+                title: "Copies every setting, plus bookmarks, history and hidden members, as JSON. Unsent drafts stay here.",
+            }, [icon("copy"), "Copy settings"]),
+            el("button.rr-btn", {
+                type: "button", onclick: importSettings,
+                title: "Paste JSON copied from another browser",
+            }, ["Paste settings"]),
+            el("button.rr-btn", {
+                type: "button", "data-variant": "quiet", onclick: clearData,
+                title: "Forget bookmarks, reading history, hidden members and the Releases cache",
+            }, ["Clear data"]),
             el("span.rr-spacer"),
             el("button.rr-btn", {
                 type: "button",
@@ -6117,7 +6326,7 @@ function openSettings() {
                     if (!window.confirm("Reset every RIN Reforged setting to its default?")) return;
                     settings.reset();
                     toast("Settings reset");
-                    setTimeout(() => location.reload(), 400);
+                    setTimeout(() => location.reload(), 1000);
                 },
             }, ["Reset"]),
         ]),
@@ -6615,15 +6824,15 @@ function buildBoardBar() {
 /**
  * Give a control a name, said three ways.
  *
- * These are glyphs with nothing beside them. `title` is the browser's
- * own tooltip and takes about a second of hovering to appear, which is
- * a second of not knowing what a button does; `aria-label` is what a
+ * These are glyphs with nothing beside them. `aria-label` is what a
  * screen reader announces; `data-rr-tip` is what the stylesheet draws
- * on hover and on focus, straight away. All three say the same words,
- * from one argument, so they cannot drift apart.
+ * on hover and on focus, straight away. Both say the same words, from
+ * one argument, so they cannot drift apart. There is deliberately no
+ * `title`: the browser's own tooltip arrived a second after the drawn
+ * one and sat on top of it, the same words twice.
  */
 function labelled(node, text) {
-    node.setAttribute("title", text);
+    node.removeAttribute("title");
     node.setAttribute("aria-label", text);
     node.setAttribute("data-rr-tip", text);
     return node;
@@ -6631,9 +6840,15 @@ function labelled(node, text) {
 
 function buildNavbar() {
     const bar = el("header.rr-nav", { role: "banner" });
-    bar.append(buildBrand());
+    /* The bar runs edge to edge; its contents keep to the content
+       column, so the brand and the icons line up with the board bar and
+       the listing under them on a wide monitor instead of sitting at
+       the screen's edges half a metre from either. */
+    const inner = el("div.rr-nav__inner");
+    bar.append(inner);
+    inner.append(buildBrand());
 
-    bar.append(buildCrumbs());
+    inner.append(buildCrumbs());
 
     const actions = el("div.rr-nav__actions");
 
@@ -6644,11 +6859,11 @@ function buildNavbar() {
             el("span.rr-kbd.rr-nav__kbd", {}, [navigator.platform.startsWith("Mac") ? "⌘K" : "Ctrl K"]),
         ]);
         search.addEventListener("click", () => openPalette());
-        bar.append(search);
+        inner.append(search);
     } else {
         const searchHref = findHeaderLink("search.php");
         if (searchHref) {
-            actions.append(el("a.rr-icon-btn", { href: searchHref, title: "Search" }, [icon("search")]));
+            actions.append(labelled(el("a.rr-icon-btn", { href: searchHref }, [icon("search")]), t("Search")));
         }
     }
 
@@ -6685,7 +6900,7 @@ function buildNavbar() {
     settingsButton.addEventListener("click", () => openSettings());
     actions.append(settingsButton);
 
-    bar.append(actions);
+    inner.append(actions);
     return bar;
 }
 
@@ -7705,7 +7920,98 @@ function markShapes() {
     for (const input of document.querySelectorAll(
         '#wrapcentre td:first-child > input[type="checkbox"]:only-child, #wrapcentre td:first-child > input[type="radio"]:only-child')) {
         const row = input.closest("tr");
-        if (row) row.setAttribute("data-rr-check-row", "");
+        if (!row) continue;
+        row.setAttribute("data-rr-check-row", "");
+        /* The words in the next cell are the control's label and the
+           template never says so: clicking them did nothing, where on
+           every other form it toggles the box. */
+        const words = input.parentElement && input.parentElement.nextElementSibling;
+        if (!words || words.querySelector("input, select, textarea, button")) continue;
+        words.setAttribute("data-rr-check-label", "");
+        words.addEventListener("click", (event) => {
+            if (event.target instanceof Element && event.target.closest("a")) return;
+            input.click();
+        });
+    }
+}
+
+/**
+ * The member list, a message folder and Who is online are listings too
+ * — rows of members or messages under a header row — and got none of a
+ * listing's treatment: no zebra, numbers left ragged, the header as the
+ * template set it. A post table wears the same row1/row2 classes and is
+ * not a listing, so the shape is checked rather than the class: a
+ * header row, three or more rows opening with a row cell, a member or
+ * message link somewhere, and nothing that belongs to a post or a form.
+ */
+function isRoster(table) {
+    if (PAGE.isTopic || profileView()) return false;
+    if (!table.querySelector("th")) return false;
+    if (table.querySelector(".postbody, textarea, table")) return false;
+    /* The row class sits on the cells in a message folder and on Who is
+       online, and on the <tr> itself in the member list. Either counts. */
+    const striped = (node) => Boolean(node) && /(^|\s)row[12](\s|$)/.test(node.className || "");
+    const rows = Array.from(table.querySelectorAll(":scope > tbody > tr"))
+        .filter((row) => striped(row) || striped(row.firstElementChild));
+    if (rows.length < 3) return false;
+    return Boolean(table.querySelector('a[href*="mode=viewprofile"], .topictitle a'));
+}
+
+/**
+ * The whole title cell opens the topic. The row lights up on hover
+ * from edge to edge and three quarters of the title cell were dead
+ * space under that light: a promise the row did not keep. A click on a
+ * link, a control or a text selection is left alone; Ctrl or ⌘ opens
+ * in a new tab the way it does on a link.
+ */
+function initRowClick() {
+    let any = false;
+    for (const table of document.querySelectorAll("table[data-rr-list]")) {
+        if (!table.querySelector('td[data-rr-col="title"] a.topictitle, td[data-rr-col="title"] a.forumlink')) continue;
+        table.setAttribute("data-rr-rowclick", "");
+        any = true;
+    }
+    if (!any) return;
+    document.addEventListener("click", (event) => {
+        if (event.button !== 0 || event.defaultPrevented) return;
+        const target = event.target instanceof Element ? event.target : null;
+        if (!target) return;
+        const cell = target.closest('table[data-rr-rowclick] td[data-rr-col="title"]');
+        if (!cell) return;
+        if (target.closest("a, button, input, select, label, [role='button']")) return;
+        if (window.getSelection && String(window.getSelection()).trim()) return;
+        const link = cell.querySelector("a.topictitle, a.forumlink");
+        if (!link) return;
+        if (event.ctrlKey || event.metaKey) window.open(link.href, "_blank", "noopener");
+        else location.href = link.href;
+    });
+}
+
+/**
+ * A profile prints every field the template knows — ICQ, AIM, Yahoo,
+ * MSN, Jabber, Occupation, Interests — with nothing after the colon on
+ * nearly every account. A row whose label ends in a colon and whose
+ * value cell holds no text, link or image is a row about nothing, and
+ * goes. Judged by shape, not by name, so a filled-in field of any
+ * name stays.
+ */
+/* PAGE.isProfile is true of all of memberlist.php — the roster as well
+   as one member's page. This is the one member's page. */
+function profileView() {
+    return PAGE.isProfile && /mode=viewprofile/.test(location.search);
+}
+
+function hideEmptyProfileRows() {
+    for (const row of document.querySelectorAll("#wrapcentre table.tablebg tr")) {
+        const cells = Array.from(row.children).filter((node) => node.tagName === "TD");
+        if (cells.length !== 2) continue;
+        const label = cells[0].textContent.replace(/\s+/g, " ").trim();
+        if (!/:$/.test(label)) continue;
+        const value = cells[1];
+        if (value.querySelector("a, img, input, select, button, textarea")) continue;
+        if (value.textContent.replace(/[\s\u00a0]+/g, "")) continue;
+        row.hidden = true;
+        row.setAttribute("data-rr-empty-row", "");
     }
 }
 
@@ -7717,11 +8023,13 @@ function initLists() {
         // stylesheet needs to know which is which: row1/row2 alternate
         // down a listing and wrap whole posts in a topic, so the same
         // two classes mean opposite things on the two kinds of page.
-        if (table.querySelector("a.topictitle, a.forumlink")) {
+        if (table.querySelector("a.topictitle, a.forumlink") || isRoster(table)) {
             table.setAttribute("data-rr-list", "");
             groupListingNumbers(table);
         }
     }
+    if (settings.get("rowClick")) initRowClick();
+    if (profileView()) hideEmptyProfileRows();
 
     dedupeSearchBoxes();
 
@@ -8219,13 +8527,26 @@ function buildTopicBar() {
     if (settings.get("spoilerAll")) {
         const buttons = spoilerButtons();
         if (buttons.length >= 2) {
-            const control = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
-                icon("chevronD", 13),
-                t("Open all {n} spoilers", { n: buttons.length }),
-            ]);
+            /* It stays, and closes them again on the second press. It
+               used to remove itself once pressed, which took the focus
+               with it and left a reader with thirty open spoilers and
+               no way back. */
+            const count = buttons.length;
+            let open = false;
+            const control = el("button.rr-btn", { type: "button", "data-variant": "quiet", "aria-pressed": "false" });
+            const relabel = () => {
+                control.replaceChildren(icon("chevronD", 13), t(open ? "Close all {n} spoilers" : "Open all {n} spoilers", { n: count }));
+                control.setAttribute("aria-pressed", open ? "true" : "false");
+                control.toggleAttribute("data-rr-open", open);
+            };
+            relabel();
             control.addEventListener("click", () => {
-                for (const button of spoilerButtons()) button.click();
-                control.remove();
+                const want = open ? "hide" : "show";
+                for (const input of document.querySelectorAll('.spoiler input[type="button"]')) {
+                    if ((input.value || "").trim().toLowerCase() === want) input.click();
+                }
+                open = !open;
+                relabel();
             });
             here.append(control);
         }
@@ -8906,21 +9227,24 @@ function addPostTools(post, index) {
 function collapseSignature(post) {
     if (!post.signature) return;
 
-    // Signatures are one text node broken by <br>, so counting newlines
-    // finds nothing; the line breaks and the length are the signal.
-    const breaks = post.signature.querySelectorAll("br").length;
-    const length = post.signature.textContent.trim().length;
-    if (breaks <= 4 && length <= 220) return;
-
+    // Every signature is set apart the same way — the small muted face,
+    // a rule instead of the board's row of underscores. A short one
+    // used to keep the underscores and the post's own type, so two
+    // posts in a row ended in two different ways.
     post.signature.classList.add("rr-signature");
-    post.signature.setAttribute("data-rr-sig", "collapsed");
-
-    // Drop the row of underscores the board uses as a divider; the
-    // stylesheet draws a rule instead.
     for (const node of Array.from(post.signature.childNodes).slice(0, 3)) {
         if (node.nodeType === 3 && /^\s*_{5,}\s*$/.test(node.textContent)) node.remove();
         else if (node.nodeType === 1 && node.tagName === "BR" && !post.signature.textContent.trim()) node.remove();
     }
+
+    // Signatures are one text node broken by <br>, so counting newlines
+    // finds nothing; the line breaks and the length are the signal.
+    // Only a long one is folded.
+    const breaks = post.signature.querySelectorAll("br").length;
+    const length = post.signature.textContent.trim().length;
+    if (breaks <= 4 && length <= 220) return;
+
+    post.signature.setAttribute("data-rr-sig", "collapsed");
     const toggle = el("button.rr-sig-toggle", { type: "button" }, [t("Show signature")]);
     toggle.addEventListener("click", () => {
         const collapsed = post.signature.getAttribute("data-rr-sig") === "collapsed";
@@ -8968,14 +9292,31 @@ function initLightbox() {
         event.preventDefault();
         event.stopPropagation();
 
-        const box = el("div.rr-lightbox", { role: "dialog", "aria-modal": "true" }, [
+        /* A dialog, not a backdrop with an image on it: a control that
+           closes it, the keyboard kept inside while it is open, and the
+           focus given back to the image's post when it goes. */
+        const previous = document.activeElement;
+        const closeButton = el("button.rr-icon-btn.rr-lightbox__close", {
+            type: "button",
+            "aria-label": t("Close the image"),
+        }, [icon("close")]);
+        const box = el("div.rr-lightbox", {
+            role: "dialog",
+            "aria-modal": "true",
+            "aria-label": img.alt || t("Image"),
+            tabindex: "-1",
+        }, [
             el("img", { src: img.currentSrc || img.src, alt: img.alt || "" }),
+            closeButton,
         ]);
-        const close = () => { box.remove(); document.removeEventListener("keydown", onKey); };
+        let release = () => {};
+        const close = () => { box.remove(); document.removeEventListener("keydown", onKey); release(); };
         const onKey = (e) => { if (e.key === "Escape") close(); };
         box.addEventListener("click", close);
         document.addEventListener("keydown", onKey);
         document.body.append(box);
+        release = trapFocus(box, previous instanceof HTMLElement ? previous : null);
+        closeButton.focus();
     }, true);
 }
 
@@ -8983,11 +9324,22 @@ function initLightbox() {
 
 function markExternalLinks() {
     const here = location.hostname;
+    const confirmFirst = settings.get("confirmExternal");
     for (const link of document.querySelectorAll(".postbody a[href^='http']")) {
         let host;
         try { host = new URL(link.href).hostname; } catch { continue; }
         if (host === here || host.endsWith(".rin.ru")) continue;
         if (link.querySelector(".rr-host")) continue;
+        /* The setting that existed and did nothing: with it on, an
+           off-site link asks first and shows the whole address, which
+           a shortened or a disguised link otherwise never does. */
+        if (confirmFirst && !link.rrConfirms) {
+            link.rrConfirms = true;
+            link.addEventListener("click", (event) => {
+                if (event.defaultPrevented) return;
+                if (!window.confirm(t("Leave the forum for this address?") + "\n\n" + link.href)) event.preventDefault();
+            });
+        }
         // "https://store.steampowered.com/app/… store.steampowered.com":
         // a link whose text is the address already says where it goes.
         if (link.textContent.toLowerCase().includes(host.replace(/^www\./, "").toLowerCase())) continue;
@@ -9036,7 +9388,11 @@ function initTopic() {
         all.forEach(modernisePost);
     }
 
-    if (settings.get("gameCard") && all.length && PAGE.start === 0) {
+    // The Enhanced script builds a Steam header of its own over the
+    // first post; with it present and the setting on, this one stands
+    // down (see detectEnhanced).
+    const coexisting = document.documentElement.hasAttribute("data-rr-coexist");
+    if (settings.get("gameCard") && !coexisting && all.length && PAGE.start === 0) {
         const info = parseGameInfo(all[0].body);
         if (info && (info.appId || Object.keys(info.fields).length >= 3)) {
             // Written down whether or not the preview is switched on:
@@ -9183,8 +9539,11 @@ function looksLikeDate(version) {
  * build date had no version at all rather than the one three lines
  * further down.
  */
+const VERSION_RE_ALL = new RegExp(VERSION_RE.source, "gi");
+
 function versionsIn(text) {
-    const all = new RegExp(VERSION_RE.source, "gi");
+    const all = VERSION_RE_ALL;
+    all.lastIndex = 0;
     const found = { version: null, build: null, named: false };
     let match;
     while ((match = all.exec(text)) !== null) {
@@ -9194,19 +9553,41 @@ function versionsIn(text) {
         }
         const number = match[1] || match[3] || match[4];
         if (!number || looksLikeDate(number)) continue;
+        /* Whether the post *called* it a version — a v in front, or
+           "Title Update" / "updated to" leading in — or whether it is
+           a bare three-part number read off the prose. Both go on the
+           row. Only the first is evidence about the game: "Updated
+           ACBlackFlagFix to 2.8.3!" is a mod's changelog, and off the
+           live board 2.8.3 beat 1.0.7 to the headline the moment bare
+           numbers started to count. */
         if (!found.version) {
             found.version = number;
-            /* Whether the post *called* it a version — a v in front, or
-               "Title Update" / "updated to" leading in — or whether it
-               is a bare three-part number read off the prose. Both go
-               on the row. Only the first is evidence about the game:
-               "Updated ACBlackFlagFix to 2.8.3!" is a mod's changelog,
-               and off the live board 2.8.3 beat 1.0.7 to the headline
-               the moment bare numbers started to count. */
             found.named = Boolean(match[1] || match[3]);
         }
     }
+    /* "Updated from 1.0.5 to 1.0.7": the first version in the post is
+       the one it left behind. Only this wording moves the answer — a
+       later "v2.8.3" on its own is still a mod's changelog. */
+    const step = FROM_TO_RE.exec(text);
+    if (step && !looksLikeDate(step[2]) && compareVersions(step[2], step[1]) > 0) {
+        found.version = step[2];
+        found.named = true;
+    }
     return found;
+}
+
+const FROM_TO_RE = /\bfrom\s+v?\.?\s?(\d+(?:\.\d+){1,3}[a-z]?)\s+to\s+v?\.?\s?(\d+(?:\.\d+){1,3}[a-z]?)\b/i;
+
+/** Numeric, part by part: 1.0.10 is newer than 1.0.9. */
+function compareVersions(a, b) {
+    const left = String(a).split(/[.\-_]/).map((part) => parseInt(part, 10) || 0);
+    const right = String(b).split(/[.\-_]/).map((part) => parseInt(part, 10) || 0);
+    const length = Math.max(left.length, right.length);
+    for (let index = 0; index < length; index += 1) {
+        const diff = (left[index] || 0) - (right[index] || 0);
+        if (diff) return diff;
+    }
+    return 0;
 }
 
 /** Hosts that are the forum itself rather than somewhere to download. */
@@ -9370,7 +9751,7 @@ function buildLinkFilter(all, rows) {
 
     const button = el("button.rr-btn", { type: "button", "aria-pressed": "false" }, [
         icon("filter", 13),
-        "Only posts with links",
+        t("Only posts with links"),
     ]);
     button.addEventListener("click", () => {
         on = !on;
@@ -9379,7 +9760,13 @@ function buildLinkFilter(all, rows) {
             const keep = !on || flagged.has(post.id);
             post.table.style.display = keep ? "" : "none";
         }
-        toast(on ? rows.length + " posts shown" : "All posts shown");
+        /* The Releases list, when it is showing the whole topic, holds
+           rows for posts that are not on this page; the filter used to
+           hide the page's posts and leave that list as it was. */
+        for (const row of document.querySelectorAll(".rr-releases__row")) {
+            row.toggleAttribute("data-rr-nolink", on && row.getAttribute("data-links") === "0");
+        }
+        toast(on ? t("{n} posts shown", { n: rows.length }) : t("All posts shown"));
     });
     return button;
 }
@@ -9840,7 +10227,7 @@ function planWalk(topicId, info, total) {
     };
 
     const reuse = [];
-    const fetch_ = [];
+    let fetch_ = [];
     for (let page = 1; page <= total; page += 1) {
         if (page === current) continue;
         if (kept && reusable(page)) reuse.push(page);
@@ -9854,7 +10241,20 @@ function planWalk(topicId, info, total) {
     if (canary !== null) fetch_.push(canary);
     fetch_.sort((a, b) => a - b);
 
-    return { reuse: reuse, fetch: fetch_, known: known, canary: canary };
+    /* The cap is on what is asked of the board, not on how far the
+       topic goes. A topic of 120 pages used to be read to page 80 and
+       stopped, and the newest forty — where the latest release is —
+       were the ones never looked at. The oldest pages are dropped
+       instead, and the panel says how many. */
+    let skipped = 0;
+    if (fetch_.length > RELEASE_MAX_PAGES) {
+        const keep = new Set(fetch_.slice(fetch_.length - RELEASE_MAX_PAGES));
+        if (canary !== null) keep.add(canary);
+        skipped = fetch_.filter((page) => !keep.has(page)).length;
+        fetch_ = fetch_.filter((page) => keep.has(page));
+    }
+
+    return { reuse: reuse, fetch: fetch_, known: known, canary: canary, skipped: skipped };
 }
 
 /* ---- Asking, a few at a time -------------------------------------- */
@@ -9917,7 +10317,7 @@ async function pacedPool(items, worker, state, pace) {
  * have moved. What is left goes to the pool above, a few at a time.
  */
 async function walkTopic(info, state, onProgress) {
-    const total = Math.min(info.total || 1, RELEASE_MAX_PAGES);
+    const total = info.total || 1;
     const current = info.current || 1;
     const plan = planWalk(PAGE.topicId, info, total);
     const pace = makePace();
@@ -9926,7 +10326,8 @@ async function walkTopic(info, state, onProgress) {
     read.set(current, readTopicPage(posts(), current));
 
     let done = 0;
-    const say = () => onProgress(Math.min(total, done + plan.reuse.length + 1), total);
+    const target = total - plan.skipped;
+    const say = () => onProgress(Math.min(target, done + plan.reuse.length + 1), target);
     say();
 
     const fetchOne = async (page) => {
@@ -10001,13 +10402,16 @@ async function walkTopic(info, state, onProgress) {
     }
     found.sort((a, b) => (b.page - a.page) || (Number(b.id) - Number(a.id)));
 
-    const complete = !state.cancelled && !state.stopped && scanned >= total;
+    const complete = !state.cancelled && !state.stopped && scanned + plan.skipped >= total;
     if (PAGE.topicId && complete) rememberPages(PAGE.topicId, pages, total);
 
     return {
         rows: dedupeReleases(found),
         done: complete,
         scanned: scanned,
+        // Oldest pages left unread because the topic is longer than the
+        // cap on requests; the panel says so.
+        skipped: plan.skipped,
         newest: newest,
         // How much of this answer came out of this browser rather than
         // off the board, which is the whole point of keeping it.
@@ -10044,12 +10448,17 @@ function rememberIndex(topicId, payload) {
 /** "3 minutes ago", roughly, for the line under the heading. */
 function agoText(at) {
     const seconds = Math.max(0, Math.round((Date.now() - at) / 1000));
-    if (seconds < 90) return "just now";
+    if (seconds < 90) return t("just now");
     const minutes = Math.round(seconds / 60);
-    if (minutes < 60) return minutes + " minutes ago";
+    if (minutes < 60) return t("{n} minutes ago", { n: minutes });
     const hours = Math.round(minutes / 60);
-    if (hours < 36) return hours + (hours === 1 ? " hour ago" : " hours ago");
-    return Math.round(hours / 24) + " days ago";
+    if (hours < 36) return hours === 1 ? t("1 hour ago") : t("{n} hours ago", { n: hours });
+    return t("{n} days ago", { n: Math.round(hours / 24) });
+}
+
+/** "12 pages read", in the page's language and number. */
+function pagesReadText(n) {
+    return n === 1 ? t("1 page read") : t("{n} pages read", { n });
 }
 
 /* ---- Versions ------------------------------------------------------ */
@@ -10213,7 +10622,7 @@ function releaseRow(row, latest) {
         table.scrollIntoView({ behavior: scrollBehaviour(), block: "start" });
         flash(table);
     });
-    return el("li.rr-releases__row", { "data-kinds": row.kinds.join(" ") }, [link]);
+    return el("li.rr-releases__row", { "data-kinds": row.kinds.join(" "), "data-links": String(row.links || 0) }, [link]);
 }
 
 /**
@@ -10313,11 +10722,11 @@ function initReleases() {
     /* The list is rebuilt when the scope changes rather than kept in
        two copies: the rows, the filters and the counts all differ, and
        a hidden second list is a second thing to keep in step. */
-    const panel = el("section.rr-releases", { "aria-label": "Releases in this topic" });
+    const panel = el("section.rr-releases", { "aria-label": t("Releases in this topic") });
     const state = { cancelled: false, stopped: null, scope: "page", topic: kept };
 
     const count = el("span.rr-releases__count");
-    const scope = el("div.rr-releases__scope", { role: "tablist", "aria-label": "How much to look at" });
+    const scope = el("div.rr-releases__scope", { role: "tablist", "aria-label": t("How much to look at") });
 
     /* Both options, always.
      *
@@ -10412,7 +10821,7 @@ function initReleases() {
 
         if (scoped && state.topic) {
             const again = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
-                icon("layers", 12), "Read it again",
+                icon("layers", 12), t("Read it again"),
             ]);
             again.addEventListener("click", walk);
             /* One sentence, not three spans run together. Read by eye
@@ -10421,11 +10830,12 @@ function initReleases() {
                "Latest posted: v1.10.05 pages read". */
             const said = [
                 latest ? t("Latest posted: version {v}", { v: latest }) : null,
-                state.topic.scanned + (state.topic.scanned === 1 ? " page" : " pages") + " read",
-                state.topic.done ? null : "stopped early",
-                state.topic.eased ? "the board was busy, so this was read slowly" : null,
-                "read " + agoText(state.topic.at || Date.now()),
-                staleBy ? staleBy + " new since" : null,
+                pagesReadText(state.topic.scanned),
+                state.topic.skipped ? t("the oldest {n} pages were not read", { n: state.topic.skipped }) : null,
+                state.topic.done ? null : t("stopped early"),
+                state.topic.eased ? t("the board was busy, so this was read slowly") : null,
+                t("read {ago}", { ago: agoText(state.topic.at || Date.now()) }),
+                staleBy ? t("{n} new since", { n: staleBy }) : null,
             ].filter(Boolean).join(". ");
 
             /* When it was read, whether it has moved on, and the
@@ -10437,8 +10847,9 @@ function initReleases() {
                 el("span.rr-spacer"),
                 el("div.rr-releases__read", {}, [
                     el("span", { "aria-hidden": "true" }, [
-                        state.topic.scanned + (state.topic.scanned === 1 ? " page" : " pages") + " read",
-                        state.topic.done ? "" : " · stopped early",
+                        pagesReadText(state.topic.scanned),
+                        state.topic.skipped ? " · " + t("oldest {n} skipped", { n: state.topic.skipped }) : "",
+                        state.topic.done ? "" : " · " + t("stopped early"),
                         " · " + agoText(state.topic.at || Date.now()),
                     ].join("")),
                     /* Why it took as long as it did. A walk that drops
@@ -10449,12 +10860,12 @@ function initReleases() {
                     state.topic.eased
                         ? el("span.rr-releases__eased", {
                             "aria-hidden": "true",
-                            title: "The board was answering slowly, so this was read one page at a time",
-                        }, ["read gently"])
+                            title: t("The board was answering slowly, so this was read one page at a time"),
+                        }, [t("read gently")])
                         : null,
                     staleBy
                         ? el("span.rr-releases__stale", { "aria-hidden": "true" }, [
-                            staleBy + (staleBy === 1 ? " newer post" : " newer posts") + " since",
+                            staleBy === 1 ? t("1 newer post since") : t("{n} newer posts since", { n: staleBy }),
                         ])
                         : null,
                     again,
@@ -10552,8 +10963,13 @@ function quoteHeading(quote) {
     return null;
 }
 
-function foldQuote(quote, lines) {
-    if (quote.hasAttribute("data-rr-quote")) return false;
+/**
+ * How tall the fold would be for this quote, or null when it fits
+ * within `lines` and is left alone. Reads only — see initQuotes for
+ * why the reads and the writes are kept apart.
+ */
+function measureQuote(quote, lines) {
+    if (quote.hasAttribute("data-rr-quote")) return null;
 
     // Measured, not guessed: a quote of two long lines and a quote of
     // six short ones are the same number of characters and only one of
@@ -10572,8 +10988,12 @@ function foldQuote(quote, lines) {
     const limit = lineHeight * lines;
     // Half a line of slack, so a quote that spills by a word is left
     // alone rather than folded to save four pixels.
-    if (content <= limit + lineHeight * 0.5) return false;
+    if (content <= limit + lineHeight * 0.5) return null;
+    return limit;
+}
 
+/** Fold one quote to `limit` pixels, with the control to open it. Writes only. */
+function foldQuote(quote, limit) {
     quote.setAttribute("data-rr-quote", "folded");
     quote.style.setProperty("--rr-quote-max", limit + "px");
 
@@ -10616,13 +11036,24 @@ function initQuotes() {
     if (!PAGE.isTopic || !settings.get("foldQuotes")) return;
 
     const lines = clamp(Number(settings.get("foldQuotesLines")) || 6, 3, 16);
+
+    /* Every quote is measured first and only then is any of them
+       changed. Reading a height after writing to the page forces a
+       layout, one per quote when the two are interleaved; read
+       together they cost one. */
+    const plan = quoteBlocks().map((quote) => ({ quote, limit: measureQuote(quote, lines) }));
+
     let folded = 0;
-    for (const quote of quoteBlocks()) {
+    for (const { quote, limit } of plan) {
+        if (limit === null) continue;
         // A quote nested inside one that is already folded would draw a
         // control nobody can reach until the outer one opens, and the
-        // outer fold already hides it.
+        // outer fold already hides it. Outermost come first in document
+        // order, so the outer fold is in place by the time the inner
+        // one is asked about.
         if (quote.parentElement && quote.parentElement.closest('[data-rr-quote="folded"]')) continue;
-        if (foldQuote(quote, lines)) folded += 1;
+        foldQuote(quote, limit);
+        folded += 1;
     }
     return folded;
 }
@@ -11065,7 +11496,9 @@ const STEAM_EXCUSES = {
 /* ---- The card ----------------------------------------------------- */
 
 function steamCard(game, term) {
-    const card = el("div.rr-steam", { role: "tooltip" });
+    /* Not role=tooltip: a tooltip is text, and this holds the Store and
+       SteamDB links. A group named after the game says what it is. */
+    const card = el("div.rr-steam", { role: "group", "aria-label": game.name || "Steam" });
 
     if (game.header) {
         card.append(el("img.rr-steam__art", {
@@ -11330,6 +11763,10 @@ function slimReplyForm(form) {
 
     message.classList.add("rr-reply__text");
     message.setAttribute("rows", "6");
+    // The template wires the box to editor.js — storeCaret(this) on
+    // select, click and keyup, initInsertions() on focus — and that
+    // script is not loaded on a topic page. Every keystroke threw.
+    for (const handler of ["onselect", "onclick", "onkeyup", "onfocus", "onblur", "onchange"]) message.removeAttribute(handler);
     message.setAttribute("placeholder", t("Write a reply"));
 
     // What was being written last time, if anything. The board's own
@@ -11343,6 +11780,7 @@ function slimReplyForm(form) {
     // Submitted is the one thing that means "done with this".
     slim.addEventListener("submit", () => clearDraft(PAGE.topicId));
 
+    slim.append(buildReplyTools(message));
     slim.append(message);
 
     const submit = form.querySelector('input[name="post"]');
@@ -11356,6 +11794,47 @@ function slimReplyForm(form) {
     ]);
     slim.append(actions);
     return { slim, message };
+}
+
+/* The tags a reply most often needs, one press each. The full editor
+   has the whole toolbar; the quick reply had none, and a quote or a
+   spoiler meant typing the tags by hand. Face, name, opening, closing. */
+const REPLY_TOOLS = [
+    ["B", "Bold", "[b]", "[/b]"],
+    ["I", "Italic", "[i]", "[/i]"],
+    ["U", "Underline", "[u]", "[/u]"],
+    ["Quote", "Quote", "[quote]", "[/quote]"],
+    ["Code", "Code", "[code]", "[/code]"],
+    ["URL", "Link", "[url]", "[/url]"],
+    ["Img", "Image", "[img]", "[/img]"],
+    ["Spoiler", "Spoiler", "[spoiler]", "[/spoiler]"],
+];
+
+function buildReplyTools(message) {
+    const bar = el("div.rr-reply__tools", { role: "toolbar", "aria-label": t("Formatting") });
+    for (const [face, name, open, close] of REPLY_TOOLS) {
+        const button = el("button.rr-btn", {
+            type: "button",
+            "data-variant": "quiet",
+            "data-tool": open.slice(1, -1),
+            "aria-label": t(name),
+            "data-rr-tip": t(name),
+        }, [face]);
+        button.addEventListener("click", () => wrapSelection(message, open, close));
+        bar.append(button);
+    }
+    return bar;
+}
+
+/** Wrap what is selected in the field, or leave the caret between the tags. */
+function wrapSelection(field, open, close) {
+    const start = field.selectionStart;
+    const end = field.selectionEnd;
+    const inner = field.value.slice(start, end);
+    field.setRangeText(open + inner + close, start, end, "end");
+    if (!inner) field.setSelectionRange(start + open.length, start + open.length);
+    field.focus();
+    field.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function buildQuickReply() {
@@ -11585,6 +12064,10 @@ function applyHidden(post, name) {
         for (const child of covered) child.hidden = false;
         note.remove();
         delete post.table.rrReveal;
+        /* The control that was focused is gone with the note; the
+           keyboard lands on the post it revealed, not on the page. */
+        cell.setAttribute("tabindex", "-1");
+        cell.focus({ preventScroll: true });
     };
     restore.addEventListener("click", reveal);
     // Kept on the node rather than in a map: the post objects are
@@ -11752,6 +12235,18 @@ const SEARCH_DEPTH = {
  * Scoped to the current board when there is one, the way the board's
  * own "Search this forum" box is.
  */
+/** Whether a search from here is scoped to the board the reader is in. */
+function searchScoped() {
+    return Boolean((PAGE.isForum || PAGE.isTopic) && PAGE.forumId);
+}
+
+/** The board's name off the breadcrumbs, when the page has them. */
+function currentBoardName() {
+    const crumb = Array.from(document.querySelectorAll("a.breadcrumbs, .rr-nav__crumbs a")).pop();
+    const name = crumb ? crumb.textContent.trim() : "";
+    return name && name.length <= 60 ? name : null;
+}
+
 function boardSearchUrl(query) {
     const depth = SEARCH_DEPTH[settings.get("searchDepth")] || SEARCH_DEPTH.titles;
     const url = new URL("./search.php", location.href);
@@ -11759,9 +12254,7 @@ function boardSearchUrl(query) {
     url.searchParams.set("terms", "all");
     url.searchParams.set("sf", depth.sf);
     url.searchParams.set("sr", "topics");
-    if ((PAGE.isForum || PAGE.isTopic) && PAGE.forumId) {
-        url.searchParams.set("fid[]", String(PAGE.forumId));
-    }
+    if (searchScoped()) url.searchParams.set("fid[]", String(PAGE.forumId));
     return url.toString();
 }
 
@@ -11869,7 +12362,12 @@ function collectItems() {
         });
     }
 
-    groups.push({ title: t("Actions"), items: paletteActions() });
+    /* On a topic page the actions are about this topic — copy its
+       link, jump to its last page — and were under seven boards and six
+       recent topics, below the fold of the palette. First, there. */
+    const actions = { title: t("Actions"), items: paletteActions() };
+    if (PAGE.isTopic) groups.unshift(actions);
+    else groups.push(actions);
     return groups;
 }
 
@@ -11904,7 +12402,13 @@ function openPalette() {
     let cursor = 0;
 
     const searchItem = (query) => ({
-        label: t("Search the forum for {q}", { q: query }),
+        /* It says where it will look. The row said "the forum" and
+           searched the board the reader was in. */
+        label: searchScoped()
+            ? (currentBoardName()
+                ? t("Search {forum} for {q}", { forum: currentBoardName(), q: query })
+                : t("Search this board for {q}", { q: query }))
+            : t("Search the forum for {q}", { q: query }),
         icon: "search",
         hint: SEARCH_DEPTH[settings.get("searchDepth")]?.hint || "Enter",
         href: boardSearchUrl(query),
@@ -12043,7 +12547,8 @@ function initPalette() {
 
 const SHORTCUTS = [
     { keys: "Ctrl K", what: "Search or jump to anything" },
-    { keys: "j / k", what: "Next / previous post" },
+    { keys: "j / k", what: "Next / previous post, or row of a listing" },
+    { keys: "Enter", what: "Open the row under the cursor" },
     { keys: "n / p", what: "Next / previous page of the topic" },
     { keys: "g then i", what: "Board index" },
     { keys: "g then f", what: "The forum this topic is in" },
@@ -12068,16 +12573,42 @@ function scrollToPost(direction) {
     if (!anchors.length) return;
 
     const top = window.scrollY + 70;
+    // Each anchor's position is read once and kept with it.
+    const placed = anchors.map((node) => ({ node, at: node.getBoundingClientRect().top + window.scrollY }));
     let target = null;
     if (direction > 0) {
-        target = anchors.find((node) => node.getBoundingClientRect().top + window.scrollY > top + 10);
+        target = placed.find((entry) => entry.at > top + 10);
     } else {
-        for (const node of anchors) {
-            if (node.getBoundingClientRect().top + window.scrollY < top - 10) target = node;
+        for (const entry of placed) {
+            if (entry.at < top - 10) target = entry;
         }
     }
-    if (!target) target = direction > 0 ? anchors[anchors.length - 1] : anchors[0];
-    window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 60, behavior: scrollBehaviour() });
+    if (!target) target = direction > 0 ? placed[placed.length - 1] : placed[0];
+    window.scrollTo({ top: target.at - 60, behavior: scrollBehaviour() });
+}
+
+/**
+ * j and k on a listing: the cursor walks the rows the way it walks the
+ * posts of a topic, and Enter opens the one it is on, because the row's
+ * title link is what gets the focus. Returns false where there is no
+ * listing, so the caller falls back to posts.
+ */
+function moveListCursor(direction) {
+    const pick = 'td[data-rr-col="title"] a.topictitle, td[data-rr-col="title"] a.forumlink';
+    const rows = Array.from(document.querySelectorAll("table[data-rr-list] tr"))
+        .filter((row) => row.querySelector(pick) && row.offsetParent !== null);
+    if (!rows.length) return false;
+
+    const at = rows.findIndex((row) => row.hasAttribute("data-rr-cursor"));
+    let next;
+    if (at < 0) next = direction > 0 ? 0 : rows.length - 1;
+    else next = Math.min(rows.length - 1, Math.max(0, at + direction));
+    if (at >= 0) rows[at].removeAttribute("data-rr-cursor");
+    rows[next].setAttribute("data-rr-cursor", "");
+    rows[next].scrollIntoView({ block: "nearest", behavior: scrollBehaviour() });
+    const link = rows[next].querySelector(pick);
+    if (link) link.focus({ preventScroll: true });
+    return true;
 }
 
 function goPage(direction) {
@@ -12176,11 +12707,21 @@ function initShortcuts() {
                 awaitingG = true;
                 gTimer = setTimeout(() => { awaitingG = false; }, 900);
                 break;
-            case "j": event.preventDefault(); scrollToPost(1); break;
-            case "k": event.preventDefault(); scrollToPost(-1); break;
+            case "j": event.preventDefault(); if (!moveListCursor(1)) scrollToPost(1); break;
+            case "k": event.preventDefault(); if (!moveListCursor(-1)) scrollToPost(-1); break;
             case "n": goPage(1); break;
             case "p": goPage(-1); break;
             case "r": {
+                /* The quick reply first, when there is one: "r" used to
+                   leave for the full posting page past the form that was
+                   already on this one. */
+                const quick = document.querySelector(".rr-reply textarea, .rr-reply > button.rr-btn");
+                if (quick) {
+                    event.preventDefault();
+                    if (quick.tagName === "BUTTON") quick.click();
+                    else quick.focus();
+                    break;
+                }
                 const reply = document.querySelector('a[href*="mode=reply"]');
                 if (reply) reply.click();
                 break;
@@ -12341,7 +12882,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.8.11";
+const RR_VERSION = "0.9.0";
 
 function injectStyles() {
     const host = document.head || document.documentElement;

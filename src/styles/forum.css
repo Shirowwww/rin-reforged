@@ -265,10 +265,29 @@ html[data-rr] td.row5 { background: var(--rr-surface-2); }
    the same two classes wrap whole posts and striping those would band
    the thread rather than the rows. */
 html[data-rr] table[data-rr-list] td.row2 { background: var(--rr-surface-2); }
+/* On the member list the post count sits right-aligned against the
+   rank's left edge — "147 Advanced forumer" read as one string. A
+   gutter after the numbers, on the header too so they stay aligned. */
+html[data-rr] table[data-rr-list] th[data-rr-col="posts"],
+html[data-rr] table[data-rr-list] td[data-rr-col="posts"] { padding-right: 28px; }
+
+/* The member list stripes its rows, not its cells: <tr class="row2">
+   over plain td.gen. The same shade, read off the row. */
+html[data-rr] table[data-rr-list] > tbody > tr.row2 > td { background: var(--rr-surface-2); }
+html[data-rr] table[data-rr-list] > tbody > tr.row1:hover > td,
+html[data-rr] table[data-rr-list] > tbody > tr.row2:hover > td { background: var(--rr-surface-3); }
 
 /* Whole-row hover, which the table markup cannot express by itself. */
 html[data-rr] tr:hover > td.row1,
 html[data-rr] tr:hover > td.row2 { background: var(--rr-surface-3); }
+/* And a whole-row click (lists.js): the title cell's empty three
+   quarters open the topic too, so the hover is not a promise the row
+   fails to keep. */
+html[data-rr] table[data-rr-list][data-rr-rowclick] td[data-rr-col="title"] { cursor: pointer; }
+html[data-rr] table[data-rr-list][data-rr-rowclick] td[data-rr-col="title"] a,
+html[data-rr] table[data-rr-list][data-rr-rowclick] td[data-rr-col="title"] button { cursor: pointer; }
+/* The words beside a lone checkbox toggle it (lists.js). */
+html[data-rr] td[data-rr-check-label] { cursor: pointer; }
 
 html[data-rr] tr:last-child > td { border-bottom: 0; }
 
@@ -634,7 +653,8 @@ html[data-rr] .quotecontent {
     color: var(--rr-muted);
     font-size: var(--rr-fs-sm);
 }
-html[data-rr] blockquote blockquote { background: var(--rr-surface-3); }
+html[data-rr] blockquote blockquote,
+html[data-rr] .quotecontent .quotecontent { background: var(--rr-surface-3); }
 html[data-rr] .quotetitle,
 html[data-rr] blockquote > cite {
     display: block;
@@ -773,6 +793,17 @@ html[data-rr] .post {
 }
 html[data-rr] textarea,
 html[data-rr] textarea.post { font-family: var(--rr-font); line-height: var(--rr-lh); }
+/* The template sizes every text field with size="25", size="45": a
+   fixed count of characters from 2003, cramped on a fluid frame. The
+   board's own fields get a floor in ems and the room they have; the
+   script's own controls size themselves. */
+html[data-rr] #wrapcentre input[type="text"]:not([class*="rr-"]):not([size="1"]):not([size="2"]):not([size="3"]):not([size="4"]):not([size="5"]):not([size="6"]),
+html[data-rr] #wrapcentre input[type="search"]:not([class*="rr-"]),
+html[data-rr] #wrapcentre input[type="password"]:not([class*="rr-"]),
+html[data-rr] #wrapcentre input[type="email"]:not([class*="rr-"]) {
+    width: auto;
+    min-width: min(100%, 22em);
+}
 html[data-rr] input:hover,
 html[data-rr] select:hover,
 html[data-rr] textarea:hover { border-color: var(--rr-faint); }
@@ -1012,4 +1043,22 @@ html[data-rr] .postbody iframe[src*="vimeo"] {
     aspect-ratio: 16 / 9;
     height: auto;
     border-radius: var(--rr-radius);
+}
+
+/* A moved topic: the template's beveled GIF was the one marker the
+   icon pass left as it was. A hollow diamond, the dot's size. */
+html[data-rr] .rr-dot[data-state="moved"] {
+    background: transparent;
+    border: 2px solid var(--rr-faint);
+    border-radius: 2px;
+    transform: rotate(45deg) scale(.85);
+}
+
+/* A roster prints "Send private message" on every one of its forty
+   rows; drawn as full buttons they were the loudest thing on the page.
+   Smaller and quieter there, still a control. */
+html[data-rr] table[data-rr-list] td .rr-ctl {
+    padding: 1px 8px;
+    font-size: var(--rr-fs-xs);
+    background: transparent;
 }

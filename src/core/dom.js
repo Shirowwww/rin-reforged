@@ -539,7 +539,8 @@ let toastHost = null;
 
 function toast(message) {
     if (!toastHost) {
-        toastHost = el("div.rr-toasts");
+        /* A live region, so "Link copied" is said as well as shown. */
+        toastHost = el("div.rr-toasts", { role: "status", "aria-live": "polite" });
         document.body.append(toastHost);
     }
     const node = el("div.rr-toast", {}, [message]);

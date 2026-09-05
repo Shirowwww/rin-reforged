@@ -17,7 +17,7 @@ function pageLinkMap(root = document) {
         const label = link.textContent.trim();
         if (!/^\d+$/.test(label)) continue;              // skip Go, Next, Previous
         const href = link.getAttribute("href");
-        if (!href || !/viewtopic|viewforum|search/.test(href)) continue;
+        if (!href || !/viewtopic|viewforum|search|memberlist|viewonline|ucp\.php/.test(href)) continue;
 
         const page = parseInt(label, 10);
         if (map.has(page)) continue;                     // first occurrence wins

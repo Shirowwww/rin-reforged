@@ -742,7 +742,98 @@ function markShapes() {
     for (const input of document.querySelectorAll(
         '#wrapcentre td:first-child > input[type="checkbox"]:only-child, #wrapcentre td:first-child > input[type="radio"]:only-child')) {
         const row = input.closest("tr");
-        if (row) row.setAttribute("data-rr-check-row", "");
+        if (!row) continue;
+        row.setAttribute("data-rr-check-row", "");
+        /* The words in the next cell are the control's label and the
+           template never says so: clicking them did nothing, where on
+           every other form it toggles the box. */
+        const words = input.parentElement && input.parentElement.nextElementSibling;
+        if (!words || words.querySelector("input, select, textarea, button")) continue;
+        words.setAttribute("data-rr-check-label", "");
+        words.addEventListener("click", (event) => {
+            if (event.target instanceof Element && event.target.closest("a")) return;
+            input.click();
+        });
+    }
+}
+
+/**
+ * The member list, a message folder and Who is online are listings too
+ * — rows of members or messages under a header row — and got none of a
+ * listing's treatment: no zebra, numbers left ragged, the header as the
+ * template set it. A post table wears the same row1/row2 classes and is
+ * not a listing, so the shape is checked rather than the class: a
+ * header row, three or more rows opening with a row cell, a member or
+ * message link somewhere, and nothing that belongs to a post or a form.
+ */
+function isRoster(table) {
+    if (PAGE.isTopic || profileView()) return false;
+    if (!table.querySelector("th")) return false;
+    if (table.querySelector(".postbody, textarea, table")) return false;
+    /* The row class sits on the cells in a message folder and on Who is
+       online, and on the <tr> itself in the member list. Either counts. */
+    const striped = (node) => Boolean(node) && /(^|\s)row[12](\s|$)/.test(node.className || "");
+    const rows = Array.from(table.querySelectorAll(":scope > tbody > tr"))
+        .filter((row) => striped(row) || striped(row.firstElementChild));
+    if (rows.length < 3) return false;
+    return Boolean(table.querySelector('a[href*="mode=viewprofile"], .topictitle a'));
+}
+
+/**
+ * The whole title cell opens the topic. The row lights up on hover
+ * from edge to edge and three quarters of the title cell were dead
+ * space under that light: a promise the row did not keep. A click on a
+ * link, a control or a text selection is left alone; Ctrl or ⌘ opens
+ * in a new tab the way it does on a link.
+ */
+function initRowClick() {
+    let any = false;
+    for (const table of document.querySelectorAll("table[data-rr-list]")) {
+        if (!table.querySelector('td[data-rr-col="title"] a.topictitle, td[data-rr-col="title"] a.forumlink')) continue;
+        table.setAttribute("data-rr-rowclick", "");
+        any = true;
+    }
+    if (!any) return;
+    document.addEventListener("click", (event) => {
+        if (event.button !== 0 || event.defaultPrevented) return;
+        const target = event.target instanceof Element ? event.target : null;
+        if (!target) return;
+        const cell = target.closest('table[data-rr-rowclick] td[data-rr-col="title"]');
+        if (!cell) return;
+        if (target.closest("a, button, input, select, label, [role='button']")) return;
+        if (window.getSelection && String(window.getSelection()).trim()) return;
+        const link = cell.querySelector("a.topictitle, a.forumlink");
+        if (!link) return;
+        if (event.ctrlKey || event.metaKey) window.open(link.href, "_blank", "noopener");
+        else location.href = link.href;
+    });
+}
+
+/**
+ * A profile prints every field the template knows — ICQ, AIM, Yahoo,
+ * MSN, Jabber, Occupation, Interests — with nothing after the colon on
+ * nearly every account. A row whose label ends in a colon and whose
+ * value cell holds no text, link or image is a row about nothing, and
+ * goes. Judged by shape, not by name, so a filled-in field of any
+ * name stays.
+ */
+/* PAGE.isProfile is true of all of memberlist.php — the roster as well
+   as one member's page. This is the one member's page. */
+function profileView() {
+    return PAGE.isProfile && /mode=viewprofile/.test(location.search);
+}
+
+function hideEmptyProfileRows() {
+    for (const row of document.querySelectorAll("#wrapcentre table.tablebg tr")) {
+        const cells = Array.from(row.children).filter((node) => node.tagName === "TD");
+        if (cells.length !== 2) continue;
+        const label = cells[0].textContent.replace(/\s+/g, " ").trim();
+        if (!/:$/.test(label)) continue;
+        const value = cells[1];
+        if (value.querySelector("a, img, input, select, button, textarea")) continue;
+        if (value.textContent.replace(/[\s\u00a0]+/g, "")) continue;
+        row.hidden = true;
+        row.setAttribute("data-rr-empty-row", "");
     }
 }
 
@@ -754,11 +845,13 @@ function initLists() {
         // stylesheet needs to know which is which: row1/row2 alternate
         // down a listing and wrap whole posts in a topic, so the same
         // two classes mean opposite things on the two kinds of page.
-        if (table.querySelector("a.topictitle, a.forumlink")) {
+        if (table.querySelector("a.topictitle, a.forumlink") || isRoster(table)) {
             table.setAttribute("data-rr-list", "");
             groupListingNumbers(table);
         }
     }
+    if (settings.get("rowClick")) initRowClick();
+    if (profileView()) hideEmptyProfileRows();
 
     dedupeSearchBoxes();
 

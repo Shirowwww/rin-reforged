@@ -23,7 +23,8 @@
 .rr-btn[data-variant="primary"]:hover { filter: brightness(1.08); }
 .rr-btn[data-variant="quiet"] { background: transparent; border-color: transparent; color: var(--rr-muted); }
 .rr-btn[data-variant="quiet"]:hover { background: var(--rr-surface-2); color: var(--rr-text); }
-.rr-btn[aria-pressed="true"] { background: var(--rr-accent-soft); border-color: var(--rr-accent); color: var(--rr-accent); }
+.rr-btn[aria-pressed="true"] { background: var(--rr-accent-soft); border-color: var(--rr-accent); color: var(--rr-accent-on-soft, var(--rr-accent)); }
+.rr-btn:disabled, .rr-btn[aria-busy="true"] { opacity: .6; cursor: progress; }
 .rr-btn svg { width: 14px; height: 14px; flex: none; }
 
 .rr-icon-btn {
@@ -120,14 +121,26 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     position: sticky;
     top: 0;
     z-index: 900;
-    display: flex;
-    align-items: center;
-    gap: var(--rr-s3);
     height: var(--rr-nav-h);
     padding: 0 var(--rr-s4);
     background: color-mix(in srgb, var(--rr-bg) 88%, transparent);
     backdrop-filter: blur(10px) saturate(140%);
     border-bottom: 1px solid var(--rr-line);
+}
+/* The bar is full-bleed; what is in it follows the content column.
+   Without this the brand sat at x=16 and the icons at the screen's
+   edge while the board bar and the listing under them were indented
+   half a metre on a 2560px monitor — two stacked header rows with a
+   500px zig-zag between them. */
+.rr-nav__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s3);
+    height: 100%;
+    width: 100%;
+    max-width: var(--rr-content-max);
+    margin: 0 auto;
+    min-width: 0;
 }
 .rr-nav__brand {
     display: flex;
@@ -802,10 +815,14 @@ tr[data-rr-hidden] { display: none; }
 }
 .rr-game__meta {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: max-content minmax(0, 1fr);
     gap: 6px var(--rr-s4);
     margin: var(--rr-s4) 0 0;
     font-size: var(--rr-fs-sm);
+    /* Short values — a developer, a date — sat by their label with a
+       metre of nothing to their right on a wide card. The grid is as
+       wide as a long line needs and no wider. */
+    max-width: 72ch;
 }
 .rr-game__meta dt { color: var(--rr-faint); white-space: nowrap; }
 .rr-game__meta dd { margin: 0; color: var(--rr-text); }
@@ -1070,7 +1087,7 @@ html[data-rr] a.rr-postnum:hover {
     padding: 1px 5px;
     border-radius: var(--rr-radius-pill);
     background: var(--rr-accent-soft);
-    color: var(--rr-accent);
+    color: var(--rr-accent-on-soft, var(--rr-accent));
     font: 700 var(--rr-fs-xs) / 1.5 var(--rr-font-mono);
     text-align: center;
 }
@@ -1119,6 +1136,9 @@ html[data-rr] a.rr-postnum:hover {
 .rr-field[hidden],
 .rr-field[data-rr-dep-off],
 .rr-field[data-rr-nomatch] { display: none; }
+/* A search hit under a parent that is switched off is still a hit:
+   shown, dimmed, rather than counted on the tab and then not there. */
+.rr-group[data-rr-searching] .rr-field[data-rr-dep-off]:not([data-rr-nomatch]) { display: flex; opacity: .6; }
 /* A field that depends on another is stepped in under it, so "off
    because the thing above is off" is visible rather than inferred. */
 .rr-field[data-rr-dep] { padding-left: var(--rr-s3); }
@@ -1190,6 +1210,18 @@ html[data-rr] a.rr-postnum:hover {
     border-radius: var(--rr-radius);
     box-shadow: var(--rr-shadow-pop);
 }
+.rr-lightbox__close {
+    position: fixed;
+    top: 14px;
+    right: 18px;
+    width: 40px;
+    height: 40px;
+    color: #f0f0f0;
+    background: rgba(20, 22, 26, .7);
+    border: 1px solid rgba(255, 255, 255, .18);
+}
+.rr-lightbox__close:hover { background: rgba(40, 42, 48, .9); color: #fff; }
+.rr-lightbox__close:focus-visible { outline: 2px solid var(--rr-accent); outline-offset: 2px; }
 
 /* ---- Floating actions -------------------------------------------- */
 
@@ -1337,3 +1369,19 @@ html[data-rr] a.rr-postnum:hover {
 /* A crumb that is a place, not a link: the control panel section the
    window title named. */
 .rr-nav__here { color: var(--rr-text-strong); font-weight: 600; white-space: nowrap; }
+
+/* ---- Quick reply toolbar ------------------------------------------ */
+
+.rr-reply__tools { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 6px; }
+.rr-reply__tools .rr-btn { padding: 3px 9px; font-size: var(--rr-fs-xs); min-width: 30px; }
+.rr-reply__tools .rr-btn[data-tool="b"] { font-weight: 700; }
+.rr-reply__tools .rr-btn[data-tool="i"] { font-style: italic; }
+.rr-reply__tools .rr-btn[data-tool="u"] { text-decoration: underline; }
+
+/* ---- Keyboard cursor on a listing ---------------------------------- */
+
+/* j/k walk the rows the way they walk the posts of a topic; the row
+   under the cursor is marked the way a hovered row is, plus a hairline
+   in the accent so a hovered row and the chosen one read differently. */
+html[data-rr] table[data-rr-list] tr[data-rr-cursor] > td { background: var(--rr-surface-3); }
+html[data-rr] table[data-rr-list] tr[data-rr-cursor] > td:first-child { box-shadow: inset 3px 0 0 var(--rr-accent); }

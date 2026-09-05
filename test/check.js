@@ -82,8 +82,10 @@ const WIDTHS = [
    way into 200-character lines on the widest screens.
 
    `ceiling` is the design, written down: --rr-content-max in
-   tokens.css is min(1560px, 95vw). */
-const FRAME = { minShare: 0.78, ceiling: 1560 };
+   tokens.css is min(1560px, 95vw); on a topic page in Reading mode the
+   frame closes in to min(1440px, 95vw), so the prose is not left in a
+   1180px card. */
+const FRAME = { minShare: 0.78, ceiling: 1560, topicCeiling: 1440 };
 
 /* Settings that change layout rather than only colour. Each is applied
    before the page loads, so the script boots with it in place. */
@@ -211,6 +213,9 @@ async function main() {
                             width: centre.getBoundingClientRect().width,
                             inner: inner,
                             window: window.innerWidth,
+                            // Reading mode closes the frame in on a topic page (tokens.css).
+                            page: document.documentElement.getAttribute("data-rr-page"),
+                            mode: document.documentElement.getAttribute("data-rr-width"),
                             narrow: narrow.slice(0, 3),
                         };
                     })(),
@@ -238,12 +243,13 @@ async function main() {
             if (result.tinyText) problems.push(result.tinyText + " nodes under 11px");
             if (result.darkPatches) problems.push(result.darkPatches + " dark patches on a light theme");
             if (size.frame && result.frame) {
-                const want = Math.min(FRAME.ceiling, FRAME.minShare * result.frame.window);
+                const ceiling = result.frame.page === "topic" && result.frame.mode === "reading" ? FRAME.topicCeiling : FRAME.ceiling;
+                const want = Math.min(ceiling, FRAME.minShare * result.frame.window);
                 if (result.frame.width < want - 1) {
                     problems.push("frame is " + Math.round(result.frame.width) + "px, wanted "
                         + Math.round(want) + " on a " + result.frame.window + "px window");
                 }
-                if (result.frame.width > FRAME.ceiling + 4) {
+                if (result.frame.width > ceiling + 4) {
                     problems.push("frame grew to " + Math.round(result.frame.width) + "px, past the ceiling");
                 }
                 if (result.frame.narrow.length) {

@@ -152,9 +152,21 @@ function exportSettings() {
         version: RR_VERSION,
         exported: new Date().toISOString(),
         settings: settings.all(),
-        data: store.all(),
+        // Bookmarks, history, hidden members — what a move to another
+        // browser wants. Not the drafts: an unsent reply is not settings
+        // and has no business on a clipboard.
+        data: Object.fromEntries(Object.entries(store.all()).filter(([key]) => key !== "drafts")),
     };
-    copyText(JSON.stringify(payload, null, 2), "Settings copied as JSON");
+    copyText(JSON.stringify(payload, null, 2), "Settings and data copied as JSON");
+}
+
+/* Bookmarks, history, hidden members, the Releases cache: the data the
+   script keeps for itself, gone in one step. The settings stay. */
+function clearData() {
+    if (!window.confirm("Forget bookmarks, reading history, hidden members and the Releases cache? Your settings stay.")) return;
+    store.replace({});
+    toast("Data cleared");
+    setTimeout(() => location.reload(), 1000);
 }
 
 async function importSettings() {
@@ -170,7 +182,7 @@ async function importSettings() {
         if (payload.settings) settings.replace(payload.settings);
         if (payload.data) store.replace(payload.data);
         toast("Settings imported. Reloading.");
-        setTimeout(() => location.reload(), 600);
+        setTimeout(() => location.reload(), 1000);
     } catch {
         toast("That is not valid exported JSON");
     }
@@ -323,8 +335,20 @@ function openSettings() {
         ]),
         body,
         el("div.rr-panel__foot", {}, [
-            el("button.rr-btn", { type: "button", onclick: exportSettings }, [icon("copy"), "Export"]),
-            el("button.rr-btn", { type: "button", onclick: importSettings }, ["Import"]),
+            /* "Export" copied to the clipboard and took bookmarks and
+               history with it, and said neither. */
+            el("button.rr-btn", {
+                type: "button", onclick: exportSettings,
+                title: "Copies every setting, plus bookmarks, history and hidden members, as JSON. Unsent drafts stay here.",
+            }, [icon("copy"), "Copy settings"]),
+            el("button.rr-btn", {
+                type: "button", onclick: importSettings,
+                title: "Paste JSON copied from another browser",
+            }, ["Paste settings"]),
+            el("button.rr-btn", {
+                type: "button", "data-variant": "quiet", onclick: clearData,
+                title: "Forget bookmarks, reading history, hidden members and the Releases cache",
+            }, ["Clear data"]),
             el("span.rr-spacer"),
             el("button.rr-btn", {
                 type: "button",
@@ -332,7 +356,7 @@ function openSettings() {
                     if (!window.confirm("Reset every RIN Reforged setting to its default?")) return;
                     settings.reset();
                     toast("Settings reset");
-                    setTimeout(() => location.reload(), 400);
+                    setTimeout(() => location.reload(), 1000);
                 },
             }, ["Reset"]),
         ]),

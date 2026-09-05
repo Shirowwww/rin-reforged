@@ -30,6 +30,7 @@ function applyTheme() {
     root.setAttribute("data-rr-theme", theme);
     root.setAttribute("data-rr-density", settings.get("density"));
     root.setAttribute("data-rr-width", settings.get("width"));
+    root.setAttribute("data-rr-page", PAGE.isTopic ? "topic" : PAGE.isForum ? "forum" : PAGE.isIndex ? "index" : PAGE.isSearch ? "search" : "other");
     root.setAttribute("data-rr-icons", settings.get("modernIcons") ? "on" : "off");
     root.setAttribute("data-rr-nav", settings.get("navbar") ? "on" : "off");
     root.toggleAttribute("data-rr-still", Boolean(settings.get("reduceMotion")));
@@ -37,9 +38,17 @@ function applyTheme() {
     root.style.setProperty("--rr-fs", settings.get("fontSize") + "px");
 
     const accent = ACCENTS[settings.get("accent")] || ACCENTS.brass;
-    root.style.setProperty("--rr-accent", isLight ? accent.light : accent.accent);
-    root.style.setProperty("--rr-accent-soft", isLight ? accent.lightSoft : accent.soft);
+    const ink = isLight ? accent.light : accent.accent;
+    const soft = isLight ? accent.lightSoft : accent.soft;
+    root.style.setProperty("--rr-accent", ink);
+    root.style.setProperty("--rr-accent-soft", soft);
     root.style.setProperty("--rr-accent-text", isLight ? accent.lightText : accent.text);
+    /* The accent used as text on its own soft wash — a pressed filter
+       chip, the count on a settings tab. On the light theme the raw
+       accent read at 3.3:1 there; it is lifted toward black or white
+       until it clears 4.5, and left as it is where it already does. */
+    const lifted = readableInk(parseColour(ink), parseColour(soft), 4.5);
+    root.style.setProperty("--rr-accent-on-soft", lifted ? rgbText(lifted) : ink);
     root.style.setProperty("color-scheme", isLight ? "light" : "dark");
 }
 
@@ -138,4 +147,9 @@ function readableBoardInk() {
         node.style.color = "rgb(" + [lifted.r, lifted.g, lifted.b]
             .map((v) => Math.round(v)).join(", ") + ")";
     }
+}
+
+/** A parsed colour back as CSS. */
+function rgbText(colour) {
+    return "rgb(" + Math.round(colour.r) + ", " + Math.round(colour.g) + ", " + Math.round(colour.b) + ")";
 }

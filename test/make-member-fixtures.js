@@ -64,17 +64,20 @@ const MEMBERS = [
     { n: 4, name: "C-Corpse", joined: "Monday, 18 Aug 2003, 17:13", posts: "12034", rank: "Super-Donor <3" },
 ];
 
+// As the live board prints it (checked 2026-09-06): the row class is on
+// the <tr>, the cells are plain gen/genmed, the username cell is the one
+// aligned left and every value is padded with &nbsp;.
 function memberRow(m, index) {
     const row = index % 2 ? "row2" : "row1";
-    return `<tr>
-\t<td class="gen ${row}" align="center">${m.n}</td>
-\t<td class="genmed ${row}" align="center"><a href="./memberlist.php?mode=viewprofile&amp;u=${100 + m.n}">${m.name}</a></td>
-\t<td class="genmed ${row}" align="center" nowrap="nowrap">${m.joined}</td>
-\t<td class="gen ${row}" align="center">${m.posts}</td>
-\t<td class="gen ${row}" align="center">${m.rank}</td>
-\t<td class="gen ${row}" align="center"><a href="./ucp.php?i=pm&amp;mode=compose&amp;u=${100 + m.n}">${PM_ICON}</a></td>
-\t<td class="gen ${row}" align="center">&nbsp;</td>
-\t<td class="gen ${row}" align="center">&nbsp;</td>
+    return `<tr class="${row}">
+\t<td class="gen" align="center">&nbsp;${m.n}&nbsp;</td>
+\t<td class="genmed" align="left"><a href="./memberlist.php?mode=viewprofile&amp;u=${100 + m.n}">${m.name}</a>&nbsp;</td>
+\t<td class="genmed" align="center" nowrap="nowrap">&nbsp;${m.joined}&nbsp;</td>
+\t<td class="gen" align="center">${m.posts}</td>
+\t<td class="gen" align="center">${m.rank}</td>
+\t<td class="gen" align="center">&nbsp;<a href="./ucp.php?i=pm&amp;mode=compose&amp;u=${100 + m.n}">${PM_ICON}</a>&nbsp;</td>
+\t<td class="gen" align="center">&nbsp;&nbsp;</td>
+\t<td class="gen" align="center">&nbsp;&nbsp;</td>
 </tr>`;
 }
 
