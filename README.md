@@ -58,6 +58,10 @@ checks this repository and offers new versions on its own.
   columns, one-line dates, English ranks, subjects that line up, a colour
   palette you can actually hit, and Subscribe / Bookmark / E-mail friend in
   the topic bar rather than in a strip of their own.
+- **Works on the Russian interface too.** Half the board reads it. Column
+  names, page counters, weekdays, "Joined / Posts" and "Posted" are read in
+  both languages, so a Russian page gets the same grouped numbers, one-line
+  dates, pager and post headers as an English one.
 - **Readable, and measured.** Every colour this script paints meets WCAG AA on
   all four themes — 8 748 pieces of text checked across five pages, and the
   check fails the build if one slips. The board's own group-coloured usernames

@@ -272,7 +272,7 @@ function buildTopicBar() {
     // The numbered strip under the title says the same thing as the
     // pager, less usefully.
     for (const strip of header.querySelectorAll("p.gensmall, span.gensmall")) {
-        if (/Go to page/.test(strip.textContent)) strip.style.display = "none";
+        if (/Go to page|На страницу/.test(strip.textContent)) strip.style.display = "none";
     }
 }
 
@@ -288,8 +288,18 @@ function buildTopicBar() {
    topic actions share that row and they are not a duplicate of
    anything. The post count is worth keeping, so the first one found
    moves into the bar; the rest go with the page counters. */
-const PAGE_OF_RE = /^\s*Page\s+\d+\s+of\s+\d+\s*$/;
-const POST_COUNT_RE = /^\s*\[\s*([\d\s]+)\s+(posts?|topics?)\s*\]\s*$/i;
+const PAGE_OF_RE = /^\s*(?:Page\s+\d+\s+of\s+\d+|Страница\s+\d+\s+из\s+\d+)\s*$/;
+/* "[ 239 posts ]" — or, on the Russian interface, "[ Сообщений: 239 ]"
+   and "[ Тем: 61487 ]", the word first. */
+const POST_COUNT_RE = /^\s*\[\s*(?:([\d\s]+)\s+(posts?|topics?)|(Сообщений|Тем):\s*([\d\s]+))\s*\]\s*$/i;
+
+function postCount(text) {
+    const m = text.match(POST_COUNT_RE);
+    if (!m) return null;
+    const digits = (m[1] || m[4]).replace(/\s+/g, "");
+    const unit = (m[2] || m[3]).toLowerCase();
+    return digits + " " + (unit === "сообщений" ? "сообщений" : unit === "тем" ? "тем" : unit);
+}
 
 function tidyBoardPagerStrip(bar, row) {
     // The listing bar lifts its own "[ N topics ]" before calling this,
@@ -304,13 +314,11 @@ function tidyBoardPagerStrip(bar, row) {
 
         if (PAGE_OF_RE.test(text)) { cell.style.display = "none"; continue; }
 
-        const count = text.match(POST_COUNT_RE);
+        const count = postCount(text);
         if (!count) continue;
         if (!counted) {
             counted = true;
-            row.append(el("span.rr-topicbar__count", {}, [
-                count[1].replace(/\s+/g, "") + " " + count[2].toLowerCase(),
-            ]));
+            row.append(el("span.rr-topicbar__count", {}, [count]));
         }
         cell.style.display = "none";
     }
@@ -513,9 +521,17 @@ const CYRILLIC_RE = /[\u0400-\u04FF]/;
 
 function localiseRank(text) {
     const clean = text.replace(/\s+/g, " ").trim();
-    if (!CYRILLIC_RE.test(clean) || currentLanguage() !== "en") return clean;
+    const lang = currentLanguage();
+    if (!CYRILLIC_RE.test(clean) || !lang) return clean;
 
-    const kept = clean.split(" ").filter((word) => !CYRILLIC_RE.test(word));
+    /* On the English interface the Russian words go; on the Russian
+       one the Latin ones do — "I live here Три раза сломал клаву :)"
+       reads "Три раза сломал клаву :)" there. A word with no letters
+       of either kind (":)", "<3") sides with whichever half stays. */
+    const LATIN_RE = /[A-Za-z]/;
+    const kept = lang === "en"
+        ? clean.split(" ").filter((word) => !CYRILLIC_RE.test(word))
+        : clean.split(" ").filter((word) => !LATIN_RE.test(word) || CYRILLIC_RE.test(word));
     /* Punctuation that belonged to the half that just went. "I live
        here Три раза сломал клаву :)" is one rank in two languages with
        the smiley on the end of the Russian half, and dropping the
@@ -524,7 +540,7 @@ function localiseRank(text) {
        in it goes with them. A rank that is *only* punctuation, like
        "Super-Donor <3", never reaches this: it has no Cyrillic in it
        and was returned untouched three lines ago. */
-    while (kept.length && !/[A-Za-z0-9]/.test(kept[kept.length - 1])) kept.pop();
+    while (kept.length && !/[A-Za-z0-9\u0400-\u04FF]/.test(kept[kept.length - 1])) kept.pop();
     return kept.join(" ").replace(/[\s|·,;:/–—-]+$/, "").trim();
 }
 
@@ -542,14 +558,14 @@ const JOIN_TIME_RE = /(\d{4}),\s*\d{1,2}:\d{2}(?::\d{2})?/g;
 
 function shortenPostMeta(text) {
     return text
-        .replace(/\b(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day,\s*/gi, "")
+        .replace(/(?:\b(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day|Понедельник|Вторник|Среда|Четверг|Пятница|Суббота|Воскресенье),\s*/gi, "")
         .replace(JOIN_TIME_RE, "$1")
         /* The post count, and only the post count. This line is
            "Joined: 15 Nov 2005 · Posts: 12575", and a sweep over it
            that grouped from four digits would turn the year into
            "2 005". The count is named right there in the text; the
            year is not. */
-        .replace(/(Posts:\s*)(\d+)/i, (all, label, count) => label + groupDigits(count))
+        .replace(/((?:Posts|Сообщения):\s*)(\d+)/i, (all, label, count) => label + groupDigits(count))
         .replace(/\s+/g, " ")
         .trim();
 }
@@ -576,8 +592,9 @@ function modernisePost(post) {
 
     // The first detail block is the rank line ("Administrator",
     // "I live here"); the ones after it are Joined and Posts.
-    const rank = details.find((node) => !/joined|posts/i.test(node.textContent));
-    const meta = details.filter((node) => /joined|posts/i.test(node.textContent));
+    const META_RE = /joined|posts|зарегистрирован|сообщени/i;
+    const rank = details.find((node) => !META_RE.test(node.textContent));
+    const meta = details.filter((node) => META_RE.test(node.textContent));
 
     const head = el("div.rr-posthead");
 
@@ -619,7 +636,7 @@ function modernisePost(post) {
         const summary = meta
             .map((node) => node.textContent.replace(/\s+/g, " ").trim())
             .join(" · ")
-            .replace(/(\S)\s*((?:Posts|Location|Gender|Age|Occupation|Interests|Website):)/g, "$1 · $2");
+            .replace(/(\S)\s*((?:Posts|Location|Gender|Age|Occupation|Interests|Website|Сообщения|Откуда|Пол|Возраст|Род занятий|Интересы|Сайт):)/g, "$1 · $2");
         head.append(el("span.rr-posthead__meta", { title: summary }, [shortenPostMeta(summary)]));
     }
 
@@ -629,7 +646,7 @@ function modernisePost(post) {
     // line with the author it stops being a row of its own.
     if (post.headCell) {
         const posted = Array.from(post.headCell.querySelectorAll("b"))
-            .find((node) => /^Posted:/i.test(node.textContent));
+            .find((node) => /^(?:Posted|Добавлено):/i.test(node.textContent));
         if (posted && posted.nextSibling) {
             const when = posted.nextSibling.textContent.trim();
             if (when) {

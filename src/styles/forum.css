@@ -921,3 +921,13 @@ html[data-rr] select[multiple] { min-height: 12em; }
    post footer on a desktop and back on a phone, where the footer row
    is a flex row. The floating button does this job on every width. */
 html[data-rr] a[href="#wrapheader"] { display: none; }
+
+/* Search results mark the term with the board's `.posthilit`: pure
+   yellow behind dark text, on every theme. A wash of the warning
+   colour, and the text keeps its own. */
+html[data-rr] .posthilit {
+    background: color-mix(in srgb, var(--rr-warn) 32%, transparent);
+    color: var(--rr-text-strong);
+    border-radius: 3px;
+    padding: 0 2px;
+}

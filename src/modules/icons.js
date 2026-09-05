@@ -78,7 +78,12 @@ function controlLink(img) {
 function unreadJump(link, img, label) {
     if (!/view=unread/.test(link.getAttribute("href") || "")) return false;
     const row = link.closest("tr");
-    const title = row && row.querySelector("a.topictitle");
+    // The control panel's watched-topics list names its titles with no
+    // class at all; the topic link in the same row is the one that is
+    // not this arrow and not a page number.
+    const title = row && (row.querySelector("a.topictitle, .topictitle a")
+        || Array.from(row.querySelectorAll('a[href*="viewtopic.php"]'))
+            .find((a) => a !== link && !/view=unread|[?&]p=\d|start=\d/.test(a.getAttribute("href") || "") && a.textContent.trim().length > 2));
     if (!title) return false;
 
     link.classList.add("rr-icon-btn", "rr-unread-jump");

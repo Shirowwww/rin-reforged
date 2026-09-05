@@ -44,7 +44,10 @@ function pageStep(map) {
 function totalPages() {
     let best = null;
     for (const cell of document.querySelectorAll("td.nav, .nav, .pagination")) {
-        const match = cell.textContent.match(/\bof\s+(\d+)\b/);
+        // "Page 1 of 19", or "Страница 1 из 19" on the Russian interface.
+        // No \b before "из": a JavaScript word boundary is ASCII-only and
+        // never fires next to a Cyrillic letter.
+        const match = cell.textContent.match(/(?:^|\s)(?:of|из)\s+(\d+)(?!\d)/);
         if (!match) continue;
         const value = parseInt(match[1], 10);
         if (value > 0 && (best === null || value > best)) best = value;

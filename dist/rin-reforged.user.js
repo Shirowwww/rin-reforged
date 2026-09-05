@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.8.7
+// @version         0.8.8
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -1277,6 +1277,16 @@ html[data-rr] select[multiple] { min-height: 12em; }
    post footer on a desktop and back on a phone, where the footer row
    is a flex row. The floating button does this job on every width. */
 html[data-rr] a[href="#wrapheader"] { display: none; }
+
+/* Search results mark the term with the board's \`.posthilit\`: pure
+   yellow behind dark text, on every theme. A wash of the warning
+   colour, and the text keeps its own. */
+html[data-rr] .posthilit {
+    background: color-mix(in srgb, var(--rr-warn) 32%, transparent);
+    color: var(--rr-text-strong);
+    border-radius: 3px;
+    padding: 0 2px;
+}
 
 /* == ui.css == */
 /* ------------------------------------------------------------------
@@ -2614,6 +2624,10 @@ html[data-rr] a.rr-postnum:hover {
    them on top of the noun's own space. The gap is taken back and the
    space kept, so "Previous topic" is spaced like two words. */
 .rr-topicbar .rr-opt { margin-left: -6px; white-space: pre; }
+
+/* A crumb that is a place, not a link: the control panel section the
+   window title named. */
+.rr-nav__here { color: var(--rr-text-strong); font-weight: 600; white-space: nowrap; }
 
 /* == features.css == */
 /* ------------------------------------------------------------------
@@ -5059,7 +5073,10 @@ function pageStep(map) {
 function totalPages() {
     let best = null;
     for (const cell of document.querySelectorAll("td.nav, .nav, .pagination")) {
-        const match = cell.textContent.match(/\bof\s+(\d+)\b/);
+        // "Page 1 of 19", or "Страница 1 из 19" on the Russian interface.
+        // No \b before "из": a JavaScript word boundary is ASCII-only and
+        // never fires next to a Cyrillic letter.
+        const match = cell.textContent.match(/(?:^|\s)(?:of|из)\s+(\d+)(?!\d)/);
         if (!match) continue;
         const value = parseInt(match[1], 10);
         if (value > 0 && (best === null || value > best)) best = value;
@@ -5343,7 +5360,12 @@ function controlLink(img) {
 function unreadJump(link, img, label) {
     if (!/view=unread/.test(link.getAttribute("href") || "")) return false;
     const row = link.closest("tr");
-    const title = row && row.querySelector("a.topictitle");
+    // The control panel's watched-topics list names its titles with no
+    // class at all; the topic link in the same row is the one that is
+    // not this arrow and not a page number.
+    const title = row && (row.querySelector("a.topictitle, .topictitle a")
+        || Array.from(row.querySelectorAll('a[href*="viewtopic.php"]'))
+            .find((a) => a !== link && !/view=unread|[?&]p=\d|start=\d/.test(a.getAttribute("href") || "") && a.textContent.trim().length > 2));
     if (!title) return false;
 
     link.classList.add("rr-icon-btn", "rr-unread-jump");
@@ -5815,6 +5837,24 @@ function buildCrumbs() {
         if (wrap.children.length) wrap.append(el("span.rr-nav__sep", {}, ["/"]));
         const { rest } = splitPrefix(heading.textContent.trim());
         wrap.append(el("a", { href: "#top", title: rest }, [rest]));
+        return wrap;
+    }
+
+    /* The control panel, the member list, a profile: the board's
+       breadcrumb on those is "Board index" and nothing else, but the
+       window title knows where you are — "CS RIN • User Control Panel
+       • View messages". The parts after the board's name are the rest
+       of the trail. */
+    if (wrap.querySelectorAll("a").length <= 1 && !PAGE.isIndex && !PAGE.isForum) {
+        const parts = document.title.split(/\s+[•·]\s+/).slice(1)
+            .map((part) => part.trim())
+            .filter((part) => part && !/^index page$/i.test(part)
+                && !Array.from(wrap.querySelectorAll("a")).some((a) => a.textContent.trim() === part));
+        parts.forEach((part, index) => {
+            if (wrap.children.length) wrap.append(el("span.rr-nav__sep", {}, ["/"]));
+            const last = index === parts.length - 1;
+            wrap.append(el("span.rr-nav__here", last ? { "aria-current": "page" } : {}, [part]));
+        });
     }
     return wrap;
 }
@@ -6131,6 +6171,25 @@ function buildLanguageSwitch(links) {
     return group;
 }
 
+/* The board's two language links are `index.php?lang=en` and
+   `index.php?lang=ru`, each with a flag. But a guest who has switched
+   to Russian gets `lang=ru` stamped on *every* navigation link, and
+   reading the parameter alone turned Rules, FAQ, Register and Search
+   into a row of pills that all said "RU" while the bar behind them
+   emptied. A language link carries a flag, or a language for a name,
+   or nothing in its query but the language. */
+function isLanguageLink(link, href) {
+    if (!/[?&]lang=/.test(href)) return false;
+    if (link.querySelector('img[src*="uk.png"], img[src*="ru.png"], img[src*="/flags/"], img[src*="lang_"]')) return true;
+    if (/^\s*(?:english|русский|en|ru)\s*$/i.test(link.textContent)) return true;
+    // Only the index takes a bare lang=: search.php?lang=ru&sid=… is the
+    // search page, in Russian.
+    const path = href.replace(/[?#].*$/, "");
+    if (!/(?:^|\/)index\.php$|^\.?\/?$/.test(path)) return false;
+    const query = href.replace(/^[^?]*\??/, "").replace(/&?sid=[a-f0-9]+/, "");
+    return /^&?lang=[a-z_-]+&?$/i.test(query);
+}
+
 function buildBoardBar() {
     const groups = new Map();
     const languages = [];
@@ -6147,7 +6206,7 @@ function buildBoardBar() {
         const key = href.replace(/[?&]sid=[a-f0-9]+/, "").replace(/[?&]$/, "");
         if (seen.has(key)) return;
         seen.add(key);
-        if (/[?&]lang=/.test(href)) { languages.push(link); return; }
+        if (isLanguageLink(link, href)) { languages.push(link); return; }
         const group = groupNode(boardBarGroup(href).id);
         const node = boardBarLink(link);
         group.append(node);
@@ -6590,6 +6649,24 @@ const COLUMN_NAMES = {
     message: "action",
     "e-mail": "action",
     website: "action",
+    /* The Russian interface. Half the board reads it, and with the
+       headers unread nothing below them was: counts ungrouped, dates
+       with their weekday, the last-post column on two lines. */
+    "форум": "title",
+    "темы": "topics",
+    "сообщения": "posts",
+    "последнее сообщение": "last",
+    "ответы": "replies",
+    "автор": "author",
+    "просмотры": "views",
+    "имя пользователя": "author",
+    "зарегистрирован": "date",
+    "отправлено": "date",
+    "звание": "rank",
+    "тема": "title",
+    "отметить": "mark",
+    "сообщение": "action",
+    "сайт": "action",
 };
 
 /**
@@ -7021,7 +7098,7 @@ function buildForumBar() {
        one below; the listing does the same. */
     if (settings.get("quickPager")) {
         const strip = Array.from(document.querySelectorAll("#wrapcentre td.gensmall"))
-            .find((cell) => /^\s*Go to page/.test(cell.textContent) && cell.querySelector('a[onclick*="jumpto"]'));
+            .find((cell) => /^\s*(?:Go to page|На страницу)/.test(cell.textContent) && cell.querySelector('a[onclick*="jumpto"]'));
         if (strip) hideWithEmptyRow(strip);
     }
 
@@ -7041,20 +7118,23 @@ function buildForumBar() {
 /* "Tuesday, 01 Sep 2026, 18:10" — the weekday is four words of a date
    nobody reads a weekday off. Kept on the title, dropped from the line
    so the date and the poster fit beside each other. */
-const WEEKDAY_RE = /^\s*(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day,\s*/i;
+const WEEKDAY_RE = /^(\s*)(?:(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day|Понедельник|Вторник|Среда|Четверг|Пятница|Суббота|Воскресенье),\s*/i;
 
 /** Drop the weekday from the text nodes directly under `node`. Returns
  *  whether anything changed, so the caller can keep the full date on
  *  the title. */
-function dropWeekday(node) {
+function dropWeekday(node, depth = 0) {
     let changed = false;
     for (const child of node.childNodes) {
         if (child.nodeType === 3 && WEEKDAY_RE.test(child.textContent)) {
-            child.textContent = child.textContent.replace(WEEKDAY_RE, "");
+            // "$1" keeps the space the weekday followed: "Posted: Friday, 24 Jul"
+            // is "Posted: 24 Jul", not "Posted:24 Jul".
+            child.textContent = child.textContent.replace(WEEKDAY_RE, "$1");
             changed = true;
-        } else if (child.nodeType === 1 && !child.children.length && /^(B|STRONG|SPAN|EM)$/.test(child.tagName)) {
-            // A profile's "Joined:" value is one tag down: <b>Thursday, …</b>.
-            if (dropWeekday(child)) changed = true;
+        } else if (child.nodeType === 1 && depth < 3 && /^(B|STRONG|SPAN|EM|DIV|P)$/.test(child.tagName)) {
+            // A profile's "Joined:" value is one tag down: <b>Thursday, …</b>;
+            // a search result's "Posted:" is in a floated <div> of its own.
+            if (dropWeekday(child, depth + 1)) changed = true;
         }
     }
     return changed;
@@ -7086,13 +7166,19 @@ function tightenDateCells() {
        the date cell's text starts with the weekday. A post's own date
        cell never does — it starts with "Posted:" or is the topic
        module's — and the anchor on the regex keeps them apart. */
+    /* td.gensmall: "Posted: Friday, 24 Jul 2026" over a search result.
+       Not on a topic page, where that cell is the post's own date and
+       the topic module reads it, weekday and all, for the header. */
     const cells = document.querySelectorAll(
-        '#wrapcentre td[data-rr-col="date"], #wrapcentre p.topicdetails, #wrapcentre td.gen, #wrapcentre td.genmed, #wrapcentre b.gen, #wrapcentre b.genmed',
+        '#wrapcentre td[data-rr-col="date"], #wrapcentre p.topicdetails, #wrapcentre td.gen, #wrapcentre td.genmed, #wrapcentre b.gen, #wrapcentre b.genmed'
+        + (PAGE.isTopic ? "" : ", #wrapcentre td.gensmall"),
     );
     for (const cell of cells) {
         if (cell.hasAttribute("data-rr-date")) continue;
+        // Read before the change, so the title can carry the whole date.
+        // The weekday may follow a label — "Posted: Friday, …" on a
+        // search result — so each text node is asked, not the cell.
         const full = cell.textContent.replace(/\s+/g, " ").trim();
-        if (!WEEKDAY_RE.test(full)) continue;
         if (!dropWeekday(cell)) continue;
         cell.setAttribute("data-rr-date", "");
         if (!cell.hasAttribute("title")) cell.setAttribute("title", full);
@@ -7103,8 +7189,8 @@ function tightenDateCells() {
    counter for one page, on pages with no action bar to fold it into.
    Nothing to navigate, nothing to say. Counters on other pages stay —
    beside them is the only "Go to page" strip those pages have. */
-const LONE_PAGE_RE = /^\s*Page\s+1\s+of\s+1\s*$/;
-const LEADING_LONE_PAGE_RE = /^\s*Page\s+1\s+of\s+1\s+/;
+const LONE_PAGE_RE = /^\s*(?:Page\s+1\s+of\s+1|Страница\s+1\s+из\s+1)\s*$/;
+const LEADING_LONE_PAGE_RE = /^\s*(?:Page\s+1\s+of\s+1|Страница\s+1\s+из\s+1)\s+/;
 
 function dropLonePageCounters() {
     // td.gensmall and span.nav: the search results page prints its
@@ -7807,7 +7893,7 @@ function buildTopicBar() {
     // The numbered strip under the title says the same thing as the
     // pager, less usefully.
     for (const strip of header.querySelectorAll("p.gensmall, span.gensmall")) {
-        if (/Go to page/.test(strip.textContent)) strip.style.display = "none";
+        if (/Go to page|На страницу/.test(strip.textContent)) strip.style.display = "none";
     }
 }
 
@@ -7823,8 +7909,18 @@ function buildTopicBar() {
    topic actions share that row and they are not a duplicate of
    anything. The post count is worth keeping, so the first one found
    moves into the bar; the rest go with the page counters. */
-const PAGE_OF_RE = /^\s*Page\s+\d+\s+of\s+\d+\s*$/;
-const POST_COUNT_RE = /^\s*\[\s*([\d\s]+)\s+(posts?|topics?)\s*\]\s*$/i;
+const PAGE_OF_RE = /^\s*(?:Page\s+\d+\s+of\s+\d+|Страница\s+\d+\s+из\s+\d+)\s*$/;
+/* "[ 239 posts ]" — or, on the Russian interface, "[ Сообщений: 239 ]"
+   and "[ Тем: 61487 ]", the word first. */
+const POST_COUNT_RE = /^\s*\[\s*(?:([\d\s]+)\s+(posts?|topics?)|(Сообщений|Тем):\s*([\d\s]+))\s*\]\s*$/i;
+
+function postCount(text) {
+    const m = text.match(POST_COUNT_RE);
+    if (!m) return null;
+    const digits = (m[1] || m[4]).replace(/\s+/g, "");
+    const unit = (m[2] || m[3]).toLowerCase();
+    return digits + " " + (unit === "сообщений" ? "сообщений" : unit === "тем" ? "тем" : unit);
+}
 
 function tidyBoardPagerStrip(bar, row) {
     // The listing bar lifts its own "[ N topics ]" before calling this,
@@ -7839,13 +7935,11 @@ function tidyBoardPagerStrip(bar, row) {
 
         if (PAGE_OF_RE.test(text)) { cell.style.display = "none"; continue; }
 
-        const count = text.match(POST_COUNT_RE);
+        const count = postCount(text);
         if (!count) continue;
         if (!counted) {
             counted = true;
-            row.append(el("span.rr-topicbar__count", {}, [
-                count[1].replace(/\s+/g, "") + " " + count[2].toLowerCase(),
-            ]));
+            row.append(el("span.rr-topicbar__count", {}, [count]));
         }
         cell.style.display = "none";
     }
@@ -8048,9 +8142,17 @@ const CYRILLIC_RE = /[\u0400-\u04FF]/;
 
 function localiseRank(text) {
     const clean = text.replace(/\s+/g, " ").trim();
-    if (!CYRILLIC_RE.test(clean) || currentLanguage() !== "en") return clean;
+    const lang = currentLanguage();
+    if (!CYRILLIC_RE.test(clean) || !lang) return clean;
 
-    const kept = clean.split(" ").filter((word) => !CYRILLIC_RE.test(word));
+    /* On the English interface the Russian words go; on the Russian
+       one the Latin ones do — "I live here Три раза сломал клаву :)"
+       reads "Три раза сломал клаву :)" there. A word with no letters
+       of either kind (":)", "<3") sides with whichever half stays. */
+    const LATIN_RE = /[A-Za-z]/;
+    const kept = lang === "en"
+        ? clean.split(" ").filter((word) => !CYRILLIC_RE.test(word))
+        : clean.split(" ").filter((word) => !LATIN_RE.test(word) || CYRILLIC_RE.test(word));
     /* Punctuation that belonged to the half that just went. "I live
        here Три раза сломал клаву :)" is one rank in two languages with
        the smiley on the end of the Russian half, and dropping the
@@ -8059,7 +8161,7 @@ function localiseRank(text) {
        in it goes with them. A rank that is *only* punctuation, like
        "Super-Donor <3", never reaches this: it has no Cyrillic in it
        and was returned untouched three lines ago. */
-    while (kept.length && !/[A-Za-z0-9]/.test(kept[kept.length - 1])) kept.pop();
+    while (kept.length && !/[A-Za-z0-9\u0400-\u04FF]/.test(kept[kept.length - 1])) kept.pop();
     return kept.join(" ").replace(/[\s|·,;:/–—-]+$/, "").trim();
 }
 
@@ -8077,14 +8179,14 @@ const JOIN_TIME_RE = /(\d{4}),\s*\d{1,2}:\d{2}(?::\d{2})?/g;
 
 function shortenPostMeta(text) {
     return text
-        .replace(/\b(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day,\s*/gi, "")
+        .replace(/(?:\b(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day|Понедельник|Вторник|Среда|Четверг|Пятница|Суббота|Воскресенье),\s*/gi, "")
         .replace(JOIN_TIME_RE, "$1")
         /* The post count, and only the post count. This line is
            "Joined: 15 Nov 2005 · Posts: 12575", and a sweep over it
            that grouped from four digits would turn the year into
            "2 005". The count is named right there in the text; the
            year is not. */
-        .replace(/(Posts:\s*)(\d+)/i, (all, label, count) => label + groupDigits(count))
+        .replace(/((?:Posts|Сообщения):\s*)(\d+)/i, (all, label, count) => label + groupDigits(count))
         .replace(/\s+/g, " ")
         .trim();
 }
@@ -8111,8 +8213,9 @@ function modernisePost(post) {
 
     // The first detail block is the rank line ("Administrator",
     // "I live here"); the ones after it are Joined and Posts.
-    const rank = details.find((node) => !/joined|posts/i.test(node.textContent));
-    const meta = details.filter((node) => /joined|posts/i.test(node.textContent));
+    const META_RE = /joined|posts|зарегистрирован|сообщени/i;
+    const rank = details.find((node) => !META_RE.test(node.textContent));
+    const meta = details.filter((node) => META_RE.test(node.textContent));
 
     const head = el("div.rr-posthead");
 
@@ -8154,7 +8257,7 @@ function modernisePost(post) {
         const summary = meta
             .map((node) => node.textContent.replace(/\s+/g, " ").trim())
             .join(" · ")
-            .replace(/(\S)\s*((?:Posts|Location|Gender|Age|Occupation|Interests|Website):)/g, "$1 · $2");
+            .replace(/(\S)\s*((?:Posts|Location|Gender|Age|Occupation|Interests|Website|Сообщения|Откуда|Пол|Возраст|Род занятий|Интересы|Сайт):)/g, "$1 · $2");
         head.append(el("span.rr-posthead__meta", { title: summary }, [shortenPostMeta(summary)]));
     }
 
@@ -8164,7 +8267,7 @@ function modernisePost(post) {
     // line with the author it stops being a row of its own.
     if (post.headCell) {
         const posted = Array.from(post.headCell.querySelectorAll("b"))
-            .find((node) => /^Posted:/i.test(node.textContent));
+            .find((node) => /^(?:Posted|Добавлено):/i.test(node.textContent));
         if (posted && posted.nextSibling) {
             const when = posted.nextSibling.textContent.trim();
             if (when) {
@@ -8824,7 +8927,8 @@ function describePost(post) {
 
 function postDate(post) {
     if (!post.headCell) return null;
-    const match = post.headCell.textContent.match(/Posted:\s*(.+?)(?:\s{2,}|$)/);
+    // "Posted:", or "Добавлено:" on the Russian interface.
+    const match = post.headCell.textContent.match(/(?:Posted|Добавлено):\s*(.+?)(?:\s{2,}|$)/);
     return match ? match[1].trim() : null;
 }
 
@@ -11844,7 +11948,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.8.7";
+const RR_VERSION = "0.8.8";
 
 function injectStyles() {
     const host = document.head || document.documentElement;

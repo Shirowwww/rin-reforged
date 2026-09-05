@@ -32,6 +32,24 @@ const COLUMN_NAMES = {
     message: "action",
     "e-mail": "action",
     website: "action",
+    /* The Russian interface. Half the board reads it, and with the
+       headers unread nothing below them was: counts ungrouped, dates
+       with their weekday, the last-post column on two lines. */
+    "форум": "title",
+    "темы": "topics",
+    "сообщения": "posts",
+    "последнее сообщение": "last",
+    "ответы": "replies",
+    "автор": "author",
+    "просмотры": "views",
+    "имя пользователя": "author",
+    "зарегистрирован": "date",
+    "отправлено": "date",
+    "звание": "rank",
+    "тема": "title",
+    "отметить": "mark",
+    "сообщение": "action",
+    "сайт": "action",
 };
 
 /**
@@ -463,7 +481,7 @@ function buildForumBar() {
        one below; the listing does the same. */
     if (settings.get("quickPager")) {
         const strip = Array.from(document.querySelectorAll("#wrapcentre td.gensmall"))
-            .find((cell) => /^\s*Go to page/.test(cell.textContent) && cell.querySelector('a[onclick*="jumpto"]'));
+            .find((cell) => /^\s*(?:Go to page|На страницу)/.test(cell.textContent) && cell.querySelector('a[onclick*="jumpto"]'));
         if (strip) hideWithEmptyRow(strip);
     }
 
@@ -483,20 +501,23 @@ function buildForumBar() {
 /* "Tuesday, 01 Sep 2026, 18:10" — the weekday is four words of a date
    nobody reads a weekday off. Kept on the title, dropped from the line
    so the date and the poster fit beside each other. */
-const WEEKDAY_RE = /^\s*(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day,\s*/i;
+const WEEKDAY_RE = /^(\s*)(?:(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day|Понедельник|Вторник|Среда|Четверг|Пятница|Суббота|Воскресенье),\s*/i;
 
 /** Drop the weekday from the text nodes directly under `node`. Returns
  *  whether anything changed, so the caller can keep the full date on
  *  the title. */
-function dropWeekday(node) {
+function dropWeekday(node, depth = 0) {
     let changed = false;
     for (const child of node.childNodes) {
         if (child.nodeType === 3 && WEEKDAY_RE.test(child.textContent)) {
-            child.textContent = child.textContent.replace(WEEKDAY_RE, "");
+            // "$1" keeps the space the weekday followed: "Posted: Friday, 24 Jul"
+            // is "Posted: 24 Jul", not "Posted:24 Jul".
+            child.textContent = child.textContent.replace(WEEKDAY_RE, "$1");
             changed = true;
-        } else if (child.nodeType === 1 && !child.children.length && /^(B|STRONG|SPAN|EM)$/.test(child.tagName)) {
-            // A profile's "Joined:" value is one tag down: <b>Thursday, …</b>.
-            if (dropWeekday(child)) changed = true;
+        } else if (child.nodeType === 1 && depth < 3 && /^(B|STRONG|SPAN|EM|DIV|P)$/.test(child.tagName)) {
+            // A profile's "Joined:" value is one tag down: <b>Thursday, …</b>;
+            // a search result's "Posted:" is in a floated <div> of its own.
+            if (dropWeekday(child, depth + 1)) changed = true;
         }
     }
     return changed;
@@ -528,13 +549,19 @@ function tightenDateCells() {
        the date cell's text starts with the weekday. A post's own date
        cell never does — it starts with "Posted:" or is the topic
        module's — and the anchor on the regex keeps them apart. */
+    /* td.gensmall: "Posted: Friday, 24 Jul 2026" over a search result.
+       Not on a topic page, where that cell is the post's own date and
+       the topic module reads it, weekday and all, for the header. */
     const cells = document.querySelectorAll(
-        '#wrapcentre td[data-rr-col="date"], #wrapcentre p.topicdetails, #wrapcentre td.gen, #wrapcentre td.genmed, #wrapcentre b.gen, #wrapcentre b.genmed',
+        '#wrapcentre td[data-rr-col="date"], #wrapcentre p.topicdetails, #wrapcentre td.gen, #wrapcentre td.genmed, #wrapcentre b.gen, #wrapcentre b.genmed'
+        + (PAGE.isTopic ? "" : ", #wrapcentre td.gensmall"),
     );
     for (const cell of cells) {
         if (cell.hasAttribute("data-rr-date")) continue;
+        // Read before the change, so the title can carry the whole date.
+        // The weekday may follow a label — "Posted: Friday, …" on a
+        // search result — so each text node is asked, not the cell.
         const full = cell.textContent.replace(/\s+/g, " ").trim();
-        if (!WEEKDAY_RE.test(full)) continue;
         if (!dropWeekday(cell)) continue;
         cell.setAttribute("data-rr-date", "");
         if (!cell.hasAttribute("title")) cell.setAttribute("title", full);
@@ -545,8 +572,8 @@ function tightenDateCells() {
    counter for one page, on pages with no action bar to fold it into.
    Nothing to navigate, nothing to say. Counters on other pages stay —
    beside them is the only "Go to page" strip those pages have. */
-const LONE_PAGE_RE = /^\s*Page\s+1\s+of\s+1\s*$/;
-const LEADING_LONE_PAGE_RE = /^\s*Page\s+1\s+of\s+1\s+/;
+const LONE_PAGE_RE = /^\s*(?:Page\s+1\s+of\s+1|Страница\s+1\s+из\s+1)\s*$/;
+const LEADING_LONE_PAGE_RE = /^\s*(?:Page\s+1\s+of\s+1|Страница\s+1\s+из\s+1)\s+/;
 
 function dropLonePageCounters() {
     // td.gensmall and span.nav: the search results page prints its

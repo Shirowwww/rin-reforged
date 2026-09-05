@@ -36,6 +36,24 @@ function buildCrumbs() {
         if (wrap.children.length) wrap.append(el("span.rr-nav__sep", {}, ["/"]));
         const { rest } = splitPrefix(heading.textContent.trim());
         wrap.append(el("a", { href: "#top", title: rest }, [rest]));
+        return wrap;
+    }
+
+    /* The control panel, the member list, a profile: the board's
+       breadcrumb on those is "Board index" and nothing else, but the
+       window title knows where you are — "CS RIN • User Control Panel
+       • View messages". The parts after the board's name are the rest
+       of the trail. */
+    if (wrap.querySelectorAll("a").length <= 1 && !PAGE.isIndex && !PAGE.isForum) {
+        const parts = document.title.split(/\s+[•·]\s+/).slice(1)
+            .map((part) => part.trim())
+            .filter((part) => part && !/^index page$/i.test(part)
+                && !Array.from(wrap.querySelectorAll("a")).some((a) => a.textContent.trim() === part));
+        parts.forEach((part, index) => {
+            if (wrap.children.length) wrap.append(el("span.rr-nav__sep", {}, ["/"]));
+            const last = index === parts.length - 1;
+            wrap.append(el("span.rr-nav__here", last ? { "aria-current": "page" } : {}, [part]));
+        });
     }
     return wrap;
 }
@@ -352,6 +370,25 @@ function buildLanguageSwitch(links) {
     return group;
 }
 
+/* The board's two language links are `index.php?lang=en` and
+   `index.php?lang=ru`, each with a flag. But a guest who has switched
+   to Russian gets `lang=ru` stamped on *every* navigation link, and
+   reading the parameter alone turned Rules, FAQ, Register and Search
+   into a row of pills that all said "RU" while the bar behind them
+   emptied. A language link carries a flag, or a language for a name,
+   or nothing in its query but the language. */
+function isLanguageLink(link, href) {
+    if (!/[?&]lang=/.test(href)) return false;
+    if (link.querySelector('img[src*="uk.png"], img[src*="ru.png"], img[src*="/flags/"], img[src*="lang_"]')) return true;
+    if (/^\s*(?:english|русский|en|ru)\s*$/i.test(link.textContent)) return true;
+    // Only the index takes a bare lang=: search.php?lang=ru&sid=… is the
+    // search page, in Russian.
+    const path = href.replace(/[?#].*$/, "");
+    if (!/(?:^|\/)index\.php$|^\.?\/?$/.test(path)) return false;
+    const query = href.replace(/^[^?]*\??/, "").replace(/&?sid=[a-f0-9]+/, "");
+    return /^&?lang=[a-z_-]+&?$/i.test(query);
+}
+
 function buildBoardBar() {
     const groups = new Map();
     const languages = [];
@@ -368,7 +405,7 @@ function buildBoardBar() {
         const key = href.replace(/[?&]sid=[a-f0-9]+/, "").replace(/[?&]$/, "");
         if (seen.has(key)) return;
         seen.add(key);
-        if (/[?&]lang=/.test(href)) { languages.push(link); return; }
+        if (isLanguageLink(link, href)) { languages.push(link); return; }
         const group = groupNode(boardBarGroup(href).id);
         const node = boardBarLink(link);
         group.append(node);

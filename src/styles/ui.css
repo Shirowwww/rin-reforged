@@ -1333,3 +1333,7 @@ html[data-rr] a.rr-postnum:hover {
    them on top of the noun's own space. The gap is taken back and the
    space kept, so "Previous topic" is spaced like two words. */
 .rr-topicbar .rr-opt { margin-left: -6px; white-space: pre; }
+
+/* A crumb that is a place, not a link: the control panel section the
+   window title named. */
+.rr-nav__here { color: var(--rr-text-strong); font-weight: 600; white-space: nowrap; }

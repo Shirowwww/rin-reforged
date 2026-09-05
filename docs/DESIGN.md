@@ -323,6 +323,45 @@ work had never looked.
   card led with the date; on the light theme the original stylesheet's
   `th a { color: #ccc }` and `li.row2 { background: #232323 }` were
   still being painted. Each of these is one rule or one line now.
+- **A third pass (0.8.8)** reached the pages that had still not been
+  opened — a message read in full, the watched-topics list, the search
+  results as posts, the member search — and the Russian interface (see
+  *It reads Russian*). The control panel's breadcrumb, which the board
+  leaves at "Board index", now continues with what the window title
+  knows: "User Control Panel / View messages". The watched-topics list
+  gets the same first-unread arrow as a listing. A search result's
+  "Posted: Friday, …" loses its weekday like every other date, and the
+  search term is marked with a wash of the warning colour rather than
+  the board's pure yellow.
+
+### It reads Russian
+
+The board is bilingual and half of it reads the Russian interface. The
+first version of this script read English: column headers, "Page 1 of
+19", "[ 239 posts ]", "Go to page", weekdays, "Joined:", "Posts:",
+"Posted:". On a Russian page none of that matched, so the counts went
+ungrouped, the dates kept their weekday, the last-post column ran to two
+lines, the board's own page counters stayed on screen, the bar had no
+pager and the post header had no date. Worse: a guest who switches the
+board to Russian gets `lang=ru` stamped on every navigation link, and
+the script took each of them for a language link — Rules, FAQ, Register
+and Search became a row of pills that all said "RU" while the bar behind
+them emptied.
+
+Every one of those strings now has its Russian twin — Темы, Сообщения,
+Ответы, Автор, Просмотры, Последнее сообщение; Страница N из M;
+[ Сообщений: N ] and [ Тем: N ]; На страницу; the seven weekdays;
+Зарегистрирован, Сообщения, Откуда; Добавлено — and a language link is
+one that carries a flag, is named for a language, or has nothing but the
+language in its query. Two things learned on the way: a JavaScript `\b`
+is ASCII-only and never fires next to a Cyrillic letter, so "из 20" has
+to be matched with whitespace rather than a word boundary; and a
+two-language rank is localised in *either* direction — "I live here Три
+раза сломал клаву" reads "I live here" on the English interface and
+"Три раза сломал клаву" on the Russian one.
+
+The script's own words — Reply, First unread, the settings — stay in
+English. That is a choice for now, not a limit.
 
 ### It is readable, and that is a measurement rather than an opinion
 

@@ -247,7 +247,8 @@ function describePost(post) {
 
 function postDate(post) {
     if (!post.headCell) return null;
-    const match = post.headCell.textContent.match(/Posted:\s*(.+?)(?:\s{2,}|$)/);
+    // "Posted:", or "Добавлено:" on the Russian interface.
+    const match = post.headCell.textContent.match(/(?:Posted|Добавлено):\s*(.+?)(?:\s{2,}|$)/);
     return match ? match[1].trim() : null;
 }
 
