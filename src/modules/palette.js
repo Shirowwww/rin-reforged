@@ -131,7 +131,7 @@ function collectItems() {
         groups.push({
             title: "Bookmarks",
             items: bookmarks.map((item) => ({
-                label: item.title, icon: "star", hint: "topic", href: item.href,
+                label: item.title, icon: "star", hint: t("topic"), href: item.href,
             })),
         });
     }
@@ -139,9 +139,9 @@ function collectItems() {
     const forums = store.get("forums", []);
     if (forums.length) {
         groups.push({
-            title: "Boards",
+            title: t("Boards"),
             items: forums.map((item) => ({
-                label: item.title, icon: "layers", hint: "board", href: item.href,
+                label: item.title, icon: "layers", hint: t("board"), href: item.href,
             })),
         });
     }
@@ -149,14 +149,14 @@ function collectItems() {
     const history = store.get("history", []);
     if (history.length) {
         groups.push({
-            title: "Recent",
+            title: t("Recent"),
             items: history.slice(0, 12).map((item) => ({
-                label: item.title, icon: "clock", hint: "topic", href: item.href,
+                label: item.title, icon: "clock", hint: t("topic"), href: item.href,
             })),
         });
     }
 
-    groups.push({ title: "Actions", items: paletteActions() });
+    groups.push({ title: t("Actions"), items: paletteActions() });
     return groups;
 }
 
@@ -170,7 +170,7 @@ function openPalette() {
     const groups = collectItems();
     const input = el("input.rr-palette__input", {
         type: "text",
-        placeholder: "Search the forum, or jump to a board",
+        placeholder: t("Search the forum, or jump to a board"),
         "aria-label": "Search or jump to",
         autocomplete: "off",
         spellcheck: "false",
@@ -207,7 +207,7 @@ function openPalette() {
         for (const group of groups) {
             const matches = needle
                 ? group.items.filter((item) => item.label.toLowerCase().includes(needle)).slice(0, 8)
-                : group.items.slice(0, group.title === "Boards" ? 7 : 6);
+                : group.items.slice(0, group.title === t("Boards") ? 7 : 6);
             if (matches.length) list.append(renderGroup(group.title, matches, flat));
         }
 

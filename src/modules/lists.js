@@ -178,7 +178,7 @@ function decorateTitle(entry, onTagClick) {
     // the same tag is drawn as a label rather than a button, because a
     // control that answers a click with nothing is worse than a word.
     const tag = onTagClick
-        ? el("button.rr-tag", { type: "button", "data-tag": kind, title: "Show only " + prefix }, [prefix])
+        ? el("button.rr-tag", { type: "button", "data-tag": kind, title: t("Show only {x}", { x: prefix }) }, [prefix])
         : el("span.rr-tag", { "data-tag": kind }, [prefix]);
     if (onTagClick) {
         tag.addEventListener("click", (event) => {
@@ -235,7 +235,7 @@ function toggleBookmark(topicId, title, href) {
 function addBookmarkStar(entry) {
     const star = el("button.rr-icon-btn.rr-star", {
         type: "button",
-        title: "Bookmark this topic",
+        title: t("Bookmark this topic"),
         "aria-label": "Bookmark " + entry.title,
         "aria-pressed": isBookmarked(entry.id) ? "true" : "false",
     }, [icon("star", 13)]);
@@ -375,14 +375,14 @@ function buildToolbar(entries, prefixes, rich) {
             if (visible) shown += 1;
         }
         count.textContent = shown === entries.length
-            ? entries.length + " on this page"
-            : shown + " of " + entries.length + " on this page";
+            ? t("{n} on this page", { n: entries.length })
+            : t("{a} of {b} on this page", { a: shown, b: entries.length });
     };
 
     const input = el("input", {
         type: "search",
-        placeholder: "Filter this page by title",
-        "aria-label": "Filter topics on this page",
+        placeholder: t("Filter this page by title"),
+        "aria-label": t("Filter topics on this page"),
     });
     input.addEventListener("input", debounce(() => { state.text = input.value.trim(); apply(); }, 90));
     input.addEventListener("keydown", (event) => {
@@ -402,7 +402,7 @@ function buildToolbar(entries, prefixes, rich) {
             type: "button",
             "data-tag": kind,
             "aria-pressed": "false",
-            title: "Show only " + name,
+            title: t("Show only {x}", { x: name }),
         }, [name]);
         button.dataset.value = name.toLowerCase();
         button.addEventListener("click", () => setTag(name.toLowerCase()));
@@ -451,7 +451,7 @@ function buildForumBar() {
 
     const post = document.querySelector('a[href*="mode=post"]');
     if (post) {
-        bar.append(el("a.rr-btn", { href: post.getAttribute("href"), "data-variant": "primary" }, ["New topic"]));
+        bar.append(el("a.rr-btn", { href: post.getAttribute("href"), "data-variant": "primary" }, [t("New topic")]));
         const strip = post.closest("table");
         if (strip) strip.style.display = "none";
     }
@@ -612,6 +612,8 @@ function alignMessageMarkers() {
     const cells = Array.from(document.querySelectorAll('#wrapcentre td[data-rr-col="title"]'));
     if (!cells.some((cell) => cell.querySelector(PM_MARK))) return;
     for (const cell of cells) {
+        const row = cell.parentElement;
+        if (row) row.setAttribute("data-rr-pm-row", "");
         const mark = cell.querySelector(PM_MARK);
         if (mark) {
             mark.classList.add("rr-pm-mark");
@@ -687,7 +689,7 @@ function collapseAnnouncements(entries) {
     let open = false;
     const toggle = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
         icon("chevronD"),
-        pinned.length + " pinned announcements",
+        t("{n} pinned announcements", { n: pinned.length }),
     ]);
     const setState = () => {
         for (const entry of pinned) entry.row.style.display = open ? "" : "none";
@@ -705,7 +707,48 @@ function collapseAnnouncements(entries) {
 
 /* ---- Entry point --------------------------------------------------- */
 
+/* The shapes the stylesheet needs to know about, named once here.
+
+   These were `:has()` selectors — `tr:has(> td.cat) > td`, `td.cat:has(
+   select)`, `table:not(:has(table)):has(td[bgcolor] > a[onclick])` — and
+   they cost the listing 240ms of style work: a `:has()` on a table or a
+   row is re-checked every time anything inside changes, and this script
+   changes six hundred cells on a listing. An attribute set once is
+   free to match. */
+function markShapes() {
+    for (const cell of document.querySelectorAll("#wrapcentre td.cat")) {
+        const row = cell.parentElement;
+        if (row && row.tagName === "TR") {
+            row.setAttribute("data-rr-cat-row", cell.childNodes.length ? "" : "empty");
+        }
+        if (cell.querySelector(':scope > table, select, input[type="submit"]')) {
+            cell.setAttribute("data-rr-cat", "controls");
+        } else if (cell.getAttribute("align") === "right" && !cell.querySelector("h4")) {
+            cell.setAttribute("data-rr-cat", "plain");
+        }
+    }
+
+    // The posting form's font colour palette: one table of swatches.
+    const swatch = document.querySelector('td[bgcolor] > a[onclick*="bbfontstyle"]');
+    if (swatch) {
+        const table = swatch.closest("table");
+        if (table) {
+            table.setAttribute("data-rr-palette", "");
+            for (const cell of table.querySelectorAll("td[bgcolor]")) cell.setAttribute("data-rr-swatch", "");
+        }
+    }
+
+    // A form row that is a checkbox or radio alone in its first cell,
+    // with the words in the next.
+    for (const input of document.querySelectorAll(
+        '#wrapcentre td:first-child > input[type="checkbox"]:only-child, #wrapcentre td:first-child > input[type="radio"]:only-child')) {
+        const row = input.closest("tr");
+        if (row) row.setAttribute("data-rr-check-row", "");
+    }
+}
+
 function initLists() {
+    markShapes();
     for (const table of document.querySelectorAll("table.tablebg")) {
         labelColumns(table);
         // A listing, as opposed to a post or a strip of chrome. The

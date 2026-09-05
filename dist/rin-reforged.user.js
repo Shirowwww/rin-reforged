@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.8.8
+// @version         0.8.9
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -540,7 +540,7 @@ html[data-rr] td.cat a { color: var(--rr-text-strong); margin: 0; font-size: var
 /* A category row is one cell plus a few empty ones the table needs to
    keep its columns. Tinting the whole row stops it reading as a bar
    that runs out halfway across. */
-html[data-rr] tr:has(> td.cat) > td {
+html[data-rr] tr[data-rr-cat-row] > td {
     background: var(--rr-surface-2);
     border-bottom: 1px solid var(--rr-line);
 }
@@ -571,20 +571,17 @@ html[data-rr] input.ccclose[type="button"]:hover { background-color: var(--rr-su
    / Go" controls a listing ends with. Those get the surface without
    the accent — the tinted edge marks a block of content, and a row of
    form controls is not one. */
-html[data-rr] td.cat:has(> table),
-html[data-rr] td.cat:has(select),
-html[data-rr] td.cat:has(input[type="submit"]),
-/* "Mark forums read" alone at the right of an otherwise empty band:
-   the index wrote it straight into the cell and got the section-head
-   accent, the listing wrapped it in a table and did not. Neither is a
-   heading. */
-html[data-rr] td.cat[align="right"]:not(:has(h4)) {
+/* Named by lists.js (markShapes): "controls" for a cell holding a
+   table, a select or a submit; "plain" for "Mark forums read" alone at
+   the right of an otherwise empty band, which the index writes straight
+   into the cell and the listing wraps in a table. Neither is a heading. */
+html[data-rr] td.cat[data-rr-cat] {
     background: var(--rr-surface-2);
     box-shadow: none;
     font-weight: 400;
 }
-html[data-rr] td.cat:has(> table) a { color: var(--rr-muted); font-weight: 500; }
-html[data-rr] td.cat:has(> table) a:hover { color: var(--rr-text-strong); }
+html[data-rr] td.cat[data-rr-cat="controls"] a { color: var(--rr-muted); font-weight: 500; }
+html[data-rr] td.cat[data-rr-cat="controls"] a:hover { color: var(--rr-text-strong); }
 
 /* The template puts these classes on <tr> as well as <td>, and the
    original stylesheet colours both. A row left uncovered keeps its
@@ -797,41 +794,39 @@ html[data-rr] input.btnbbcode[type="button"] {
    a 7×6px link around a spacer gif — a click target smaller than a
    full stop. Twice the size on each side is four times the target,
    and the column it makes is still narrower than its label was. */
-html[data-rr] td[bgcolor] > a[onclick*="bbfontstyle"] {
+html[data-rr] td[data-rr-swatch] > a {
     display: block;
     width: 14px;
     height: 14px;
 }
-html[data-rr] td[bgcolor] > a[onclick*="bbfontstyle"] > img {
+html[data-rr] td[data-rr-swatch] > a > img {
     display: block;
     width: 100%;
     height: 100%;
 }
-html[data-rr] td[bgcolor]:has(> a[onclick*="bbfontstyle"]) {
+html[data-rr] td[data-rr-swatch] {
     width: 14px !important;
     height: 14px !important;
     padding: 0 !important;
     border-radius: 2px;
 }
-html[data-rr] td[bgcolor]:has(> a[onclick*="bbfontstyle"]):hover { outline: 2px solid var(--rr-text-strong); outline-offset: -1px; }
+html[data-rr] td[data-rr-swatch]:hover { outline: 2px solid var(--rr-text-strong); outline-offset: -1px; }
 /* The template lays the swatches out six to a row, 25 rows deep — at
    14px that is taller than the message box beside it. Flowed nine to
-   a row it is 16 rows and the same height as the box. \`:not(:has(
-   table))\` because :has() reaches down through every level: without
-   it the layout tables around the palette matched too, and the whole
-   form became a 150px flex column. \`#wrapcentre\` because the narrow
-   layout's table rules carry it, and an id outranks any number of
-   classes: without it the phone stacked the swatches again. */
-html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) {
-    display: flex;
+   a row it is 16 rows and the same height as the box. The table is
+   named by lists.js (markShapes); the !important on display is for the
+   narrow layout, whose table rules carry #wrapcentre and would
+   otherwise stack the swatches into a 1750px column again. */
+html[data-rr] table[data-rr-palette] {
+    display: flex !important;
     flex-wrap: wrap;
     gap: 3px;
     width: 150px;
     margin: 0 auto;
 }
-html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) tbody,
-html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) tr { display: contents; }
-html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) td { display: block; flex: 0 0 auto; }
+html[data-rr] table[data-rr-palette] tbody,
+html[data-rr] table[data-rr-palette] tr { display: contents !important; }
+html[data-rr] table[data-rr-palette] td { display: block !important; flex: 0 0 auto; }
 
 /* The board's radios and checkboxes are 13px and typed flush against
    their word — "Yes" with the button touching the Y on one row and a
@@ -1235,7 +1230,7 @@ html[data-rr][data-rr-nav="on"] #wrapcentre { padding-top: var(--rr-s4); }
 
 /* Category strips the template leaves empty. */
 html[data-rr] td.cat:empty,
-html[data-rr] tr:has(> td.cat:empty) { display: none; }
+html[data-rr] tr[data-rr-cat-row="empty"] { display: none; }
 
 /* ---- Donation overlay ------------------------------------------- */
 
@@ -1286,6 +1281,23 @@ html[data-rr] .posthilit {
     color: var(--rr-text-strong);
     border-radius: 3px;
     padding: 0 2px;
+}
+
+/* A YouTube embed is written as <iframe width="560" height="315">. On a
+   phone the post is 340px wide; the frame was not. The box follows the
+   width it has and keeps the picture's shape. */
+html[data-rr] .postbody iframe,
+html[data-rr] .postbody embed,
+html[data-rr] .postbody object,
+html[data-rr] .postbody video {
+    max-width: 100%;
+}
+html[data-rr] .postbody iframe[src*="youtube"],
+html[data-rr] .postbody iframe[src*="youtu.be"],
+html[data-rr] .postbody iframe[src*="vimeo"] {
+    aspect-ratio: 16 / 9;
+    height: auto;
+    border-radius: var(--rr-radius);
 }
 
 /* == ui.css == */
@@ -3386,22 +3398,22 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
     /* A form row that is a checkbox in one cell and its words in the
        next: stacked, the box sat on a line of its own above "Disable
        BBCode". The row stays a row. */
-    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="checkbox"]:only-child),
-    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="radio"]:only-child) {
-        display: flex;
+    /* !important: the generic table rules above carry a class more
+       than this attribute does, and would stack the row again. */
+    html[data-rr] #wrapcentre tr[data-rr-check-row] {
+        display: flex !important;
         align-items: center;
         gap: 6px;
     }
-    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="checkbox"]:only-child) > td,
-    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="radio"]:only-child) > td {
-        display: block;
-        width: auto;
-        padding: 4px 0;
+    html[data-rr] #wrapcentre tr[data-rr-check-row] > td {
+        display: block !important;
+        width: auto !important;
+        padding: 4px 0 !important;
     }
 
     /* The colour palette flows to the width it has (forum.css lays it
        out as a wrapped row of squares). */
-    html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) { width: auto; max-width: 100%; }
+    html[data-rr] table[data-rr-palette] { width: auto; max-width: 100%; }
 
     /* Content width is a desktop setting; on a phone the window is the
        constraint whatever it says. */
@@ -3485,7 +3497,7 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
     html[data-rr] td[data-rr-col] p { display: inline; margin: 0; }
     /* A message folder: the date and the checkbox had no order and led
        the card, before the subject. */
-    html[data-rr] tr:has(> td[data-rr-col="mark"]) > td[data-rr-col="date"] { order: 3; font-size: var(--rr-fs-xs); color: var(--rr-muted); }
+    html[data-rr] tr[data-rr-pm-row] > td[data-rr-col="date"] { order: 3; font-size: var(--rr-fs-xs); color: var(--rr-muted); }
     html[data-rr] td[data-rr-col="mark"] { order: 4; }
 
     /* The template pins several cells with nowrap="nowrap" and the
@@ -3982,7 +3994,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "foldWhoIsOnline", label: "Fold Who is online", type: "toggle", default: true,
-                desc: "The index lists all 500-odd names in full, which is most of the page. This keeps the counts and hides the list.",
+                desc: "The index lists all 500-odd names in full, which is most of the page, and every forum and topic ends with the list of who is browsing it. This keeps the counts and hides the names behind a control.",
             },
             {
                 id: "hideAnnouncements", label: "Collapse global announcements", type: "toggle", default: false,
@@ -5136,6 +5148,174 @@ function pagination() {
     };
 }
 
+/* ================= src/core/i18n.js ================= */
+/* ------------------------------------------------------------------
+   The script's own words, in the board's other language.
+
+   The board is bilingual and the script reads both halves (column
+   headers, page counters, weekdays — see lists.js and topic.js). What
+   it *says* — Reply, First unread, Releases, Show all 300 names — was
+   English on both. On the Russian interface that put a row of English
+   controls over a Russian page. These are those words, once each, with
+   the Russian beside them; the settings panel stays in English.
+
+   `t("Open all {n} spoilers", { n })` looks the key up when the page is
+   Russian and fills the braces either way. A Russian entry may be a
+   function of the variables, because Russian counts in three forms:
+   1 спойлер, 3 спойлера, 5 спойлеров.
+   ------------------------------------------------------------------ */
+
+/** Russian plural: one / few / many, by the last digits. */
+function ruPlural(n, one, few, many) {
+    const value = Math.abs(Number(n)) || 0;
+    const tens = value % 100;
+    const ones = value % 10;
+    if (tens >= 11 && tens <= 14) return many;
+    if (ones === 1) return one;
+    if (ones >= 2 && ones <= 4) return few;
+    return many;
+}
+
+const RU_WORDS = {
+    // The topic bar
+    "Reply": "Ответить",
+    "New topic": "Новая тема",
+    "Open all {n} spoilers": ({ n }) => "Раскрыть все " + n + " " + ruPlural(n, "спойлер", "спойлера", "спойлеров"),
+    "First unread": "Первое непрочитанное",
+    "Jump to the first post you have not read": "К первому непрочитанному сообщению",
+    "Page {a} of {b}": "Страница {a} из {b}",
+    "Page": "Страница",
+    "of {n}": "из {n}",
+    "First page": "Первая страница",
+    "Previous page": "Предыдущая страница",
+    "Next page": "Следующая страница",
+    "Last page": "Последняя страница",
+    "Go to page": "Перейти к странице",
+    "Pages of this topic": "Страницы темы",
+    "Could not work out that page": "Не удалось определить страницу",
+    "Previous topic": "Предыдущая тема",
+    "Next topic": "Следующая тема",
+    "Print view": "Версия для печати",
+
+    // Posts
+    "Copy link to this post": "Скопировать ссылку на сообщение",
+    "Copy as a quote": "Скопировать как цитату",
+    "Show signature": "Показать подпись",
+    "Hide signature": "Скрыть подпись",
+    "Show ": "Показать ",
+    "Hide ": "Скрыть ",
+    "Show": "Показать",
+    "the original post": "исходное сообщение",
+    "the full Steam description": "полное описание Steam",
+    "this category": "этот раздел",
+    "Post by {name} is hidden": "Сообщение {name} скрыто",
+    "Show posts by {name}": "Показать сообщения {name}",
+    "Hide posts by {name}": "Скрыть сообщения {name}",
+    "Hide posts by this member": "Скрыть сообщения этого участника",
+
+    // Listings
+    "{n} on this page": "{n} на этой странице",
+    "{a} of {b} on this page": "{a} из {b} на этой странице",
+    "Filter this page by title": "Фильтр по названию",
+    "Filter topics on this page": "Фильтр тем на этой странице",
+    "Show only {x}": "Показать только {x}",
+    "Bookmark this topic": "В закладки",
+    "{n} pinned announcements": ({ n }) => n + " " + ruPlural(n, "закреплённое объявление", "закреплённых объявления", "закреплённых объявлений"),
+
+    // Who is online
+    "{n} online": "{n} онлайн",
+    "{n} browsing": "{n} просматривают",
+    "{n} registered": "{n} зарегистрированных",
+    "{n} hidden": "{n} скрытых",
+    "{n} guests": ({ n }) => n + " " + ruPlural(n, "гость", "гостя", "гостей"),
+    "Show all {n} names": ({ n }) => "Показать все " + n + " " + ruPlural(n, "имя", "имени", "имён"),
+    "Hide the list": "Скрыть список",
+
+    // The Releases panel
+    "Releases": "Релизы",
+    "{n} release": "{n} релиз",
+    "{n} releases": ({ n }) => n + " " + ruPlural(n, "релиз", "релиза", "релизов"),
+    " on this page": " на этой странице",
+    "This page": "Эта страница",
+    "All {n} page": "Вся тема ({n} страница)",
+    "All {n} pages": ({ n }) => "Все " + n + " " + ruPlural(n, "страница", "страницы", "страниц"),
+    "Filter by kind": "Фильтр по типу",
+    "Reading {a} of {b}…": "Читаю {a} из {b}…",
+    "Could not read the whole topic": "Не удалось прочитать всю тему",
+    "Stopped reading the topic": "Чтение темы остановлено",
+    "Reading a whole topic is switched off in the settings": "Чтение всей темы отключено в настройках",
+    "This topic is one page — you are looking at all of it": "В теме одна страница — вы видите её целиком",
+    "No version given in this post": "Версия в сообщении не указана",
+    "No version given": "Версия не указана",
+    "Steam build {n}, which is not a version number": "Сборка Steam {n} — это не номер версии",
+    "build": "сборка",
+    "p.": "с.",
+    "{n} link": "{n} ссылка",
+    "{n} links": ({ n }) => n + " " + ruPlural(n, "ссылка", "ссылки", "ссылок"),
+    "Latest posted: version {v}": "Последняя версия в теме: {v}",
+    "Latest posted: v{v}": "Последняя: v{v}",
+    "Clean Steam files": "Чистые файлы Steam",
+    "Repack": "Репак",
+    "Crack": "Кряк",
+    "Hypervisor": "Гипервизор",
+    "Online fix": "Онлайн-фикс",
+    "Update": "Обновление",
+    "Reupload": "Перезалив",
+    "Trainer": "Трейнер",
+    "Language": "Локализация",
+    "Tool": "Утилита",
+
+    // The quick reply
+    "Write a reply": "Написать ответ",
+    "Finish your reply": "Закончить ответ",
+    "Loading the reply form…": "Загрузка формы…",
+    "Post reply": "Отправить",
+    "Open the full editor": "Открыть полный редактор",
+    "Preview, attachments and the full toolbar": "Предпросмотр, вложения и полная панель",
+    "Could not load the reply form. Opening the full editor instead.": "Не удалось загрузить форму. Открываю полный редактор.",
+    "Added to your reply": "Добавлено в ответ",
+
+    // The top bar
+    "More": "Ещё",
+    "More board links": "Ещё ссылки",
+    "Board links": "Ссылки форума",
+    "Search or jump to": "Поиск или переход",
+    "Search and jump (Ctrl+K)": "Поиск и переход (Ctrl+K)",
+    "Private messages": "Личные сообщения",
+    "Private messages — {n} unread": "Личные сообщения — {n} непрочитанных",
+    "Your account": "Ваш профиль",
+    "Log in": "Вход",
+    "RIN Reforged settings": "Настройки RIN Reforged",
+    "Skip to content": "К содержимому",
+
+    // The command palette
+    "Boards": "Разделы",
+    "Recent": "Недавние",
+    "Actions": "Действия",
+    "Search the forum, or jump to a board": "Поиск по форуму или переход в раздел",
+    "topic": "тема",
+    "board": "раздел",
+};
+
+/**
+ * The word for the page's language, with `{name}` slots filled.
+ * `currentLanguage()` (navbar.js) reads <html lang>; anything but
+ * Russian gets the English key as written.
+ */
+function t(key, vars) {
+    let text = key;
+    if (currentLanguage() === "ru" && Object.prototype.hasOwnProperty.call(RU_WORDS, key)) {
+        text = RU_WORDS[key];
+        if (typeof text === "function") text = text(vars || {});
+    }
+    if (vars) {
+        for (const [name, value] of Object.entries(vars)) {
+            text = text.split("{" + name + "}").join(String(value));
+        }
+    }
+    return text;
+}
+
 /* ================= src/modules/theme.js ================= */
 /* ------------------------------------------------------------------
    Theme application.
@@ -6253,10 +6433,10 @@ function buildBoardBar() {
     const more = el("button.rr-boardbar__more", {
         type: "button",
         "aria-expanded": "false",
-        "aria-label": "More board links",
-    }, ["More", icon("chevronD", 12)]);
+        "aria-label": t("More board links"),
+    }, [t("More"), icon("chevronD", 12)]);
 
-    const bar = el("nav.rr-boardbar", { "aria-label": "Board links" }, [main, end, more]);
+    const bar = el("nav.rr-boardbar", { "aria-label": t("Board links") }, [main, end, more]);
 
     more.addEventListener("click", () => {
         const open = bar.toggleAttribute("data-rr-open");
@@ -6292,9 +6472,9 @@ function buildNavbar() {
     const actions = el("div.rr-nav__actions");
 
     if (settings.get("palette")) {
-        const search = el("button.rr-nav__search", { type: "button", "aria-label": "Search and jump (Ctrl+K)" }, [
+        const search = el("button.rr-nav__search", { type: "button", "aria-label": t("Search and jump (Ctrl+K)") }, [
             icon("search"),
-            el("span", {}, ["Search or jump to"]),
+            el("span", {}, [t("Search or jump to")]),
             el("span.rr-kbd.rr-nav__kbd", {}, [navigator.platform.startsWith("Mac") ? "⌘K" : "Ctrl K"]),
         ]);
         search.addEventListener("click", () => openPalette());
@@ -6310,8 +6490,8 @@ function buildNavbar() {
     if (pmHref) {
         const unread = unreadMessages();
         const label = unread > 0
-            ? "Private messages — " + unread + " unread"
-            : "Private messages";
+            ? t("Private messages — {n} unread", { n: unread })
+            : t("Private messages");
         const button = labelled(el("a.rr-icon-btn", { href: pmHref }, [icon("mail")]), label);
         if (unread > 0) button.append(el("span.rr-badge", {}, [String(unread)]));
         actions.append(button);
@@ -6319,7 +6499,7 @@ function buildNavbar() {
 
     const ucpHref = findHeaderLink("mode=login", "ucp.php");
     if (ucpHref) {
-        const label = isLoggedIn() ? "Your account" : "Log in";
+        const label = t(isLoggedIn() ? "Your account" : "Log in");
         actions.append(labelled(el("a.rr-icon-btn", { href: ucpHref }, [icon("user")]), label));
     }
 
@@ -6335,7 +6515,7 @@ function buildNavbar() {
 
     const settingsButton = labelled(
         el("button.rr-icon-btn", { type: "button" }, [icon("settings")]),
-        "RIN Reforged settings");
+        t("RIN Reforged settings"));
     settingsButton.addEventListener("click", () => openSettings());
     actions.append(settingsButton);
 
@@ -6408,7 +6588,7 @@ function addSkipLink() {
     if (!main.id) main.id = "rr-main";
     main.setAttribute("tabindex", "-1");
 
-    const skip = el("a.rr-skip", { href: "#" + main.id }, ["Skip to content"]);
+    const skip = el("a.rr-skip", { href: "#" + main.id }, [t("Skip to content")]);
     skip.addEventListener("click", (event) => {
         event.preventDefault();
         main.focus();
@@ -6795,7 +6975,7 @@ function decorateTitle(entry, onTagClick) {
     // the same tag is drawn as a label rather than a button, because a
     // control that answers a click with nothing is worse than a word.
     const tag = onTagClick
-        ? el("button.rr-tag", { type: "button", "data-tag": kind, title: "Show only " + prefix }, [prefix])
+        ? el("button.rr-tag", { type: "button", "data-tag": kind, title: t("Show only {x}", { x: prefix }) }, [prefix])
         : el("span.rr-tag", { "data-tag": kind }, [prefix]);
     if (onTagClick) {
         tag.addEventListener("click", (event) => {
@@ -6852,7 +7032,7 @@ function toggleBookmark(topicId, title, href) {
 function addBookmarkStar(entry) {
     const star = el("button.rr-icon-btn.rr-star", {
         type: "button",
-        title: "Bookmark this topic",
+        title: t("Bookmark this topic"),
         "aria-label": "Bookmark " + entry.title,
         "aria-pressed": isBookmarked(entry.id) ? "true" : "false",
     }, [icon("star", 13)]);
@@ -6992,14 +7172,14 @@ function buildToolbar(entries, prefixes, rich) {
             if (visible) shown += 1;
         }
         count.textContent = shown === entries.length
-            ? entries.length + " on this page"
-            : shown + " of " + entries.length + " on this page";
+            ? t("{n} on this page", { n: entries.length })
+            : t("{a} of {b} on this page", { a: shown, b: entries.length });
     };
 
     const input = el("input", {
         type: "search",
-        placeholder: "Filter this page by title",
-        "aria-label": "Filter topics on this page",
+        placeholder: t("Filter this page by title"),
+        "aria-label": t("Filter topics on this page"),
     });
     input.addEventListener("input", debounce(() => { state.text = input.value.trim(); apply(); }, 90));
     input.addEventListener("keydown", (event) => {
@@ -7019,7 +7199,7 @@ function buildToolbar(entries, prefixes, rich) {
             type: "button",
             "data-tag": kind,
             "aria-pressed": "false",
-            title: "Show only " + name,
+            title: t("Show only {x}", { x: name }),
         }, [name]);
         button.dataset.value = name.toLowerCase();
         button.addEventListener("click", () => setTag(name.toLowerCase()));
@@ -7068,7 +7248,7 @@ function buildForumBar() {
 
     const post = document.querySelector('a[href*="mode=post"]');
     if (post) {
-        bar.append(el("a.rr-btn", { href: post.getAttribute("href"), "data-variant": "primary" }, ["New topic"]));
+        bar.append(el("a.rr-btn", { href: post.getAttribute("href"), "data-variant": "primary" }, [t("New topic")]));
         const strip = post.closest("table");
         if (strip) strip.style.display = "none";
     }
@@ -7229,6 +7409,8 @@ function alignMessageMarkers() {
     const cells = Array.from(document.querySelectorAll('#wrapcentre td[data-rr-col="title"]'));
     if (!cells.some((cell) => cell.querySelector(PM_MARK))) return;
     for (const cell of cells) {
+        const row = cell.parentElement;
+        if (row) row.setAttribute("data-rr-pm-row", "");
         const mark = cell.querySelector(PM_MARK);
         if (mark) {
             mark.classList.add("rr-pm-mark");
@@ -7304,7 +7486,7 @@ function collapseAnnouncements(entries) {
     let open = false;
     const toggle = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
         icon("chevronD"),
-        pinned.length + " pinned announcements",
+        t("{n} pinned announcements", { n: pinned.length }),
     ]);
     const setState = () => {
         for (const entry of pinned) entry.row.style.display = open ? "" : "none";
@@ -7322,7 +7504,48 @@ function collapseAnnouncements(entries) {
 
 /* ---- Entry point --------------------------------------------------- */
 
+/* The shapes the stylesheet needs to know about, named once here.
+
+   These were `:has()` selectors — `tr:has(> td.cat) > td`, `td.cat:has(
+   select)`, `table:not(:has(table)):has(td[bgcolor] > a[onclick])` — and
+   they cost the listing 240ms of style work: a `:has()` on a table or a
+   row is re-checked every time anything inside changes, and this script
+   changes six hundred cells on a listing. An attribute set once is
+   free to match. */
+function markShapes() {
+    for (const cell of document.querySelectorAll("#wrapcentre td.cat")) {
+        const row = cell.parentElement;
+        if (row && row.tagName === "TR") {
+            row.setAttribute("data-rr-cat-row", cell.childNodes.length ? "" : "empty");
+        }
+        if (cell.querySelector(':scope > table, select, input[type="submit"]')) {
+            cell.setAttribute("data-rr-cat", "controls");
+        } else if (cell.getAttribute("align") === "right" && !cell.querySelector("h4")) {
+            cell.setAttribute("data-rr-cat", "plain");
+        }
+    }
+
+    // The posting form's font colour palette: one table of swatches.
+    const swatch = document.querySelector('td[bgcolor] > a[onclick*="bbfontstyle"]');
+    if (swatch) {
+        const table = swatch.closest("table");
+        if (table) {
+            table.setAttribute("data-rr-palette", "");
+            for (const cell of table.querySelectorAll("td[bgcolor]")) cell.setAttribute("data-rr-swatch", "");
+        }
+    }
+
+    // A form row that is a checkbox or radio alone in its first cell,
+    // with the words in the next.
+    for (const input of document.querySelectorAll(
+        '#wrapcentre td:first-child > input[type="checkbox"]:only-child, #wrapcentre td:first-child > input[type="radio"]:only-child')) {
+        const row = input.closest("tr");
+        if (row) row.setAttribute("data-rr-check-row", "");
+    }
+}
+
 function initLists() {
+    markShapes();
     for (const table of document.querySelectorAll("table.tablebg")) {
         labelColumns(table);
         // A listing, as opposed to a post or a strip of chrome. The
@@ -7425,17 +7648,18 @@ function initLists() {
    ------------------------------------------------------------------ */
 
 /** "In total there are 513 users online :: 326 registered, ..." */
-function onlineSummary(text) {
-    const total = text.match(/there are\s+(\d+)\s+users? online/i);
-    const registered = text.match(/(\d+)\s+registered/i);
-    const guests = text.match(/(\d+)\s+guests?/i);
-    const hidden = text.match(/(\d+)\s+hidden/i);
+function onlineSummary(text, names) {
+    const total = text.match(/there are\s+(\d+)\s+users? online|всего\s+(\d+)\s+пользовател/i);
+    const registered = text.match(/(\d+)\s+(?:registered|зарегистрированн)/i);
+    const guests = text.match(/(\d+)\s+(?:guests?|гост)/i);
+    const hidden = text.match(/(\d+)\s+(?:hidden|скрыт)/i);
 
     const parts = [];
-    if (total) parts.push(total[1] + " online");
-    if (registered) parts.push(registered[1] + " registered");
-    if (hidden) parts.push(hidden[1] + " hidden");
-    if (guests) parts.push(guests[1] + " guests");
+    if (total) parts.push(t("{n} online", { n: total[1] || total[2] }));
+    else if (names) parts.push(t("{n} browsing", { n: names }));   // a forum or topic foot: "Users browsing this forum: …"
+    if (registered) parts.push(t("{n} registered", { n: registered[1] }));
+    if (hidden) parts.push(t("{n} hidden", { n: hidden[1] }));
+    if (guests) parts.push(t("{n} guests", { n: guests[1] }));
     return parts.join(" · ");
 }
 
@@ -7467,7 +7691,7 @@ function collapseWhoIsOnline() {
     if (!body) return;
 
     const names = body.querySelectorAll("a[href*='viewprofile']");
-    const summary = onlineSummary(body.textContent);
+    const summary = onlineSummary(body.textContent, names.length);
 
     // Moved, not rebuilt: every name keeps its link, its role colour
     // and anything another script attached to it.
@@ -7477,7 +7701,7 @@ function collapseWhoIsOnline() {
     let open = store.get("whoIsOnlineOpen", false);
     holder.hidden = !open;
 
-    const label = () => (open ? "Hide the list" : "Show all " + names.length + " names");
+    const label = () => (open ? t("Hide the list") : t("Show all {n} names", { n: names.length }));
     const toggle = el("button.rr-btn", {
         type: "button",
         "data-variant": "quiet",
@@ -7556,7 +7780,7 @@ function tidyCategoryToggles() {
 
         const sync = () => {
             const collapsed = toggle.classList.contains("ccopen");
-            const name = (collapsed ? "Show " : "Hide ") + (heading || "this category");
+            const name = t(collapsed ? "Show " : "Hide ") + (heading || t("this category"));
             toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
             toggle.setAttribute("title", name);
             toggle.setAttribute("aria-label", name);
@@ -7612,8 +7836,11 @@ function tidyCategoryToggles() {
 }
 
 function initBoardIndex() {
-    if (!PAGE.isIndex) return;
+    // The list of who is online ends every forum and every topic too —
+    // 272 names and 360px under the last post — and the fold is the
+    // same fold: it finds the cell by what is in it, not by page.
     if (settings.get("foldWhoIsOnline")) collapseWhoIsOnline();
+    if (!PAGE.isIndex) return;
     dropDuplicateSearch();
     tidyCategoryToggles();
 }
@@ -7802,7 +8029,7 @@ function buildTopicBar() {
     if (reply) {
         const button = el("a.rr-btn", { href: reply.getAttribute("href"), "data-variant": "primary" }, [
             icon("reply", 13),
-            /mode=post/.test(reply.getAttribute("href")) ? "New topic" : "Reply",
+            t(/mode=post/.test(reply.getAttribute("href")) ? "New topic" : "Reply"),
         ]);
         here.append(button);
         /* The *cell* the reply button is in, not the table it is in.
@@ -7829,7 +8056,7 @@ function buildTopicBar() {
         if (buttons.length >= 2) {
             const control = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
                 icon("chevronD", 13),
-                "Open all " + buttons.length + " spoilers",
+                t("Open all {n} spoilers", { n: buttons.length }),
             ]);
             control.addEventListener("click", () => {
                 for (const button of spoilerButtons()) button.click();
@@ -7866,7 +8093,7 @@ function buildTopicBar() {
     if (info.total && info.total > 1) {
         here.append(settings.get("quickPager")
             ? buildPagerGroup(info)
-            : el("span.rr-topicbar__count", {}, ["Page " + info.current + " of " + info.total]));
+            : el("span.rr-topicbar__count", {}, [t("Page {a} of {b}", { a: info.current, b: info.total })]));
     }
 
     adoptTopicNav(away);
@@ -7986,7 +8213,7 @@ function hideEmptyBoardStrips(bar) {
    on every one and the row says it already, so it is marked optional
    and the narrow layout drops it — "Previous · Next · Subscribe". */
 function labelWithOptionalTail(link, label) {
-    const m = label.match(/^(.*\S)(\s+(?:topic|friend))$/i);
+    const m = label.match(/^(.*\S)(\s+(?:topic|friend|тема|другу))$/i);
     link.textContent = "";
     // The noun keeps its own space and the stylesheet takes the flex
     // gap off it: a word space, not a 6px slot.
@@ -8033,8 +8260,9 @@ function adoptTopicNav(bar) {
         if (!link) continue;
         link.classList.add("rr-btn", "rr-topicnav");
         link.setAttribute("data-variant", "quiet");
-        link.setAttribute("title", label);
-        labelWithOptionalTail(link, label);
+        const shown = t(label);
+        link.setAttribute("title", shown);
+        labelWithOptionalTail(link, shown);
         if (glyph) link.append(icon(glyph, 12));
         bar.append(link);
     }
@@ -8080,13 +8308,13 @@ function buildPagerGroup(info) {
         min: "1",
         max: String(info.total),
         value: String(info.current),
-        "aria-label": "Go to page",
+        "aria-label": t("Go to page"),
     });
     const go = () => {
         const target = clamp(parseInt(jump.value, 10) || 1, 1, info.total);
         const href = pageHref(target);
         if (href) location.href = href;
-        else toast("Could not work out that page");
+        else toast(t("Could not work out that page"));
     };
     jump.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); go(); } });
     jump.addEventListener("change", go);
@@ -8109,14 +8337,14 @@ function buildPagerGroup(info) {
         ? [icon(glyph, 13), words ? label : null]
         : [words ? label : null, icon(glyph, 13)]);
 
-    return el("div.rr-pager", { role: "group", "aria-label": "Pages of this topic" }, [
-        info.hasPrevious ? step(info.first, "First page", "pageFirst", false) : null,
-        info.hasPrevious ? step(info.previous, "Previous page", "chevronL", true) : null,
-        el("span.rr-pager__label", {}, ["Page"]),
+    return el("div.rr-pager", { role: "group", "aria-label": t("Pages of this topic") }, [
+        info.hasPrevious ? step(info.first, t("First page"), "pageFirst", false) : null,
+        info.hasPrevious ? step(info.previous, t("Previous page"), "chevronL", true) : null,
+        el("span.rr-pager__label", {}, [t("Page")]),
         jump,
-        el("span.rr-pager__label", {}, ["of " + info.total]),
-        info.hasNext ? step(info.next, "Next page", "chevron", true) : null,
-        info.hasNext ? step(info.last, "Last page", "pageLast", false) : null,
+        el("span.rr-pager__label", {}, [t("of {n}", { n: info.total })]),
+        info.hasNext ? step(info.next, t("Next page"), "chevron", true) : null,
+        info.hasNext ? step(info.last, t("Last page"), "pageLast", false) : null,
     ]);
 }
 
@@ -8321,16 +8549,16 @@ function foldSteamBlurb(body, fromTitle) {
     const holder = el("div", { hidden: true });
     for (const node of folded) holder.append(node);
 
-    const label = fromTitle ? "the original post" : "the full Steam description";
+    const label = t(fromTitle ? "the original post" : "the full Steam description");
     let open = false;
     const toggle = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
         icon("chevronD"),
-        "Show " + label,
+        t("Show ") + label,
     ]);
     toggle.addEventListener("click", () => {
         open = !open;
         holder.hidden = !open;
-        toggle.lastChild.textContent = (open ? "Hide " : "Show ") + label;
+        toggle.lastChild.textContent = t(open ? "Hide " : "Show ") + label;
         toggle.firstChild.style.transform = open ? "rotate(180deg)" : "";
     });
 
@@ -8449,12 +8677,12 @@ function addPostTools(post, index) {
         : el("span.rr-postnum", { title: numberTitle }, [numberLabel]));
 
     const linkButton = labelled(
-        el("button.rr-icon-btn", { type: "button" }, [icon("link")]), "Copy link to this post");
+        el("button.rr-icon-btn", { type: "button" }, [icon("link")]), t("Copy link to this post"));
     linkButton.addEventListener("click", () => copyText(postUrl(post.id), "Post link copied"));
     tools.append(linkButton);
 
     const quoteButton = labelled(
-        el("button.rr-icon-btn", { type: "button" }, [icon("quote")]), "Copy as a quote");
+        el("button.rr-icon-btn", { type: "button" }, [icon("quote")]), t("Copy as a quote"));
     quoteButton.addEventListener("click", () => {
         const author = post.author ? post.author.textContent.trim() : "";
         const text = post.body.textContent.trim().replace(/\n{3,}/g, "\n\n");
@@ -8528,12 +8756,12 @@ function collapseSignature(post) {
         if (node.nodeType === 3 && /^\s*_{5,}\s*$/.test(node.textContent)) node.remove();
         else if (node.nodeType === 1 && node.tagName === "BR" && !post.signature.textContent.trim()) node.remove();
     }
-    const toggle = el("button.rr-sig-toggle", { type: "button" }, ["Show signature"]);
+    const toggle = el("button.rr-sig-toggle", { type: "button" }, [t("Show signature")]);
     toggle.addEventListener("click", () => {
         const collapsed = post.signature.getAttribute("data-rr-sig") === "collapsed";
         if (collapsed) post.signature.removeAttribute("data-rr-sig");
         else post.signature.setAttribute("data-rr-sig", "collapsed");
-        toggle.textContent = collapsed ? "Hide signature" : "Show signature";
+        toggle.textContent = t(collapsed ? "Hide signature" : "Show signature");
     });
     post.signature.before(toggle);
 }
@@ -9764,16 +9992,16 @@ function releaseVersion(row, latest) {
     if (row.build) {
         return el("span.rr-releases__version", {
             "data-rr-kind": "build",
-            title: "Steam build " + row.build + ", which is not a version number",
+            title: t("Steam build {n}, which is not a version number", { n: row.build }),
         }, [
-            el("span.rr-releases__vkind", {}, ["build"]),
+            el("span.rr-releases__vkind", {}, [t("build")]),
             row.build,
         ]);
     }
     return el("span.rr-releases__version", {
         "data-rr-kind": "none",
-        title: "No version given in this post",
-        "aria-label": "No version given",
+        title: t("No version given in this post"),
+        "aria-label": t("No version given"),
     }, [el("span.rr-releases__vnone", { "aria-hidden": "true" }, ["\u2014"])]);
 }
 
@@ -9786,11 +10014,11 @@ function releaseRow(row, latest) {
         tags.append(el("span.rr-releases__tag", {
             "data-kind": row.kinds[i],
             "data-family": releaseFamily(row.kinds[i]),
-        }, [text]));
+        }, [t(text)]));
     }
     if (!row.labels.length && row.links) {
         tags.append(el("span.rr-releases__tag", { "data-kind": "link", "data-family": "other" }, [
-            row.links + (row.links === 1 ? " link" : " links"),
+            t(row.links === 1 ? "{n} link" : "{n} links", { n: row.links }),
         ]));
     }
 
@@ -9805,7 +10033,7 @@ function releaseRow(row, latest) {
         tags,
         el("span.rr-releases__who", {}, [row.author]),
         el("span.rr-releases__when", { title: when }, [shortenPostMeta(when)]),
-        el("span.rr-releases__page", {}, ["p." + row.page]),
+        el("span.rr-releases__page", {}, [t("p.") + row.page]),
     ]);
 
     // A row for a post on the page you are already on scrolls to it and
@@ -9832,11 +10060,11 @@ function releaseRow(row, latest) {
 function releaseFilters(rows, list, onCount) {
     const present = new Map();
     for (const row of rows) {
-        for (const [i, id] of row.kinds.entries()) present.set(id, row.labels[i]);
+        for (const [i, id] of row.kinds.entries()) present.set(id, t(row.labels[i]));
     }
     if (present.size < 2) return null;
 
-    const bar = el("div.rr-releases__filters", { role: "group", "aria-label": "Filter by kind" });
+    const bar = el("div.rr-releases__filters", { role: "group", "aria-label": t("Filter by kind") });
     let active = null;
 
     const apply = () => {
@@ -9938,15 +10166,15 @@ function initReleases() {
      *
      * So the second option is always drawn, and on a one page topic it
      * is disabled and says why. */
-    const pageTab = el("button.rr-releases__tab", { type: "button", role: "tab" }, ["This page"]);
-    const topicLabel = "All " + total + (total === 1 ? " page" : " pages");
+    const pageTab = el("button.rr-releases__tab", { type: "button", role: "tab" }, [t("This page")]);
+    const topicLabel = t(total === 1 ? "All {n} page" : "All {n} pages", { n: total });
     const topicTab = el("button.rr-releases__tab", { type: "button", role: "tab" }, [topicLabel]);
     if (!canWalk || !multi) {
         topicTab.disabled = true;
         topicTab.setAttribute("data-rr-why", "");
         topicTab.setAttribute("title", !canWalk
-            ? "Reading a whole topic is switched off in the settings"
-            : "This topic is one page — you are looking at all of it");
+            ? t("Reading a whole topic is switched off in the settings")
+            : t("This topic is one page — you are looking at all of it"));
     }
     scope.append(pageTab, topicTab);
 
@@ -9961,7 +10189,7 @@ function initReleases() {
     panel.append(
         el("div.rr-releases__head", {}, [
             icon("layers", 14),
-            el("h3", {}, ["Releases"]),
+            el("h3", {}, [t("Releases")]),
             count,
             el("div.rr-releases__controls", {}, [scope, linkFilter]),
         ]),
@@ -9971,7 +10199,7 @@ function initReleases() {
     const setCount = (shown, filtered, rows, scoped) => {
         count.textContent = filtered
             ? shown + " of " + rows.length
-            : rows.length + (rows.length === 1 ? " release" : " releases") + (scoped ? "" : " on this page");
+            : t(rows.length === 1 ? "{n} release" : "{n} releases", { n: rows.length }) + (scoped ? "" : t(" on this page"));
     };
 
     const walk = () => {
@@ -9987,7 +10215,7 @@ function initReleases() {
         };
 
         walkTopic(info, state, (at, of) => {
-            topicTab.textContent = "Reading " + at + " of " + of + "…";
+            topicTab.textContent = t("Reading {a} of {b}…", { a: at, b: of });
         }).then((result) => {
             finish();
             state.topic = {
@@ -10004,7 +10232,7 @@ function initReleases() {
         }).catch((err) => {
             finish();
             console.warn("[RIN Reforged] topic index:", err);
-            toast("Could not read the whole topic");
+            toast(t("Could not read the whole topic"));
         });
     };
 
@@ -10027,7 +10255,7 @@ function initReleases() {
                they are nothing, and the line came out as
                "Latest posted: v1.10.05 pages read". */
             const said = [
-                latest ? "Latest posted: version " + latest : null,
+                latest ? t("Latest posted: version {v}", { v: latest }) : null,
                 state.topic.scanned + (state.topic.scanned === 1 ? " page" : " pages") + " read",
                 state.topic.done ? null : "stopped early",
                 state.topic.eased ? "the board was busy, so this was read slowly" : null,
@@ -10040,7 +10268,7 @@ function initReleases() {
                were at opposite ends of the card: the fact on the left,
                the button that changes it 900px away on the right. */
             body.append(el("div.rr-releases__note", { role: "status", "aria-label": said }, [
-                latest ? el("span.rr-releases__latest", { "aria-hidden": "true" }, ["Latest posted: v" + latest]) : null,
+                latest ? el("span.rr-releases__latest", { "aria-hidden": "true" }, [t("Latest posted: v{v}", { v: latest })]) : null,
                 el("span.rr-spacer"),
                 el("div.rr-releases__read", {}, [
                     el("span", { "aria-hidden": "true" }, [
@@ -10100,7 +10328,7 @@ function initReleases() {
     on(document, "keydown", (event) => {
         if (event.key === "Escape" && topicTab.disabled && topicTab.hasAttribute("aria-busy")) {
             state.cancelled = true;
-            toast("Stopped reading the topic");
+            toast(t("Stopped reading the topic"));
         }
     });
 
@@ -10937,7 +11165,7 @@ function slimReplyForm(form) {
 
     message.classList.add("rr-reply__text");
     message.setAttribute("rows", "6");
-    message.setAttribute("placeholder", "Write a reply");
+    message.setAttribute("placeholder", t("Write a reply"));
 
     // What was being written last time, if anything. The board's own
     // form arrives empty, so this can only ever add.
@@ -10954,12 +11182,12 @@ function slimReplyForm(form) {
 
     const submit = form.querySelector('input[name="post"]');
     const actions = el("div.rr-reply__actions", {}, [
-        el("button.rr-btn", { type: "submit", name: "post", value: submit ? submit.value : "Submit", "data-variant": "primary" }, ["Post reply"]),
+        el("button.rr-btn", { type: "submit", name: "post", value: submit ? submit.value : "Submit", "data-variant": "primary" }, [t("Post reply")]),
         el("a.rr-btn", {
             href: form.getAttribute("action"),
             "data-variant": "quiet",
-            title: "Preview, attachments and the full toolbar",
-        }, ["Open the full editor"]),
+            title: t("Preview, attachments and the full toolbar"),
+        }, [t("Open the full editor")]),
     ]);
     slim.append(actions);
     return { slim, message };
@@ -10969,7 +11197,7 @@ function buildQuickReply() {
     const holder = el("section.rr-reply", { "aria-label": "Quick reply" });
     const openButton = el("button.rr-btn", { type: "button", "data-variant": "primary" }, [
         icon("reply", 13),
-        "Write a reply",
+        t("Write a reply"),
     ]);
     holder.append(openButton);
 
@@ -10978,7 +11206,7 @@ function buildQuickReply() {
     // comes back to.
     const kept = settings.get("saveDraft") && PAGE.topicId ? draftFor(PAGE.topicId) : "";
     if (kept) {
-        openButton.lastChild.textContent = "Finish your reply";
+        openButton.lastChild.textContent = t("Finish your reply");
         openButton.setAttribute("title", kept.slice(0, 120));
         holder.setAttribute("data-rr-draft", "");
     }
@@ -10993,7 +11221,7 @@ function buildQuickReply() {
 
     openButton.addEventListener("click", async () => {
         openButton.disabled = true;
-        setLabel("Loading the reply form…");
+        setLabel(t("Loading the reply form…"));
         try {
             const form = await fetchReplyForm();
             const { slim, message } = slimReplyForm(form);
@@ -11007,8 +11235,8 @@ function buildQuickReply() {
         } catch (err) {
             console.warn("[RIN Reforged] quick reply:", err);
             openButton.disabled = false;
-            setLabel("Write a reply");
-            toast("Could not load the reply form. Opening the full editor instead.");
+            setLabel(t("Write a reply"));
+            toast(t("Could not load the reply form. Opening the full editor instead."));
             const link = document.querySelector('a[href*="mode=reply"]');
             if (link) location.href = link.getAttribute("href");
         }
@@ -11054,7 +11282,7 @@ function initSelectionQuote() {
                     quickReplyForm.value += (quickReplyForm.value ? "\n" : "") + quoted;
                     quickReplyForm.focus();
                     quickReplyForm.scrollIntoView({ behavior: scrollBehaviour(), block: "center" });
-                    toast("Added to your reply");
+                    toast(t("Added to your reply"));
                 } else if (settings.get("saveDraft") && settings.get("quickReply") && PAGE.topicId) {
                     // No box open: it goes into the draft for this
                     // topic, so opening the reply later finds it there.
@@ -11175,9 +11403,9 @@ function applyHidden(post, name) {
     const cell = post.body.closest("td");
     if (!cell) return;
 
-    const restore = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, ["Show"]);
+    const restore = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [t("Show")]);
     const note = el("div.rr-hidden-note", {}, [
-        el("span", {}, ["Post by " + name + " is hidden"]),
+        el("span", {}, [t("Post by {name} is hidden", { name })]),
         restore,
     ]);
 
@@ -11220,7 +11448,7 @@ function addHideControl(post) {
     const person = personOf(post);
     if (!person) return;
 
-    const label = (hidden) => (hidden ? "Show posts by " : "Hide posts by ") + person.name;
+    const label = (hidden) => t(hidden ? "Show posts by {name}" : "Hide posts by {name}", { name: person.name });
 
     const button = el("button.rr-icon-btn", {
         type: "button",
@@ -11265,7 +11493,7 @@ function addHideControl(post) {
         holder.append(tools);
     }
     tools.append(button);
-    labelled(button, button.getAttribute("title") || "Hide posts by this member");
+    labelled(button, button.getAttribute("title") || t("Hide posts by this member"));
     button.setAttribute("data-rr-tip-side", "above");
 }
 
@@ -11288,8 +11516,8 @@ function addUnreadJump(bar) {
     const link = el("a.rr-btn", {
         href: url.toString() + "#unread",
         "data-variant": "quiet",
-        title: "Jump to the first post you have not read",
-    }, [icon("arrowDown", 13), "First unread"]);
+        title: t("Jump to the first post you have not read"),
+    }, [icon("arrowDown", 13), t("First unread")]);
 
     // The first row is what you do to the topic in front of you, which
     // is what this is. Without the row it falls back to the bar.
@@ -11451,7 +11679,7 @@ function collectItems() {
         groups.push({
             title: "Bookmarks",
             items: bookmarks.map((item) => ({
-                label: item.title, icon: "star", hint: "topic", href: item.href,
+                label: item.title, icon: "star", hint: t("topic"), href: item.href,
             })),
         });
     }
@@ -11459,9 +11687,9 @@ function collectItems() {
     const forums = store.get("forums", []);
     if (forums.length) {
         groups.push({
-            title: "Boards",
+            title: t("Boards"),
             items: forums.map((item) => ({
-                label: item.title, icon: "layers", hint: "board", href: item.href,
+                label: item.title, icon: "layers", hint: t("board"), href: item.href,
             })),
         });
     }
@@ -11469,14 +11697,14 @@ function collectItems() {
     const history = store.get("history", []);
     if (history.length) {
         groups.push({
-            title: "Recent",
+            title: t("Recent"),
             items: history.slice(0, 12).map((item) => ({
-                label: item.title, icon: "clock", hint: "topic", href: item.href,
+                label: item.title, icon: "clock", hint: t("topic"), href: item.href,
             })),
         });
     }
 
-    groups.push({ title: "Actions", items: paletteActions() });
+    groups.push({ title: t("Actions"), items: paletteActions() });
     return groups;
 }
 
@@ -11490,7 +11718,7 @@ function openPalette() {
     const groups = collectItems();
     const input = el("input.rr-palette__input", {
         type: "text",
-        placeholder: "Search the forum, or jump to a board",
+        placeholder: t("Search the forum, or jump to a board"),
         "aria-label": "Search or jump to",
         autocomplete: "off",
         spellcheck: "false",
@@ -11527,7 +11755,7 @@ function openPalette() {
         for (const group of groups) {
             const matches = needle
                 ? group.items.filter((item) => item.label.toLowerCase().includes(needle)).slice(0, 8)
-                : group.items.slice(0, group.title === "Boards" ? 7 : 6);
+                : group.items.slice(0, group.title === t("Boards") ? 7 : 6);
             if (matches.length) list.append(renderGroup(group.title, matches, flat));
         }
 
@@ -11948,7 +12176,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.8.8";
+const RR_VERSION = "0.8.9";
 
 function injectStyles() {
     const host = document.head || document.documentElement;

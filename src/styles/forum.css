@@ -184,7 +184,7 @@ html[data-rr] td.cat a { color: var(--rr-text-strong); margin: 0; font-size: var
 /* A category row is one cell plus a few empty ones the table needs to
    keep its columns. Tinting the whole row stops it reading as a bar
    that runs out halfway across. */
-html[data-rr] tr:has(> td.cat) > td {
+html[data-rr] tr[data-rr-cat-row] > td {
     background: var(--rr-surface-2);
     border-bottom: 1px solid var(--rr-line);
 }
@@ -215,20 +215,17 @@ html[data-rr] input.ccclose[type="button"]:hover { background-color: var(--rr-su
    / Go" controls a listing ends with. Those get the surface without
    the accent — the tinted edge marks a block of content, and a row of
    form controls is not one. */
-html[data-rr] td.cat:has(> table),
-html[data-rr] td.cat:has(select),
-html[data-rr] td.cat:has(input[type="submit"]),
-/* "Mark forums read" alone at the right of an otherwise empty band:
-   the index wrote it straight into the cell and got the section-head
-   accent, the listing wrapped it in a table and did not. Neither is a
-   heading. */
-html[data-rr] td.cat[align="right"]:not(:has(h4)) {
+/* Named by lists.js (markShapes): "controls" for a cell holding a
+   table, a select or a submit; "plain" for "Mark forums read" alone at
+   the right of an otherwise empty band, which the index writes straight
+   into the cell and the listing wraps in a table. Neither is a heading. */
+html[data-rr] td.cat[data-rr-cat] {
     background: var(--rr-surface-2);
     box-shadow: none;
     font-weight: 400;
 }
-html[data-rr] td.cat:has(> table) a { color: var(--rr-muted); font-weight: 500; }
-html[data-rr] td.cat:has(> table) a:hover { color: var(--rr-text-strong); }
+html[data-rr] td.cat[data-rr-cat="controls"] a { color: var(--rr-muted); font-weight: 500; }
+html[data-rr] td.cat[data-rr-cat="controls"] a:hover { color: var(--rr-text-strong); }
 
 /* The template puts these classes on <tr> as well as <td>, and the
    original stylesheet colours both. A row left uncovered keeps its
@@ -441,41 +438,39 @@ html[data-rr] input.btnbbcode[type="button"] {
    a 7×6px link around a spacer gif — a click target smaller than a
    full stop. Twice the size on each side is four times the target,
    and the column it makes is still narrower than its label was. */
-html[data-rr] td[bgcolor] > a[onclick*="bbfontstyle"] {
+html[data-rr] td[data-rr-swatch] > a {
     display: block;
     width: 14px;
     height: 14px;
 }
-html[data-rr] td[bgcolor] > a[onclick*="bbfontstyle"] > img {
+html[data-rr] td[data-rr-swatch] > a > img {
     display: block;
     width: 100%;
     height: 100%;
 }
-html[data-rr] td[bgcolor]:has(> a[onclick*="bbfontstyle"]) {
+html[data-rr] td[data-rr-swatch] {
     width: 14px !important;
     height: 14px !important;
     padding: 0 !important;
     border-radius: 2px;
 }
-html[data-rr] td[bgcolor]:has(> a[onclick*="bbfontstyle"]):hover { outline: 2px solid var(--rr-text-strong); outline-offset: -1px; }
+html[data-rr] td[data-rr-swatch]:hover { outline: 2px solid var(--rr-text-strong); outline-offset: -1px; }
 /* The template lays the swatches out six to a row, 25 rows deep — at
    14px that is taller than the message box beside it. Flowed nine to
-   a row it is 16 rows and the same height as the box. `:not(:has(
-   table))` because :has() reaches down through every level: without
-   it the layout tables around the palette matched too, and the whole
-   form became a 150px flex column. `#wrapcentre` because the narrow
-   layout's table rules carry it, and an id outranks any number of
-   classes: without it the phone stacked the swatches again. */
-html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) {
-    display: flex;
+   a row it is 16 rows and the same height as the box. The table is
+   named by lists.js (markShapes); the !important on display is for the
+   narrow layout, whose table rules carry #wrapcentre and would
+   otherwise stack the swatches into a 1750px column again. */
+html[data-rr] table[data-rr-palette] {
+    display: flex !important;
     flex-wrap: wrap;
     gap: 3px;
     width: 150px;
     margin: 0 auto;
 }
-html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) tbody,
-html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) tr { display: contents; }
-html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) td { display: block; flex: 0 0 auto; }
+html[data-rr] table[data-rr-palette] tbody,
+html[data-rr] table[data-rr-palette] tr { display: contents !important; }
+html[data-rr] table[data-rr-palette] td { display: block !important; flex: 0 0 auto; }
 
 /* The board's radios and checkboxes are 13px and typed flush against
    their word — "Yes" with the button touching the Y on one row and a
@@ -879,7 +874,7 @@ html[data-rr][data-rr-nav="on"] #wrapcentre { padding-top: var(--rr-s4); }
 
 /* Category strips the template leaves empty. */
 html[data-rr] td.cat:empty,
-html[data-rr] tr:has(> td.cat:empty) { display: none; }
+html[data-rr] tr[data-rr-cat-row="empty"] { display: none; }
 
 /* ---- Donation overlay ------------------------------------------- */
 
@@ -930,4 +925,21 @@ html[data-rr] .posthilit {
     color: var(--rr-text-strong);
     border-radius: 3px;
     padding: 0 2px;
+}
+
+/* A YouTube embed is written as <iframe width="560" height="315">. On a
+   phone the post is 340px wide; the frame was not. The box follows the
+   width it has and keeps the picture's shape. */
+html[data-rr] .postbody iframe,
+html[data-rr] .postbody embed,
+html[data-rr] .postbody object,
+html[data-rr] .postbody video {
+    max-width: 100%;
+}
+html[data-rr] .postbody iframe[src*="youtube"],
+html[data-rr] .postbody iframe[src*="youtu.be"],
+html[data-rr] .postbody iframe[src*="vimeo"] {
+    aspect-ratio: 16 / 9;
+    height: auto;
+    border-radius: var(--rr-radius);
 }

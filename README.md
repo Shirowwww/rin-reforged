@@ -61,7 +61,9 @@ checks this repository and offers new versions on its own.
 - **Works on the Russian interface too.** Half the board reads it. Column
   names, page counters, weekdays, "Joined / Posts" and "Posted" are read in
   both languages, so a Russian page gets the same grouped numbers, one-line
-  dates, pager and post headers as an English one.
+  dates, pager and post headers as an English one — and the script's own
+  controls speak Russian there: Ответить, Первое непрочитанное, Релизы,
+  Показать все 300 имён. Only the settings panel stays in English.
 - **Readable, and measured.** Every colour this script paints meets WCAG AA on
   all four themes — 8 748 pieces of text checked across five pages, and the
   check fails the build if one slips. The board's own group-coloured usernames

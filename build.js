@@ -46,6 +46,7 @@ const JS_FILES = [
     "src/core/dom.js",
     "src/core/page.js",
     "src/core/pagination.js",
+    "src/core/i18n.js",
     "src/modules/theme.js",
     "src/modules/icons.js",
     "src/modules/settingsui.js",

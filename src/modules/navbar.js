@@ -452,10 +452,10 @@ function buildBoardBar() {
     const more = el("button.rr-boardbar__more", {
         type: "button",
         "aria-expanded": "false",
-        "aria-label": "More board links",
-    }, ["More", icon("chevronD", 12)]);
+        "aria-label": t("More board links"),
+    }, [t("More"), icon("chevronD", 12)]);
 
-    const bar = el("nav.rr-boardbar", { "aria-label": "Board links" }, [main, end, more]);
+    const bar = el("nav.rr-boardbar", { "aria-label": t("Board links") }, [main, end, more]);
 
     more.addEventListener("click", () => {
         const open = bar.toggleAttribute("data-rr-open");
@@ -491,9 +491,9 @@ function buildNavbar() {
     const actions = el("div.rr-nav__actions");
 
     if (settings.get("palette")) {
-        const search = el("button.rr-nav__search", { type: "button", "aria-label": "Search and jump (Ctrl+K)" }, [
+        const search = el("button.rr-nav__search", { type: "button", "aria-label": t("Search and jump (Ctrl+K)") }, [
             icon("search"),
-            el("span", {}, ["Search or jump to"]),
+            el("span", {}, [t("Search or jump to")]),
             el("span.rr-kbd.rr-nav__kbd", {}, [navigator.platform.startsWith("Mac") ? "⌘K" : "Ctrl K"]),
         ]);
         search.addEventListener("click", () => openPalette());
@@ -509,8 +509,8 @@ function buildNavbar() {
     if (pmHref) {
         const unread = unreadMessages();
         const label = unread > 0
-            ? "Private messages — " + unread + " unread"
-            : "Private messages";
+            ? t("Private messages — {n} unread", { n: unread })
+            : t("Private messages");
         const button = labelled(el("a.rr-icon-btn", { href: pmHref }, [icon("mail")]), label);
         if (unread > 0) button.append(el("span.rr-badge", {}, [String(unread)]));
         actions.append(button);
@@ -518,7 +518,7 @@ function buildNavbar() {
 
     const ucpHref = findHeaderLink("mode=login", "ucp.php");
     if (ucpHref) {
-        const label = isLoggedIn() ? "Your account" : "Log in";
+        const label = t(isLoggedIn() ? "Your account" : "Log in");
         actions.append(labelled(el("a.rr-icon-btn", { href: ucpHref }, [icon("user")]), label));
     }
 
@@ -534,7 +534,7 @@ function buildNavbar() {
 
     const settingsButton = labelled(
         el("button.rr-icon-btn", { type: "button" }, [icon("settings")]),
-        "RIN Reforged settings");
+        t("RIN Reforged settings"));
     settingsButton.addEventListener("click", () => openSettings());
     actions.append(settingsButton);
 
@@ -607,7 +607,7 @@ function addSkipLink() {
     if (!main.id) main.id = "rr-main";
     main.setAttribute("tabindex", "-1");
 
-    const skip = el("a.rr-skip", { href: "#" + main.id }, ["Skip to content"]);
+    const skip = el("a.rr-skip", { href: "#" + main.id }, [t("Skip to content")]);
     skip.addEventListener("click", (event) => {
         event.preventDefault();
         main.focus();

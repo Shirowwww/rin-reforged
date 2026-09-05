@@ -95,7 +95,7 @@ function slimReplyForm(form) {
 
     message.classList.add("rr-reply__text");
     message.setAttribute("rows", "6");
-    message.setAttribute("placeholder", "Write a reply");
+    message.setAttribute("placeholder", t("Write a reply"));
 
     // What was being written last time, if anything. The board's own
     // form arrives empty, so this can only ever add.
@@ -112,12 +112,12 @@ function slimReplyForm(form) {
 
     const submit = form.querySelector('input[name="post"]');
     const actions = el("div.rr-reply__actions", {}, [
-        el("button.rr-btn", { type: "submit", name: "post", value: submit ? submit.value : "Submit", "data-variant": "primary" }, ["Post reply"]),
+        el("button.rr-btn", { type: "submit", name: "post", value: submit ? submit.value : "Submit", "data-variant": "primary" }, [t("Post reply")]),
         el("a.rr-btn", {
             href: form.getAttribute("action"),
             "data-variant": "quiet",
-            title: "Preview, attachments and the full toolbar",
-        }, ["Open the full editor"]),
+            title: t("Preview, attachments and the full toolbar"),
+        }, [t("Open the full editor")]),
     ]);
     slim.append(actions);
     return { slim, message };
@@ -127,7 +127,7 @@ function buildQuickReply() {
     const holder = el("section.rr-reply", { "aria-label": "Quick reply" });
     const openButton = el("button.rr-btn", { type: "button", "data-variant": "primary" }, [
         icon("reply", 13),
-        "Write a reply",
+        t("Write a reply"),
     ]);
     holder.append(openButton);
 
@@ -136,7 +136,7 @@ function buildQuickReply() {
     // comes back to.
     const kept = settings.get("saveDraft") && PAGE.topicId ? draftFor(PAGE.topicId) : "";
     if (kept) {
-        openButton.lastChild.textContent = "Finish your reply";
+        openButton.lastChild.textContent = t("Finish your reply");
         openButton.setAttribute("title", kept.slice(0, 120));
         holder.setAttribute("data-rr-draft", "");
     }
@@ -151,7 +151,7 @@ function buildQuickReply() {
 
     openButton.addEventListener("click", async () => {
         openButton.disabled = true;
-        setLabel("Loading the reply form…");
+        setLabel(t("Loading the reply form…"));
         try {
             const form = await fetchReplyForm();
             const { slim, message } = slimReplyForm(form);
@@ -165,8 +165,8 @@ function buildQuickReply() {
         } catch (err) {
             console.warn("[RIN Reforged] quick reply:", err);
             openButton.disabled = false;
-            setLabel("Write a reply");
-            toast("Could not load the reply form. Opening the full editor instead.");
+            setLabel(t("Write a reply"));
+            toast(t("Could not load the reply form. Opening the full editor instead."));
             const link = document.querySelector('a[href*="mode=reply"]');
             if (link) location.href = link.getAttribute("href");
         }
@@ -212,7 +212,7 @@ function initSelectionQuote() {
                     quickReplyForm.value += (quickReplyForm.value ? "\n" : "") + quoted;
                     quickReplyForm.focus();
                     quickReplyForm.scrollIntoView({ behavior: scrollBehaviour(), block: "center" });
-                    toast("Added to your reply");
+                    toast(t("Added to your reply"));
                 } else if (settings.get("saveDraft") && settings.get("quickReply") && PAGE.topicId) {
                     // No box open: it goes into the draft for this
                     // topic, so opening the reply later finds it there.

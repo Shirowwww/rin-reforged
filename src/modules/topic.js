@@ -181,7 +181,7 @@ function buildTopicBar() {
     if (reply) {
         const button = el("a.rr-btn", { href: reply.getAttribute("href"), "data-variant": "primary" }, [
             icon("reply", 13),
-            /mode=post/.test(reply.getAttribute("href")) ? "New topic" : "Reply",
+            t(/mode=post/.test(reply.getAttribute("href")) ? "New topic" : "Reply"),
         ]);
         here.append(button);
         /* The *cell* the reply button is in, not the table it is in.
@@ -208,7 +208,7 @@ function buildTopicBar() {
         if (buttons.length >= 2) {
             const control = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
                 icon("chevronD", 13),
-                "Open all " + buttons.length + " spoilers",
+                t("Open all {n} spoilers", { n: buttons.length }),
             ]);
             control.addEventListener("click", () => {
                 for (const button of spoilerButtons()) button.click();
@@ -245,7 +245,7 @@ function buildTopicBar() {
     if (info.total && info.total > 1) {
         here.append(settings.get("quickPager")
             ? buildPagerGroup(info)
-            : el("span.rr-topicbar__count", {}, ["Page " + info.current + " of " + info.total]));
+            : el("span.rr-topicbar__count", {}, [t("Page {a} of {b}", { a: info.current, b: info.total })]));
     }
 
     adoptTopicNav(away);
@@ -365,7 +365,7 @@ function hideEmptyBoardStrips(bar) {
    on every one and the row says it already, so it is marked optional
    and the narrow layout drops it — "Previous · Next · Subscribe". */
 function labelWithOptionalTail(link, label) {
-    const m = label.match(/^(.*\S)(\s+(?:topic|friend))$/i);
+    const m = label.match(/^(.*\S)(\s+(?:topic|friend|тема|другу))$/i);
     link.textContent = "";
     // The noun keeps its own space and the stylesheet takes the flex
     // gap off it: a word space, not a 6px slot.
@@ -412,8 +412,9 @@ function adoptTopicNav(bar) {
         if (!link) continue;
         link.classList.add("rr-btn", "rr-topicnav");
         link.setAttribute("data-variant", "quiet");
-        link.setAttribute("title", label);
-        labelWithOptionalTail(link, label);
+        const shown = t(label);
+        link.setAttribute("title", shown);
+        labelWithOptionalTail(link, shown);
         if (glyph) link.append(icon(glyph, 12));
         bar.append(link);
     }
@@ -459,13 +460,13 @@ function buildPagerGroup(info) {
         min: "1",
         max: String(info.total),
         value: String(info.current),
-        "aria-label": "Go to page",
+        "aria-label": t("Go to page"),
     });
     const go = () => {
         const target = clamp(parseInt(jump.value, 10) || 1, 1, info.total);
         const href = pageHref(target);
         if (href) location.href = href;
-        else toast("Could not work out that page");
+        else toast(t("Could not work out that page"));
     };
     jump.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); go(); } });
     jump.addEventListener("change", go);
@@ -488,14 +489,14 @@ function buildPagerGroup(info) {
         ? [icon(glyph, 13), words ? label : null]
         : [words ? label : null, icon(glyph, 13)]);
 
-    return el("div.rr-pager", { role: "group", "aria-label": "Pages of this topic" }, [
-        info.hasPrevious ? step(info.first, "First page", "pageFirst", false) : null,
-        info.hasPrevious ? step(info.previous, "Previous page", "chevronL", true) : null,
-        el("span.rr-pager__label", {}, ["Page"]),
+    return el("div.rr-pager", { role: "group", "aria-label": t("Pages of this topic") }, [
+        info.hasPrevious ? step(info.first, t("First page"), "pageFirst", false) : null,
+        info.hasPrevious ? step(info.previous, t("Previous page"), "chevronL", true) : null,
+        el("span.rr-pager__label", {}, [t("Page")]),
         jump,
-        el("span.rr-pager__label", {}, ["of " + info.total]),
-        info.hasNext ? step(info.next, "Next page", "chevron", true) : null,
-        info.hasNext ? step(info.last, "Last page", "pageLast", false) : null,
+        el("span.rr-pager__label", {}, [t("of {n}", { n: info.total })]),
+        info.hasNext ? step(info.next, t("Next page"), "chevron", true) : null,
+        info.hasNext ? step(info.last, t("Last page"), "pageLast", false) : null,
     ]);
 }
 
@@ -700,16 +701,16 @@ function foldSteamBlurb(body, fromTitle) {
     const holder = el("div", { hidden: true });
     for (const node of folded) holder.append(node);
 
-    const label = fromTitle ? "the original post" : "the full Steam description";
+    const label = t(fromTitle ? "the original post" : "the full Steam description");
     let open = false;
     const toggle = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
         icon("chevronD"),
-        "Show " + label,
+        t("Show ") + label,
     ]);
     toggle.addEventListener("click", () => {
         open = !open;
         holder.hidden = !open;
-        toggle.lastChild.textContent = (open ? "Hide " : "Show ") + label;
+        toggle.lastChild.textContent = t(open ? "Hide " : "Show ") + label;
         toggle.firstChild.style.transform = open ? "rotate(180deg)" : "";
     });
 
@@ -828,12 +829,12 @@ function addPostTools(post, index) {
         : el("span.rr-postnum", { title: numberTitle }, [numberLabel]));
 
     const linkButton = labelled(
-        el("button.rr-icon-btn", { type: "button" }, [icon("link")]), "Copy link to this post");
+        el("button.rr-icon-btn", { type: "button" }, [icon("link")]), t("Copy link to this post"));
     linkButton.addEventListener("click", () => copyText(postUrl(post.id), "Post link copied"));
     tools.append(linkButton);
 
     const quoteButton = labelled(
-        el("button.rr-icon-btn", { type: "button" }, [icon("quote")]), "Copy as a quote");
+        el("button.rr-icon-btn", { type: "button" }, [icon("quote")]), t("Copy as a quote"));
     quoteButton.addEventListener("click", () => {
         const author = post.author ? post.author.textContent.trim() : "";
         const text = post.body.textContent.trim().replace(/\n{3,}/g, "\n\n");
@@ -907,12 +908,12 @@ function collapseSignature(post) {
         if (node.nodeType === 3 && /^\s*_{5,}\s*$/.test(node.textContent)) node.remove();
         else if (node.nodeType === 1 && node.tagName === "BR" && !post.signature.textContent.trim()) node.remove();
     }
-    const toggle = el("button.rr-sig-toggle", { type: "button" }, ["Show signature"]);
+    const toggle = el("button.rr-sig-toggle", { type: "button" }, [t("Show signature")]);
     toggle.addEventListener("click", () => {
         const collapsed = post.signature.getAttribute("data-rr-sig") === "collapsed";
         if (collapsed) post.signature.removeAttribute("data-rr-sig");
         else post.signature.setAttribute("data-rr-sig", "collapsed");
-        toggle.textContent = collapsed ? "Hide signature" : "Show signature";
+        toggle.textContent = t(collapsed ? "Hide signature" : "Show signature");
     });
     post.signature.before(toggle);
 }

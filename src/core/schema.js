@@ -183,7 +183,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "foldWhoIsOnline", label: "Fold Who is online", type: "toggle", default: true,
-                desc: "The index lists all 500-odd names in full, which is most of the page. This keeps the counts and hides the list.",
+                desc: "The index lists all 500-odd names in full, which is most of the page, and every forum and topic ends with the list of who is browsing it. This keeps the counts and hides the names behind a control.",
             },
             {
                 id: "hideAnnouncements", label: "Collapse global announcements", type: "toggle", default: false,

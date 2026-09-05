@@ -770,16 +770,16 @@ function releaseVersion(row, latest) {
     if (row.build) {
         return el("span.rr-releases__version", {
             "data-rr-kind": "build",
-            title: "Steam build " + row.build + ", which is not a version number",
+            title: t("Steam build {n}, which is not a version number", { n: row.build }),
         }, [
-            el("span.rr-releases__vkind", {}, ["build"]),
+            el("span.rr-releases__vkind", {}, [t("build")]),
             row.build,
         ]);
     }
     return el("span.rr-releases__version", {
         "data-rr-kind": "none",
-        title: "No version given in this post",
-        "aria-label": "No version given",
+        title: t("No version given in this post"),
+        "aria-label": t("No version given"),
     }, [el("span.rr-releases__vnone", { "aria-hidden": "true" }, ["\u2014"])]);
 }
 
@@ -792,11 +792,11 @@ function releaseRow(row, latest) {
         tags.append(el("span.rr-releases__tag", {
             "data-kind": row.kinds[i],
             "data-family": releaseFamily(row.kinds[i]),
-        }, [text]));
+        }, [t(text)]));
     }
     if (!row.labels.length && row.links) {
         tags.append(el("span.rr-releases__tag", { "data-kind": "link", "data-family": "other" }, [
-            row.links + (row.links === 1 ? " link" : " links"),
+            t(row.links === 1 ? "{n} link" : "{n} links", { n: row.links }),
         ]));
     }
 
@@ -811,7 +811,7 @@ function releaseRow(row, latest) {
         tags,
         el("span.rr-releases__who", {}, [row.author]),
         el("span.rr-releases__when", { title: when }, [shortenPostMeta(when)]),
-        el("span.rr-releases__page", {}, ["p." + row.page]),
+        el("span.rr-releases__page", {}, [t("p.") + row.page]),
     ]);
 
     // A row for a post on the page you are already on scrolls to it and
@@ -838,11 +838,11 @@ function releaseRow(row, latest) {
 function releaseFilters(rows, list, onCount) {
     const present = new Map();
     for (const row of rows) {
-        for (const [i, id] of row.kinds.entries()) present.set(id, row.labels[i]);
+        for (const [i, id] of row.kinds.entries()) present.set(id, t(row.labels[i]));
     }
     if (present.size < 2) return null;
 
-    const bar = el("div.rr-releases__filters", { role: "group", "aria-label": "Filter by kind" });
+    const bar = el("div.rr-releases__filters", { role: "group", "aria-label": t("Filter by kind") });
     let active = null;
 
     const apply = () => {
@@ -944,15 +944,15 @@ function initReleases() {
      *
      * So the second option is always drawn, and on a one page topic it
      * is disabled and says why. */
-    const pageTab = el("button.rr-releases__tab", { type: "button", role: "tab" }, ["This page"]);
-    const topicLabel = "All " + total + (total === 1 ? " page" : " pages");
+    const pageTab = el("button.rr-releases__tab", { type: "button", role: "tab" }, [t("This page")]);
+    const topicLabel = t(total === 1 ? "All {n} page" : "All {n} pages", { n: total });
     const topicTab = el("button.rr-releases__tab", { type: "button", role: "tab" }, [topicLabel]);
     if (!canWalk || !multi) {
         topicTab.disabled = true;
         topicTab.setAttribute("data-rr-why", "");
         topicTab.setAttribute("title", !canWalk
-            ? "Reading a whole topic is switched off in the settings"
-            : "This topic is one page — you are looking at all of it");
+            ? t("Reading a whole topic is switched off in the settings")
+            : t("This topic is one page — you are looking at all of it"));
     }
     scope.append(pageTab, topicTab);
 
@@ -967,7 +967,7 @@ function initReleases() {
     panel.append(
         el("div.rr-releases__head", {}, [
             icon("layers", 14),
-            el("h3", {}, ["Releases"]),
+            el("h3", {}, [t("Releases")]),
             count,
             el("div.rr-releases__controls", {}, [scope, linkFilter]),
         ]),
@@ -977,7 +977,7 @@ function initReleases() {
     const setCount = (shown, filtered, rows, scoped) => {
         count.textContent = filtered
             ? shown + " of " + rows.length
-            : rows.length + (rows.length === 1 ? " release" : " releases") + (scoped ? "" : " on this page");
+            : t(rows.length === 1 ? "{n} release" : "{n} releases", { n: rows.length }) + (scoped ? "" : t(" on this page"));
     };
 
     const walk = () => {
@@ -993,7 +993,7 @@ function initReleases() {
         };
 
         walkTopic(info, state, (at, of) => {
-            topicTab.textContent = "Reading " + at + " of " + of + "…";
+            topicTab.textContent = t("Reading {a} of {b}…", { a: at, b: of });
         }).then((result) => {
             finish();
             state.topic = {
@@ -1010,7 +1010,7 @@ function initReleases() {
         }).catch((err) => {
             finish();
             console.warn("[RIN Reforged] topic index:", err);
-            toast("Could not read the whole topic");
+            toast(t("Could not read the whole topic"));
         });
     };
 
@@ -1033,7 +1033,7 @@ function initReleases() {
                they are nothing, and the line came out as
                "Latest posted: v1.10.05 pages read". */
             const said = [
-                latest ? "Latest posted: version " + latest : null,
+                latest ? t("Latest posted: version {v}", { v: latest }) : null,
                 state.topic.scanned + (state.topic.scanned === 1 ? " page" : " pages") + " read",
                 state.topic.done ? null : "stopped early",
                 state.topic.eased ? "the board was busy, so this was read slowly" : null,
@@ -1046,7 +1046,7 @@ function initReleases() {
                were at opposite ends of the card: the fact on the left,
                the button that changes it 900px away on the right. */
             body.append(el("div.rr-releases__note", { role: "status", "aria-label": said }, [
-                latest ? el("span.rr-releases__latest", { "aria-hidden": "true" }, ["Latest posted: v" + latest]) : null,
+                latest ? el("span.rr-releases__latest", { "aria-hidden": "true" }, [t("Latest posted: v{v}", { v: latest })]) : null,
                 el("span.rr-spacer"),
                 el("div.rr-releases__read", {}, [
                     el("span", { "aria-hidden": "true" }, [
@@ -1106,7 +1106,7 @@ function initReleases() {
     on(document, "keydown", (event) => {
         if (event.key === "Escape" && topicTab.disabled && topicTab.hasAttribute("aria-busy")) {
             state.cancelled = true;
-            toast("Stopped reading the topic");
+            toast(t("Stopped reading the topic"));
         }
     });
 

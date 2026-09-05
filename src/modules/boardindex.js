@@ -8,17 +8,18 @@
    ------------------------------------------------------------------ */
 
 /** "In total there are 513 users online :: 326 registered, ..." */
-function onlineSummary(text) {
-    const total = text.match(/there are\s+(\d+)\s+users? online/i);
-    const registered = text.match(/(\d+)\s+registered/i);
-    const guests = text.match(/(\d+)\s+guests?/i);
-    const hidden = text.match(/(\d+)\s+hidden/i);
+function onlineSummary(text, names) {
+    const total = text.match(/there are\s+(\d+)\s+users? online|всего\s+(\d+)\s+пользовател/i);
+    const registered = text.match(/(\d+)\s+(?:registered|зарегистрированн)/i);
+    const guests = text.match(/(\d+)\s+(?:guests?|гост)/i);
+    const hidden = text.match(/(\d+)\s+(?:hidden|скрыт)/i);
 
     const parts = [];
-    if (total) parts.push(total[1] + " online");
-    if (registered) parts.push(registered[1] + " registered");
-    if (hidden) parts.push(hidden[1] + " hidden");
-    if (guests) parts.push(guests[1] + " guests");
+    if (total) parts.push(t("{n} online", { n: total[1] || total[2] }));
+    else if (names) parts.push(t("{n} browsing", { n: names }));   // a forum or topic foot: "Users browsing this forum: …"
+    if (registered) parts.push(t("{n} registered", { n: registered[1] }));
+    if (hidden) parts.push(t("{n} hidden", { n: hidden[1] }));
+    if (guests) parts.push(t("{n} guests", { n: guests[1] }));
     return parts.join(" · ");
 }
 
@@ -50,7 +51,7 @@ function collapseWhoIsOnline() {
     if (!body) return;
 
     const names = body.querySelectorAll("a[href*='viewprofile']");
-    const summary = onlineSummary(body.textContent);
+    const summary = onlineSummary(body.textContent, names.length);
 
     // Moved, not rebuilt: every name keeps its link, its role colour
     // and anything another script attached to it.
@@ -60,7 +61,7 @@ function collapseWhoIsOnline() {
     let open = store.get("whoIsOnlineOpen", false);
     holder.hidden = !open;
 
-    const label = () => (open ? "Hide the list" : "Show all " + names.length + " names");
+    const label = () => (open ? t("Hide the list") : t("Show all {n} names", { n: names.length }));
     const toggle = el("button.rr-btn", {
         type: "button",
         "data-variant": "quiet",
@@ -139,7 +140,7 @@ function tidyCategoryToggles() {
 
         const sync = () => {
             const collapsed = toggle.classList.contains("ccopen");
-            const name = (collapsed ? "Show " : "Hide ") + (heading || "this category");
+            const name = t(collapsed ? "Show " : "Hide ") + (heading || t("this category"));
             toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
             toggle.setAttribute("title", name);
             toggle.setAttribute("aria-label", name);
@@ -195,8 +196,11 @@ function tidyCategoryToggles() {
 }
 
 function initBoardIndex() {
-    if (!PAGE.isIndex) return;
+    // The list of who is online ends every forum and every topic too —
+    // 272 names and 360px under the last post — and the fold is the
+    // same fold: it finds the cell by what is in it, not by page.
     if (settings.get("foldWhoIsOnline")) collapseWhoIsOnline();
+    if (!PAGE.isIndex) return;
     dropDuplicateSearch();
     tidyCategoryToggles();
 }

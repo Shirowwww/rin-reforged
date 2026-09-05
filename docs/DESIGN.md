@@ -333,6 +333,15 @@ work had never looked.
   "Posted: Friday, …" loses its weekday like every other date, and the
   search term is marked with a wash of the warning colour rather than
   the board's pure yellow.
+- **0.8.9** put the script's own words into Russian (see *It reads
+  Russian*), folded the who-is-online list at the foot of every forum
+  and topic the way the index already did (272 names, 360px, behind
+  "Show all 272 names"), let embedded players follow the width of the
+  post on a phone, and took back a performance regression: the listing's
+  style recalculation had gone from 45ms to 283ms on `:has()` selectors
+  that a table full of attribute changes kept re-evaluating. The shapes
+  those selectors found are now named once by the script, and the
+  listing is back at 42ms.
 
 ### It reads Russian
 
@@ -360,8 +369,14 @@ two-language rank is localised in *either* direction — "I live here Три
 раза сломал клаву" reads "I live here" on the English interface and
 "Три раза сломал клаву" on the Russian one.
 
-The script's own words — Reply, First unread, the settings — stay in
-English. That is a choice for now, not a limit.
+The script's own words followed in 0.8.9: Reply, First unread, Open all
+18 spoilers, the pager, the Releases panel and its kinds, the who-is-
+online fold, the quick reply, the top bar and the command palette all
+read in Russian on a Russian page (`src/core/i18n.js`, one table, each
+English string beside its Russian; counts take the three Russian
+plural forms — 1 спойлер, 3 спойлера, 5 спойлеров). The settings panel
+stays in English: it is long, it is read once, and a half-translated
+panel would be worse than an English one.
 
 ### It is readable, and that is a measurement rather than an opinion
 

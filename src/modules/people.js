@@ -63,9 +63,9 @@ function applyHidden(post, name) {
     const cell = post.body.closest("td");
     if (!cell) return;
 
-    const restore = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, ["Show"]);
+    const restore = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [t("Show")]);
     const note = el("div.rr-hidden-note", {}, [
-        el("span", {}, ["Post by " + name + " is hidden"]),
+        el("span", {}, [t("Post by {name} is hidden", { name })]),
         restore,
     ]);
 
@@ -108,7 +108,7 @@ function addHideControl(post) {
     const person = personOf(post);
     if (!person) return;
 
-    const label = (hidden) => (hidden ? "Show posts by " : "Hide posts by ") + person.name;
+    const label = (hidden) => t(hidden ? "Show posts by {name}" : "Hide posts by {name}", { name: person.name });
 
     const button = el("button.rr-icon-btn", {
         type: "button",
@@ -153,7 +153,7 @@ function addHideControl(post) {
         holder.append(tools);
     }
     tools.append(button);
-    labelled(button, button.getAttribute("title") || "Hide posts by this member");
+    labelled(button, button.getAttribute("title") || t("Hide posts by this member"));
     button.setAttribute("data-rr-tip-side", "above");
 }
 
@@ -176,8 +176,8 @@ function addUnreadJump(bar) {
     const link = el("a.rr-btn", {
         href: url.toString() + "#unread",
         "data-variant": "quiet",
-        title: "Jump to the first post you have not read",
-    }, [icon("arrowDown", 13), "First unread"]);
+        title: t("Jump to the first post you have not read"),
+    }, [icon("arrowDown", 13), t("First unread")]);
 
     // The first row is what you do to the topic in front of you, which
     // is what this is. Without the row it falls back to the bar.

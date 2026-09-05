@@ -22,22 +22,22 @@
     /* A form row that is a checkbox in one cell and its words in the
        next: stacked, the box sat on a line of its own above "Disable
        BBCode". The row stays a row. */
-    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="checkbox"]:only-child),
-    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="radio"]:only-child) {
-        display: flex;
+    /* !important: the generic table rules above carry a class more
+       than this attribute does, and would stack the row again. */
+    html[data-rr] #wrapcentre tr[data-rr-check-row] {
+        display: flex !important;
         align-items: center;
         gap: 6px;
     }
-    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="checkbox"]:only-child) > td,
-    html[data-rr] #wrapcentre tr:has(> td:first-child > input[type="radio"]:only-child) > td {
-        display: block;
-        width: auto;
-        padding: 4px 0;
+    html[data-rr] #wrapcentre tr[data-rr-check-row] > td {
+        display: block !important;
+        width: auto !important;
+        padding: 4px 0 !important;
     }
 
     /* The colour palette flows to the width it has (forum.css lays it
        out as a wrapped row of squares). */
-    html[data-rr] #wrapcentre table:not(:has(table)):has(td[bgcolor] > a[onclick*="bbfontstyle"]) { width: auto; max-width: 100%; }
+    html[data-rr] table[data-rr-palette] { width: auto; max-width: 100%; }
 
     /* Content width is a desktop setting; on a phone the window is the
        constraint whatever it says. */
@@ -121,7 +121,7 @@
     html[data-rr] td[data-rr-col] p { display: inline; margin: 0; }
     /* A message folder: the date and the checkbox had no order and led
        the card, before the subject. */
-    html[data-rr] tr:has(> td[data-rr-col="mark"]) > td[data-rr-col="date"] { order: 3; font-size: var(--rr-fs-xs); color: var(--rr-muted); }
+    html[data-rr] tr[data-rr-pm-row] > td[data-rr-col="date"] { order: 3; font-size: var(--rr-fs-xs); color: var(--rr-muted); }
     html[data-rr] td[data-rr-col="mark"] { order: 4; }
 
     /* The template pins several cells with nowrap="nowrap" and the
