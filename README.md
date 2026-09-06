@@ -72,6 +72,13 @@ checks this repository and offers new versions on its own.
   BBCode toolbar, quote what you select, an unsent reply kept in your
   browser, long quotes and low-value replies folded (never removed), images
   in a lightbox you can close and leave by keyboard.
+- **A writing toolbar you can read.** On the reply form the board's sixteen
+  grey rectangles — `s`, `[*]`, `List=`, `spoiler=`, `Generate SteamInfo
+  BBCode` — say what they make, with an icon each and the bar cut into
+  groups. What a button does is a small label above it on hover and on
+  keyboard focus, instead of the read-only field under the bar that looked
+  like a second Subject box. Under the form, the last posts of the thread
+  are cards with air between them rather than one continuous slab.
 - **Signed in, too.** The member list, the message folders, Who is online,
   the control panel, the posting form and profiles get the same treatment:
   they are listings, with labelled and aligned columns, striped rows,
@@ -90,7 +97,7 @@ checks this repository and offers new versions on its own.
   controls speak Russian there: Ответить, Первое непрочитанное, Релизы,
   Показать все 300 имён. Only the settings panel stays in English.
 - **Readable, and measured.** Every colour this script paints meets WCAG AA on
-  all four themes — 8 748 pieces of text checked across five pages, and the
+  all four themes — 7 688 pieces of text checked across six pages, and the
   check fails the build if one slips. The board's own group-coloured usernames
   are kept and lifted too: same hue, the least change in brightness that makes
   them readable, and a switch to leave them exactly as the board wrote them.
@@ -135,6 +142,7 @@ attached, so changes are checked against the actual markup.
 npm i -D playwright-core
 node test/make-quotes-fixture.js   # regenerate the synthesised fixtures
 node test/make-member-fixtures.js  # the pages only a member sees, made up
+node test/make-posting-fixture.js  # the reply form, toolbar and topic review
 node test/prepare.js               # build test/pages from test/fixtures
 python test/serve.py &             # http://localhost:8731
 export RR_CHROME=/path/to/chrome

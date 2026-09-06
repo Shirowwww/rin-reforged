@@ -1043,3 +1043,54 @@
     }
     html[data-rr] #wrapcentre form[name="sortmsg"] select { flex: none; }
 }
+
+/* ---- The topic review, on a phone -------------------------------- */
+
+@media (max-width: 860px) {
+    /* The block above turns every row of it into a flex row, which put
+       the author's name in a 46px column beside the subject with the
+       card's left edge drawn round it. The card belongs to the row
+       here, not to the cells: the two rows of a post are the top and
+       the bottom of one box, and everything inside them is a line of
+       its own. */
+    html[data-rr] #wrapcentre tr[data-rr-review-row="head"],
+    html[data-rr] #wrapcentre tr[data-rr-review-row="body"] {
+        display: block !important;
+        background: var(--rr-surface-2);
+        border: 1px solid var(--rr-line);
+        padding: 0 var(--rr-s3);
+    }
+    html[data-rr] #wrapcentre tr[data-rr-review-row="head"] {
+        border-bottom: 0;
+        border-radius: var(--rr-radius) var(--rr-radius) 0 0;
+        padding-top: var(--rr-s2);
+    }
+    html[data-rr] #wrapcentre tr[data-rr-review-row="body"] {
+        border-top: 0;
+        border-radius: 0 0 var(--rr-radius) var(--rr-radius);
+        padding-bottom: var(--rr-s2);
+    }
+    html[data-rr] #wrapcentre tr[data-rr-review-row] > td {
+        display: block !important;
+        width: auto !important;
+        background: none;
+        border: 0;
+        border-radius: 0;
+        padding: 0 !important;
+    }
+    html[data-rr] #wrapcentre td[data-rr-review-cell="author"] { padding-bottom: 2px !important; }
+    /* "Post subject: Re: <the topic> [Reply with quote]" is four cells
+       of a nested table, and stacked that is four lines of a card
+       whose message is three. One wrapped line, with the button
+       pushed to the end of it. */
+    html[data-rr] #wrapcentre tr[data-rr-review-row="head"] > td:not([data-rr-review-cell]) > table > tbody > tr {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 2px var(--rr-s2);
+    }
+    html[data-rr] #wrapcentre tr[data-rr-review-row="head"] > td:not([data-rr-review-cell]) > table td:last-child { margin-left: auto; }
+    /* The scroller keeps its own edge, so the cards inside it need no
+       second one against the window. */
+    html[data-rr] [data-rr-review] { padding: var(--rr-s2); }
+}

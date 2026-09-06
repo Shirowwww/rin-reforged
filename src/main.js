@@ -76,6 +76,8 @@ function bootLate() {
     guard("steam", initSteamPreview);
     guard("compose", initCompose);
     guard("posting", initPostingMemory);
+    guard("toolbar", initPostingToolbar);
+    guard("review", initTopicReview);
     guard("people", initPeople);
     guard("palette", initPalette);
     guard("shortcuts", initShortcuts);

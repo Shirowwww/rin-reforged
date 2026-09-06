@@ -344,3 +344,287 @@ function initPostingMemory() {
         });
     }
 }
+
+/* ---- The writing toolbar -------------------------------------------
+
+   The board's own BBCode bar is sixteen grey rectangles reading "s",
+   "[*]", "List=", "spoiler=" and "Generate SteamInfo BBCode", laid out
+   in two undivided rows. What each one does is written nowhere on it:
+   the board puts the explanation in a read-only text field under the
+   bar, the full width of the form, which sits exactly where a second
+   Subject box would and reads as one. People fill in a form; they do
+   not hover a field to be told things.
+
+   So: the caption says what the button makes, an icon repeats it, the
+   bar is cut into groups, and the explanation is a small label above
+   the button that names it — the same tooltip every other control in
+   this script already uses.
+
+   Nothing about the button changes but its face. `bbstyle()` works off
+   the `bbtags` array and never off a caption, the accesskeys stay, the
+   onclick stays, and the helpbox stays in the page (hidden) because
+   `helpline()` writes into it on every mouseover.
+   -------------------------------------------------------------------- */
+
+/* Keyed by the input's name for the tags phpBB numbers itself, which
+   is stable and the same in both languages. */
+const BB_BY_NAME = {
+    addbbcode0:   { label: "B", face: "bold", tip: "Bold" },
+    addbbcode2:   { label: "i", face: "italic", tip: "Italic" },
+    addbbcode4:   { label: "u", face: "underline", tip: "Underline" },
+    addbbcode6:   { label: "Quote", icon: "quote", tip: "Quote a post" },
+    addbbcode8:   { label: "Code", icon: "code", tip: "Code, kept as typed" },
+    addbbcode10:  { label: "List", icon: "list", tip: "Bulleted list" },
+    addbbcode12:  { label: "Numbered", icon: "listnum", tip: "Numbered list" },
+    addlistitem:  { label: "Item", tip: "An item in a list" },
+    addbbcode14:  { label: "Image", icon: "image", tip: "Image from a URL" },
+    addbbcode16:  { label: "Link", icon: "link", tip: "Link to a page" },
+    addsteaminfo: { label: "SteamInfo", icon: "game", tip: "Game details from Steam" },
+};
+
+/* The board's own added BBCodes are numbered in whatever order the
+   admin defined them, so those are keyed by the tag itself — which is
+   what the button already says. */
+const BB_BY_TAG = {
+    "s":        { label: "S", face: "strike", tip: "Strikethrough" },
+    "spoiler":  { label: "Spoiler", icon: "hide", tip: "Hide text until clicked" },
+    "spoiler=": { label: "Named spoiler", icon: "hide", tip: "Spoiler with a title" },
+    "youtube":  { label: "YouTube", icon: "play", tip: "Embed a YouTube video" },
+};
+
+/* What belongs beside what: the letter styles, then the blocks, then
+   what is fetched from somewhere else, then what is hidden, then the
+   board's own generator. A key is a button name, or a tag written
+   `tag:`. */
+const BB_GROUPS = [
+    ["addbbcode0", "addbbcode2", "addbbcode4", "tag:s"],
+    ["addbbcode6", "addbbcode8", "addbbcode10", "addbbcode12", "addlistitem"],
+    ["addbbcode14", "addbbcode16", "tag:youtube"],
+    ["tag:spoiler", "tag:spoiler="],
+    ["addsteaminfo"],
+];
+
+/**
+ * The board's own help text, out of the inline `help_line` table it
+ * writes beside the toolbar.
+ *
+ * Only ever used for a BBCode this script has no entry for — one the
+ * board has added since — so that an unknown button still says
+ * something rather than nothing.
+ */
+function boardHelpLines() {
+    const table = {};
+    for (const script of $$("script:not([src])")) {
+        const text = script.textContent || "";
+        const at = text.indexOf("help_line");
+        if (at < 0 || !/var\s+help_line\s*=/.test(text)) continue;
+        // No value in that object contains a brace, so the first one
+        // after it closes the literal.
+        const body = text.slice(at, text.indexOf("}", at));
+        const entry = /([A-Za-z_]\w*)\s*:\s*'((?:[^'\\]|\\.)*)'/g;
+        let match;
+        while ((match = entry.exec(body)) !== null) table[match[1]] = match[2].replace(/\\(.)/g, "$1");
+    }
+    return table;
+}
+
+/** The `helpline('q')` key on a button, if it has one. */
+function helpKeyOf(input) {
+    const call = input.getAttribute("onmouseover") || "";
+    const match = call.match(/helpline\(\s*'([^']+)'/);
+    return match ? match[1] : null;
+}
+
+/**
+ * Draw one button as a tool: a caption that says what it makes, an
+ * icon beside it, and its name on a label above it.
+ *
+ * The tooltip goes on a wrapper rather than on the input, because a
+ * replaced element draws no pseudo-elements — `input::after` is
+ * nothing at all, which is the reason the board needed a field for
+ * this in the first place.
+ */
+function dressTool(input, spec, fallbackTip) {
+    const tip = spec ? t(spec.tip) : fallbackTip;
+    const holder = el("span.rr-bbtool", { "data-rr-tip": tip, "data-rr-tip-side": "above" });
+
+    if (spec) {
+        // The template types a width and a text-decoration into every
+        // one of these; both are wrong once the caption is a word.
+        input.removeAttribute("style");
+        input.value = t(spec.label);
+        if (spec.face) input.setAttribute("data-rr-face", spec.face);
+        if (spec.icon) holder.append(icon(spec.icon, 13));
+    }
+    input.setAttribute("aria-label", tip);
+    input.removeAttribute("title");
+
+    holder.append(input);
+    return holder;
+}
+
+/** Above the button, and inside the window: a label centred on a
+    button at either edge of a narrow screen hangs off the page. */
+function clampTip(holder) {
+    const box = holder.getBoundingClientRect();
+    const room = 130;
+    const side = box.left < room ? "above-left"
+        : box.right > window.innerWidth - room ? "above-right"
+        : "above";
+    holder.setAttribute("data-rr-tip-side", side);
+}
+
+function initPostingToolbar() {
+    const buttons = $$("#wrapcentre input.btnbbcode");
+    if (!buttons.length) return;
+
+    /* Where the buttons came from, read before any of them is moved:
+       once one is in the new bar its `closest("td")` is the bar. */
+    const cells = new Set(buttons.map((input) => input.closest("td")).filter(Boolean));
+    const home = buttons[0].closest("td");
+    if (!home) return;
+
+    const help = boardHelpLines();
+    const pool = new Map();
+    for (const input of buttons) {
+        pool.set("name:" + (input.getAttribute("name") || ""), input);
+        // First one wins: two BBCodes cannot share a tag, but a stray
+        // duplicate must not take a named button's place.
+        const tag = "tag:" + input.value.trim();
+        if (!pool.has(tag)) pool.set(tag, input);
+    }
+
+    const bar = el("div.rr-bbtools", { role: "toolbar", "aria-label": t("Formatting") });
+    const taken = new Set();
+
+    const take = (key) => {
+        const byTag = key.startsWith("tag:");
+        const input = pool.get(byTag ? key : "name:" + key);
+        if (!input || taken.has(input)) return null;
+        const spec = byTag ? BB_BY_TAG[key.slice(4)] : BB_BY_NAME[key];
+        if (!spec) return null;
+        taken.add(input);
+        return dressTool(input, spec, "");
+    };
+
+    for (const keys of BB_GROUPS) {
+        const group = el("div.rr-bbtools__group");
+        for (const key of keys) {
+            const tool = take(key);
+            if (tool) group.append(tool);
+        }
+        /* The font size menu is a letter style like the three beside
+           it, and the board leaves it stranded at the end of the first
+           row wearing a label of its own. */
+        if (keys[0] === "addbbcode0") {
+            const size = document.querySelector('#wrapcentre select[name="addbbcode20"]');
+            const label = size && size.closest("span");
+            if (label) group.append(el("span.rr-bbtool.rr-bbtool--menu", {
+                "data-rr-tip": t("Text size"),
+                "data-rr-tip-side": "above",
+            }, [label]));
+        }
+        if (group.childElementCount) bar.append(group);
+    }
+
+    /* A BBCode the board has added since this was written: it keeps
+       its own caption, and the board's own help line becomes its
+       tooltip. Better an unfamiliar button that explains itself than
+       one this script quietly drops. */
+    const strays = buttons.filter((input) => !taken.has(input));
+    if (strays.length) {
+        const group = el("div.rr-bbtools__group");
+        for (const input of strays) {
+            const key = helpKeyOf(input);
+            group.append(dressTool(input, null, (key && help[key]) || input.value.trim()));
+        }
+        bar.append(group);
+    }
+
+    for (const holder of bar.querySelectorAll(".rr-bbtool")) {
+        holder.addEventListener("pointerenter", () => clampTip(holder));
+        holder.addEventListener("focusin", () => clampTip(holder));
+    }
+
+    /* The buttons come out of two table rows. The first takes the
+       toolbar — it also holds the inline scripts the board runs there,
+       which are left exactly where they are — and any row left with no
+       control on it goes. */
+    home.append(bar);
+    for (const cell of cells) {
+        if (cell !== home && !cell.querySelector("input, select, a, textarea")) {
+            const row = cell.closest("tr");
+            if (row) row.hidden = true;
+        }
+    }
+
+    /* The field the board wrote the explanation into. It stays in the
+       page and it stays a field: `helpline()` sets its value on every
+       mouseover, and a removed one throws on all of them. */
+    const helpbox = document.querySelector('#wrapcentre input[name="helpbox"]');
+    if (helpbox) {
+        helpbox.setAttribute("data-rr-helpbox", "");
+        helpbox.setAttribute("tabindex", "-1");
+        helpbox.setAttribute("aria-hidden", "true");
+        /* Its row is shared with the "Font colour" heading over the
+           palette, which has to stay where it is. Named, so the row
+           can be closed up to the label rather than keeping the height
+           a field used to need. */
+        const row = helpbox.closest("tr");
+        if (row) row.setAttribute("data-rr-helprow", "");
+    }
+}
+
+/* ---- The topic review ----------------------------------------------
+
+   Under the reply form the board reprints the last few posts of the
+   thread, in a 300px box you scroll. They are drawn as one continuous
+   table — a hairline of table background between two posts, and a
+   zebra so faint that at a glance the five look like one long post
+   with somebody's name in the middle of it.
+
+   Each one becomes a card here: its own edge, its own corners, and a
+   gap between it and the next. Nothing is added to the page; the rows
+   the board already prints are named so the stylesheet can draw them.
+   -------------------------------------------------------------------- */
+
+function initTopicReview() {
+    /* By shape, not by the heading: "Topic review" is one string in
+       English and another in Russian, and the box is the only scroller
+       on the page holding posts. */
+    const scroller = $$("#wrapcentre div").find((node) =>
+        /auto|scroll/.test(node.style.overflow || "") && node.querySelector(".postbody"));
+    if (!scroller) return;
+
+    scroller.setAttribute("data-rr-review", "");
+    const box = scroller.closest("table.tablebg");
+    if (box) box.setAttribute("data-rr-reviewbox", "");
+
+    const list = scroller.querySelector("table");
+    if (!list) return;
+    list.setAttribute("data-rr-review-list", "");
+
+    /* Every post is two rows carrying the same row1/row2 class — the
+       author cell spans both — and a `td.spacer` row between one post
+       and the next. */
+    for (const row of Array.from(list.rows)) {
+        if (row.cells.length === 1 && row.cells[0].classList.contains("spacer")) {
+            row.setAttribute("data-rr-review-row", "gap");
+            continue;
+        }
+        if (!/\brow[12]\b/.test(row.className)) continue;
+
+        /* The author's cell is the one that spans the pair, so it is
+           on the first row of a post and on no other. It has to be
+           picked off the row itself: the name is wrapped in a table of
+           its own, and `closest("td")` from it lands on that table's
+           cell rather than on the one that spans. */
+        const author = row.querySelector(":scope > td[rowspan]");
+        if (author && author.querySelector(".postauthor")) {
+            row.setAttribute("data-rr-review-row", "head");
+            author.setAttribute("data-rr-review-cell", "author");
+        } else {
+            row.setAttribute("data-rr-review-row", "body");
+        }
+    }
+}

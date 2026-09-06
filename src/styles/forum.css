@@ -870,6 +870,20 @@ html[data-rr] .post {
 }
 html[data-rr] textarea,
 html[data-rr] textarea.post { font-family: var(--rr-font); line-height: var(--rr-lh); }
+/* The attachment field on the posting form. The board's sheet paints
+   every `input` near-black, and this one was never in the list above:
+   on the light themes it read as a black bar with the browser's own
+   "Choose file" button sitting in it. */
+html[data-rr] input[type="file"] {
+    background: var(--rr-bg-sunken);
+    color: var(--rr-text);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius);
+    padding: var(--rr-s2) var(--rr-s3);
+    font-family: var(--rr-font);
+    font-size: var(--rr-fs-sm);
+    max-width: 100%;
+}
 /* The template sizes every text field with size="25", size="45": a
    fixed count of characters from 2003, cramped on a fluid frame. The
    board's own fields get a floor in ems and the room they have; the
@@ -1198,3 +1212,96 @@ html[data-rr] hr.rr-rule {
     background: none;
     height: 0;
 }
+
+/* ---- The topic review under the reply form ----------------------- */
+
+/* The last few posts of the thread, reprinted in a box you scroll so
+   you can answer them without leaving the form. The board draws them
+   as one continuous table: a hairline of table background between two
+   posts and a zebra a shade apart, which at a glance reads as one long
+   post with somebody's name in the middle of it.
+
+   Each is a card here — its own edge, its own corners, a gap to the
+   next — out of the rows the board already prints, named by
+   compose.js (initTopicReview). */
+
+html[data-rr] [data-rr-review] {
+    /* The template types the height into the element. Five cards and
+       the air between them need a little more of it than five glued
+       rows did. */
+    height: 360px !important;
+    padding: var(--rr-s3);
+    background: var(--rr-surface);
+    overscroll-behavior: contain;
+}
+html[data-rr] table[data-rr-reviewbox] > tbody > tr > td { padding: 0; }
+/* The inner table is a `tablebg` too, so it arrives wearing the card
+   the reskin gives every one of those — an edge, corners and a gap
+   under it, inside the card it is already in. The cards are its rows
+   now. */
+html[data-rr] table[data-rr-review-list] {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    overflow: visible;
+}
+
+/* The two headings the box opens with. They name the columns of a
+   table nobody reads as a table; kept, quietly. */
+html[data-rr] table[data-rr-review-list] > tbody > tr[data-rr-head] > th {
+    background: none;
+    border: 0;
+    padding: 0 var(--rr-s3) var(--rr-s2);
+    color: var(--rr-faint);
+    font-size: var(--rr-fs-xs);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+html[data-rr] tr[data-rr-review-row] > td {
+    background: var(--rr-surface-2);
+    padding: var(--rr-s2) var(--rr-s3);
+    vertical-align: top;
+}
+/* The author cell spans the pair, so it draws the whole left side. */
+html[data-rr] td[data-rr-review-cell="author"] {
+    border: 1px solid var(--rr-line);
+    border-right: 0;
+    border-radius: var(--rr-radius) 0 0 var(--rr-radius);
+    padding-top: var(--rr-s3);
+}
+html[data-rr] tr[data-rr-review-row="head"] > td:not([data-rr-review-cell]) {
+    border: 1px solid var(--rr-line);
+    border-left: 0;
+    border-bottom: 0;
+    border-radius: 0 var(--rr-radius) 0 0;
+    padding-top: var(--rr-s3);
+}
+html[data-rr] tr[data-rr-review-row="body"] > td {
+    border: 1px solid var(--rr-line);
+    border-left: 0;
+    border-top: 0;
+    border-radius: 0 0 var(--rr-radius) 0;
+    padding-bottom: var(--rr-s3);
+}
+/* The spacer row is a 1px image the reskin already hides; it is the
+   air between two cards now. */
+html[data-rr] tr[data-rr-review-row="gap"] > td.spacer {
+    height: var(--rr-s3);
+    padding: 0;
+    background: none;
+    border: 0;
+}
+
+/* Whose post it is, said once and plainly. The template wraps the name
+   in a 150px table of its own. */
+html[data-rr] td[data-rr-review-cell="author"] > table { width: auto !important; }
+html[data-rr] td[data-rr-review-cell="author"] td { text-align: left !important; padding: 0; }
+
+/* "Post subject: Re: <the topic>" on every one of the five, which is
+   the thread's own title said five more times. Supporting detail, not
+   a heading. */
+html[data-rr] tr[data-rr-review-row="head"] .gensmall { color: var(--rr-faint); }
+html[data-rr] tr[data-rr-review-row="head"] .gensmall b { color: var(--rr-faint); font-weight: 400; }
+html[data-rr] tr[data-rr-review-row="body"] .gensmall b { color: var(--rr-muted); font-weight: 600; }

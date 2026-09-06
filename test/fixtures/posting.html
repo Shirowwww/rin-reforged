@@ -1,16 +1,1020 @@
-<!DOCTYPE html>
-<html><head><title>Post a reply</title>
-<link rel="stylesheet" href="./styles/forum.css" type="text/css" />
-</head><body>
-<div id="wrapcentre">
-<form action="./posting.php?mode=reply&amp;f=14&amp;t=75717&amp;sid=58ea12208ff859b805cc1a28ecf51e8a" method="post" name="postform">
-<input type="hidden" name="lastclick" value="1767225600" />
-<input type="hidden" name="creation_time" value="1767225600" />
-<input type="hidden" name="form_token" value="0123456789abcdef0123456789abcdef01234567" />
-<input type="hidden" name="topic_cur_post_id" value="900006" />
-<textarea name="message" rows="15" cols="76" class="post"></textarea>
-<input type="submit" name="preview" value="Preview" class="button2" />
-<input type="submit" name="post" value="Submit" class="button1" />
-</form>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en-gb" xml:lang="en-gb">
+<head>
+
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<meta http-equiv="content-language" content="en-gb" />
+<meta http-equiv="content-style-type" content="text/css" />
+<meta http-equiv="imagetoolbar" content="no" />
+<meta name="resource-type" content="document" />
+<meta name="distribution" content="global" />
+<meta name="keywords" content="" />
+<meta name="description" content="Cracking Steam and coding Steam related tools and emulators since 2003. Get all Steam games you want and play them the way you want to - for free!" />
+<meta name="robots" content="noindex,nofollow" />
+
+<title>CS RIN - Steam Underground &bull; Post a reply</title>
+
+<link rel="alternate" type="application/atom+xml" title="Feed - CS RIN - Steam Underground" href="https://cs.rin.ru/forum/feed.php" /><link rel="alternate" type="application/atom+xml" title="Feed - All forums" href="https://cs.rin.ru/forum/feed.php?mode=forums" /><link rel="alternate" type="application/atom+xml" title="Feed - New Topics" href="https://cs.rin.ru/forum/feed.php?mode=topics" /><link rel="alternate" type="application/atom+xml" title="Feed - Active Topics" href="https://cs.rin.ru/forum/feed.php?mode=topics_active" /><link rel="alternate" type="application/atom+xml" title="Feed - Forum - Main Forum" href="https://cs.rin.ru/forum/feed.php?f=10" />
+
+<link rel="stylesheet" href="./styles/rinDark/theme/stylesheet.css" type="text/css" />
+<!-- <script type="text/javascript" src="./mobiquo/tapatalkdetect.js"></script> -->
+<script type="text/javascript" src="./styles/subsilver2/template/forum_fn.js"></script>
+<!-- <script type="text/javascript" src="//yandex.st/share/share.js" charset="utf-8"></script>-->
+<script type="text/javascript">
+// <![CDATA[
+
+
+function popup(url, width, height, name)
+{
+	if (!name)
+	{
+		name = '_popup';
+	}
+
+	window.open(url.replace(/&amp;/g, '&'), name, 'height=' + height + ',resizable=yes,scrollbars=yes,width=' + width);
+	return false;
+}
+
+function jumpto()
+{
+	var page = prompt('Enter the page number you wish to go to:', '1');
+	var per_page = '100';
+	var base_url = './viewforum.php?f=10&amp;sid=50ead6db992b0c075b84241e1c78fc49';
+
+	if (page !== null && !isNaN(page) && page == Math.floor(page) && page > 0)
+	{
+		if (base_url.indexOf('?') == -1)
+		{
+			document.location.href = base_url + '?start=' + ((page - 1) * per_page);
+		}
+		else
+		{
+			document.location.href = base_url.replace(/&amp;/g, '&') + '&start=' + ((page - 1) * per_page);
+		}
+	}
+}
+
+/**
+* Find a member
+*/
+function find_username(url)
+{
+	popup(url, 760, 570, '_usersearch');
+	return false;
+}
+
+/**
+* Mark/unmark checklist
+* id = ID of parent container, name = name prefix, state = state [true/false]
+*/
+function marklist(id, name, state)
+{
+	var parent = document.getElementById(id);
+	if (!parent)
+	{
+		eval('parent = document.' + id);
+	}
+
+	if (!parent)
+	{
+		return;
+	}
+
+	var rb = parent.getElementsByTagName('input');
+	
+	for (var r = 0; r < rb.length; r++)
+	{
+		if (rb[r].name.substr(0, name.length) == name)
+		{
+			rb[r].checked = state;
+		}
+	}
+}
+
+
+
+// ]]>
+
+// RIN donation overlay
+//subsilver2
+window.onload = onloadFunction;
+//proSilver
+if (!(typeof onload_functions === 'undefined')) {
+	onload_functions.push('onloadFunction();');
+} 
+
+function overlayconfirm() {
+  document.getElementById("overlay").style.display = "none";
+  document.cookie = "csrin_overlay=0; path=/forum; max-age=31536000";
+}
+
+function onloadFunction()
+{
+    // RIN donation overlay
+    // if cookie NOT set, display
+    var decodedCookie = decodeURIComponent(document.cookie);
+    if (decodedCookie.search("csrin_overlay=0") === -1)
+    {
+        //document.getElementById("overlay").style.display = "block";
+    }
+}
+
+// RIN: load page in the background
+function loadAsync(page, returnTarget, returnText, returnClass) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onload = () => {
+        if (xhttp.readyState === XMLHttpRequest.DONE) {
+            if (xhttp.status === 200) {
+                console.log("yay");
+                var successText = document.createElement("span");
+                successText.innerHTML = returnText;
+                successText.className = returnClass;
+                returnTarget.replaceWith(successText);
+            } else {
+                console.error(xhttp.statusText);
+            }
+        }
+    };
+    xhttp.open("GET", page, true);
+    xhttp.send();
+}
+
+// RIN image resizer
+function resizeimg(img)
+{
+    if (img.style.maxHeight == 'none')
+        img.style.maxHeight = '250px';
+    else
+        img.style.maxHeight = 'none';
+}
+</script>
+
+<!-- Malicious filehosts -->
+<script type="text/javascript">
+function reveal_unsafe(e) {
+  e.style.display = "none";
+  e.parentElement.getElementsByClassName('link_unsafe')[0].style.display = "inline";
+}
+</script>
+<style></style>
+<style>
+.link_unsafe_overlay {
+  --warning-color: red;
+  border-style:dashed;
+  border-color: var(--warning-color);
+  border-width: thin;
+  width: fit-content;
+  display: inline-block;
+  color: var(--warning-color);
+}
+
+.link_unsafe_overlay2 {
+  --warning-color: orange;
+  border-style:dashed;
+  border-color: var(--warning-color);
+  border-width: thin;
+  width: fit-content;
+  display: inline-block;
+  color: var(--warning-color);
+}
+
+.link_unsafe_reveal {
+  cursor: pointer;
+  color: #AAAAAA;
+}
+
+.link_unsafe {
+  display: none;
+}
+
+.link_unsafe_note {
+  font-size: 0.8em;
+  vertical-align: super;
+  position: relative;
+}
+
+.tooltip {
+  border-bottom: 1px dotted green;
+  color: green;
+  cursor: pointer;
+}
+
+.tooltiptext {
+  visibility: hidden;
+  font-size: 1.3em;
+  width: 22em;
+  color: var(--warning-color);
+  background-color: black;
+  text-align: center;
+  padding: 0.5em 0.5em;
+  border-radius: 6px;
+  position: absolute;
+  cursor: default;
+  z-index: 1;
+  top: 100%;
+  left: -13em;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+</style>
+
+<!-- Donation overlay --><!-- duplicated here because of caching issues -->
+<style>
+#overlay {
+  position: fixed;
+  width: 40%;
+  height: 40%;
+  top: 50%;
+  left: 50%;
+  margin-right: -50%; 
+  right: 0;
+  bottom: 0;
+  min-width: 300px;
+  min-height: 300px;
+  background-color: rgba(0,0,0,0.9);
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  border: 1px solid #777777;
+  display: none;
+}
+
+#overlaytext {
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  font-size: 1.2em;
+  color: white;
+  transform: translate(-5%,-5%);
+  -ms-transform: translate(-5%,-5%);
+}
+
+#overlayconfirmbtn {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%); 
+  bottom: 0px;
+  font-size: 1.2em;
+  padding: 1px 5px;
+}
+</style>
+<!-- RIN: image resize and page stretch fix -->
+<style>
+.postbody img,
+.postbody ~ table img {
+  max-width: 95%;
+  max-height: 250px;
+}
+</style>
+
+</head>
+<body class="ltr">
+
+<!-- Donation overlay -->
+<div id="overlay">
+  <div id="overlaytext">
+  <p align="center">We need your help!</p>
+  <br /><br />
+  <p>For 17 years, this forum has served us as a platform for sharing games with each other, graciously hosted by the owner of RIN for all this time. Sadly, he can no longer afford our server.</p>
+  <br /><br />
+  <p>To keep this forum alive, we need your help with covering the hosting expenses.</p>
+  <br /><br />
+  <p>For more information, click <a href="../donate" target="_blank" onclick="overlayconfirm()">here</a>.</p>
+  
+  </div>
+  <a id="overlayconfirmbtn" onclick="overlayconfirm()" href="javascript:overlayconfirm();">Close</a>
 </div>
-</body></html>
+
+<table align="center" width="100%" class="bodyline">
+	<tr>
+		<td>
+<a name="top"></a>		
+<div id="wrapheader">
+
+	<div id="logodesc">
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td><a href="./index.php?sid=50ead6db992b0c075b84241e1c78fc49"><img src="./styles/rinDark/imageset/site_logo-2.png" alt="Logo" title="Logo" /></a></td>
+			<td width="100%" align="center"><h1>CS RIN - Steam Underground</h1><span class="gen">cs.rin.ru | csrin.org | The password is usually one of these.</span></td>
+		</tr>
+		</table>
+	</div>
+
+	<div id="menubar">
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				<a href="./viewtopic.php?f=10&amp;t=44034&amp;sid=50ead6db992b0c075b84241e1c78fc49"><img src="./styles/rinDark/theme/images/icon_mini_rules.gif" width="14" height="14" alt="*" /> Forum rules</a>
+                &nbsp;:: &nbsp;<a href="../donate"><img src="./styles/rinDark/theme/images/icon_donate.gif" width="14" height="14" alt="*" /> Donate</a>
+			</td>
+			<td class="genmed" align="right">
+                <a href="chat.php"><img src="./styles/rinDark/theme/images/icon_mini_irc.gif" width="14" height="14" alt="*" /> Chat</a>
+				&nbsp;:: &nbsp;<a href="./viewtopic.php?f=10&amp;t=98158&amp;sid=50ead6db992b0c075b84241e1c78fc49"><img src="./styles/rinDark/theme/images/icon_mini_faq.gif" width="12" height="13" alt="*" /> FAQ</a><!--<sup style="color:#FF0000;"> new!</sup>-->
+				
+			</td>
+		</tr>
+		</table>
+		<br>
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				 &nbsp;<a href="./ucp.php?mode=register&amp;sid=50ead6db992b0c075b84241e1c78fc49"><img src="./styles/rinDark/theme/images/icon_mini_register.gif" width="12" height="13" alt="*" /> Register</a>
+					
+			</td>
+			<td class="genmed" align="right">
+				<a href="./search.php?sid=50ead6db992b0c075b84241e1c78fc49"><img src="./styles/rinDark/theme/images/icon_mini_search.gif" width="12" height="13" alt="*" /> Search</a>
+                        &nbsp;:: &nbsp;<a href="./ucp.php?mode=logout&amp;sid=50ead6db992b0c075b84241e1c78fc49"><img src="./styles/rinDark/theme/images/icon_mini_login.gif" width="12" height="13" alt="*" /> Logout</a>
+				
+			</td>
+		</tr>
+		</table>
+		
+		<table width="100%" cellspacing="0">
+		<tr>
+			<td class="genmed">
+				
+			</td>
+		</tr>
+		</table>
+	</div>
+
+	<div id="datebar">
+		<table width="100%" cellspacing="0">
+			<td class="gensmall"></td>
+            
+			<td class="gensmall" align="right">It is currently Friday, 04 Sep 2026, 00:37<br /></td>
+		</tr>
+		</table>
+	</div>
+
+	<div>
+		<table width="100%" cellspacing="0">
+		<br>
+		<tr>
+			<td class="genmed" align="right"><a href="index.php?lang=en"><img src="./styles/rinDark/theme/images/uk.png" width="16" height="11" alt="English" /></a> | <a href="index.php?lang=ru"><img src="./styles/rinDark/theme/images/ru.png" width="16" height="11" alt="Русский" /></a></td>
+		</tr>
+		</table>
+</div>
+</div>
+
+<div id="wrapcentre">
+
+	
+	<p class="searchbar">
+		<span style="float: left;"><a href="./search.php?search_id=unanswered&amp;sid=50ead6db992b0c075b84241e1c78fc49">View unanswered posts</a> | <a href="./search.php?search_id=active_topics&amp;sid=50ead6db992b0c075b84241e1c78fc49">View active topics</a></span>
+		
+	</p>
+	
+
+	<br style="clear: both;" />
+
+	<table class="tablebg" width="100%" cellspacing="1" cellpadding="0" style="margin-top: 5px;">
+	<tr>
+		<td class="row5">
+			<p class="breadcrumbs"><a class="breadcrumbs" href="./index.php?sid=50ead6db992b0c075b84241e1c78fc49">Board index</a> &#187; <a class="breadcrumbs" href="./viewforum.php?f=27&amp;sid=50ead6db992b0c075b84241e1c78fc49">English Forums</a> &#187; <a class="breadcrumbs" href="./viewforum.php?f=10&amp;sid=50ead6db992b0c075b84241e1c78fc49">Main Forum</a></p>
+			
+		<div id="search-box">
+			<form method="post" id="forum-search" action="./search.php?sid=50ead6db992b0c075b84241e1c78fc49">	
+				<input class="inputbox search tiny" type="text" name="keywords" id="search_keywords" size="22" value="Search this forum…" onclick="if (this.value == 'Search this forum…') this.value = '';" onblur="if (this.value == '') this.value = 'Search this forum…';" />
+				<input class="button1" type="submit" value="Search" />	
+				<input type="hidden" value="10" name="fid[]" />
+				<input type="hidden" name="sr" value="topics" />
+				<input type="hidden" value="titleonly" name="sf" />
+			</form>
+		</div>
+
+
+		</td>
+	</tr>
+	</table>
+
+	<br /><style>
+.ccopen{
+	background: #FFFFFF url("./styles/rinDark/theme/images/cc_down.gif") no-repeat center center;
+	width: 12px;
+	height:12px; 
+}
+.ccclose{
+	background: #FFFFFF url("./styles/rinDark/theme/images/cc_up.gif") no-repeat center center;
+	width: 12px;
+	height:12px;
+}
+</style> 
+<script type="text/javascript">
+// <![CDATA[
+function flipf(btn, thiscat)
+{
+	rnd = Math.random().toString().substring(2);
+    myurl = "./ajax_update_collapse.php?dummy=1&sid=50ead6db992b0c075b84241e1c78fc49" + "&rnd=" + rnd;
+	if (btn.className=="ccclose")
+	{
+		btn.className="ccopen";
+		document.getElementById('flist'+thiscat).style.display="none";
+		myurl = myurl + "&cset=" + thiscat;
+	}
+	else
+	{
+		btn.className="ccclose";
+		document.getElementById('flist'+thiscat).style.display="";
+		myurl = myurl + "&cunset=" + thiscat;
+	}
+	// alert (myurl);
+	var myajax=ajaxobject();
+	myajax.open('GET',myurl,true);
+	myajax.onreadystatechange = function()
+		{
+			if (myajax.readyState == 4)
+			{
+				if (myoutput = myajax.responseXML)
+					{
+						// Discard
+						return;
+					}
+			}		
+		}
+	myajax.send(null);
+}
+function ajaxobject()
+{
+	try
+	{
+		var http_request = false;
+		if (window.XMLHttpRequest)
+		{ // Mozilla, Safari,...
+			http_request = new XMLHttpRequest();
+			if (http_request.overrideMimeType)
+			{
+				http_request.overrideMimeType('text/xml');
+			}
+		}
+		else if (window.ActiveXObject)
+		{ // IE
+			try
+			{
+				http_request = new ActiveXObject('Msxml2.XMLHTTP');
+			}
+			catch (e)
+			{
+				try
+				{
+					http_request = new ActiveXObject('Microsoft.XMLHTTP');
+				}
+				catch (e)
+				{
+				}
+			}
+		}
+
+		if (!http_request)
+		{
+			 return false;
+		}
+		else
+		{
+			return http_request;
+	}	
+	}
+	catch (e)
+	{
+		handle(e);
+		return false;
+	}
+}
+
+//]]>
+</script>
+<div id="pagecontent">
+<form action="./posting.php?mode=reply&amp;f=10&amp;t=133316" method="post" name="postform" enctype="multipart/form-data">
+
+<table class="tablebg" width="100%" cellspacing="1">
+<tr>
+	<th colspan="2"><b>Post a reply</b></th>
+</tr>
+
+<tr>
+	<td class="row1" width="22%"><b class="genmed">Subject:</b></td>
+	<td class="row2" width="78%"><input class="post" style="width:450px" type="text" name="subject" size="45" maxlength="64" tabindex="2" value="Re: Dragon's Dogma 2" /></td>
+</tr>
+
+<tr>
+	<td class="row1" valign="top"><b class="genmed">Message body:</b><br /><span class="gensmall">Enter your message here, it may contain no more than <strong>300000</strong> characters.&nbsp;</span><br /><br />
+		<table width="100%" cellspacing="5" cellpadding="0" border="0" align="center">
+		<tr>
+			<td class="gensmall" align="center"><b>Smilies</b></td>
+		</tr>
+		<tr>
+			<td align="center">
+				<a href="#" onclick="insert_text(':arrow:', true); return false;" style="line-height: 20px;"><img src="./images/smilies/icon_arrow.gif" width="15" height="17" alt=":arrow:" title="Arrow" hspace="2" vspace="2" /></a>
+				<a href="#" onclick="insert_text(':mrgreen:', true); return false;" style="line-height: 20px;"><img src="./images/smilies/icon_mrgreen.gif" width="15" height="17" alt=":mrgreen:" title="Mr. Green" hspace="2" vspace="2" /></a>
+				<a href="#" onclick="insert_text(':-|', true); return false;" style="line-height: 20px;"><img src="./images/smilies/icon_neutral.gif" width="15" height="17" alt=":-|" title="Neutral" hspace="2" vspace="2" /></a>
+				<a href="#" onclick="insert_text(':idea:', true); return false;" style="line-height: 20px;"><img src="./images/smilies/icon_idea.gif" width="15" height="17" alt=":idea:" title="Idea" hspace="2" vspace="2" /></a>
+				<a href="#" onclick="insert_text(':?:', true); return false;" style="line-height: 20px;"><img src="./images/smilies/icon_question.gif" width="15" height="17" alt=":?:" title="Question" hspace="2" vspace="2" /></a>
+				<a href="#" onclick="insert_text(':!:', true); return false;" style="line-height: 20px;"><img src="./images/smilies/icon_exclaim.gif" width="15" height="17" alt=":!:" title="Exclamation" hspace="2" vspace="2" /></a>
+				<a href="#" onclick="insert_text(':roll:', true); return false;" style="line-height: 20px;"><img src="./images/smilies/icon_rolleyes.gif" width="15" height="17" alt=":roll:" title="Rolling Eyes" hspace="2" vspace="2" /></a>
+				<a href="#" onclick="insert_text(':twisted:', true); return false;" style="line-height: 20px;"><img src="./images/smilies/icon_twisted.gif" width="15" height="17" alt=":twisted:" title="Twisted Evil" hspace="2" vspace="2" /></a>
+				<a href="#" onclick="insert_text(':evil:', true); return false;" style="line-height: 20px;"><img src="./images/smilies/icon_evil.gif" width="15" height="17" alt=":evil:" title="Evil or Very Mad" hspace="2" vspace="2" /></a>
+				<a href="#" onclick="insert_text(':cry:', true); return false;" style="line-height: 20px;"><img src="./images/smilies/icon_cry.gif" width="15" height="17" alt=":cry:" title="Crying or Very Sad" hspace="2" vspace="2" /></a>
+				<a href="#" onclick="insert_text(':-)', true); return false;" style="line-height: 20px;"><img src="./images/smilies/icon_smile.gif" width="15" height="17" alt=":-)" title="Smile" hspace="2" vspace="2" /></a>
+				<a href="#" onclick="insert_text(':-D', true); return false;" style="line-height: 20px;"><img src="./images/smilies/icon_biggrin.gif" width="15" height="17" alt=":-D" title="Very Happy" hspace="2" vspace="2" /></a>
+			</td>
+		</tr>
+		<tr>
+			<td align="center"><a class="nav" href="./posting.php?mode=smilies&amp;f=10" onclick="popup(this.href, 578, 370, '_phpbbsmilies'); return false;">View more smilies</a></td>
+		</tr>
+		</table>
+	</td>
+	<td class="row2" valign="top">
+		<script type="text/javascript">
+// <![CDATA[
+	var form_name = 'postform';
+	var text_name = 'message';
+
+	var bbtags = new Array('[b]','[/b]','[i]','[/i]','[u]','[/u]','[quote]','[/quote]','[code]','[/code]','[list]','[/list]','[list=]','[/list]','[img]','[/img]','[url]','[/url]','[flash=]', '[/flash]','[size=]','[/size]', '[s]', '[/s]', '[spoiler]', '[/spoiler]', '[spoiler=]', '[/spoiler]', '[youtube]', '[/youtube]');
+
+	var help_line = {
+		b: 'Bold text: [b]text[/b]',
+		i: 'Italic text: [i]text[/i]',
+		u: 'Underline text: [u]text[/u]',
+		q: 'Quote text: [quote]text[/quote]',
+		c: 'Code display: [code]code[/code]',
+		l: 'List: [list][*]text[/list]',
+		e: 'List item: [*]text',
+		o: 'Ordered list: e.g. [list=1][*]First point[/list] or [list=a][*]Point a[/list]',
+		p: 'Insert image: [img]http://image_url[/img]',
+		w: 'Insert URL: [url]http://url[/url] or [url=http://url]URL text[/url]',
+		a: 'Inline uploaded attachment: [attachment=]filename.ext[/attachment]',
+		s: 'Font colour: [color=red]text[/color]  Tip: you can also use color=#FF0000',
+		f: 'Font size: [size=85]small text[/size]',
+		y: 'List: Add list element',
+		d: 'Flash: [flash=width,height]http://url[/flash]',
+		tip: 'Tip: Styles can be applied quickly to selected text.'
+		,cb_22: 'Strikethrough text: [s]this sentence is false[/s]'
+		,cb_24: 'Hidden text: [spoiler]hidden text here[/spoiler]'
+		,cb_26: 'Hidden text: [spoiler="description"]hidden text here[/spoiler]'
+		,cb_28: 'YouTube video: [youtube]http://www.youtube.com/watch?v=dQw4w9WgXcQ[/youtube]'
+	}
+
+	function helpline(help) { document.forms[form_name].helpbox.value = help_line[help]; }
+
+	function bbfontstyle(open, close) {
+		var box = document.forms[form_name].elements[text_name];
+		var start = box.selectionStart, end = box.selectionEnd;
+		box.setRangeText(open + box.value.slice(start, end) + close, start, end, 'end');
+		box.focus();
+	}
+	function bbstyle(n) { if (n != -1) { bbfontstyle(bbtags[n], bbtags[n + 1]); } else { bbfontstyle('[*]', ''); } }
+// ]]>
+</script>
+
+		<table width="100%" cellspacing="0" cellpadding="0" border="0">
+		<tr valign="middle" align="left">
+	<td colspan="2">
+		<input type="button" class="btnbbcode" accesskey="b" name="addbbcode0" value=" B " style="font-weight:bold; width: 30px;" onclick="bbstyle(0)" onmouseover="helpline('b')" onmouseout="helpline('tip')" />
+		<input type="button" class="btnbbcode" accesskey="i" name="addbbcode2" value=" i " style="font-style:italic; width: 30px;" onclick="bbstyle(2)" onmouseover="helpline('i')" onmouseout="helpline('tip')" />
+		<input type="button" class="btnbbcode" accesskey="u" name="addbbcode4" value=" u " style="text-decoration: underline; width: 30px;" onclick="bbstyle(4)" onmouseover="helpline('u')" onmouseout="helpline('tip')" />
+		<input type="button" class="btnbbcode" accesskey="q" name="addbbcode6" value="Quote" style="width: 50px" onclick="bbstyle(6)" onmouseover="helpline('q')" onmouseout="helpline('tip')" />
+		<input type="button" class="btnbbcode" accesskey="c" name="addbbcode8" value="Code" style="width: 40px" onclick="bbstyle(8)" onmouseover="helpline('c')" onmouseout="helpline('tip')" />
+		<input type="button" class="btnbbcode" accesskey="l" name="addbbcode10" value="List" style="width: 40px" onclick="bbstyle(10)" onmouseover="helpline('l')" onmouseout="helpline('tip')" />
+		<input type="button" class="btnbbcode" accesskey="o" name="addbbcode12" value="List=" style="width: 40px" onclick="bbstyle(12)" onmouseover="helpline('o')" onmouseout="helpline('tip')" />
+		<input type="button" class="btnbbcode" accesskey="y" name="addlistitem" value="[*]" style="width: 40px" onclick="bbstyle(-1)" onmouseover="helpline('e')" onmouseout="helpline('tip')" />
+		<input type="button" class="btnbbcode" accesskey="p" name="addbbcode14" value="Img" style="width: 40px" onclick="bbstyle(14)" onmouseover="helpline('p')" onmouseout="helpline('tip')" />
+		<input type="button" class="btnbbcode" accesskey="w" name="addbbcode16" value="URL" style="text-decoration: underline; width: 40px" onclick="bbstyle(16)" onmouseover="helpline('w')" onmouseout="helpline('tip')" />
+		<span class="genmed nowrap">Font size: <select class="gensmall" name="addbbcode20" onchange="bbfontstyle('[size=' + this.form.addbbcode20.options[this.form.addbbcode20.selectedIndex].value + ']', '[/size]');this.form.addbbcode20.selectedIndex = 2;" onmouseover="helpline('f')" onmouseout="helpline('tip')">
+			<option value="50">Tiny</option>
+			<option value="85">Small</option>
+			<option value="100" selected="selected">Normal</option>
+			<option value="150">Large</option>
+			<option value="200">Huge</option>
+		</select></span>
+	</td>
+</tr>
+
+	<tr valign="middle" align="left">
+		<td colspan="2">
+		<input type="button" class="btnbbcode" name="addbbcode22" value="s" onclick="bbstyle(22)" onmouseover="helpline('cb_22')" onmouseout="helpline('tip')" />
+		<input type="button" class="btnbbcode" name="addbbcode24" value="spoiler" onclick="bbstyle(24)" onmouseover="helpline('cb_24')" onmouseout="helpline('tip')" />
+		<input type="button" class="btnbbcode" name="addbbcode26" value="spoiler=" onclick="bbstyle(26)" onmouseover="helpline('cb_26')" onmouseout="helpline('tip')" />
+		<input type="button" class="btnbbcode" name="addbbcode28" value="youtube" onclick="bbstyle(28)" onmouseover="helpline('cb_28')" onmouseout="helpline('tip')" />
+		<!-- RIN SteamInfo Generator -->
+		<input type="button" class="btnbbcode" name="addsteaminfo" value="Generate SteamInfo BBCode" onclick="SteamInfoBBCode.generatePrompt(SteamInfoBBCode.process);" />
+		</td>
+	</tr>
+
+<tr>
+	<td><input type="text" readonly="readonly" name="helpbox" style="width:100%" class="helpline" value="Tip: Styles can be applied quickly to selected text." /></td>
+	<td class="genmed" align="center">Font colour</td>
+</tr>
+
+		<tr>
+			<td valign="top" style="width: 100%;"><textarea name="message" rows="15" cols="76" tabindex="3" onselect="storeCaret(this);" onclick="storeCaret(this);" onkeyup="storeCaret(this);" onfocus="initInsertions();" style="width: 700px; height: 270px; min-width: 98%; max-width: 98%;"></textarea></td>
+			<td width="80" align="center" valign="top">
+<table cellspacing="1" cellpadding="0" border="0">
+<tr><td bgcolor="#000000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#000000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#000000" title="#000000" /></a></td><td bgcolor="#000040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#000040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#000040" title="#000040" /></a></td><td bgcolor="#000080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#000080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#000080" title="#000080" /></a></td><td bgcolor="#0000BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#0000BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#0000BF" title="#0000BF" /></a></td><td bgcolor="#0000FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#0000FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#0000FF" title="#0000FF" /></a></td></tr>
+<tr><td bgcolor="#004000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#004000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#004000" title="#004000" /></a></td><td bgcolor="#004040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#004040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#004040" title="#004040" /></a></td><td bgcolor="#004080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#004080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#004080" title="#004080" /></a></td><td bgcolor="#0040BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#0040BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#0040BF" title="#0040BF" /></a></td><td bgcolor="#0040FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#0040FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#0040FF" title="#0040FF" /></a></td></tr>
+<tr><td bgcolor="#008000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#008000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#008000" title="#008000" /></a></td><td bgcolor="#008040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#008040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#008040" title="#008040" /></a></td><td bgcolor="#008080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#008080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#008080" title="#008080" /></a></td><td bgcolor="#0080BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#0080BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#0080BF" title="#0080BF" /></a></td><td bgcolor="#0080FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#0080FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#0080FF" title="#0080FF" /></a></td></tr>
+<tr><td bgcolor="#00BF00" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#00BF00]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#00BF00" title="#00BF00" /></a></td><td bgcolor="#00BF40" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#00BF40]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#00BF40" title="#00BF40" /></a></td><td bgcolor="#00BF80" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#00BF80]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#00BF80" title="#00BF80" /></a></td><td bgcolor="#00BFBF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#00BFBF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#00BFBF" title="#00BFBF" /></a></td><td bgcolor="#00BFFF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#00BFFF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#00BFFF" title="#00BFFF" /></a></td></tr>
+<tr><td bgcolor="#00FF00" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#00FF00]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#00FF00" title="#00FF00" /></a></td><td bgcolor="#00FF40" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#00FF40]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#00FF40" title="#00FF40" /></a></td><td bgcolor="#00FF80" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#00FF80]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#00FF80" title="#00FF80" /></a></td><td bgcolor="#00FFBF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#00FFBF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#00FFBF" title="#00FFBF" /></a></td><td bgcolor="#00FFFF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#00FFFF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#00FFFF" title="#00FFFF" /></a></td></tr>
+<tr><td bgcolor="#400000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#400000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#400000" title="#400000" /></a></td><td bgcolor="#400040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#400040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#400040" title="#400040" /></a></td><td bgcolor="#400080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#400080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#400080" title="#400080" /></a></td><td bgcolor="#4000BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#4000BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#4000BF" title="#4000BF" /></a></td><td bgcolor="#4000FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#4000FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#4000FF" title="#4000FF" /></a></td></tr>
+<tr><td bgcolor="#404000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#404000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#404000" title="#404000" /></a></td><td bgcolor="#404040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#404040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#404040" title="#404040" /></a></td><td bgcolor="#404080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#404080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#404080" title="#404080" /></a></td><td bgcolor="#4040BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#4040BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#4040BF" title="#4040BF" /></a></td><td bgcolor="#4040FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#4040FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#4040FF" title="#4040FF" /></a></td></tr>
+<tr><td bgcolor="#408000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#408000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#408000" title="#408000" /></a></td><td bgcolor="#408040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#408040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#408040" title="#408040" /></a></td><td bgcolor="#408080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#408080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#408080" title="#408080" /></a></td><td bgcolor="#4080BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#4080BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#4080BF" title="#4080BF" /></a></td><td bgcolor="#4080FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#4080FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#4080FF" title="#4080FF" /></a></td></tr>
+<tr><td bgcolor="#40BF00" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#40BF00]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#40BF00" title="#40BF00" /></a></td><td bgcolor="#40BF40" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#40BF40]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#40BF40" title="#40BF40" /></a></td><td bgcolor="#40BF80" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#40BF80]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#40BF80" title="#40BF80" /></a></td><td bgcolor="#40BFBF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#40BFBF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#40BFBF" title="#40BFBF" /></a></td><td bgcolor="#40BFFF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#40BFFF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#40BFFF" title="#40BFFF" /></a></td></tr>
+<tr><td bgcolor="#40FF00" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#40FF00]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#40FF00" title="#40FF00" /></a></td><td bgcolor="#40FF40" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#40FF40]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#40FF40" title="#40FF40" /></a></td><td bgcolor="#40FF80" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#40FF80]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#40FF80" title="#40FF80" /></a></td><td bgcolor="#40FFBF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#40FFBF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#40FFBF" title="#40FFBF" /></a></td><td bgcolor="#40FFFF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#40FFFF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#40FFFF" title="#40FFFF" /></a></td></tr>
+<tr><td bgcolor="#800000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#800000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#800000" title="#800000" /></a></td><td bgcolor="#800040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#800040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#800040" title="#800040" /></a></td><td bgcolor="#800080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#800080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#800080" title="#800080" /></a></td><td bgcolor="#8000BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#8000BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#8000BF" title="#8000BF" /></a></td><td bgcolor="#8000FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#8000FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#8000FF" title="#8000FF" /></a></td></tr>
+<tr><td bgcolor="#804000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#804000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#804000" title="#804000" /></a></td><td bgcolor="#804040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#804040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#804040" title="#804040" /></a></td><td bgcolor="#804080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#804080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#804080" title="#804080" /></a></td><td bgcolor="#8040BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#8040BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#8040BF" title="#8040BF" /></a></td><td bgcolor="#8040FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#8040FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#8040FF" title="#8040FF" /></a></td></tr>
+<tr><td bgcolor="#808000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#808000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#808000" title="#808000" /></a></td><td bgcolor="#808040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#808040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#808040" title="#808040" /></a></td><td bgcolor="#808080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#808080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#808080" title="#808080" /></a></td><td bgcolor="#8080BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#8080BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#8080BF" title="#8080BF" /></a></td><td bgcolor="#8080FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#8080FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#8080FF" title="#8080FF" /></a></td></tr>
+<tr><td bgcolor="#80BF00" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#80BF00]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#80BF00" title="#80BF00" /></a></td><td bgcolor="#80BF40" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#80BF40]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#80BF40" title="#80BF40" /></a></td><td bgcolor="#80BF80" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#80BF80]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#80BF80" title="#80BF80" /></a></td><td bgcolor="#80BFBF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#80BFBF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#80BFBF" title="#80BFBF" /></a></td><td bgcolor="#80BFFF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#80BFFF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#80BFFF" title="#80BFFF" /></a></td></tr>
+<tr><td bgcolor="#80FF00" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#80FF00]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#80FF00" title="#80FF00" /></a></td><td bgcolor="#80FF40" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#80FF40]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#80FF40" title="#80FF40" /></a></td><td bgcolor="#80FF80" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#80FF80]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#80FF80" title="#80FF80" /></a></td><td bgcolor="#80FFBF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#80FFBF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#80FFBF" title="#80FFBF" /></a></td><td bgcolor="#80FFFF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#80FFFF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#80FFFF" title="#80FFFF" /></a></td></tr>
+<tr><td bgcolor="#BF0000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF0000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF0000" title="#BF0000" /></a></td><td bgcolor="#BF0040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF0040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF0040" title="#BF0040" /></a></td><td bgcolor="#BF0080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF0080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF0080" title="#BF0080" /></a></td><td bgcolor="#BF00BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF00BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF00BF" title="#BF00BF" /></a></td><td bgcolor="#BF00FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF00FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF00FF" title="#BF00FF" /></a></td></tr>
+<tr><td bgcolor="#BF4000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF4000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF4000" title="#BF4000" /></a></td><td bgcolor="#BF4040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF4040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF4040" title="#BF4040" /></a></td><td bgcolor="#BF4080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF4080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF4080" title="#BF4080" /></a></td><td bgcolor="#BF40BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF40BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF40BF" title="#BF40BF" /></a></td><td bgcolor="#BF40FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF40FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF40FF" title="#BF40FF" /></a></td></tr>
+<tr><td bgcolor="#BF8000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF8000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF8000" title="#BF8000" /></a></td><td bgcolor="#BF8040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF8040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF8040" title="#BF8040" /></a></td><td bgcolor="#BF8080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF8080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF8080" title="#BF8080" /></a></td><td bgcolor="#BF80BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF80BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF80BF" title="#BF80BF" /></a></td><td bgcolor="#BF80FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BF80FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BF80FF" title="#BF80FF" /></a></td></tr>
+<tr><td bgcolor="#BFBF00" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BFBF00]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BFBF00" title="#BFBF00" /></a></td><td bgcolor="#BFBF40" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BFBF40]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BFBF40" title="#BFBF40" /></a></td><td bgcolor="#BFBF80" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BFBF80]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BFBF80" title="#BFBF80" /></a></td><td bgcolor="#BFBFBF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BFBFBF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BFBFBF" title="#BFBFBF" /></a></td><td bgcolor="#BFBFFF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BFBFFF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BFBFFF" title="#BFBFFF" /></a></td></tr>
+<tr><td bgcolor="#BFFF00" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BFFF00]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BFFF00" title="#BFFF00" /></a></td><td bgcolor="#BFFF40" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BFFF40]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BFFF40" title="#BFFF40" /></a></td><td bgcolor="#BFFF80" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BFFF80]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BFFF80" title="#BFFF80" /></a></td><td bgcolor="#BFFFBF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BFFFBF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BFFFBF" title="#BFFFBF" /></a></td><td bgcolor="#BFFFFF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#BFFFFF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#BFFFFF" title="#BFFFFF" /></a></td></tr>
+<tr><td bgcolor="#FF0000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF0000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF0000" title="#FF0000" /></a></td><td bgcolor="#FF0040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF0040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF0040" title="#FF0040" /></a></td><td bgcolor="#FF0080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF0080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF0080" title="#FF0080" /></a></td><td bgcolor="#FF00BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF00BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF00BF" title="#FF00BF" /></a></td><td bgcolor="#FF00FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF00FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF00FF" title="#FF00FF" /></a></td></tr>
+<tr><td bgcolor="#FF4000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF4000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF4000" title="#FF4000" /></a></td><td bgcolor="#FF4040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF4040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF4040" title="#FF4040" /></a></td><td bgcolor="#FF4080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF4080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF4080" title="#FF4080" /></a></td><td bgcolor="#FF40BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF40BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF40BF" title="#FF40BF" /></a></td><td bgcolor="#FF40FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF40FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF40FF" title="#FF40FF" /></a></td></tr>
+<tr><td bgcolor="#FF8000" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF8000]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF8000" title="#FF8000" /></a></td><td bgcolor="#FF8040" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF8040]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF8040" title="#FF8040" /></a></td><td bgcolor="#FF8080" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF8080]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF8080" title="#FF8080" /></a></td><td bgcolor="#FF80BF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF80BF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF80BF" title="#FF80BF" /></a></td><td bgcolor="#FF80FF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FF80FF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FF80FF" title="#FF80FF" /></a></td></tr>
+<tr><td bgcolor="#FFBF00" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FFBF00]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FFBF00" title="#FFBF00" /></a></td><td bgcolor="#FFBF40" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FFBF40]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FFBF40" title="#FFBF40" /></a></td><td bgcolor="#FFBF80" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FFBF80]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FFBF80" title="#FFBF80" /></a></td><td bgcolor="#FFBFBF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FFBFBF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FFBFBF" title="#FFBFBF" /></a></td><td bgcolor="#FFBFFF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FFBFFF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FFBFFF" title="#FFBFFF" /></a></td></tr>
+<tr><td bgcolor="#FFFF00" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FFFF00]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FFFF00" title="#FFFF00" /></a></td><td bgcolor="#FFFF40" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FFFF40]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FFFF40" title="#FFFF40" /></a></td><td bgcolor="#FFFF80" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FFFF80]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FFFF80" title="#FFFF80" /></a></td><td bgcolor="#FFFFBF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FFFFBF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FFFFBF" title="#FFFFBF" /></a></td><td bgcolor="#FFFFFF" style="width: 7px; height: 6px;"><a href="#" onclick="bbfontstyle('[color=#FFFFFF]', '[/color]'); return false;"><img src="images/spacer.gif" width="7" height="6" alt="#FFFFFF" title="#FFFFFF" /></a></td></tr>
+</table>
+			</td>
+		</tr>
+		</table>
+	</td>
+</tr>
+
+<tr>
+	<td class="row1" valign="top"><b class="genmed">Options:</b><br />
+		<table cellspacing="2" cellpadding="0" border="0">
+		<tr><td class="gensmall"><a href="./faq.php?mode=bbcode">BBCode</a> is <em>ON</em></td></tr>
+		<tr><td class="gensmall">[img] is <em>ON</em></td></tr>
+		<tr><td class="gensmall">[flash] is <em>OFF</em></td></tr>
+		<tr><td class="gensmall">[url] is <em>ON</em></td></tr>
+		<tr><td class="gensmall">Smilies are <em>ON</em></td></tr>
+		</table>
+	</td>
+	<td class="row2">
+		<table cellpadding="1">
+		<tr>
+			<td><input type="checkbox" class="radio" name="disable_bbcode" /></td>
+			<td class="gen">Disable BBCode</td>
+		</tr>
+		<tr>
+			<td><input type="checkbox" class="radio" name="disable_smilies" /></td>
+			<td class="gen">Disable smilies</td>
+		</tr>
+		<tr>
+			<td><input type="checkbox" class="radio" name="disable_magic_url" /></td>
+			<td class="gen">Do not automatically parse URLs</td>
+		</tr>
+		<tr>
+			<td><input type="checkbox" class="radio" name="attach_sig" checked="checked" /></td>
+			<td class="gen">Attach a signature (signatures can be altered via the UCP)</td>
+		</tr>
+		<tr>
+			<td><input type="checkbox" class="radio" name="notify" /></td>
+			<td class="gen">Notify me when a reply is posted</td>
+		</tr>
+		</table>
+	</td>
+</tr>
+
+<tr>
+	<td class="cat" colspan="2" align="center">
+		<input class="btnlite" type="submit" tabindex="5" name="preview" value="Preview" />
+		&nbsp; <input class="btnmain" type="submit" accesskey="s" tabindex="6" name="post" value="Submit" />
+		&nbsp; <input class="btnlite" type="submit" accesskey="k" tabindex="7" name="save" value="Save draft" />
+		&nbsp; <input class="btnlite" type="submit" accesskey="c" tabindex="9" name="cancel" value="Cancel" />
+	</td>
+</tr>
+
+<tr>
+	<th colspan="2">Upload attachment</th>
+</tr>
+<tr>
+	<td class="row1" colspan="2"><span class="gensmall">If you wish to attach one or more files enter the details below.</span></td>
+</tr>
+<tr>
+	<td class="row1" width="22%"><b class="genmed">Filename</b></td>
+	<td class="row2"><input type="file" name="fileupload" size="40" /></td>
+</tr>
+<tr>
+	<td class="row1" width="22%"><b class="genmed">File comment</b></td>
+	<td class="row2">
+		<table border="0" cellspacing="4" cellpadding="0">
+		<tr>
+			<td><textarea class="post" name="filecomment" rows="3" cols="35"></textarea>&nbsp;</td>
+			<td valign="top"><input class="btnlite" type="submit" style="width:150px" name="add_file" value="Add the file" /></td>
+		</tr>
+		</table>
+	</td>
+</tr>
+
+<tr>
+	<td class="cat" colspan="2" align="center"><input type="hidden" name="topic_cur_post_id" value="900012" /><input type="hidden" name="lastclick" value="1767225600" />
+		<input class="btnlite" type="submit" tabindex="10" name="preview" value="Preview" />
+		&nbsp; <input class="btnmain" type="submit" accesskey="s" tabindex="11" name="post" value="Submit" />
+		&nbsp; <input class="btnlite" type="submit" accesskey="c" tabindex="14" name="cancel" value="Cancel" />
+	</td>
+</tr>
+</table>
+
+	<input type="hidden" name="creation_time" value="1767225600" />
+<input type="hidden" name="form_token" value="0123456789abcdef0123456789abcdef01234567" />
+
+	</form>
+
+<br clear="all" />
+
+<table class="tablebg" width="100%" cellspacing="1">
+<tr>
+	<th align="center">Topic review - Dragon's Dogma 2</th>
+</tr>
+<tr>
+	<td class="row1"><div style="overflow: auto; width: 100%; height: 300px;">
+
+		<table class="tablebg" width="100%" cellspacing="1">
+		<tr>
+			<th width="22%">Author</th>
+			<th>Message</th>
+		</tr>
+		<tr class="row1">
+				<td rowspan="2" align="left" valign="top"><a id="pr900012"></a>
+					<table width="150" cellspacing="0">
+					<tr>
+						<td align="center"><b class="postauthor">Rogue</b></td>
+					</tr>
+					</table>
+				</td>
+				<td width="100%">
+					<table width="100%" cellspacing="0">
+					<tr>
+						<td>&nbsp;</td>
+						<td class="gensmall" valign="middle" nowrap="nowrap"><b>Post subject:</b>&nbsp;</td>
+						<td class="gensmall" width="100%" valign="middle">Re: Dragon's Dogma 2</td>
+						<td valign="top" nowrap="nowrap">&nbsp;<a href="#" onclick="addquote(900012,'Rogue', 'wrote'); return false;"><img src="./styles/rinDark/imageset/en/icon_post_quote.gif" alt="Reply with quote" title="Reply with quote" /></a></td>
+					</tr>
+					</table>
+				</td>
+			</tr>
+
+			<tr class="row1">
+				<td valign="top">
+					<table width="100%" cellspacing="0">
+					<tr>
+						<td valign="top">
+							<table width="100%" cellspacing="0" cellpadding="2">
+							<tr>
+								<td>
+									<div class="postbody">Anyone managed to get the game to work with the co-op mod while the overlay is on? It launches fine on its own but the second player never connects.</div>
+									<div id="message_900012" style="display: none;">Anyone managed to get the game to work with the co-op mod while the overlay is on? It launches fine on its own but the second player never connects.</div>
+								</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<table width="100%" cellspacing="0">
+							<tr valign="middle">
+								<td width="100%" align="left"><span class="gensmall"></span></td>
+								<td width="10" nowrap="nowrap"><a href="./viewtopic.php?p=900012#p900012"><img src="./styles/rinDark/imageset/icon_post_target.gif" width="12" height="9" alt="Post" title="Post" /></a></td>
+								<td class="gensmall" nowrap="nowrap"><b>Posted:</b> Today, 19:40</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td class="spacer" colspan="2"><img src="images/spacer.gif" alt="" width="1" height="1" /></td>
+			</tr>
+		<tr class="row2">
+				<td rowspan="2" align="left" valign="top"><a id="pr900011"></a>
+					<table width="150" cellspacing="0">
+					<tr>
+						<td align="center"><b class="postauthor">dangwoot</b></td>
+					</tr>
+					</table>
+				</td>
+				<td width="100%">
+					<table width="100%" cellspacing="0">
+					<tr>
+						<td>&nbsp;</td>
+						<td class="gensmall" valign="middle" nowrap="nowrap"><b>Post subject:</b>&nbsp;</td>
+						<td class="gensmall" width="100%" valign="middle">Re: Dragon's Dogma 2</td>
+						<td valign="top" nowrap="nowrap">&nbsp;<a href="#" onclick="addquote(900011,'dangwoot', 'wrote'); return false;"><img src="./styles/rinDark/imageset/en/icon_post_quote.gif" alt="Reply with quote" title="Reply with quote" /></a></td>
+					</tr>
+					</table>
+				</td>
+			</tr>
+
+			<tr class="row2">
+				<td valign="top">
+					<table width="100%" cellspacing="0">
+					<tr>
+						<td valign="top">
+							<table width="100%" cellspacing="0" cellpadding="2">
+							<tr>
+								<td>
+									<div class="postbody">Update installed cleanly over the previous build, no reinstall needed. Saves carried over.</div>
+									<div id="message_900011" style="display: none;">Update installed cleanly over the previous build, no reinstall needed. Saves carried over.</div>
+								</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<table width="100%" cellspacing="0">
+							<tr valign="middle">
+								<td width="100%" align="left"><span class="gensmall"></span></td>
+								<td width="10" nowrap="nowrap"><a href="./viewtopic.php?p=900011#p900011"><img src="./styles/rinDark/imageset/icon_post_target.gif" width="12" height="9" alt="Post" title="Post" /></a></td>
+								<td class="gensmall" nowrap="nowrap"><b>Posted:</b> Today, 05:00</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td class="spacer" colspan="2"><img src="images/spacer.gif" alt="" width="1" height="1" /></td>
+			</tr>
+		<tr class="row1">
+				<td rowspan="2" align="left" valign="top"><a id="pr900010"></a>
+					<table width="150" cellspacing="0">
+					<tr>
+						<td align="center"><b class="postauthor">UltraShaggy</b></td>
+					</tr>
+					</table>
+				</td>
+				<td width="100%">
+					<table width="100%" cellspacing="0">
+					<tr>
+						<td>&nbsp;</td>
+						<td class="gensmall" valign="middle" nowrap="nowrap"><b>Post subject:</b>&nbsp;</td>
+						<td class="gensmall" width="100%" valign="middle">Re: Dragon's Dogma 2</td>
+						<td valign="top" nowrap="nowrap">&nbsp;<a href="#" onclick="addquote(900010,'UltraShaggy', 'wrote'); return false;"><img src="./styles/rinDark/imageset/en/icon_post_quote.gif" alt="Reply with quote" title="Reply with quote" /></a></td>
+					</tr>
+					</table>
+				</td>
+			</tr>
+
+			<tr class="row1">
+				<td valign="top">
+					<table width="100%" cellspacing="0">
+					<tr>
+						<td valign="top">
+							<table width="100%" cellspacing="0" cellpadding="2">
+							<tr>
+								<td>
+									<div class="postbody">Is there a way to get gyro controls to work? The controller is recognised as a generic pad and the stick deadzone is enormous.</div>
+									<div id="message_900010" style="display: none;">Is there a way to get gyro controls to work? The controller is recognised as a generic pad and the stick deadzone is enormous.</div>
+								</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<table width="100%" cellspacing="0">
+							<tr valign="middle">
+								<td width="100%" align="left"><span class="gensmall"></span></td>
+								<td width="10" nowrap="nowrap"><a href="./viewtopic.php?p=900010#p900010"><img src="./styles/rinDark/imageset/icon_post_target.gif" width="12" height="9" alt="Post" title="Post" /></a></td>
+								<td class="gensmall" nowrap="nowrap"><b>Posted:</b> Yesterday, 22:14</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td class="spacer" colspan="2"><img src="images/spacer.gif" alt="" width="1" height="1" /></td>
+			</tr>
+		<tr class="row2">
+				<td rowspan="2" align="left" valign="top"><a id="pr900009"></a>
+					<table width="150" cellspacing="0">
+					<tr>
+						<td align="center"><b class="postauthor">joy7</b></td>
+					</tr>
+					</table>
+				</td>
+				<td width="100%">
+					<table width="100%" cellspacing="0">
+					<tr>
+						<td>&nbsp;</td>
+						<td class="gensmall" valign="middle" nowrap="nowrap"><b>Post subject:</b>&nbsp;</td>
+						<td class="gensmall" width="100%" valign="middle">Re: Dragon's Dogma 2</td>
+						<td valign="top" nowrap="nowrap">&nbsp;<a href="#" onclick="addquote(900009,'joy7', 'wrote'); return false;"><img src="./styles/rinDark/imageset/en/icon_post_quote.gif" alt="Reply with quote" title="Reply with quote" /></a></td>
+					</tr>
+					</table>
+				</td>
+			</tr>
+
+			<tr class="row2">
+				<td valign="top">
+					<table width="100%" cellspacing="0">
+					<tr>
+						<td valign="top">
+							<table width="100%" cellspacing="0" cellpadding="2">
+							<tr>
+								<td>
+									<div class="postbody">Mirror is up again. Same hash as the one in the first post, so nothing to redownload if you already have it.</div>
+									<div id="message_900009" style="display: none;">Mirror is up again. Same hash as the one in the first post, so nothing to redownload if you already have it.</div>
+								</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<table width="100%" cellspacing="0">
+							<tr valign="middle">
+								<td width="100%" align="left"><span class="gensmall"></span></td>
+								<td width="10" nowrap="nowrap"><a href="./viewtopic.php?p=900009#p900009"><img src="./styles/rinDark/imageset/icon_post_target.gif" width="12" height="9" alt="Post" title="Post" /></a></td>
+								<td class="gensmall" nowrap="nowrap"><b>Posted:</b> Yesterday, 18:02</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td class="spacer" colspan="2"><img src="images/spacer.gif" alt="" width="1" height="1" /></td>
+			</tr>
+		<tr class="row1">
+				<td rowspan="2" align="left" valign="top"><a id="pr900008"></a>
+					<table width="150" cellspacing="0">
+					<tr>
+						<td align="center"><b class="postauthor">Zøg</b></td>
+					</tr>
+					</table>
+				</td>
+				<td width="100%">
+					<table width="100%" cellspacing="0">
+					<tr>
+						<td>&nbsp;</td>
+						<td class="gensmall" valign="middle" nowrap="nowrap"><b>Post subject:</b>&nbsp;</td>
+						<td class="gensmall" width="100%" valign="middle">Re: Dragon's Dogma 2</td>
+						<td valign="top" nowrap="nowrap">&nbsp;<a href="#" onclick="addquote(900008,'Zøg', 'wrote'); return false;"><img src="./styles/rinDark/imageset/en/icon_post_quote.gif" alt="Reply with quote" title="Reply with quote" /></a></td>
+					</tr>
+					</table>
+				</td>
+			</tr>
+
+			<tr class="row1">
+				<td valign="top">
+					<table width="100%" cellspacing="0">
+					<tr>
+						<td valign="top">
+							<table width="100%" cellspacing="0" cellpadding="2">
+							<tr>
+								<td>
+									<div class="postbody">Reminder that the trainer from two pages back is flagged by the anti-cheat in online mode. Offline only.</div>
+									<div id="message_900008" style="display: none;">Reminder that the trainer from two pages back is flagged by the anti-cheat in online mode. Offline only.</div>
+								</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<table width="100%" cellspacing="0">
+							<tr valign="middle">
+								<td width="100%" align="left"><span class="gensmall"></span></td>
+								<td width="10" nowrap="nowrap"><a href="./viewtopic.php?p=900008#p900008"><img src="./styles/rinDark/imageset/icon_post_target.gif" width="12" height="9" alt="Post" title="Post" /></a></td>
+								<td class="gensmall" nowrap="nowrap"><b>Posted:</b> Sunday, 30 Aug 2026, 11:47</td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+	</div></td>
+</tr>
+</table>
+</div>
+
+	<br clear="all" />
+</div>
+
+<div id="wrapfooter">
+    <br><br><br>
+	
+	<span class="copyright">Powered by <a href="https://www.phpbb.com/">phpBB</a>&reg; Forum Software &copy; phpBB Group
+	</span>
+	<br><br>
+</div>
+	
+		</td>
+	</tr>
+	<br>
+</table>
+	<br>
+</body>
+</html>

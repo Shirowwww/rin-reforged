@@ -1244,6 +1244,20 @@ html[data-rr] .post {
 }
 html[data-rr] textarea,
 html[data-rr] textarea.post { font-family: var(--rr-font); line-height: var(--rr-lh); }
+/* The attachment field on the posting form. The board's sheet paints
+   every \`input\` near-black, and this one was never in the list above:
+   on the light themes it read as a black bar with the browser's own
+   "Choose file" button sitting in it. */
+html[data-rr] input[type="file"] {
+    background: var(--rr-bg-sunken);
+    color: var(--rr-text);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius);
+    padding: var(--rr-s2) var(--rr-s3);
+    font-family: var(--rr-font);
+    font-size: var(--rr-fs-sm);
+    max-width: 100%;
+}
 /* The template sizes every text field with size="25", size="45": a
    fixed count of characters from 2003, cramped on a fluid frame. The
    board's own fields get a floor in ems and the room they have; the
@@ -1572,6 +1586,99 @@ html[data-rr] hr.rr-rule {
     background: none;
     height: 0;
 }
+
+/* ---- The topic review under the reply form ----------------------- */
+
+/* The last few posts of the thread, reprinted in a box you scroll so
+   you can answer them without leaving the form. The board draws them
+   as one continuous table: a hairline of table background between two
+   posts and a zebra a shade apart, which at a glance reads as one long
+   post with somebody's name in the middle of it.
+
+   Each is a card here — its own edge, its own corners, a gap to the
+   next — out of the rows the board already prints, named by
+   compose.js (initTopicReview). */
+
+html[data-rr] [data-rr-review] {
+    /* The template types the height into the element. Five cards and
+       the air between them need a little more of it than five glued
+       rows did. */
+    height: 360px !important;
+    padding: var(--rr-s3);
+    background: var(--rr-surface);
+    overscroll-behavior: contain;
+}
+html[data-rr] table[data-rr-reviewbox] > tbody > tr > td { padding: 0; }
+/* The inner table is a \`tablebg\` too, so it arrives wearing the card
+   the reskin gives every one of those — an edge, corners and a gap
+   under it, inside the card it is already in. The cards are its rows
+   now. */
+html[data-rr] table[data-rr-review-list] {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    overflow: visible;
+}
+
+/* The two headings the box opens with. They name the columns of a
+   table nobody reads as a table; kept, quietly. */
+html[data-rr] table[data-rr-review-list] > tbody > tr[data-rr-head] > th {
+    background: none;
+    border: 0;
+    padding: 0 var(--rr-s3) var(--rr-s2);
+    color: var(--rr-faint);
+    font-size: var(--rr-fs-xs);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+html[data-rr] tr[data-rr-review-row] > td {
+    background: var(--rr-surface-2);
+    padding: var(--rr-s2) var(--rr-s3);
+    vertical-align: top;
+}
+/* The author cell spans the pair, so it draws the whole left side. */
+html[data-rr] td[data-rr-review-cell="author"] {
+    border: 1px solid var(--rr-line);
+    border-right: 0;
+    border-radius: var(--rr-radius) 0 0 var(--rr-radius);
+    padding-top: var(--rr-s3);
+}
+html[data-rr] tr[data-rr-review-row="head"] > td:not([data-rr-review-cell]) {
+    border: 1px solid var(--rr-line);
+    border-left: 0;
+    border-bottom: 0;
+    border-radius: 0 var(--rr-radius) 0 0;
+    padding-top: var(--rr-s3);
+}
+html[data-rr] tr[data-rr-review-row="body"] > td {
+    border: 1px solid var(--rr-line);
+    border-left: 0;
+    border-top: 0;
+    border-radius: 0 0 var(--rr-radius) 0;
+    padding-bottom: var(--rr-s3);
+}
+/* The spacer row is a 1px image the reskin already hides; it is the
+   air between two cards now. */
+html[data-rr] tr[data-rr-review-row="gap"] > td.spacer {
+    height: var(--rr-s3);
+    padding: 0;
+    background: none;
+    border: 0;
+}
+
+/* Whose post it is, said once and plainly. The template wraps the name
+   in a 150px table of its own. */
+html[data-rr] td[data-rr-review-cell="author"] > table { width: auto !important; }
+html[data-rr] td[data-rr-review-cell="author"] td { text-align: left !important; padding: 0; }
+
+/* "Post subject: Re: <the topic>" on every one of the five, which is
+   the thread's own title said five more times. Supporting detail, not
+   a heading. */
+html[data-rr] tr[data-rr-review-row="head"] .gensmall { color: var(--rr-faint); }
+html[data-rr] tr[data-rr-review-row="head"] .gensmall b { color: var(--rr-faint); font-weight: 400; }
+html[data-rr] tr[data-rr-review-row="body"] .gensmall b { color: var(--rr-muted); font-weight: 600; }
 
 /* == ui.css == */
 /* ------------------------------------------------------------------
@@ -2149,14 +2256,27 @@ html[data-rr] [data-rr-tip]::after {
     display: none;
 }
 html[data-rr] [data-rr-tip]:hover::after,
-html[data-rr] [data-rr-tip]:focus-visible::after { display: block; }
+html[data-rr] [data-rr-tip]:focus-visible::after,
+/* A tip that hangs off a wrapper rather than off the control itself
+   (the writing toolbar: an \`input\` draws no pseudo-element) has to
+   answer to the control's focus, because the wrapper never takes any.
+   Scoped to the wrapper's own children, so this costs nothing on the
+   ancestors of a page full of them. */
+html[data-rr] [data-rr-tip]:has(> :focus-visible)::after { display: block; }
 /* Near the right edge the label would still push the page sideways
    while it is up, so those hang off their own right edge instead. The
    last control in the top bar is against the window; so is the corner
    the jump buttons live in. */
 html[data-rr] [data-rr-tip][data-rr-tip-side="right"]::after,
 html[data-rr] .rr-nav__actions > :last-child[data-rr-tip]::after { left: auto; right: 0; transform: none; }
-html[data-rr] [data-rr-tip][data-rr-tip-side="above"]::after { top: auto; bottom: calc(100% + 6px); }
+html[data-rr] [data-rr-tip][data-rr-tip-side="above"]::after,
+html[data-rr] [data-rr-tip][data-rr-tip-side="above-left"]::after,
+html[data-rr] [data-rr-tip][data-rr-tip-side="above-right"]::after { top: auto; bottom: calc(100% + 6px); }
+/* A bar of buttons wraps, so which end of the window a given button
+   sits at is only known once it is hovered; compose.js measures then
+   and picks one of these. */
+html[data-rr] [data-rr-tip][data-rr-tip-side="above-left"]::after { left: 0; right: auto; transform: none; }
+html[data-rr] [data-rr-tip][data-rr-tip-side="above-right"]::after { left: auto; right: 0; transform: none; }
 
 /* ---- Reading progress ------------------------------------------- */
 
@@ -3490,6 +3610,105 @@ html[data-rr] .rr-lightbox__step:focus-visible { outline: 2px solid var(--rr-acc
     background: rgba(20, 22, 26, .72);
     color: #fff;
     font: 500 var(--rr-fs-xs) / 1.6 var(--rr-font);
+}
+
+/* ---- The writing toolbar ------------------------------------------ */
+
+/* The board's BBCode buttons, regrouped by compose.js. What was two
+   undivided rows of grey rectangles is one bar in five groups: the
+   letter styles, the blocks, what is fetched from elsewhere, what is
+   hidden, and the board's own generator.
+
+   The groups are told apart by the space between them and nothing
+   else. A hairline would be read the same way, right up to the moment
+   the bar wraps on a narrow window and a line opens with a divider
+   against nothing — which is exactly what the board bar had to be
+   rebuilt to avoid. */
+.rr-bbtools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px var(--rr-s5);
+    margin: 0 0 var(--rr-s2);
+}
+.rr-bbtools__group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+/* The tooltip hangs off this wrapper rather than off the button: an
+   \`input\` is a replaced element and draws no pseudo-element, so
+   \`input::after\` is nothing at all. */
+.rr-bbtool {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+.rr-bbtool > svg {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--rr-muted);
+    /* The icon sits over the button it belongs to; a click on it is a
+       click on the button. */
+    pointer-events: none;
+    transition: color var(--rr-speed) ease;
+}
+.rr-bbtool:hover > svg { color: var(--rr-accent); }
+
+html[data-rr] .rr-bbtool > input.btnbbcode {
+    width: auto !important;
+    min-width: 34px;
+    height: 30px;
+    padding: 0 11px;
+    background: var(--rr-surface-2);
+    border-color: var(--rr-line);
+    color: var(--rr-text);
+    font-size: var(--rr-fs-sm);
+    font-weight: 600;
+}
+html[data-rr] .rr-bbtool > svg + input.btnbbcode { padding-left: 29px; }
+html[data-rr] .rr-bbtool > input.btnbbcode:hover {
+    background: var(--rr-surface-3);
+    border-color: var(--rr-line-strong);
+    color: var(--rr-text-strong);
+}
+html[data-rr] .rr-bbtool > input.btnbbcode:active { background: var(--rr-line); }
+
+/* Four buttons whose caption is the effect: they wear it. */
+html[data-rr] .rr-bbtool > input[data-rr-face="bold"] { font-weight: 800; }
+html[data-rr] .rr-bbtool > input[data-rr-face="italic"] { font-style: italic; }
+html[data-rr] .rr-bbtool > input[data-rr-face="underline"] { text-decoration: underline; }
+html[data-rr] .rr-bbtool > input[data-rr-face="strike"] { text-decoration: line-through; }
+
+/* The font size menu, which the template leaves stranded at the end of
+   the first row with a label of its own. */
+.rr-bbtool--menu > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--rr-muted);
+    font-size: var(--rr-fs-sm);
+    white-space: nowrap;
+}
+html[data-rr] .rr-bbtool--menu select { height: 30px; padding: 0 6px; }
+
+/* The read-only field the board wrote its explanations into. It stays
+   in the page — \`helpline()\` sets its value on every mouseover of
+   every button, and a removed one throws on all of them — and stops
+   being a field the eye reads as a second Subject box. */
+html[data-rr] input[data-rr-helpbox] { display: none; }
+/* Its row also carries the heading over the colour palette, so the row
+   stays and closes up to the height of that one word. */
+html[data-rr] tr[data-rr-helprow] > td { padding: 0 0 var(--rr-s2); }
+html[data-rr] tr[data-rr-helprow] > td.genmed {
+    color: var(--rr-faint);
+    font-size: var(--rr-fs-xs);
+    letter-spacing: .04em;
+    text-transform: uppercase;
 }
 
 /* == features.css == */
@@ -5286,6 +5505,57 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
         padding: 12px 14px !important;
     }
     html[data-rr] #wrapcentre form[name="sortmsg"] select { flex: none; }
+}
+
+/* ---- The topic review, on a phone -------------------------------- */
+
+@media (max-width: 860px) {
+    /* The block above turns every row of it into a flex row, which put
+       the author's name in a 46px column beside the subject with the
+       card's left edge drawn round it. The card belongs to the row
+       here, not to the cells: the two rows of a post are the top and
+       the bottom of one box, and everything inside them is a line of
+       its own. */
+    html[data-rr] #wrapcentre tr[data-rr-review-row="head"],
+    html[data-rr] #wrapcentre tr[data-rr-review-row="body"] {
+        display: block !important;
+        background: var(--rr-surface-2);
+        border: 1px solid var(--rr-line);
+        padding: 0 var(--rr-s3);
+    }
+    html[data-rr] #wrapcentre tr[data-rr-review-row="head"] {
+        border-bottom: 0;
+        border-radius: var(--rr-radius) var(--rr-radius) 0 0;
+        padding-top: var(--rr-s2);
+    }
+    html[data-rr] #wrapcentre tr[data-rr-review-row="body"] {
+        border-top: 0;
+        border-radius: 0 0 var(--rr-radius) var(--rr-radius);
+        padding-bottom: var(--rr-s2);
+    }
+    html[data-rr] #wrapcentre tr[data-rr-review-row] > td {
+        display: block !important;
+        width: auto !important;
+        background: none;
+        border: 0;
+        border-radius: 0;
+        padding: 0 !important;
+    }
+    html[data-rr] #wrapcentre td[data-rr-review-cell="author"] { padding-bottom: 2px !important; }
+    /* "Post subject: Re: <the topic> [Reply with quote]" is four cells
+       of a nested table, and stacked that is four lines of a card
+       whose message is three. One wrapped line, with the button
+       pushed to the end of it. */
+    html[data-rr] #wrapcentre tr[data-rr-review-row="head"] > td:not([data-rr-review-cell]) > table > tbody > tr {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 2px var(--rr-s2);
+    }
+    html[data-rr] #wrapcentre tr[data-rr-review-row="head"] > td:not([data-rr-review-cell]) > table td:last-child { margin-left: auto; }
+    /* The scroller keeps its own edge, so the cards inside it need no
+       second one against the window. */
+    html[data-rr] [data-rr-review] { padding: var(--rr-s2); }
 }`;
 
 /* ================= src/core/store.js ================= */
@@ -6264,6 +6534,18 @@ const ICON_PATHS = {
     // shrunk to 20px.
     crosshair: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2"/><path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5"/>',
     clip:      '<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
+
+    /* The writing toolbar. Each of these has to read at 13px against a
+       word, so they are the plainest shape that says the thing: two
+       angle brackets for code, bullets and rules for the two kinds of
+       list, a frame with a sun in it for an image, a play triangle for
+       the video embed, a struck-through eye for the spoiler. */
+    code:      '<path d="M9 7 4 12l5 5M15 7l5 5-5 5"/>',
+    list:      '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/>',
+    listnum:   '<path d="M10 6h10M10 12h10M10 18h10M4 5.5 5.5 5v4M3.6 15.2a1.4 1.4 0 1 1 2.5.9L3.6 19h3"/>',
+    image:     '<rect x="3" y="4.5" width="18" height="15" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 17 4.5-4.5 4 4L16 13l4 4"/>',
+    play:      '<rect x="2.5" y="4.5" width="19" height="15" rx="4"/><path d="m10 8.8 5.2 3.2-5.2 3.2z"/>',
+    hide:      '<path d="M2.5 12S6.4 5.8 12 5.8 21.5 12 21.5 12 17.6 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.7"/><path d="M4 20 20 4"/>',
 };
 
 /* Each icon's shapes, built once as real nodes and cloned after.
@@ -6981,6 +7263,32 @@ const RU_WORDS = {
     "Code": "Код",
     "Link": "Ссылка",
     "Spoiler": "Спойлер",
+
+    /* The writing toolbar on posting.php. The captions are what the
+       button says, so they are short; the tips are what it does. */
+    "B": "Ж",
+    "i": "К",
+    "u": "П",
+    "S": "З",
+    "Strikethrough": "Зачёркнутый",
+    "Quote a post": "Цитата сообщения",
+    "Code, kept as typed": "Код, как он набран",
+    "List": "Список",
+    "Bulleted list": "Маркированный список",
+    "Numbered": "Нумерация",
+    "Numbered list": "Нумерованный список",
+    "Item": "Пункт",
+    "An item in a list": "Пункт списка",
+    "Image from a URL": "Изображение по адресу",
+    "Link to a page": "Ссылка на страницу",
+    "Named spoiler": "Спойлер с заголовком",
+    "Hide text until clicked": "Скрыть текст до нажатия",
+    "Spoiler with a title": "Спойлер со своим заголовком",
+    "YouTube": "YouTube",
+    "Embed a YouTube video": "Вставить видео с YouTube",
+    "SteamInfo": "SteamInfo",
+    "Game details from Steam": "Данные об игре из Steam",
+    "Text size": "Размер текста",
 
     // The top bar
     "More": "Ещё",
@@ -14708,6 +15016,290 @@ function initPostingMemory() {
     }
 }
 
+/* ---- The writing toolbar -------------------------------------------
+
+   The board's own BBCode bar is sixteen grey rectangles reading "s",
+   "[*]", "List=", "spoiler=" and "Generate SteamInfo BBCode", laid out
+   in two undivided rows. What each one does is written nowhere on it:
+   the board puts the explanation in a read-only text field under the
+   bar, the full width of the form, which sits exactly where a second
+   Subject box would and reads as one. People fill in a form; they do
+   not hover a field to be told things.
+
+   So: the caption says what the button makes, an icon repeats it, the
+   bar is cut into groups, and the explanation is a small label above
+   the button that names it — the same tooltip every other control in
+   this script already uses.
+
+   Nothing about the button changes but its face. `bbstyle()` works off
+   the `bbtags` array and never off a caption, the accesskeys stay, the
+   onclick stays, and the helpbox stays in the page (hidden) because
+   `helpline()` writes into it on every mouseover.
+   -------------------------------------------------------------------- */
+
+/* Keyed by the input's name for the tags phpBB numbers itself, which
+   is stable and the same in both languages. */
+const BB_BY_NAME = {
+    addbbcode0:   { label: "B", face: "bold", tip: "Bold" },
+    addbbcode2:   { label: "i", face: "italic", tip: "Italic" },
+    addbbcode4:   { label: "u", face: "underline", tip: "Underline" },
+    addbbcode6:   { label: "Quote", icon: "quote", tip: "Quote a post" },
+    addbbcode8:   { label: "Code", icon: "code", tip: "Code, kept as typed" },
+    addbbcode10:  { label: "List", icon: "list", tip: "Bulleted list" },
+    addbbcode12:  { label: "Numbered", icon: "listnum", tip: "Numbered list" },
+    addlistitem:  { label: "Item", tip: "An item in a list" },
+    addbbcode14:  { label: "Image", icon: "image", tip: "Image from a URL" },
+    addbbcode16:  { label: "Link", icon: "link", tip: "Link to a page" },
+    addsteaminfo: { label: "SteamInfo", icon: "game", tip: "Game details from Steam" },
+};
+
+/* The board's own added BBCodes are numbered in whatever order the
+   admin defined them, so those are keyed by the tag itself — which is
+   what the button already says. */
+const BB_BY_TAG = {
+    "s":        { label: "S", face: "strike", tip: "Strikethrough" },
+    "spoiler":  { label: "Spoiler", icon: "hide", tip: "Hide text until clicked" },
+    "spoiler=": { label: "Named spoiler", icon: "hide", tip: "Spoiler with a title" },
+    "youtube":  { label: "YouTube", icon: "play", tip: "Embed a YouTube video" },
+};
+
+/* What belongs beside what: the letter styles, then the blocks, then
+   what is fetched from somewhere else, then what is hidden, then the
+   board's own generator. A key is a button name, or a tag written
+   `tag:`. */
+const BB_GROUPS = [
+    ["addbbcode0", "addbbcode2", "addbbcode4", "tag:s"],
+    ["addbbcode6", "addbbcode8", "addbbcode10", "addbbcode12", "addlistitem"],
+    ["addbbcode14", "addbbcode16", "tag:youtube"],
+    ["tag:spoiler", "tag:spoiler="],
+    ["addsteaminfo"],
+];
+
+/**
+ * The board's own help text, out of the inline `help_line` table it
+ * writes beside the toolbar.
+ *
+ * Only ever used for a BBCode this script has no entry for — one the
+ * board has added since — so that an unknown button still says
+ * something rather than nothing.
+ */
+function boardHelpLines() {
+    const table = {};
+    for (const script of $$("script:not([src])")) {
+        const text = script.textContent || "";
+        const at = text.indexOf("help_line");
+        if (at < 0 || !/var\s+help_line\s*=/.test(text)) continue;
+        // No value in that object contains a brace, so the first one
+        // after it closes the literal.
+        const body = text.slice(at, text.indexOf("}", at));
+        const entry = /([A-Za-z_]\w*)\s*:\s*'((?:[^'\\]|\\.)*)'/g;
+        let match;
+        while ((match = entry.exec(body)) !== null) table[match[1]] = match[2].replace(/\\(.)/g, "$1");
+    }
+    return table;
+}
+
+/** The `helpline('q')` key on a button, if it has one. */
+function helpKeyOf(input) {
+    const call = input.getAttribute("onmouseover") || "";
+    const match = call.match(/helpline\(\s*'([^']+)'/);
+    return match ? match[1] : null;
+}
+
+/**
+ * Draw one button as a tool: a caption that says what it makes, an
+ * icon beside it, and its name on a label above it.
+ *
+ * The tooltip goes on a wrapper rather than on the input, because a
+ * replaced element draws no pseudo-elements — `input::after` is
+ * nothing at all, which is the reason the board needed a field for
+ * this in the first place.
+ */
+function dressTool(input, spec, fallbackTip) {
+    const tip = spec ? t(spec.tip) : fallbackTip;
+    const holder = el("span.rr-bbtool", { "data-rr-tip": tip, "data-rr-tip-side": "above" });
+
+    if (spec) {
+        // The template types a width and a text-decoration into every
+        // one of these; both are wrong once the caption is a word.
+        input.removeAttribute("style");
+        input.value = t(spec.label);
+        if (spec.face) input.setAttribute("data-rr-face", spec.face);
+        if (spec.icon) holder.append(icon(spec.icon, 13));
+    }
+    input.setAttribute("aria-label", tip);
+    input.removeAttribute("title");
+
+    holder.append(input);
+    return holder;
+}
+
+/** Above the button, and inside the window: a label centred on a
+    button at either edge of a narrow screen hangs off the page. */
+function clampTip(holder) {
+    const box = holder.getBoundingClientRect();
+    const room = 130;
+    const side = box.left < room ? "above-left"
+        : box.right > window.innerWidth - room ? "above-right"
+        : "above";
+    holder.setAttribute("data-rr-tip-side", side);
+}
+
+function initPostingToolbar() {
+    const buttons = $$("#wrapcentre input.btnbbcode");
+    if (!buttons.length) return;
+
+    /* Where the buttons came from, read before any of them is moved:
+       once one is in the new bar its `closest("td")` is the bar. */
+    const cells = new Set(buttons.map((input) => input.closest("td")).filter(Boolean));
+    const home = buttons[0].closest("td");
+    if (!home) return;
+
+    const help = boardHelpLines();
+    const pool = new Map();
+    for (const input of buttons) {
+        pool.set("name:" + (input.getAttribute("name") || ""), input);
+        // First one wins: two BBCodes cannot share a tag, but a stray
+        // duplicate must not take a named button's place.
+        const tag = "tag:" + input.value.trim();
+        if (!pool.has(tag)) pool.set(tag, input);
+    }
+
+    const bar = el("div.rr-bbtools", { role: "toolbar", "aria-label": t("Formatting") });
+    const taken = new Set();
+
+    const take = (key) => {
+        const byTag = key.startsWith("tag:");
+        const input = pool.get(byTag ? key : "name:" + key);
+        if (!input || taken.has(input)) return null;
+        const spec = byTag ? BB_BY_TAG[key.slice(4)] : BB_BY_NAME[key];
+        if (!spec) return null;
+        taken.add(input);
+        return dressTool(input, spec, "");
+    };
+
+    for (const keys of BB_GROUPS) {
+        const group = el("div.rr-bbtools__group");
+        for (const key of keys) {
+            const tool = take(key);
+            if (tool) group.append(tool);
+        }
+        /* The font size menu is a letter style like the three beside
+           it, and the board leaves it stranded at the end of the first
+           row wearing a label of its own. */
+        if (keys[0] === "addbbcode0") {
+            const size = document.querySelector('#wrapcentre select[name="addbbcode20"]');
+            const label = size && size.closest("span");
+            if (label) group.append(el("span.rr-bbtool.rr-bbtool--menu", {
+                "data-rr-tip": t("Text size"),
+                "data-rr-tip-side": "above",
+            }, [label]));
+        }
+        if (group.childElementCount) bar.append(group);
+    }
+
+    /* A BBCode the board has added since this was written: it keeps
+       its own caption, and the board's own help line becomes its
+       tooltip. Better an unfamiliar button that explains itself than
+       one this script quietly drops. */
+    const strays = buttons.filter((input) => !taken.has(input));
+    if (strays.length) {
+        const group = el("div.rr-bbtools__group");
+        for (const input of strays) {
+            const key = helpKeyOf(input);
+            group.append(dressTool(input, null, (key && help[key]) || input.value.trim()));
+        }
+        bar.append(group);
+    }
+
+    for (const holder of bar.querySelectorAll(".rr-bbtool")) {
+        holder.addEventListener("pointerenter", () => clampTip(holder));
+        holder.addEventListener("focusin", () => clampTip(holder));
+    }
+
+    /* The buttons come out of two table rows. The first takes the
+       toolbar — it also holds the inline scripts the board runs there,
+       which are left exactly where they are — and any row left with no
+       control on it goes. */
+    home.append(bar);
+    for (const cell of cells) {
+        if (cell !== home && !cell.querySelector("input, select, a, textarea")) {
+            const row = cell.closest("tr");
+            if (row) row.hidden = true;
+        }
+    }
+
+    /* The field the board wrote the explanation into. It stays in the
+       page and it stays a field: `helpline()` sets its value on every
+       mouseover, and a removed one throws on all of them. */
+    const helpbox = document.querySelector('#wrapcentre input[name="helpbox"]');
+    if (helpbox) {
+        helpbox.setAttribute("data-rr-helpbox", "");
+        helpbox.setAttribute("tabindex", "-1");
+        helpbox.setAttribute("aria-hidden", "true");
+        /* Its row is shared with the "Font colour" heading over the
+           palette, which has to stay where it is. Named, so the row
+           can be closed up to the label rather than keeping the height
+           a field used to need. */
+        const row = helpbox.closest("tr");
+        if (row) row.setAttribute("data-rr-helprow", "");
+    }
+}
+
+/* ---- The topic review ----------------------------------------------
+
+   Under the reply form the board reprints the last few posts of the
+   thread, in a 300px box you scroll. They are drawn as one continuous
+   table — a hairline of table background between two posts, and a
+   zebra so faint that at a glance the five look like one long post
+   with somebody's name in the middle of it.
+
+   Each one becomes a card here: its own edge, its own corners, and a
+   gap between it and the next. Nothing is added to the page; the rows
+   the board already prints are named so the stylesheet can draw them.
+   -------------------------------------------------------------------- */
+
+function initTopicReview() {
+    /* By shape, not by the heading: "Topic review" is one string in
+       English and another in Russian, and the box is the only scroller
+       on the page holding posts. */
+    const scroller = $$("#wrapcentre div").find((node) =>
+        /auto|scroll/.test(node.style.overflow || "") && node.querySelector(".postbody"));
+    if (!scroller) return;
+
+    scroller.setAttribute("data-rr-review", "");
+    const box = scroller.closest("table.tablebg");
+    if (box) box.setAttribute("data-rr-reviewbox", "");
+
+    const list = scroller.querySelector("table");
+    if (!list) return;
+    list.setAttribute("data-rr-review-list", "");
+
+    /* Every post is two rows carrying the same row1/row2 class — the
+       author cell spans both — and a `td.spacer` row between one post
+       and the next. */
+    for (const row of Array.from(list.rows)) {
+        if (row.cells.length === 1 && row.cells[0].classList.contains("spacer")) {
+            row.setAttribute("data-rr-review-row", "gap");
+            continue;
+        }
+        if (!/\brow[12]\b/.test(row.className)) continue;
+
+        /* The author's cell is the one that spans the pair, so it is
+           on the first row of a post and on no other. It has to be
+           picked off the row itself: the name is wrapped in a table of
+           its own, and `closest("td")` from it lands on that table's
+           cell rather than on the one that spans. */
+        const author = row.querySelector(":scope > td[rowspan]");
+        if (author && author.querySelector(".postauthor")) {
+            row.setAttribute("data-rr-review-row", "head");
+            author.setAttribute("data-rr-review-cell", "author");
+        } else {
+            row.setAttribute("data-rr-review-row", "body");
+        }
+    }
+}
+
 /* ================= src/modules/people.js ================= */
 /* ------------------------------------------------------------------
    People.
@@ -15676,6 +16268,8 @@ function bootLate() {
     guard("steam", initSteamPreview);
     guard("compose", initCompose);
     guard("posting", initPostingMemory);
+    guard("toolbar", initPostingToolbar);
+    guard("review", initTopicReview);
     guard("people", initPeople);
     guard("palette", initPalette);
     guard("shortcuts", initShortcuts);

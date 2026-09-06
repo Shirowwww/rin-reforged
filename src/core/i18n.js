@@ -180,6 +180,32 @@ const RU_WORDS = {
     "Link": "Ссылка",
     "Spoiler": "Спойлер",
 
+    /* The writing toolbar on posting.php. The captions are what the
+       button says, so they are short; the tips are what it does. */
+    "B": "Ж",
+    "i": "К",
+    "u": "П",
+    "S": "З",
+    "Strikethrough": "Зачёркнутый",
+    "Quote a post": "Цитата сообщения",
+    "Code, kept as typed": "Код, как он набран",
+    "List": "Список",
+    "Bulleted list": "Маркированный список",
+    "Numbered": "Нумерация",
+    "Numbered list": "Нумерованный список",
+    "Item": "Пункт",
+    "An item in a list": "Пункт списка",
+    "Image from a URL": "Изображение по адресу",
+    "Link to a page": "Ссылка на страницу",
+    "Named spoiler": "Спойлер с заголовком",
+    "Hide text until clicked": "Скрыть текст до нажатия",
+    "Spoiler with a title": "Спойлер со своим заголовком",
+    "YouTube": "YouTube",
+    "Embed a YouTube video": "Вставить видео с YouTube",
+    "SteamInfo": "SteamInfo",
+    "Game details from Steam": "Данные об игре из Steam",
+    "Text size": "Размер текста",
+
     // The top bar
     "More": "Ещё",
     "Less": "Свернуть",

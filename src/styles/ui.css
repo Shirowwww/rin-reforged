@@ -573,14 +573,27 @@ html[data-rr] [data-rr-tip]::after {
     display: none;
 }
 html[data-rr] [data-rr-tip]:hover::after,
-html[data-rr] [data-rr-tip]:focus-visible::after { display: block; }
+html[data-rr] [data-rr-tip]:focus-visible::after,
+/* A tip that hangs off a wrapper rather than off the control itself
+   (the writing toolbar: an `input` draws no pseudo-element) has to
+   answer to the control's focus, because the wrapper never takes any.
+   Scoped to the wrapper's own children, so this costs nothing on the
+   ancestors of a page full of them. */
+html[data-rr] [data-rr-tip]:has(> :focus-visible)::after { display: block; }
 /* Near the right edge the label would still push the page sideways
    while it is up, so those hang off their own right edge instead. The
    last control in the top bar is against the window; so is the corner
    the jump buttons live in. */
 html[data-rr] [data-rr-tip][data-rr-tip-side="right"]::after,
 html[data-rr] .rr-nav__actions > :last-child[data-rr-tip]::after { left: auto; right: 0; transform: none; }
-html[data-rr] [data-rr-tip][data-rr-tip-side="above"]::after { top: auto; bottom: calc(100% + 6px); }
+html[data-rr] [data-rr-tip][data-rr-tip-side="above"]::after,
+html[data-rr] [data-rr-tip][data-rr-tip-side="above-left"]::after,
+html[data-rr] [data-rr-tip][data-rr-tip-side="above-right"]::after { top: auto; bottom: calc(100% + 6px); }
+/* A bar of buttons wraps, so which end of the window a given button
+   sits at is only known once it is hovered; compose.js measures then
+   and picks one of these. */
+html[data-rr] [data-rr-tip][data-rr-tip-side="above-left"]::after { left: 0; right: auto; transform: none; }
+html[data-rr] [data-rr-tip][data-rr-tip-side="above-right"]::after { left: auto; right: 0; transform: none; }
 
 /* ---- Reading progress ------------------------------------------- */
 
@@ -1914,4 +1927,103 @@ html[data-rr] .rr-lightbox__step:focus-visible { outline: 2px solid var(--rr-acc
     background: rgba(20, 22, 26, .72);
     color: #fff;
     font: 500 var(--rr-fs-xs) / 1.6 var(--rr-font);
+}
+
+/* ---- The writing toolbar ------------------------------------------ */
+
+/* The board's BBCode buttons, regrouped by compose.js. What was two
+   undivided rows of grey rectangles is one bar in five groups: the
+   letter styles, the blocks, what is fetched from elsewhere, what is
+   hidden, and the board's own generator.
+
+   The groups are told apart by the space between them and nothing
+   else. A hairline would be read the same way, right up to the moment
+   the bar wraps on a narrow window and a line opens with a divider
+   against nothing — which is exactly what the board bar had to be
+   rebuilt to avoid. */
+.rr-bbtools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px var(--rr-s5);
+    margin: 0 0 var(--rr-s2);
+}
+.rr-bbtools__group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+/* The tooltip hangs off this wrapper rather than off the button: an
+   `input` is a replaced element and draws no pseudo-element, so
+   `input::after` is nothing at all. */
+.rr-bbtool {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+.rr-bbtool > svg {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--rr-muted);
+    /* The icon sits over the button it belongs to; a click on it is a
+       click on the button. */
+    pointer-events: none;
+    transition: color var(--rr-speed) ease;
+}
+.rr-bbtool:hover > svg { color: var(--rr-accent); }
+
+html[data-rr] .rr-bbtool > input.btnbbcode {
+    width: auto !important;
+    min-width: 34px;
+    height: 30px;
+    padding: 0 11px;
+    background: var(--rr-surface-2);
+    border-color: var(--rr-line);
+    color: var(--rr-text);
+    font-size: var(--rr-fs-sm);
+    font-weight: 600;
+}
+html[data-rr] .rr-bbtool > svg + input.btnbbcode { padding-left: 29px; }
+html[data-rr] .rr-bbtool > input.btnbbcode:hover {
+    background: var(--rr-surface-3);
+    border-color: var(--rr-line-strong);
+    color: var(--rr-text-strong);
+}
+html[data-rr] .rr-bbtool > input.btnbbcode:active { background: var(--rr-line); }
+
+/* Four buttons whose caption is the effect: they wear it. */
+html[data-rr] .rr-bbtool > input[data-rr-face="bold"] { font-weight: 800; }
+html[data-rr] .rr-bbtool > input[data-rr-face="italic"] { font-style: italic; }
+html[data-rr] .rr-bbtool > input[data-rr-face="underline"] { text-decoration: underline; }
+html[data-rr] .rr-bbtool > input[data-rr-face="strike"] { text-decoration: line-through; }
+
+/* The font size menu, which the template leaves stranded at the end of
+   the first row with a label of its own. */
+.rr-bbtool--menu > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--rr-muted);
+    font-size: var(--rr-fs-sm);
+    white-space: nowrap;
+}
+html[data-rr] .rr-bbtool--menu select { height: 30px; padding: 0 6px; }
+
+/* The read-only field the board wrote its explanations into. It stays
+   in the page — `helpline()` sets its value on every mouseover of
+   every button, and a removed one throws on all of them — and stops
+   being a field the eye reads as a second Subject box. */
+html[data-rr] input[data-rr-helpbox] { display: none; }
+/* Its row also carries the heading over the colour palette, so the row
+   stays and closes up to the height of that one word. */
+html[data-rr] tr[data-rr-helprow] > td { padding: 0 0 var(--rr-s2); }
+html[data-rr] tr[data-rr-helprow] > td.genmed {
+    color: var(--rr-faint);
+    font-size: var(--rr-fs-xs);
+    letter-spacing: .04em;
+    text-transform: uppercase;
 }

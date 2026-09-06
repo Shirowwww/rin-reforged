@@ -30,6 +30,9 @@ const PAGES = [
     { name: "topic", url: "/forum/topic/viewtopic.php?f=10&t=133316" },
     { name: "replies", url: "/forum/replies/viewtopic.php?f=14&t=75717&start=225" },
     { name: "hypervisor", url: "/forum/hypervisor/viewtopic.php?f=41&t=940000" },
+    /* The reply form: the writing toolbar and the topic review, which
+       are the only place this script paints on a form. */
+    { name: "posting", url: "/forum/member/posting.php?mode=reply&f=10&t=133316" },
 ];
 
 const THEMES = ["native", "slate", "carbon", "paper"];

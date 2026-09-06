@@ -71,6 +71,9 @@ const SEARCH_ONE = "/forum/searchone/search.php?search_id=egosearch";
 const MEMBERS = "/forum/members/memberlist.php";
 const PM = "/forum/ucp/ucp.php?i=pm&folder=inbox";
 const PROFILE_M = "/forum/profilem/memberlist.php?mode=viewprofile&u=1";
+/* The reply form: the BBCode toolbar, the helpbox and the topic review,
+   as the live board prints them. See make-posting-fixture.js. */
+const POSTING = "/forum/member/posting.php?mode=reply&f=10&t=133316";
 /* Five pages of one topic. The middle page on purpose: the index has
    to read forwards and backwards from wherever it is started, and use
    the page already on screen rather than fetching it again. */
@@ -3155,6 +3158,96 @@ const CHECKS = [
             if (!/Half a sentence/.test(button.getAttribute("title") || "")) {
                 return "the draft is not on the control";
             }
+            return null;
+        },
+    },
+    /* ---- The writing toolbar and the topic review ---------------- */
+    {
+        name: "toolbar: every BBCode button says what it makes",
+        url: POSTING,
+        run: () => {
+            const bar = document.querySelector(".rr-bbtools");
+            if (!bar) return "no toolbar";
+
+            const tools = Array.from(bar.querySelectorAll(".rr-bbtool"));
+            const loose = Array.from(document.querySelectorAll("#wrapcentre input.btnbbcode"))
+                .filter((input) => !input.closest(".rr-bbtool"));
+            if (loose.length) return loose.length + " buttons left outside the bar";
+
+            const mute = tools.filter((holder) => !(holder.getAttribute("data-rr-tip") || "").trim());
+            if (mute.length) return mute.length + " tools with nothing to say";
+
+            // The captions people complained about: none of them left.
+            const captions = tools.map((holder) => {
+                const control = holder.querySelector("input");
+                return control ? control.value.trim() : "";
+            });
+            const cryptic = captions.filter((word) => /^(s|\[\*\]|List=|spoiler=?|youtube)$/.test(word));
+            if (cryptic.length) return "still reads: " + cryptic.join(", ");
+
+            // The field the board wrote its explanations into is out of
+            // the way, and still in the page: helpline() writes into it
+            // on every mouseover and a removed one throws on all of them.
+            const helpbox = document.querySelector('input[name="helpbox"]');
+            if (!helpbox) return "the helpbox was removed, helpline() will throw";
+            if (getComputedStyle(helpbox).display !== "none") return "the helpbox is still on show";
+            return null;
+        },
+    },
+    {
+        name: "toolbar: renaming a button did not stop it inserting its tag",
+        fresh: true,
+        url: POSTING,
+        run: () => {
+            const box = document.querySelector('textarea[name="message"]');
+            if (!box) return "no message box";
+            box.value = "";
+
+            const press = (name) => {
+                const control = document.querySelector('input[name="' + name + '"]');
+                if (!control) return "no button named " + name;
+                control.click();
+                return null;
+            };
+            // One of each kind: a tag phpBB numbers itself, the list
+            // item that inserts on its own, and one of the board's own.
+            for (const name of ["addbbcode0", "addlistitem", "addbbcode24"]) {
+                const missing = press(name);
+                if (missing) return missing;
+            }
+            const wanted = "[b][/b][*][spoiler][/spoiler]";
+            if (box.value !== wanted) return "wrote " + JSON.stringify(box.value);
+            return null;
+        },
+    },
+    {
+        name: "topic review: each post is told apart from the next",
+        url: POSTING,
+        run: () => {
+            const scroller = document.querySelector("[data-rr-review]");
+            if (!scroller) return "the review was not found";
+
+            const heads = Array.from(scroller.querySelectorAll('tr[data-rr-review-row="head"]'));
+            const bodies = scroller.querySelectorAll('tr[data-rr-review-row="body"]');
+            if (heads.length < 2) return "only " + heads.length + " posts labelled";
+            if (heads.length !== bodies.length) {
+                return heads.length + " heads against " + bodies.length + " bodies";
+            }
+            // The author's name is on the cell that spans the pair, not
+            // on the one inside the little table it is wrapped in.
+            const strays = heads.filter((row) => {
+                const cell = row.querySelector('[data-rr-review-cell="author"]');
+                return !cell || cell.parentElement !== row;
+            });
+            if (strays.length) return strays.length + " posts with the wrong author cell";
+
+            // What the reader actually notices: a gap and an edge
+            // between one post and the next.
+            const first = heads[0].querySelector('[data-rr-review-cell="author"]');
+            const style = getComputedStyle(first);
+            if (parseFloat(style.borderTopWidth) < 1) return "no edge round a post";
+            const gap = scroller.querySelector('tr[data-rr-review-row="gap"] > td');
+            if (!gap || gap.getBoundingClientRect().height < 8) return "no gap between posts";
             return null;
         },
     },

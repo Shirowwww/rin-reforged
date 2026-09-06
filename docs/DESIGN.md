@@ -269,6 +269,45 @@ of the four reasons it is.
 - Long signatures fold. Spoilers open at load and close again in one
   press. Images open in a lightbox. Off-site links show their
   destination host.
+- **The writing toolbar says what it makes.** The board's own BBCode bar
+  is sixteen grey rectangles in two undivided rows, and five of them
+  read `s`, `[*]`, `List=`, `spoiler=` and `Generate SteamInfo BBCode`.
+  What each one does is written nowhere on it: the board puts the
+  explanation in a read-only text field under the bar, the full width of
+  the form, directly under the Subject box and drawn exactly like it.
+  People fill in a form; they do not hover a field to be told things.
+
+  So the caption says what the button makes — Numbered, Item, Image,
+  Link, YouTube, Spoiler, Named spoiler, SteamInfo — an icon repeats it,
+  and the bar is cut into five groups by the space between them: letter
+  styles, blocks, what is fetched from elsewhere, what is hidden, the
+  board's own generator. A hairline between groups would read the same
+  way right up to the moment the bar wraps on a narrow window and a line
+  opens with a divider against nothing, which is what the board bar had
+  to be rebuilt to avoid.
+
+  The explanation is the same small label above the control that every
+  other button in this script already uses. It hangs off a wrapper span
+  rather than off the button, because a replaced element draws no
+  pseudo-element: `input::after` is nothing at all, which is the reason
+  the board needed a field for this in the first place. Which way it
+  hangs is measured when it is hovered — a bar that wraps has no fixed
+  idea of which end of the window a given button is at.
+
+  Nothing about the button changes but its face. `bbstyle()` works off
+  the `bbtags` array and never off a caption, so renaming one is safe;
+  the accesskeys and the onclick stay; and the field the board wrote
+  into stays in the page, hidden, because `helpline()` sets its value on
+  every mouseover and a removed one throws on all of them.
+- **The topic review is five posts, not one.** Under the reply form the
+  board reprints the end of the thread in a box you scroll. It draws
+  them as one continuous table — a hairline of table background between
+  two posts and a zebra a shade apart — so at a glance the five read as
+  one long post with somebody's name in the middle of it. Each is a card
+  now: its own edge, its own corners, and air to the next. Nothing is
+  added to the page; the rows the board already prints are named so the
+  stylesheet can draw them, and the `td.spacer` that held a 1px image
+  between two posts is the gap.
 
 ![A folded quote](screenshots/folded-quote.png)
 
@@ -568,8 +607,8 @@ eye against a screenshot. That is the right way to choose a colour and
 the wrong way to check one: "muted grey on a dark surface" is a
 judgement and 3.9:1 is a number.
 
-`test/contrast.js` walks every element that draws text on five pages
-across all four themes — 8 748 of them — works out what colour that
+`test/contrast.js` walks every element that draws text on six pages
+across all four themes — 7 688 of them — works out what colour that
 text really is against what is really behind it, compositing back up
 the tree through every tint on the way, and measures the pair against
 the WCAG AA threshold for its size. It fails the run on anything this
@@ -798,6 +837,7 @@ idealised version of it.
 ```sh
 node test/make-quotes-fixture.js   # regenerates the synthesised fixtures
 node test/make-member-fixtures.js  # the pages only a member sees, made up
+node test/make-posting-fixture.js  # the reply form, toolbar and topic review
 node test/prepare.js               # builds test/pages from test/fixtures
 python test/serve.py               # http://localhost:8731/forum/viewforum.php?f=10
 node test/check.js                 # headless pass over every page and setting
@@ -872,6 +912,17 @@ found — a two-language Rank column, a Sent column, a marker in front of some
 subjects and not others, a profile header spanning a label and a value — and
 nothing of anybody's account. A real member page is never saved as a
 fixture; it is somebody's inbox.
+
+`test/make-posting-fixture.js` makes the reply form, which is the same
+kind of page: two rows of `input.btnbbcode` with the board's own
+`helpline()` calls on them, the `help_line` table it defines inline, the
+`helpbox` field those write into, the 125-swatch colour palette
+`colorPalette('v', 7, 6)` writes out, and a topic review of five posts —
+each two rows and a `td.spacer` between them. Checked attribute for
+attribute against the live board on 2026-09-06; the names and the text
+are made up. The fixture it replaced was a textarea and two submit
+buttons, which was enough to prove the quick reply could parse a form
+and nothing at all like the page a member writes on.
 
 `check.js` also measures the frame at 1280, 1600, 1920 and 2560: it has
 to reach 78% of the window or its ceiling, whichever comes first, may
