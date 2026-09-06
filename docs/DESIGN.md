@@ -395,6 +395,35 @@ work had never looked.
   Wide and Full let the images grow with the text. Native keeps the
   board's red on both Important and Problem, and Info stays blue on
   every theme; those are the identity, not oversights.
+- **0.9.1** came from two phone screenshots, signed in: the search
+  results page and the foot of a topic. Each of five defect clusters was
+  diagnosed and patched in its own worktree and then handed to a second
+  reader told to refute it; two of the five patch sets came back
+  amended. The current page's name in the top bar was cut mid-glyph:
+  a flex item's minimum width is its full nowrap content unless its own
+  overflow says otherwise, and the linked crumbs had that treatment
+  while the title-derived one did not. The collapsed search control
+  kept the desktop pill's frame beside three borderless glyphs. The
+  board bar, opened, had its More control on a line of its own at the
+  bottom; it is pinned to the corner it was tapped in. The search box's
+  button was four pixels shorter than its field because the board's
+  own `input[type=text]` rule outranked a bare class. The sort strip at
+  the foot of a listing was the last row of the results table and drew
+  as a box dropped into the last result; it is the card's foot now,
+  flush, under a hairline, and each label travels with the selects it
+  names so a wrap never falls inside a pair. "[ Search found 1 match ]"
+  floated left from the board's stylesheet and shared a line with
+  "Jump to:". The attachment GIF was the one marker the icon pass had
+  left: a paperclip now, where the board put it, because after the
+  title it wrapped to a line of its own. The bookmark star moves to a
+  phone card's top-right. Every post's "Top" row, its link long hidden,
+  was 49px of empty band under every post on a phone and 28px on a
+  desktop; the row is labelled and gone. The topic foot's search box and
+  display options depended on inline flow, which Chrome and Safari
+  resolved differently — Safari wrapped "Display posts from previous:"
+  letter by letter beside the search field; it is an explicit flex
+  stack now. "Jump to" keeps its select and Go on one line, and the
+  page gets room at the bottom so the floating button covers nothing.
 
 ### It reads Russian
 

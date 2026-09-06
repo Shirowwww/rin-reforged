@@ -30,6 +30,12 @@
 .rr-icon-btn {
     display: inline-grid;
     place-items: center;
+    /* A <button> takes border-box from the UA sheet; an <a> stays
+       content-box, so the same 30px (34px on a phone, see responsive.css)
+       drew two different squares depending on which tag built it — the
+       settings cog a couple of pixels smaller than mail and account
+       beside it. */
+    box-sizing: border-box;
     width: 30px;
     height: 30px;
     padding: 0;
@@ -301,6 +307,16 @@ html[data-rr] a.rr-langswitch__option[aria-current] .rr-boardbar__flag { opacity
 
 @media (max-width: 720px) {
     .rr-boardbar { gap: var(--rr-s2); }
+    /* The tap target grows into the link, not into the space around
+       it: a bare 22px text line is a slim thing to hit on a phone, and
+       widening the row-gap instead would only read as loosely spaced
+       without making anything easier to tap. Taken back from the
+       group's own row-gap by exactly what the padding adds, so a
+       group that wraps across several lines keeps the same pitch it
+       had before — only the fold now lands inside a link instead of
+       between two of them. */
+    .rr-boardbar__link { padding: 3px 0; }
+    .rr-boardbar__group { row-gap: 6px; }
     .rr-boardbar__more {
         display: inline-flex;
         align-items: center;
@@ -332,8 +348,20 @@ html[data-rr] a.rr-langswitch__option[aria-current] .rr-boardbar__flag { opacity
     .rr-boardbar__group + .rr-boardbar__group { padding-left: 0; border-left: 0; }
     .rr-boardbar__main, .rr-boardbar__end { gap: var(--rr-s2) var(--rr-s3); }
 
-    .rr-boardbar[data-rr-open] { flex-wrap: wrap; }
-    .rr-boardbar[data-rr-open] .rr-boardbar__end { margin-left: 0; flex-basis: 100%; }
+    /* The language switch used to be forced onto a full-width line of
+       its own here, which pushed More — the next thing in flow — onto
+       a line with nothing else on it, alone at the bar's far right and
+       a full row below anything it folds. Left to wrap like everything
+       above it, it shares whatever line still has room, and More lands
+       beside it instead of under everything. */
+    .rr-boardbar[data-rr-open] { flex-wrap: wrap; position: relative; }
+    /* Signed in there is no language switch for More to share a line
+       with, so it still fell to a line of its own at the bottom, a bar's
+       height below the fold it controls. Pinned to the corner it stays
+       where the thumb found it when the bar was folded; only the first
+       group's lines make room for it, the rest run the full width. */
+    .rr-boardbar[data-rr-open] .rr-boardbar__more { position: absolute; top: 2px; right: 4px; margin-left: 0; }
+    .rr-boardbar[data-rr-open] .rr-boardbar__main > [data-rr-group="views"] { padding-right: 78px; }
 }
 
 /* ---- Restored board controls -------------------------------------- */
@@ -410,7 +438,15 @@ html[data-rr] a.rr-ctl:hover {
    palette trigger. */
 .rr-search:focus-within { border-color: var(--rr-accent); }
 .rr-search__form { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
-html[data-rr] .rr-search__input {
+/* input.rr-search__input, not the bare class: the board's own field
+   reset (forum.css, "input[type=text], … .inputbox") matches this
+   same input through its `input[type="text"]` branch, which is one
+   element more specific than a class alone — at equal specificity
+   that branch wins the tie regardless of which file loads last, so
+   the board's padding and border rode along and the input never
+   shrank to the pill's 26px. Matching the element ourselves puts both
+   rules on equal footing, where this one loads later and wins. */
+html[data-rr] input.rr-search__input {
     flex: 1;
     min-width: 0;
     height: 26px;
@@ -420,11 +456,17 @@ html[data-rr] .rr-search__input {
     border-radius: 0;
     color: var(--rr-text);
     font-size: var(--rr-fs-sm);
+    box-sizing: border-box;
 }
-html[data-rr] .rr-search__input:focus-visible { outline: none; }
-html[data-rr] .rr-search__go {
+html[data-rr] input.rr-search__input:focus-visible { outline: none; }
+/* Same trap, against the board's input.button1 / input[type=submit]:
+   its padding survived inside a 22px-tall button with none of its own,
+   leaving four pixels for a 13px line — the label read as clipped and
+   sitting low. Matched by element and given the input's own height,
+   the two now sit level. */
+html[data-rr] input.rr-search__go {
     flex: none;
-    height: 22px;
+    height: 26px;
     padding: 0 9px;
     background: var(--rr-surface-2);
     border: 1px solid var(--rr-line);
@@ -432,8 +474,9 @@ html[data-rr] .rr-search__go {
     color: var(--rr-muted);
     font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
     cursor: pointer;
+    box-sizing: border-box;
 }
-html[data-rr] .rr-search__go:hover {
+html[data-rr] input.rr-search__go:hover {
     background: var(--rr-surface-3);
     border-color: var(--rr-line-strong);
     color: var(--rr-text-strong);
@@ -1367,8 +1410,21 @@ html[data-rr] a.rr-postnum:hover {
 .rr-topicbar .rr-opt { margin-left: -6px; white-space: pre; }
 
 /* A crumb that is a place, not a link: the control panel section the
-   window title named. */
-.rr-nav__here { color: var(--rr-text-strong); font-weight: 600; white-space: nowrap; }
+   window title named. It sits in the same shrinking flex row as the
+   linked crumbs before it, but had none of the treatment that lets
+   them ellipsize — a flex item's automatic minimum width is its full
+   nowrap content width unless overflow is something other than
+   visible, so on a narrow phone this span refused to shrink, overran
+   the crumbs bar's own clip, and read as a word guillotined mid-way
+   with no "more to see" cue rather than a title trimmed with one. */
+.rr-nav__here {
+    color: var(--rr-text-strong);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
 
 /* ---- Quick reply toolbar ------------------------------------------ */
 

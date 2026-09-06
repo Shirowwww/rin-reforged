@@ -470,6 +470,7 @@ const ICON_PATHS = {
     // a Steam valve, and the crosshair is the half that survives being
     // shrunk to 20px.
     crosshair: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2"/><path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5"/>',
+    clip:      '<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
 };
 
 /* Each icon's shapes, built once as real nodes and cloned after.

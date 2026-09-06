@@ -48,7 +48,28 @@
     html[data-rr] #wrapcentre { padding-top: var(--rr-s3); }
 
     html[data-rr] .rr-nav { padding: 0 var(--rr-s2); gap: var(--rr-s2); }
-    html[data-rr] .rr-nav__search { min-width: 0; width: 30px; padding: 0; justify-content: center; }
+    /* Collapsed to a bare glyph, this control kept the desktop pill's
+       frame — a border and a sunken fill — so it sat in the bar as a
+       boxed search field beside two borderless icon buttons: three
+       controls that open the same kind of thing, drawn as two
+       different kinds of control. It takes the icon button's own look
+       here, sized to match the tap targets below. */
+    html[data-rr] .rr-nav__search {
+        min-width: 0;
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        justify-content: center;
+        box-sizing: border-box;
+        background: transparent;
+        border-color: transparent;
+    }
+    html[data-rr] .rr-nav__search:hover {
+        background: var(--rr-surface-2);
+        border-color: transparent;
+        color: var(--rr-text-strong);
+    }
+    html[data-rr] .rr-nav__search svg { width: 16px; height: 16px; }
     html[data-rr] .rr-nav__search span,
     html[data-rr] .rr-nav__kbd { display: none; }
 
@@ -286,6 +307,25 @@
     html[data-rr] .rr-nav__sep { display: none; }
     html[data-rr] .rr-toolbar { padding: var(--rr-s3); }
 
+    /* The masthead crop is fixed-width — set once from the image's own
+       pixels — so on the narrowest phones it held its full desktop size
+       while the crumb beside it, the one thing that actually changes
+       page to page, was squeezed to almost nothing. Every dimension of
+       the crop scales together here, window, image and offset alike,
+       which is the same arithmetic navbar.js does for a taller one: the
+       crosshair stays the crosshair, just smaller, and the room it gives
+       up goes to the page name. */
+    html[data-rr] .rr-nav__brand[data-rr-logo="art"] .rr-nav__logo {
+        width: calc(var(--rr-logo-w) * 0.7);
+        height: calc(var(--rr-logo-h) * 0.7);
+    }
+    html[data-rr] .rr-nav__brand[data-rr-logo="art"] .rr-nav__art {
+        width: calc(var(--rr-logo-img-w) * 0.7);
+        height: calc(var(--rr-logo-img-h) * 0.7);
+        top: calc(var(--rr-logo-y) * 0.7);
+        left: calc(var(--rr-logo-x) * 0.7);
+    }
+
     /* The topic bar carries nine controls and a search box, and on a
        phone that is five wrapped rows before the first post. The air
        between them is what a wide screen wants — there they sit on one
@@ -346,4 +386,315 @@
     }
     html[data-rr] table.tablebg[data-rr-quiet] .postbody br { display: inline !important; }
     .rr-quote-toggle, .rr-quiet-chip, .rr-sig-toggle, .rr-quote-bubble { display: none !important; }
+}
+
+/* ------------------------------------------------------------------
+   The listing card's marker gutter, revisited.
+
+   The gutter cell holds the read/unread dot and, on a bookmarkable
+   row, the star: two flex children of one cell (lists.js appends the
+   star beside the dot, on purpose — see addBookmarkStar). On a phone
+   card the gutter and the title are both order:0 flex children of the
+   same cell, meant to share the first line; with the star's 34px tap
+   target added to the dot's width, the two together no longer left
+   the title's own 80% minimum room beside them, so the title dropped
+   to a line of its own under a line that was just a dot and a star.
+
+   The star moves to the card's own top-right corner instead — out of
+   the gutter's width entirely — so the gutter goes back to being just
+   the dot's width and the dot and the title share the first line the
+   way every other listing shape on this board does.
+   ------------------------------------------------------------------ */
+@media (max-width: 860px) {
+    html[data-rr] table.tablebg > tbody > tr { position: relative; }
+
+    /* forum.css floors this cell at 44px so a listing's marker column
+       does not get squeezed onto the marker on a wide table — right
+       for a column, far too wide for a card the star no longer lives
+       in. Repeating the phone selector here (same specificity as the
+       block above, so it wins on being later) drops the floor back to
+       the dot's own width, which is what leaves the title's 80%
+       minimum room beside it on the first line.
+
+       The star is still a child of this cell in the markup — moving it
+       in lists.js just to give it a new home in CSS was more than the
+       fix needed — so its box (below, position:absolute against the
+       row) still has to fit *inside* this cell's own box: a child
+       drawn past its parent's edge is exactly the shape the "no cell
+       draws its content outside itself" check exists to catch, and an
+       earlier version of this rule that shrank the gutter down to the
+       dot's height alone tripped it, star and all. align-self and
+       min-height give the gutter the star's own height and pin it to
+       the row's top edge, which is enough room.
+
+       That still leaves the dot, the gutter's one real flex child: at
+       the inherited align-items: center it rode the middle of this
+       now-taller box, which was close enough for a one-line title and
+       wrong for anything else — on a wrapped one the dot sat between
+       the first line and the second rather than beside either.
+       align-items: flex-start here says where the *dot* sits within
+       the tall box, independently of why the box is tall: at its own
+       top, which is where the title's first line starts too. */
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="icon"] {
+        min-width: 0;
+        align-self: flex-start;
+        min-height: 34px;
+        align-items: flex-start;
+    }
+    /* The star's containing block is the row (tr, made position:relative
+       above), not this cell, so top/right here are relative to the
+       row's own corner and not to wherever the cell happens to sit. */
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="icon"] > .rr-star {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin: 0;
+    }
+
+    /* Room for the star's corner, on the rows that actually carry one
+       (data-rr-star, set beside it in lists.js) — a card with no star
+       keeps the title's full width. The chain down through tr and td
+       matches the generic cell rule's own specificity above, which sets
+       this same padding to 0 and would otherwise win over a shorter
+       selector.
+
+       min-width drops the 80% floor the generic title rule sets. That
+       floor exists so the counters (replies, views, author) cannot
+       climb onto the marker's own line — a fixed percentage of a
+       390px card and a fixed percentage of an 860px one are two very
+       different numbers, and at exactly 390px it was landing a
+       handful of pixels past what the line actually had left once the
+       gutter shrank, tipping the *title* onto a line of its own under
+       the marker: the very shape this rule exists to prevent, just
+       aimed at the wrong neighbour. The spacer below takes over that
+       job instead, so this can drop to nothing and let the title sit
+       beside the dot the way the marker's line was always meant to
+       read. */
+    html[data-rr] table.tablebg > tbody > tr[data-rr-star] > td[data-rr-col="title"] {
+        min-width: 0;
+        padding-right: 40px;
+    }
+
+    /* An invisible flex item, ordered between the marker/title group
+       and the counters that follow them, whose own 100% flex-basis can
+       never share a line with anything: it always starts a fresh one,
+       so the counters always land under the title regardless of how
+       widely either side's own width happens to divide the card.
+       Sturdier than sizing the title to leave "enough" room, which is
+       exactly the arithmetic that went stale at 390px. */
+    html[data-rr] table.tablebg > tbody > tr[data-rr-star]::before {
+        content: "";
+        order: 1;
+        flex-basis: 100%;
+        width: 0;
+        height: 0;
+    }
+}
+
+/* ------------------------------------------------------------------
+   The topic foot: the search-this-topic / display-options strip, the
+   jump-to box, and the floating buttons that sit over both. All three
+   were left to inline flow — a `<span>` label and a `<select>` as
+   plain siblings, wrapping wherever the browser found room — which is
+   the layout a form takes when nobody has laid it out, and it reads
+   differently every time the flow changes: Chrome stacks the search
+   input full width with "Search" centred alone under it; Safari puts
+   the label in the sliver of a line the input's own floor (forum.css,
+   min-width: min(100%, 22em)) leaves beside it, wrapping it letter by
+   letter. An explicit flex row does not care what the flow would have
+   done.
+   ------------------------------------------------------------------ */
+@media (max-width: 860px) {
+    /* The controls cell holds one or two forms: the search box on a
+       topic page, always the "Display posts from previous / Sort by /
+       Go" strip — direct children of the cell on a search-results
+       page, wrapped in form[name=viewtopic] on a topic page. Flexing
+       the cell itself, wrapped, lays out whichever shape is there;
+       the search box is given the whole first line so the display
+       form always starts a line of its own under it. */
+    html[data-rr] td.cat[data-rr-cat="controls"] {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 10px;
+    }
+    html[data-rr] td.cat[data-rr-cat="controls"] > #search-box_thread {
+        flex: 1 1 100%;
+    }
+    html[data-rr] td.cat[data-rr-cat="controls"] #search-box_thread form {
+        display: flex;
+        gap: 6px;
+    }
+    /* The search field's own floor would otherwise take the whole
+       line and push its button under it — the Chrome half of the bug
+       photographed live. */
+    html[data-rr] td.cat[data-rr-cat="controls"] #search-box_thread input[type="text"] {
+        flex: 1 1 auto;
+        min-width: 0 !important;
+    }
+    html[data-rr] td.cat[data-rr-cat="controls"] #search-box_thread input[type="submit"] {
+        flex: 0 0 auto;
+    }
+    html[data-rr] td.cat[data-rr-cat="controls"] > form[name="viewtopic"] {
+        flex: 1 1 100%;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 10px;
+    }
+    html[data-rr] td.cat[data-rr-cat="controls"] > span.gensmall,
+    html[data-rr] td.cat[data-rr-cat="controls"] > form[name="viewtopic"] > span.gensmall {
+        white-space: nowrap;
+    }
+    html[data-rr] td.cat[data-rr-cat="controls"] > select,
+    html[data-rr] td.cat[data-rr-cat="controls"] > form[name="viewtopic"] > select {
+        flex: 0 1 auto;
+        min-width: 0;
+    }
+    html[data-rr] td.cat[data-rr-cat="controls"] > input[type="submit"],
+    html[data-rr] td.cat[data-rr-cat="controls"] > form[name="viewtopic"] > input[type="submit"] {
+        flex: 0 0 auto;
+    }
+
+    /* form[name=jumpbox]: "Jump to:" label, the forum select and Go are
+       inline content of one unclassed cell in an unclassed table, and
+       the generic table-unpacking rules above turn that cell into a
+       block — three inline-level things then wrap on their own once
+       the select's width and the label's text no longer fit beside
+       Go. The extra :not()s match the specificity of the rule being
+       overridden: #wrapcentre and !important on both sides means the
+       tie is broken on class count, not source order. */
+    /* wrap, not nowrap: on the search results page this same form sits
+       beside a floated sibling the board's own markup never clears (a
+       bare <br clear="all"> is the thing that would have cleared it,
+       and it is one of the spacer breaks this stylesheet hides), which
+       leaves the row well under 342px. A select sizes to its longest
+       option — a forum name — so `flex: 1 1 auto` counted that full
+       width when deciding whether the row overflows, and Go wrapped
+       away alone rather than share a line with it. A 0% basis asks the
+       question with only the 6em floor on the table, so the row fits
+       label, select and Go at 342px and wraps at the narrower one
+       instead of crushing the select to a handful of letters. */
+    html[data-rr] #wrapcentre form[name="jumpbox"] table:not(.tablebg):not(.forumline) > tbody > tr > td {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+    }
+    html[data-rr] #wrapcentre form[name="jumpbox"] span.gensmall { white-space: nowrap; flex: 0 0 auto; }
+    html[data-rr] #wrapcentre form[name="jumpbox"] select { flex: 1 1 0%; min-width: 6em; }
+    html[data-rr] #wrapcentre form[name="jumpbox"] input[type="submit"] { flex: 0 0 auto; }
+
+    /* The floating back-to-top button is fixed in the corner, so it
+       sits over whatever is at the true bottom of the page once a
+       reader scrolls there — "Powered by phpBB", or the Who is online
+       card's corner. It is meant to be reached, not avoided, so the
+       page gets the extra room instead: enough to clear a button 38px
+       tall sitting 8px (--rr-s2) off the edge, plus a hand's width of
+       air above it. */
+    /* body.ltr carries a class the plain-body rule above does not, so
+       it is the one that would otherwise win this tie. */
+    html[data-rr] body,
+    html[data-rr] body.ltr { padding-bottom: 64px; }
+}
+
+@media (max-width: 860px) {
+    /* The sort strip — "Display posts from previous / Sort by / Go" —
+       is the last row of the same table.tablebg the list above it
+       renders in, so it inherited that table's rounded card outright
+       and read as bolted onto the last result rather than a strip of
+       its own under the list. lists.js (markShapes) now carries the
+       cell's "controls" kind onto the row, so the gap that pulls it
+       clear can live on the row itself rather than fighting the row's
+       own padding from inside the cell. #wrapcentre: an id beats the
+       table.tablebg > tbody > tr rule two blocks up on any property it
+       shares, and margin is not one it sets — but is one this page's
+       tighter search-page rule below could, so the habit is kept up
+       here too. */
+    html[data-rr] #wrapcentre tr[data-rr-cat-row="controls"] {
+        margin-top: var(--rr-s2);
+    }
+
+    /* The cell itself, and — on a topic page, where the same shape
+       shares its row with the topic search box beside it — the sort
+       form one level down. Flex items ignore float, so this also
+       stops that search box eating into the sort form's line, which
+       was the other half of the ragged wrap this shape used to
+       produce there. */
+    html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"],
+    html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > form {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: var(--rr-s2) var(--rr-s3);
+    }
+    html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > form { flex: 1 1 100%; }
+
+    /* Each label and the select(s) it names, glued into one span by
+       lists.js (groupSortControls). white-space: nowrap keeps a wrap
+       from ever landing between a label and its own control — only
+       between one pair and the next. */
+    html[data-rr] .rr-ctrl-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    /* The results footer's own float: the template sets it inline on
+       the match count and an empty companion strip, meant to be
+       cleared by a bare <br> — and #wrapcentre > br is dropped further
+       up this file as decorative spacing on every other page, which
+       silently undid the one place that clearing br was load-bearing.
+       Off the float, the count is a line of its own and the jump box
+       under it stops trying to fit "Jump to:" into whatever sliver of
+       the row the float happened to leave beside it. */
+    html[data-rr] #wrapcentre > div.gensmall[style*="float"],
+    html[data-rr] #wrapcentre > div.nav[style*="float"] {
+        float: none !important;
+        margin: 0 0 var(--rr-s2);
+    }
+
+    /* The jump-to box: a label, a forum <select> and a Go button in
+       one unstyled <td>, unpacked like any other nested table into
+       three stacked lines for one control. !important twice: the
+       table-unpacking rule above reaches this same td through one
+       more attribute selector than this one and would undo both the
+       row and the width this needs to make the select worth flexing. */
+    html[data-rr] #wrapcentre form[name="jumpbox"] td {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px var(--rr-s2);
+        width: 100% !important;
+    }
+    html[data-rr] #wrapcentre form[name="jumpbox"] span.gensmall { white-space: nowrap; }
+    /* flex-basis 0, not auto: auto reserves the select's own preferred
+       width — which Chromium sizes to its widest *option*, not the one
+       showing — before the row is split into a line at all, and that
+       alone was wider than the row, pushing Go onto a line by itself.
+       From a zero basis the select instead grows to fill whatever the
+       label and Go leave it. */
+    html[data-rr] #wrapcentre form[name="jumpbox"] select { flex: 1 1 0%; min-width: 0; }
+    html[data-rr] #wrapcentre form[name="jumpbox"] input[type="submit"] { flex: none; }
+}
+
+@media (max-width: 860px) {
+    /* The sort strip is the last row of the results card. Drawn as a
+       dark box inset in the card it read as a panel dropped into the
+       last result; drawn flush, with a hairline over it and the card's
+       own footer tone, it reads as the card's foot. */
+    html[data-rr] #wrapcentre tr[data-rr-cat-row="controls"] {
+        margin-top: var(--rr-s2);
+        padding: 10px 12px !important;
+        border-top: 1px solid var(--rr-line);
+        background: var(--rr-surface-2);
+    }
+    html[data-rr] #wrapcentre tr[data-rr-cat-row="controls"] > td.cat[data-rr-cat="controls"] {
+        background: transparent;
+        padding: 0;
+        margin: 0;
+        border-radius: 0;
+    }
 }

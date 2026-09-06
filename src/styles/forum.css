@@ -882,6 +882,11 @@ html[data-rr] [data-rr-visited] .rr-dot[data-state="read"] { background: var(--r
 .rr-latest { color: var(--rr-faint); vertical-align: -2px; }
 a:hover > .rr-latest { color: var(--rr-accent); }
 
+/* The attachment glyph (icons.js): a fact about the topic, not a
+   control, so it is muted and sits after the title rather than
+   competing with the tag in front of it. */
+.rr-attach { color: var(--rr-faint); vertical-align: -2px; margin-left: 4px; }
+
 /* "[ Go to page: 1 ... 41, 42, 43 ]" under a long topic's title.
    Two things were wrong with it. The size it asks for here never
    applied: `td.row1 p` above is one element more specific, so the
@@ -1017,6 +1022,21 @@ html[data-rr] select[multiple] { min-height: 12em; }
    post footer on a desktop and back on a phone, where the footer row
    is a flex row. The floating button does this job on every width. */
 html[data-rr] a[href="#wrapheader"] { display: none; }
+
+/* The row that link lived in stayed behind: its own cell floats a
+   profile-icon link the modernised post header already carries, and
+   with the "Top" text gone the row reads as empty even though its
+   text content is not, which is why it survived the general "empty
+   post row" cleanup. Named by lists.js (markShapes): the row's first
+   cell holds nothing but that one link. A table row with only a
+   floated child collapses to nothing on a desktop, ~20px of it; on
+   the phone layout the row is a padded flex card and the same cell
+   is 49px of empty band under every post. */
+/* !important: the phone layout's row rule (responsive.css,
+   html[data-rr] #wrapcentre table.tablebg > tbody > tr) carries an id
+   and three more type selectors than this one, so it wins on
+   specificity whatever the source order; the tie is broken here. */
+html[data-rr] tr[data-rr-top-row] { display: none !important; }
 
 /* Search results mark the term with the board's `.posthilit`: pure
    yellow behind dark text, on every theme. A wash of the warning

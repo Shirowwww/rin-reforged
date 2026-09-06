@@ -258,6 +258,11 @@ function addBookmarkStar(entry) {
     const gutter = entry.row.querySelector('td[data-rr-col="icon"]');
     if (gutter) gutter.append(star);
     else entry.link.after(star);
+
+    // Named on the row, not just the cell: the phone card (responsive.css)
+    // pulls the star out to the card's own corner and needs to know which
+    // title cells must keep their text clear of it.
+    entry.row.setAttribute("data-rr-star", "");
 }
 
 /* ---- First unread --------------------------------------------- */
@@ -717,13 +722,25 @@ function collapseAnnouncements(entries) {
 function markShapes() {
     for (const cell of document.querySelectorAll("#wrapcentre td.cat")) {
         const row = cell.parentElement;
-        if (row && row.tagName === "TR") {
-            row.setAttribute("data-rr-cat-row", cell.childNodes.length ? "" : "empty");
-        }
+        // "controls" rides along onto the row too: the sort strip at
+        // the foot of a listing is the last row of the same table the
+        // results render in, and the phone stylesheet needs to pull it
+        // away from that table's card on the row, not the cell — a
+        // margin on the cell would sit inside the row's own padding.
+        // A cell that matches the controls shape always has content (a
+        // select, a table, a submit button), so kind starts as the
+        // empty string for it every time — an "only override if kind
+        // is already truthy" guard here would test a value that is
+        // always falsy at this point and would never fire.
+        let kind = cell.childNodes.length ? "" : "empty";
         if (cell.querySelector(':scope > table, select, input[type="submit"]')) {
             cell.setAttribute("data-rr-cat", "controls");
+            kind = "controls";
         } else if (cell.getAttribute("align") === "right" && !cell.querySelector("h4")) {
             cell.setAttribute("data-rr-cat", "plain");
+        }
+        if (row && row.tagName === "TR") {
+            row.setAttribute("data-rr-cat-row", kind);
         }
     }
 
@@ -754,6 +771,22 @@ function markShapes() {
             if (event.target instanceof Element && event.target.closest("a")) return;
             input.click();
         });
+    }
+
+    // The "Top" row under every post. The link back to the header is
+    // already hidden (forum.css) — the floating button does that job
+    // now — so a row whose first cell holds nothing else is a band of
+    // empty space the width of the post, worse on a phone where the
+    // row is padded like a card.
+    for (const row of document.querySelectorAll("#wrapcentre table.tablebg > tbody > tr")) {
+        const first = row.firstElementChild;
+        if (!first || first.tagName !== "TD") continue;
+        const links = first.querySelectorAll("a");
+        if (links.length !== 1) continue;
+        const href = links[0].getAttribute("href") || "";
+        if (href !== "#wrapheader" && href !== "#top") continue;
+        if (first.textContent.trim() !== links[0].textContent.trim()) continue;
+        row.setAttribute("data-rr-top-row", "");
     }
 }
 
@@ -839,6 +872,7 @@ function hideEmptyProfileRows() {
 
 function initLists() {
     markShapes();
+    groupSortControls();
     for (const table of document.querySelectorAll("table.tablebg")) {
         labelColumns(table);
         // A listing, as opposed to a post or a strip of chrome. The
@@ -930,4 +964,37 @@ function initLists() {
     }
 
     if (settings.get("hideAnnouncements")) collapseAnnouncements(entries);
+}
+
+/* The sort strip's controls are flat siblings — a label, the select
+   it names, sometimes a second select, then the next label — with
+   nothing but a space between one and the next. Wrapped at the
+   browser's own discretion that space is a break point like any
+   other, and a narrow phone card broke "Sort by:" onto one line and
+   the select that names it onto the next. Each label and the
+   controls up to the next label (or the row's own submit) become one
+   span, so a wrap can only fall between one pair and the next, never
+   inside one. Runs on both shapes this cell comes in: the search
+   results page holds the label and its selects directly, a topic's
+   holds them one level down in the sort form beside the search box —
+   a descendant selector reaches either. */
+function groupSortControls() {
+    for (const label of document.querySelectorAll(
+        '#wrapcentre td.cat[data-rr-cat="controls"] span.gensmall',
+    )) {
+        const group = el("span.rr-ctrl-group");
+        label.before(group);
+        group.append(label);
+        let next = group.nextSibling;
+        while (next && !(next.nodeType === 1
+            && (next.matches("span.gensmall") || next.matches('input[type="submit"], input[type="button"]')))) {
+            const node = next;
+            next = next.nextSibling;
+            // The &nbsp; and bare spaces the template used to hold
+            // these apart: the group's own gap replaces them, and left
+            // in they would sit alongside it as an empty flex item.
+            if (node.nodeType === 3 && !node.textContent.trim()) { node.remove(); continue; }
+            group.append(node);
+        }
+    }
 }

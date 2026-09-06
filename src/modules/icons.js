@@ -47,6 +47,25 @@ function latestPostArrow(img) {
 }
 
 /**
+ * "This topic has an attachment" — a beveled paperclip GIF the template
+ * draws ahead of the title, in front of the [Release] tag rather than
+ * beside the fact it is closest to. A muted vector glyph replaces it
+ * after the title link instead, the way the latest-post arrow follows
+ * rather than leads.
+ */
+function attachmentGlyph(img) {
+    const label = img.getAttribute("title") || img.getAttribute("alt") || "Attachment(s)";
+    const glyph = icon("clip", 12);
+    glyph.classList.add("rr-attach");
+    glyph.setAttribute("title", label);
+    // Where the board put it, ahead of the tag and the title. Placed
+    // after the title it wrapped to a line of its own on a phone the
+    // moment the title filled the card's width.
+    img.after(glyph);
+    img.style.display = "none";
+}
+
+/**
  * A control the board draws as an image inside a link and nothing else:
  * "Reply with quote", "Profile", the post permalink.
  *
@@ -124,6 +143,7 @@ function initIcons() {
 
         if (STATUS_RE.test(src)) { statusDot(img); continue; }
         if (/icon_topic_latest/.test(src)) { latestPostArrow(img); continue; }
+        if (/icon_topic_attach/.test(src)) { attachmentGlyph(img); continue; }
         if (/\/button_/.test(src)) { imageButton(img); continue; }
         if (controlLink(img)) continue;
 
