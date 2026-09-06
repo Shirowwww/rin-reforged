@@ -438,9 +438,11 @@
     html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="icon"] {
         min-width: 0;
         align-self: flex-start;
-        min-height: 34px;
         align-items: flex-start;
     }
+    /* Only a row with a star needs the star's height; without one the
+       34px pushed a message folder's second line 20px down. */
+    html[data-rr] table.tablebg > tbody > tr[data-rr-star] > td[data-rr-col="icon"] { min-height: 34px; }
     /* The star's containing block is the row (tr, made position:relative
        above), not this cell, so top/right here are relative to the
        row's own corner and not to wherever the cell happens to sit. */
@@ -631,15 +633,26 @@
     }
     html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > form { flex: 1 1 100%; }
 
-    /* Each label and the select(s) it names, glued into one span by
-       lists.js (groupSortControls). white-space: nowrap keeps a wrap
-       from ever landing between a label and its own control — only
-       between one pair and the next. */
-    html[data-rr] .rr-ctrl-group {
-        display: inline-flex;
+    /* The message folder's export and mark controls: two floated divs
+       in the same cell, which spilled over the sort form under them.
+       Two full-width rows of the cell's own flex layout instead. */
+    html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > div[style*="float"] {
+        float: none !important;
+        display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        gap: 6px;
-        white-space: nowrap;
+        gap: var(--rr-s2);
+        flex: 1 1 100%;
+    }
+    html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > div[style*="float"] > select { flex: 1 1 auto; min-width: 0; }
+    /* The topic search box: a row of its own, the input taking the
+       width the button leaves. */
+    html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > #search-box_thread { flex: 1 1 100%; margin: 0; }
+    html[data-rr] #search-box_thread form { display: flex; }
+    html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] #search-box_thread input[type="text"] {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
     }
 
     /* The results footer's own float: the template sets it inline on
@@ -933,4 +946,99 @@
     html[data-rr] .rr-range { flex: 1; width: auto; }
     html[data-rr] .rr-panel__foot { flex-wrap: wrap; gap: var(--rr-s2); padding: var(--rr-s3); }
     html[data-rr] .rr-panel__foot .rr-spacer { display: none; }
+}
+
+/* ------------------------------------------------------------------
+   The second reading of the phone screenshots.
+   ------------------------------------------------------------------ */
+@media (max-width: 860px) {
+    /* A row hidden by the script stays hidden: the flex-row rule above
+       was bringing a profile's empty rows back. */
+    html[data-rr] #wrapcentre tr[data-rr-empty-row] { display: none !important; }
+    /* A profile's label and its value on one line, the label quiet. */
+    html[data-rr] #wrapcentre tr[data-rr-pair] { display: flex !important; flex-wrap: nowrap !important; align-items: baseline !important; gap: var(--rr-s2); }
+    html[data-rr] #wrapcentre tr[data-rr-pair] > td:first-child { flex: none; width: auto !important; color: var(--rr-muted); }
+    html[data-rr] #wrapcentre tr[data-rr-pair] > td:last-child { flex: 1 1 auto; width: auto !important; min-width: 0; }
+
+    /* Centred cells are a desktop table's idea; stacked, they left a
+       radio row or a heading floating in the middle of the card. */
+    html[data-rr] #wrapcentre td[align="center"]:not([data-rr-col]) { text-align: left; }
+
+    /* The icon legend under a listing: the dot beside its words, one
+       pair to a line, instead of each dot centred above its label. */
+    /* The two :not() classes are there to outweigh the generic
+       table-unpacking rule above, which carries the same two. */
+    html[data-rr] #wrapcentre table[data-rr-legend]:not(.tablebg):not(.forumline) { margin: var(--rr-s3) 0; }
+    /* A two-column grid: every dot in the first column, its words in
+       the second, one pair to a line at one spacing. The template's
+       spacer cells between pairs go. */
+    html[data-rr] #wrapcentre table[data-rr-legend]:not(.tablebg):not(.forumline) > tbody > tr {
+        display: grid;
+        grid-template-columns: 20px minmax(0, 1fr);
+        gap: 6px var(--rr-s2);
+        align-items: center;
+        padding: 0;
+        border: 0;
+    }
+    html[data-rr] #wrapcentre table[data-rr-legend]:not(.tablebg):not(.forumline) > tbody > tr + tr { margin-top: 6px; }
+    html[data-rr] #wrapcentre table[data-rr-legend]:not(.tablebg):not(.forumline) > tbody > tr > td {
+        display: block;
+        padding: 0;
+        font-size: var(--rr-fs-xs);
+        color: var(--rr-muted);
+        text-align: left;
+    }
+    html[data-rr] #wrapcentre table[data-rr-legend]:not(.tablebg):not(.forumline) > tbody > tr > td[data-rr-empty] { display: none; }
+    html[data-rr] #wrapcentre table[data-rr-legend]:not(.tablebg):not(.forumline) > tbody > tr > td[data-rr-legend-dot] {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* A post's header on a phone: name and rank, then the meta line,
+       then the date — each on its own line, all from the left. The
+       spacer that pushes the date right on a desktop put it right on
+       some cards and left on others, depending on what wrapped. */
+    html[data-rr] .rr-posthead__spacer { display: none; }
+    html[data-rr] .rr-posthead__meta,
+    html[data-rr] .rr-posthead__date { flex: 1 1 100%; text-align: left; margin: 0; }
+
+    /* The page box holds two digits; it does not need a hand's width. */
+    html[data-rr] .rr-pager__input { width: 3.4em; }
+    /* The arrow to the first unread post beside a title: on a phone the
+       title itself opens there, and the arrow read as a stray glyph. */
+    html[data-rr] a.rr-unread-jump { display: none; }
+
+    /* Forms: a multi-select as wide as its widest forum name overflowed
+       the card; the message box at fifteen rows was a screen and a half. */
+    html[data-rr] #wrapcentre select[multiple] { width: 100% !important; max-width: 100%; }
+    html[data-rr] #wrapcentre textarea { max-height: 45vh; }
+
+    /* The message folder's foot: the sort form in a bare table of its
+       own, its cell right-aligned and nowrap for a desktop. The cell
+       the width of the card, the form a wrapped row. The listing's
+       "Go to page" strip and the "Page 1 of 5" line, the same. */
+    html[data-rr] #wrapcentre table[data-rr-sortfoot] > tbody > tr > td,
+    html[data-rr] #wrapcentre table[data-rr-strip] > tbody > tr > td { width: 100% !important; text-align: left; white-space: normal !important; }
+    html[data-rr] #wrapcentre table[data-rr-sortfoot] > tbody > tr > td:empty { display: none; }
+    html[data-rr] #wrapcentre td[data-rr-cat="controls"] form { float: none !important; }
+    html[data-rr] #wrapcentre form[name="sortmsg"] .rr-ctrl-group { flex: 0 0 auto; }
+    html[data-rr] #wrapcentre form[name="sortmsg"] .rr-ctrl-group > span.gensmall { white-space: nowrap !important; }
+    html[data-rr] #wrapcentre form[name="sortmsg"] { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: var(--rr-s2) var(--rr-s3); margin: 0 !important; }
+    html[data-rr] #wrapcentre table[data-rr-sortfoot] { margin: var(--rr-s3) 0 !important; }
+    /* A profile's two columns — presence and statistics, contact and
+       profile — one under the other; side by side, the second's form
+       controls were squeezed to a few letters. */
+    html[data-rr][data-rr-profile] #wrapcentre table.tablebg > tbody > tr > td.row1,
+    html[data-rr][data-rr-profile] #wrapcentre table.tablebg > tbody > tr > td.row2 { flex: 1 1 100%; }
+    /* The message folder's export and mark controls sit in a table of
+       their own, not the list's, so the strip that reads as a card's
+       foot elsewhere was a bare band here. A card of its own. */
+    html[data-rr] #wrapcentre table:not(.tablebg):not(.forumline) > tbody > tr[data-rr-cat-row="controls"] {
+        margin-top: var(--rr-s3);
+        border: 1px solid var(--rr-line);
+        border-radius: var(--rr-radius-lg);
+        padding: 12px 14px !important;
+    }
+    html[data-rr] #wrapcentre form[name="sortmsg"] select { flex: none; }
 }

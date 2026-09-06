@@ -451,6 +451,27 @@ work had never looked.
   field takes the field's corner minus the gap, so the two curves are
   concentric. The board's black hairline and its Who-is-online sprite
   go.
+- **0.9.3** read the whole tour again, on a desktop as well as a phone,
+  and fixed what both readings agreed on. The strips between cards had
+  nothing holding them apart: "Delete all board cookies", the "Go to
+  page" line a listing ends with, "Page 1 of 5" over Who is online, the
+  message folder's sort form, the reply box against Who is online; each
+  is named now and takes the same 12px. Every "Go to page" strip is a
+  row of chips, the current page marked, the words kept as the board's
+  own link that asks for a page number; the mini pager under a long
+  title had lost its "…" between two runs of pages, because the gap was
+  read after the link had already moved. A sort label sat glued to its
+  select on every width, not only a phone's. The topic search under the
+  posts wrapped its button under the field and then ran into the display
+  form: the field carried the floor every board text field gets, wider
+  than the line it had. On a phone, the icon legend under a listing is a
+  two-column grid rather than dots centred over their words — the
+  listing's legend has no class at all, so it is found by its shape —
+  and a profile's label and value are a pair again, after a rule meant
+  for the message folder's foot had given every right-aligned cell the
+  whole line and set the date down letter by letter; the folder's export
+  controls, two floats in a cell, spilled over the sort form under them
+  and are a card of their own.
 
 ### It reads Russian
 

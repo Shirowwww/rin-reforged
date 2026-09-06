@@ -684,7 +684,7 @@ tr[data-rr-hidden] { display: none; }
 /* ---- Quick reply -------------------------------------------------- */
 
 .rr-reply {
-    margin: var(--rr-post-gap) 0 0;
+    margin: var(--rr-post-gap) 0 var(--rr-s3);
     padding: var(--rr-card-pad);
     background: var(--rr-surface);
     border: 1px solid var(--rr-line);
@@ -1441,3 +1441,100 @@ html[data-rr] a.rr-postnum:hover {
    in the accent so a hovered row and the chosen one read differently. */
 html[data-rr] table[data-rr-list] tr[data-rr-cursor] > td { background: var(--rr-surface-3); }
 html[data-rr] table[data-rr-list] tr[data-rr-cursor] > td:first-child { box-shadow: inset 3px 0 0 var(--rr-accent); }
+
+/* ---- The mini pager under a topic title ------------------------- */
+
+/* "[ Go to page: 1 … 41, 42, 43 ]" as a label and a row of chips
+   (lists.js, tidyMiniPagers). */
+.rr-minipager { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px 4px; font-weight: 400; }
+.rr-minipager__label { margin-right: 3px; font-size: var(--rr-fs-xs); color: var(--rr-faint); }
+/* In a listing's strip the words are the board's own link that asks
+   for a page number; it keeps that, quietly. */
+html[data-rr] a.rr-minipager__label { color: var(--rr-muted); font-weight: 500; text-decoration: none; }
+html[data-rr] a.rr-minipager__label:hover { color: var(--rr-text-strong); }
+html[data-rr] a.rr-minipager__page,
+html[data-rr] strong.rr-minipager__page {
+    display: inline-block;
+    min-width: 1.6em;
+    padding: 0 6px;
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-pill);
+    background: var(--rr-surface-2);
+    color: var(--rr-muted);
+    font: 600 var(--rr-fs-xs) / 1.7 var(--rr-font);
+    text-align: center;
+}
+html[data-rr] a.rr-minipager__page:hover { color: var(--rr-text-strong); border-color: var(--rr-line-strong); text-decoration: none; }
+html[data-rr] strong.rr-minipager__page--here { background: var(--rr-accent); border-color: var(--rr-accent); color: var(--rr-accent-text); }
+html[data-rr] a.rr-minipager__step { min-width: 0; padding: 0 9px; }
+.rr-minipager__gap { color: var(--rr-faint); font-size: var(--rr-fs-xs); }
+
+/* ---- Loose strips between cards --------------------------------- */
+
+/* The "Go to page" strip a listing ends with, the "Page 1 of 5" line
+   over Who is online, the message folder's sort form: bare tables
+   dropped between two cards, with nothing holding them apart. */
+html[data-rr] #wrapcentre table[data-rr-strip],
+html[data-rr] #wrapcentre table[data-rr-sortfoot] { margin: var(--rr-s3) 0; }
+html[data-rr] #wrapcentre table[data-rr-strip] td.nav,
+html[data-rr] #wrapcentre table[data-rr-strip] td.pagination { font-size: var(--rr-fs-sm); color: var(--rr-muted); }
+/* "Delete all board cookies | The team" is a bare span dropped
+   between two cards. A line of its own, quiet. */
+html[data-rr] #wrapcentre > span.gensmall {
+    display: block;
+    margin: var(--rr-s2) var(--rr-s1) var(--rr-s3);
+    font-size: var(--rr-fs-xs);
+    color: var(--rr-faint);
+}
+
+/* ---- Sort controls --------------------------------------------- */
+
+/* Each label and the select(s) it names, glued into one span by
+   lists.js (groupSortControls). white-space: nowrap keeps a wrap from
+   ever landing between a label and its own control — only between one
+   pair and the next. */
+html[data-rr] .rr-ctrl-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+html[data-rr] td.cat[data-rr-cat="controls"] > .rr-ctrl-group + .rr-ctrl-group,
+html[data-rr] td.cat[data-rr-cat="controls"] > .rr-ctrl-group + input { margin-left: var(--rr-s3); }
+/* The sort form itself: one wrapped row of pairs, the pairs apart. */
+html[data-rr] td.cat[data-rr-cat="controls"] > form,
+html[data-rr] #wrapcentre form[name="sortmsg"] {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--rr-s2) var(--rr-s3);
+    vertical-align: middle;
+}
+/* The topic search under the posts: the template floats its box, and
+   the button wrapped under the input in the width the float left it.
+   One line, beside the sort form. */
+html[data-rr] #search-box_thread {
+    float: none !important;
+    display: inline-flex;
+    width: auto !important;
+    vertical-align: middle;
+    margin: 0 var(--rr-s4) 0 0;
+}
+html[data-rr] #search-box_thread form {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--rr-s2);
+    width: auto !important;
+    margin: 0;
+    white-space: nowrap;
+}
+/* The field carries the floor every board text field gets (a size="22"
+   in ems); here that floor is wider than the line the box has, and the
+   button went under it. A fixed width, no floor, no growing. */
+html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] #search-box_thread input[type="text"] {
+    width: 14em !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+}

@@ -60,9 +60,9 @@ checks this repository and offers new versions on its own.
   the control panel, the posting form and profiles get the same treatment:
   they are listings, with labelled and aligned columns, striped rows,
   grouped numbers, one-line dates, English ranks, a colour palette you can
-  actually hit, profile rows that say nothing hidden, and Subscribe /
+  actually hit, profile rows that say nothing hidden, Subscribe /
   Bookmark / E-mail friend in the topic bar rather than in a strip of their
-  own.
+  own, and every "Go to page" strip as a row of chips.
 - **On a phone** the same pages are cards with one rhythm — the board
   bar folds into a real menu, the member list and the control panel are
   lists rather than stacks of cards, and the settings panel is a sheet

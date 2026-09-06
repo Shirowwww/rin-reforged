@@ -889,13 +889,91 @@ function hideEmptyProfileRows() {
     for (const row of document.querySelectorAll("#wrapcentre table.tablebg tr")) {
         const cells = Array.from(row.children).filter((node) => node.tagName === "TD");
         if (cells.length !== 2) continue;
+        // The outer table's two columns — "PM: [button]" beside
+        // "Groups: [select]" — read as a label and a value too; they are
+        // two forms side by side, and the phone stacks those.
+        if (cells.some((cell) => cell.querySelector("table, form"))) continue;
         const label = cells[0].textContent.replace(/\s+/g, " ").trim();
         if (!/:$/.test(label)) continue;
         const value = cells[1];
-        if (value.querySelector("a, img, input, select, button, textarea")) continue;
-        if (value.textContent.replace(/[\s\u00a0]+/g, "")) continue;
+        if (value.querySelector("a, img, input, select, button, textarea")
+            || value.textContent.replace(/[\s\u00a0]+/g, "")) {
+            // A label and its value: the phone keeps them on one line.
+            row.setAttribute("data-rr-pair", "");
+            continue;
+        }
         row.hidden = true;
         row.setAttribute("data-rr-empty-row", "");
+    }
+}
+
+/* The template's page links as a row of small chips, the words kept
+   as a label, the current page marked, the " ... " between two runs
+   of pages kept as a quiet mark. Two shapes come through here: the
+   "[ Go to page: 1 … 41, 42, 43 ]" under a long topic's title, bare
+   text around the links, and the "Go to page 1, 2, 3 … 615  Next"
+   strip a listing ends with, where the words are themselves a link
+   that asks for a page number. */
+function chipPager(holder) {
+    if (holder.hasAttribute("data-rr-minipager")) return;
+    if (!holder.querySelector("a[href]") || !/(Go to page|На страницу)/.test(holder.textContent)) return;
+    const russian = /На страницу/.test(holder.textContent);
+    // The links, the bold current page and the gaps, in reading order,
+    // gathered before anything moves: a node's neighbours change once
+    // it has.
+    const items = [];
+    const walk = (node) => {
+        for (const child of Array.from(node.childNodes)) {
+            if (child.nodeType === 3) { if (/…|\.\.\./.test(child.textContent)) items.push("gap"); continue; }
+            if (child.nodeType !== 1) continue;
+            if (child.matches("a[href], strong")) items.push(child);
+            else if (!child.querySelector("a") && /…|\.\.\./.test(child.textContent)) items.push("gap");
+            else walk(child);
+        }
+    };
+    walk(holder);
+    const row = el("span.rr-minipager", { "aria-label": russian ? "На страницу" : "Go to page" });
+    const jump = items.find((node) => node !== "gap" && /jumpto/.test(node.getAttribute("onclick") || ""));
+    if (jump) {
+        jump.classList.add("rr-minipager__label");
+        row.append(jump);
+    } else {
+        row.append(el("span.rr-minipager__label", {}, [russian ? "На страницу" : "Go to page"]));
+    }
+    let last = null;
+    for (const item of items) {
+        if (item === jump) continue;
+        if (item === "gap") {
+            if (last && last !== "gap") row.append(el("span.rr-minipager__gap", { "aria-hidden": "true" }, ["…"]));
+            last = "gap";
+            continue;
+        }
+        const number = /^\d+$/.test(item.textContent.trim());
+        if (item.tagName === "STRONG" && !number) continue;
+        item.classList.add("rr-minipager__page");
+        if (item.tagName === "STRONG") item.classList.add("rr-minipager__page--here");
+        else if (!number) item.classList.add("rr-minipager__step");
+        row.append(item);
+        last = item;
+    }
+    holder.textContent = "";
+    holder.append(row);
+    holder.setAttribute("data-rr-minipager", "");
+}
+
+function tidyPagers() {
+    for (const p of document.querySelectorAll('td[data-rr-col="title"] p.gensmall')) chipPager(p);
+    for (const jump of document.querySelectorAll('#wrapcentre a[onclick*="jumpto"]')) {
+        if (jump.closest(".rr-topicbar, .rr-minipager")) continue;
+        const holder = jump.closest("b") || jump.closest("td, p, span");
+        if (!holder) continue;
+        chipPager(holder);
+        // The strip is a bare table dropped between two cards, with
+        // nothing to hold them apart; named so the stylesheet can.
+        const table = holder.closest("table");
+        if (table && !table.matches(".tablebg, .forumline") && /^(wrapcentre|pagecontent)$/.test(table.parentElement.id)) {
+            table.setAttribute("data-rr-strip", "");
+        }
     }
 }
 
@@ -933,7 +1011,35 @@ function initLists() {
         }
     }
     if (settings.get("rowClick")) initRowClick();
-    if (profileView()) hideEmptyProfileRows();
+    if (profileView()) {
+        // Named on the root so the phone can stack the profile's two
+        // columns without a :has() on the table.
+        document.documentElement.setAttribute("data-rr-profile", "");
+        hideEmptyProfileRows();
+    }
+    tidyPagers();
+    // The icon legend under a listing: the index names its table
+    // "legend", a listing's has no class at all. The dot cells and the
+    // spacer between pairs are named, so the phone can lay each dot
+    // beside its words and break the line on the spacer.
+    for (const table of document.querySelectorAll("#wrapcentre table.legend, #wrapcentre table:not([class])")) {
+        if (table.hasAttribute("data-rr-legend") || table.querySelector("table, input, select, a")) continue;
+        const cells = Array.from(table.querySelectorAll(":scope > tbody > tr > td"));
+        const dot = (cell) => !cell.textContent.trim() && cell.querySelector(".rr-dot")
+            && Array.from(cell.children).every((child) => child.matches("img, .rr-dot"));
+        const words = (cell) => cell.textContent.replace(/[\s\u00a0]+/g, "") && !cell.querySelector("img, .rr-dot, b, table");
+        const dots = cells.filter(dot);
+        if (dots.length < 2) continue;
+        if (!cells.every((cell) => dot(cell) || words(cell) || !cell.textContent.replace(/[\s\u00a0]+/g, ""))) continue;
+        table.setAttribute("data-rr-legend", "");
+        for (const cell of dots) cell.setAttribute("data-rr-legend-dot", "");
+        markEmptyCells(table);
+    }
+    // The message folder's sort form sits in a bare table of its own
+    // under the list; named so it can take a card's gap.
+    const sortForm = document.querySelector('#wrapcentre form[name="sortmsg"]');
+    const sortTable = sortForm && sortForm.closest("table");
+    if (sortTable && !sortTable.matches(".tablebg, .forumline")) sortTable.setAttribute("data-rr-sortfoot", "");
 
     dedupeSearchBoxes();
 
@@ -1028,7 +1134,7 @@ function initLists() {
    a descendant selector reaches either. */
 function groupSortControls() {
     for (const label of document.querySelectorAll(
-        '#wrapcentre td.cat[data-rr-cat="controls"] span.gensmall',
+        '#wrapcentre td.cat[data-rr-cat="controls"] span.gensmall, #wrapcentre form[name="sortmsg"] span.gensmall',
     )) {
         const group = el("span.rr-ctrl-group");
         label.before(group);

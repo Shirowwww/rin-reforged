@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.9.2
+// @version         0.9.3
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -2141,7 +2141,7 @@ tr[data-rr-hidden] { display: none; }
 /* ---- Quick reply -------------------------------------------------- */
 
 .rr-reply {
-    margin: var(--rr-post-gap) 0 0;
+    margin: var(--rr-post-gap) 0 var(--rr-s3);
     padding: var(--rr-card-pad);
     background: var(--rr-surface);
     border: 1px solid var(--rr-line);
@@ -2898,6 +2898,103 @@ html[data-rr] a.rr-postnum:hover {
    in the accent so a hovered row and the chosen one read differently. */
 html[data-rr] table[data-rr-list] tr[data-rr-cursor] > td { background: var(--rr-surface-3); }
 html[data-rr] table[data-rr-list] tr[data-rr-cursor] > td:first-child { box-shadow: inset 3px 0 0 var(--rr-accent); }
+
+/* ---- The mini pager under a topic title ------------------------- */
+
+/* "[ Go to page: 1 … 41, 42, 43 ]" as a label and a row of chips
+   (lists.js, tidyMiniPagers). */
+.rr-minipager { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px 4px; font-weight: 400; }
+.rr-minipager__label { margin-right: 3px; font-size: var(--rr-fs-xs); color: var(--rr-faint); }
+/* In a listing's strip the words are the board's own link that asks
+   for a page number; it keeps that, quietly. */
+html[data-rr] a.rr-minipager__label { color: var(--rr-muted); font-weight: 500; text-decoration: none; }
+html[data-rr] a.rr-minipager__label:hover { color: var(--rr-text-strong); }
+html[data-rr] a.rr-minipager__page,
+html[data-rr] strong.rr-minipager__page {
+    display: inline-block;
+    min-width: 1.6em;
+    padding: 0 6px;
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-pill);
+    background: var(--rr-surface-2);
+    color: var(--rr-muted);
+    font: 600 var(--rr-fs-xs) / 1.7 var(--rr-font);
+    text-align: center;
+}
+html[data-rr] a.rr-minipager__page:hover { color: var(--rr-text-strong); border-color: var(--rr-line-strong); text-decoration: none; }
+html[data-rr] strong.rr-minipager__page--here { background: var(--rr-accent); border-color: var(--rr-accent); color: var(--rr-accent-text); }
+html[data-rr] a.rr-minipager__step { min-width: 0; padding: 0 9px; }
+.rr-minipager__gap { color: var(--rr-faint); font-size: var(--rr-fs-xs); }
+
+/* ---- Loose strips between cards --------------------------------- */
+
+/* The "Go to page" strip a listing ends with, the "Page 1 of 5" line
+   over Who is online, the message folder's sort form: bare tables
+   dropped between two cards, with nothing holding them apart. */
+html[data-rr] #wrapcentre table[data-rr-strip],
+html[data-rr] #wrapcentre table[data-rr-sortfoot] { margin: var(--rr-s3) 0; }
+html[data-rr] #wrapcentre table[data-rr-strip] td.nav,
+html[data-rr] #wrapcentre table[data-rr-strip] td.pagination { font-size: var(--rr-fs-sm); color: var(--rr-muted); }
+/* "Delete all board cookies | The team" is a bare span dropped
+   between two cards. A line of its own, quiet. */
+html[data-rr] #wrapcentre > span.gensmall {
+    display: block;
+    margin: var(--rr-s2) var(--rr-s1) var(--rr-s3);
+    font-size: var(--rr-fs-xs);
+    color: var(--rr-faint);
+}
+
+/* ---- Sort controls --------------------------------------------- */
+
+/* Each label and the select(s) it names, glued into one span by
+   lists.js (groupSortControls). white-space: nowrap keeps a wrap from
+   ever landing between a label and its own control — only between one
+   pair and the next. */
+html[data-rr] .rr-ctrl-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+html[data-rr] td.cat[data-rr-cat="controls"] > .rr-ctrl-group + .rr-ctrl-group,
+html[data-rr] td.cat[data-rr-cat="controls"] > .rr-ctrl-group + input { margin-left: var(--rr-s3); }
+/* The sort form itself: one wrapped row of pairs, the pairs apart. */
+html[data-rr] td.cat[data-rr-cat="controls"] > form,
+html[data-rr] #wrapcentre form[name="sortmsg"] {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--rr-s2) var(--rr-s3);
+    vertical-align: middle;
+}
+/* The topic search under the posts: the template floats its box, and
+   the button wrapped under the input in the width the float left it.
+   One line, beside the sort form. */
+html[data-rr] #search-box_thread {
+    float: none !important;
+    display: inline-flex;
+    width: auto !important;
+    vertical-align: middle;
+    margin: 0 var(--rr-s4) 0 0;
+}
+html[data-rr] #search-box_thread form {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--rr-s2);
+    width: auto !important;
+    margin: 0;
+    white-space: nowrap;
+}
+/* The field carries the floor every board text field gets (a size="22"
+   in ems); here that floor is wider than the line the box has, and the
+   button went under it. A fixed width, no floor, no growing. */
+html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] #search-box_thread input[type="text"] {
+    width: 14em !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+}
 
 /* == features.css == */
 /* ------------------------------------------------------------------
@@ -4078,9 +4175,11 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
     html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="icon"] {
         min-width: 0;
         align-self: flex-start;
-        min-height: 34px;
         align-items: flex-start;
     }
+    /* Only a row with a star needs the star's height; without one the
+       34px pushed a message folder's second line 20px down. */
+    html[data-rr] table.tablebg > tbody > tr[data-rr-star] > td[data-rr-col="icon"] { min-height: 34px; }
     /* The star's containing block is the row (tr, made position:relative
        above), not this cell, so top/right here are relative to the
        row's own corner and not to wherever the cell happens to sit. */
@@ -4271,15 +4370,26 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
     }
     html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > form { flex: 1 1 100%; }
 
-    /* Each label and the select(s) it names, glued into one span by
-       lists.js (groupSortControls). white-space: nowrap keeps a wrap
-       from ever landing between a label and its own control — only
-       between one pair and the next. */
-    html[data-rr] .rr-ctrl-group {
-        display: inline-flex;
+    /* The message folder's export and mark controls: two floated divs
+       in the same cell, which spilled over the sort form under them.
+       Two full-width rows of the cell's own flex layout instead. */
+    html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > div[style*="float"] {
+        float: none !important;
+        display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        gap: 6px;
-        white-space: nowrap;
+        gap: var(--rr-s2);
+        flex: 1 1 100%;
+    }
+    html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > div[style*="float"] > select { flex: 1 1 auto; min-width: 0; }
+    /* The topic search box: a row of its own, the input taking the
+       width the button leaves. */
+    html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > #search-box_thread { flex: 1 1 100%; margin: 0; }
+    html[data-rr] #search-box_thread form { display: flex; }
+    html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] #search-box_thread input[type="text"] {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
     }
 
     /* The results footer's own float: the template sets it inline on
@@ -4573,6 +4683,101 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
     html[data-rr] .rr-range { flex: 1; width: auto; }
     html[data-rr] .rr-panel__foot { flex-wrap: wrap; gap: var(--rr-s2); padding: var(--rr-s3); }
     html[data-rr] .rr-panel__foot .rr-spacer { display: none; }
+}
+
+/* ------------------------------------------------------------------
+   The second reading of the phone screenshots.
+   ------------------------------------------------------------------ */
+@media (max-width: 860px) {
+    /* A row hidden by the script stays hidden: the flex-row rule above
+       was bringing a profile's empty rows back. */
+    html[data-rr] #wrapcentre tr[data-rr-empty-row] { display: none !important; }
+    /* A profile's label and its value on one line, the label quiet. */
+    html[data-rr] #wrapcentre tr[data-rr-pair] { display: flex !important; flex-wrap: nowrap !important; align-items: baseline !important; gap: var(--rr-s2); }
+    html[data-rr] #wrapcentre tr[data-rr-pair] > td:first-child { flex: none; width: auto !important; color: var(--rr-muted); }
+    html[data-rr] #wrapcentre tr[data-rr-pair] > td:last-child { flex: 1 1 auto; width: auto !important; min-width: 0; }
+
+    /* Centred cells are a desktop table's idea; stacked, they left a
+       radio row or a heading floating in the middle of the card. */
+    html[data-rr] #wrapcentre td[align="center"]:not([data-rr-col]) { text-align: left; }
+
+    /* The icon legend under a listing: the dot beside its words, one
+       pair to a line, instead of each dot centred above its label. */
+    /* The two :not() classes are there to outweigh the generic
+       table-unpacking rule above, which carries the same two. */
+    html[data-rr] #wrapcentre table[data-rr-legend]:not(.tablebg):not(.forumline) { margin: var(--rr-s3) 0; }
+    /* A two-column grid: every dot in the first column, its words in
+       the second, one pair to a line at one spacing. The template's
+       spacer cells between pairs go. */
+    html[data-rr] #wrapcentre table[data-rr-legend]:not(.tablebg):not(.forumline) > tbody > tr {
+        display: grid;
+        grid-template-columns: 20px minmax(0, 1fr);
+        gap: 6px var(--rr-s2);
+        align-items: center;
+        padding: 0;
+        border: 0;
+    }
+    html[data-rr] #wrapcentre table[data-rr-legend]:not(.tablebg):not(.forumline) > tbody > tr + tr { margin-top: 6px; }
+    html[data-rr] #wrapcentre table[data-rr-legend]:not(.tablebg):not(.forumline) > tbody > tr > td {
+        display: block;
+        padding: 0;
+        font-size: var(--rr-fs-xs);
+        color: var(--rr-muted);
+        text-align: left;
+    }
+    html[data-rr] #wrapcentre table[data-rr-legend]:not(.tablebg):not(.forumline) > tbody > tr > td[data-rr-empty] { display: none; }
+    html[data-rr] #wrapcentre table[data-rr-legend]:not(.tablebg):not(.forumline) > tbody > tr > td[data-rr-legend-dot] {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* A post's header on a phone: name and rank, then the meta line,
+       then the date — each on its own line, all from the left. The
+       spacer that pushes the date right on a desktop put it right on
+       some cards and left on others, depending on what wrapped. */
+    html[data-rr] .rr-posthead__spacer { display: none; }
+    html[data-rr] .rr-posthead__meta,
+    html[data-rr] .rr-posthead__date { flex: 1 1 100%; text-align: left; margin: 0; }
+
+    /* The page box holds two digits; it does not need a hand's width. */
+    html[data-rr] .rr-pager__input { width: 3.4em; }
+    /* The arrow to the first unread post beside a title: on a phone the
+       title itself opens there, and the arrow read as a stray glyph. */
+    html[data-rr] a.rr-unread-jump { display: none; }
+
+    /* Forms: a multi-select as wide as its widest forum name overflowed
+       the card; the message box at fifteen rows was a screen and a half. */
+    html[data-rr] #wrapcentre select[multiple] { width: 100% !important; max-width: 100%; }
+    html[data-rr] #wrapcentre textarea { max-height: 45vh; }
+
+    /* The message folder's foot: the sort form in a bare table of its
+       own, its cell right-aligned and nowrap for a desktop. The cell
+       the width of the card, the form a wrapped row. The listing's
+       "Go to page" strip and the "Page 1 of 5" line, the same. */
+    html[data-rr] #wrapcentre table[data-rr-sortfoot] > tbody > tr > td,
+    html[data-rr] #wrapcentre table[data-rr-strip] > tbody > tr > td { width: 100% !important; text-align: left; white-space: normal !important; }
+    html[data-rr] #wrapcentre table[data-rr-sortfoot] > tbody > tr > td:empty { display: none; }
+    html[data-rr] #wrapcentre td[data-rr-cat="controls"] form { float: none !important; }
+    html[data-rr] #wrapcentre form[name="sortmsg"] .rr-ctrl-group { flex: 0 0 auto; }
+    html[data-rr] #wrapcentre form[name="sortmsg"] .rr-ctrl-group > span.gensmall { white-space: nowrap !important; }
+    html[data-rr] #wrapcentre form[name="sortmsg"] { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: var(--rr-s2) var(--rr-s3); margin: 0 !important; }
+    html[data-rr] #wrapcentre table[data-rr-sortfoot] { margin: var(--rr-s3) 0 !important; }
+    /* A profile's two columns — presence and statistics, contact and
+       profile — one under the other; side by side, the second's form
+       controls were squeezed to a few letters. */
+    html[data-rr][data-rr-profile] #wrapcentre table.tablebg > tbody > tr > td.row1,
+    html[data-rr][data-rr-profile] #wrapcentre table.tablebg > tbody > tr > td.row2 { flex: 1 1 100%; }
+    /* The message folder's export and mark controls sit in a table of
+       their own, not the list's, so the strip that reads as a card's
+       foot elsewhere was a bare band here. A card of its own. */
+    html[data-rr] #wrapcentre table:not(.tablebg):not(.forumline) > tbody > tr[data-rr-cat-row="controls"] {
+        margin-top: var(--rr-s3);
+        border: 1px solid var(--rr-line);
+        border-radius: var(--rr-radius-lg);
+        padding: 12px 14px !important;
+    }
+    html[data-rr] #wrapcentre form[name="sortmsg"] select { flex: none; }
 }`;
 
 /* ================= src/core/store.js ================= */
@@ -8753,13 +8958,91 @@ function hideEmptyProfileRows() {
     for (const row of document.querySelectorAll("#wrapcentre table.tablebg tr")) {
         const cells = Array.from(row.children).filter((node) => node.tagName === "TD");
         if (cells.length !== 2) continue;
+        // The outer table's two columns — "PM: [button]" beside
+        // "Groups: [select]" — read as a label and a value too; they are
+        // two forms side by side, and the phone stacks those.
+        if (cells.some((cell) => cell.querySelector("table, form"))) continue;
         const label = cells[0].textContent.replace(/\s+/g, " ").trim();
         if (!/:$/.test(label)) continue;
         const value = cells[1];
-        if (value.querySelector("a, img, input, select, button, textarea")) continue;
-        if (value.textContent.replace(/[\s\u00a0]+/g, "")) continue;
+        if (value.querySelector("a, img, input, select, button, textarea")
+            || value.textContent.replace(/[\s\u00a0]+/g, "")) {
+            // A label and its value: the phone keeps them on one line.
+            row.setAttribute("data-rr-pair", "");
+            continue;
+        }
         row.hidden = true;
         row.setAttribute("data-rr-empty-row", "");
+    }
+}
+
+/* The template's page links as a row of small chips, the words kept
+   as a label, the current page marked, the " ... " between two runs
+   of pages kept as a quiet mark. Two shapes come through here: the
+   "[ Go to page: 1 … 41, 42, 43 ]" under a long topic's title, bare
+   text around the links, and the "Go to page 1, 2, 3 … 615  Next"
+   strip a listing ends with, where the words are themselves a link
+   that asks for a page number. */
+function chipPager(holder) {
+    if (holder.hasAttribute("data-rr-minipager")) return;
+    if (!holder.querySelector("a[href]") || !/(Go to page|На страницу)/.test(holder.textContent)) return;
+    const russian = /На страницу/.test(holder.textContent);
+    // The links, the bold current page and the gaps, in reading order,
+    // gathered before anything moves: a node's neighbours change once
+    // it has.
+    const items = [];
+    const walk = (node) => {
+        for (const child of Array.from(node.childNodes)) {
+            if (child.nodeType === 3) { if (/…|\.\.\./.test(child.textContent)) items.push("gap"); continue; }
+            if (child.nodeType !== 1) continue;
+            if (child.matches("a[href], strong")) items.push(child);
+            else if (!child.querySelector("a") && /…|\.\.\./.test(child.textContent)) items.push("gap");
+            else walk(child);
+        }
+    };
+    walk(holder);
+    const row = el("span.rr-minipager", { "aria-label": russian ? "На страницу" : "Go to page" });
+    const jump = items.find((node) => node !== "gap" && /jumpto/.test(node.getAttribute("onclick") || ""));
+    if (jump) {
+        jump.classList.add("rr-minipager__label");
+        row.append(jump);
+    } else {
+        row.append(el("span.rr-minipager__label", {}, [russian ? "На страницу" : "Go to page"]));
+    }
+    let last = null;
+    for (const item of items) {
+        if (item === jump) continue;
+        if (item === "gap") {
+            if (last && last !== "gap") row.append(el("span.rr-minipager__gap", { "aria-hidden": "true" }, ["…"]));
+            last = "gap";
+            continue;
+        }
+        const number = /^\d+$/.test(item.textContent.trim());
+        if (item.tagName === "STRONG" && !number) continue;
+        item.classList.add("rr-minipager__page");
+        if (item.tagName === "STRONG") item.classList.add("rr-minipager__page--here");
+        else if (!number) item.classList.add("rr-minipager__step");
+        row.append(item);
+        last = item;
+    }
+    holder.textContent = "";
+    holder.append(row);
+    holder.setAttribute("data-rr-minipager", "");
+}
+
+function tidyPagers() {
+    for (const p of document.querySelectorAll('td[data-rr-col="title"] p.gensmall')) chipPager(p);
+    for (const jump of document.querySelectorAll('#wrapcentre a[onclick*="jumpto"]')) {
+        if (jump.closest(".rr-topicbar, .rr-minipager")) continue;
+        const holder = jump.closest("b") || jump.closest("td, p, span");
+        if (!holder) continue;
+        chipPager(holder);
+        // The strip is a bare table dropped between two cards, with
+        // nothing to hold them apart; named so the stylesheet can.
+        const table = holder.closest("table");
+        if (table && !table.matches(".tablebg, .forumline") && /^(wrapcentre|pagecontent)$/.test(table.parentElement.id)) {
+            table.setAttribute("data-rr-strip", "");
+        }
     }
 }
 
@@ -8797,7 +9080,35 @@ function initLists() {
         }
     }
     if (settings.get("rowClick")) initRowClick();
-    if (profileView()) hideEmptyProfileRows();
+    if (profileView()) {
+        // Named on the root so the phone can stack the profile's two
+        // columns without a :has() on the table.
+        document.documentElement.setAttribute("data-rr-profile", "");
+        hideEmptyProfileRows();
+    }
+    tidyPagers();
+    // The icon legend under a listing: the index names its table
+    // "legend", a listing's has no class at all. The dot cells and the
+    // spacer between pairs are named, so the phone can lay each dot
+    // beside its words and break the line on the spacer.
+    for (const table of document.querySelectorAll("#wrapcentre table.legend, #wrapcentre table:not([class])")) {
+        if (table.hasAttribute("data-rr-legend") || table.querySelector("table, input, select, a")) continue;
+        const cells = Array.from(table.querySelectorAll(":scope > tbody > tr > td"));
+        const dot = (cell) => !cell.textContent.trim() && cell.querySelector(".rr-dot")
+            && Array.from(cell.children).every((child) => child.matches("img, .rr-dot"));
+        const words = (cell) => cell.textContent.replace(/[\s\u00a0]+/g, "") && !cell.querySelector("img, .rr-dot, b, table");
+        const dots = cells.filter(dot);
+        if (dots.length < 2) continue;
+        if (!cells.every((cell) => dot(cell) || words(cell) || !cell.textContent.replace(/[\s\u00a0]+/g, ""))) continue;
+        table.setAttribute("data-rr-legend", "");
+        for (const cell of dots) cell.setAttribute("data-rr-legend-dot", "");
+        markEmptyCells(table);
+    }
+    // The message folder's sort form sits in a bare table of its own
+    // under the list; named so it can take a card's gap.
+    const sortForm = document.querySelector('#wrapcentre form[name="sortmsg"]');
+    const sortTable = sortForm && sortForm.closest("table");
+    if (sortTable && !sortTable.matches(".tablebg, .forumline")) sortTable.setAttribute("data-rr-sortfoot", "");
 
     dedupeSearchBoxes();
 
@@ -8892,7 +9203,7 @@ function initLists() {
    a descendant selector reaches either. */
 function groupSortControls() {
     for (const label of document.querySelectorAll(
-        '#wrapcentre td.cat[data-rr-cat="controls"] span.gensmall',
+        '#wrapcentre td.cat[data-rr-cat="controls"] span.gensmall, #wrapcentre form[name="sortmsg"] span.gensmall',
     )) {
         const group = el("span.rr-ctrl-group");
         label.before(group);
@@ -13683,7 +13994,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.9.2";
+const RR_VERSION = "0.9.3";
 
 function injectStyles() {
     const host = document.head || document.documentElement;
