@@ -767,7 +767,7 @@ html[data-rr] .codebox .me1 { color: var(--rr-tag-tutorial) !important; }
 html[data-rr] .username-coloured,
 html[data-rr] .postauthor a { font-weight: 600; }
 
-html[data-rr] hr { border: 0; border-top: 1px solid var(--rr-line); margin: var(--rr-s4) 0; }
+html[data-rr] hr { border: 0; border-top: 1px solid var(--rr-line); margin: var(--rr-s4) 0; background: none; height: 0; }
 
 /* ---- Forms ------------------------------------------------------ */
 

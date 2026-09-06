@@ -424,6 +424,33 @@ work had never looked.
   letter by letter beside the search field; it is an explicit flex
   stack now. "Jump to" keeps its select and Go on one line, and the
   page gets room at the bottom so the floating button covers nothing.
+- **0.9.2** answered the same two screenshots read a second time, for
+  what the author actually meant by them: not enough air, things
+  glued together, the menus disorderly, the corners ugly. One rhythm
+  for the whole phone layout, then: 12px between any two cards and
+  14px inside them, a bare line of links between two cards given a
+  line of its own. The board bar, opened, was a wrapped soup of
+  thirteen links with the fold's control alone at the bottom; it is a
+  menu now — each group on its own rows, two links to a row, a
+  hairline between groups, the control that folds it on the top line
+  where it was tapped, and it says Less while it is open. The member
+  list's phone card began with a running number and ended with the
+  name; it begins with the name and the rank, then the joining date
+  and the count, then the controls, and the template's empty e-mail
+  and website cells, which had been drawing as empty chips, are gone.
+  The control panel's menu and the message-colour legend are tables
+  of links the phone was drawing as a stack of nine cards; a table
+  that is a menu is drawn as a menu, and the legend's swatch cell,
+  which had collapsed to nothing, is a swatch. The settings panel
+  kept its desktop rail on a phone and wrapped its own labels letter
+  by letter beside it; it is a sheet, with the categories as a strip
+  of tabs that scrolls sideways and each control under its words. A
+  post's Profile, Send private message and Report are quiet words
+  after the tools rather than a second row of buttons; leaving a
+  topic is a row of chips on one rhythm; a button inside a rounded
+  field takes the field's corner minus the gap, so the two curves are
+  concentric. The board's black hairline and its Who-is-online sprite
+  go.
 
 ### It reads Russian
 

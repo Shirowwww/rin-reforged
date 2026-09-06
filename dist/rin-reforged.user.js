@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.9.1
+// @version         0.9.2
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -1138,7 +1138,7 @@ html[data-rr] .codebox .me1 { color: var(--rr-tag-tutorial) !important; }
 html[data-rr] .username-coloured,
 html[data-rr] .postauthor a { font-weight: 600; }
 
-html[data-rr] hr { border: 0; border-top: 1px solid var(--rr-line); margin: var(--rr-s4) 0; }
+html[data-rr] hr { border: 0; border-top: 1px solid var(--rr-line); margin: var(--rr-s4) 0; background: none; height: 0; }
 
 /* ---- Forms ------------------------------------------------------ */
 
@@ -4337,6 +4337,242 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
         margin: 0;
         border-radius: 0;
     }
+}
+
+/* ------------------------------------------------------------------
+   The phone's rhythm.
+
+   What the screenshots said, in the author's words: not enough air,
+   things glued together, the menus disorderly, the corners ugly. One
+   system for the whole phone layout, then: 12px between any two cards
+   and 14px inside them; every menu a list on a grid, not a wrapped
+   soup; a table that is a menu drawn as a menu; controls with the
+   corners of the box they sit in.
+   ------------------------------------------------------------------ */
+@media (max-width: 860px) {
+    /* Air between cards. Two tables back to back, a form after a
+       table, the reply box and Who is online: 12px, always. */
+    html[data-rr] #wrapcentre > table.tablebg + table.tablebg,
+    html[data-rr] #wrapcentre > table.tablebg + form,
+    html[data-rr] #wrapcentre > form + table.tablebg,
+    html[data-rr] #wrapcentre > .rr-online { margin-top: var(--rr-s3); }
+    html[data-rr] .rr-reply { margin-bottom: var(--rr-s3); }
+    /* The permissions notice ("You can post new topics…") is an
+       unclassed table straight after the jump-to form, with nothing
+       between them: the one seam on the page that measured 0px. */
+    html[data-rr] #wrapcentre table[data-rr-after-jump] { margin-top: var(--rr-s3); }
+    /* The game card is a card like the others: the same inset. */
+    html[data-rr] .rr-game { padding: 14px; }
+    /* "Delete all board cookies | The team" is a bare span dropped
+       between two cards. A line of its own, quiet. */
+    html[data-rr] #wrapcentre > span.gensmall {
+        display: block;
+        margin: var(--rr-s3) var(--rr-s1);
+        font-size: var(--rr-fs-xs);
+        color: var(--rr-faint);
+    }
+    /* Air inside them: a card's padding, not a table cell's. */
+    html[data-rr] table.tablebg > tbody > tr,
+    html[data-rr] table.forumline > tbody > tr { padding: 14px; gap: 4px var(--rr-s2); }
+
+    /* A listing card's second line reads who, then how much: the
+       author led the counters on the desktop table, and here sat
+       between them. */
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="author"] { order: 2; }
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="replies"],
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="views"],
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="topics"],
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="posts"] { order: 3; }
+    html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="last"] { order: 4; }
+
+    /* A roster's card — the member list, Who is online — name first
+       and in the reading face, then the rank, the joining date and the
+       count as one quiet line, then the controls on a line of their
+       own. The running number goes; it counts nothing a phone shows,
+       and the template's empty e-mail and website cells go with it. */
+    html[data-rr] table.tablebg[data-rr-roster] > tbody > tr { align-items: center; gap: 2px var(--rr-s3); }
+    html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-col="num"],
+    html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-empty] { display: none !important; }
+    html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-col="author"] {
+        order: -1;
+        flex: 0 1 auto;
+        font-size: var(--rr-fs);
+        font-weight: 600;
+        color: var(--rr-text-strong);
+    }
+    /* The rank beside the name, then a break: the meta line starts under
+       them whatever the name's length. */
+    html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-col="rank"] { order: -1; }
+    html[data-rr] table.tablebg[data-rr-roster] > tbody > tr::before { content: ""; order: 0; flex-basis: 100%; height: 0; }
+    /* A listing card never touches what stands above it. */
+    html[data-rr] #wrapcentre table.tablebg[data-rr-list] { margin-top: var(--rr-s3); }
+    html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-col="rank"],
+    html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-col="date"],
+    html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-col="posts"] {
+        order: 1;
+        margin: 0;
+        font-size: var(--rr-fs-xs);
+        color: var(--rr-muted);
+        background: none !important;
+        padding: 0 !important;
+    }
+    html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-col="rank"] { order: -1; color: var(--rr-muted); align-self: baseline; }
+    html[data-rr] table.tablebg[data-rr-joined] > tbody > tr > td[data-rr-col="date"]::before { content: "joined "; color: var(--rr-faint); }
+    /* Everything after the meta line starts a line of its own. */
+    html[data-rr] table.tablebg[data-rr-roster] > tbody > tr::after { content: ""; order: 2; flex-basis: 100%; height: 0; }
+    html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-col="action"],
+    html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td:not([data-rr-col]) { order: 3; flex: 0 0 auto; margin-top: 2px; }
+    html[data-rr] table.tablebg[data-rr-roster] a.rr-ctl { padding: 3px 10px; font-size: var(--rr-fs-xs); }
+
+    /* A table that is a menu: the control panel's Options, the message
+       folders, the message-colour legend. Rows, not cards — a link a
+       line, no rule under each. */
+    html[data-rr] table.tablebg[data-rr-navlist],
+    html[data-rr] table.tablebg[data-rr-pm-legend] { padding: 6px 0; }
+    html[data-rr] table.tablebg[data-rr-navlist] > tbody > tr,
+    html[data-rr] table.tablebg[data-rr-pm-legend] > tbody > tr {
+        padding: 5px 14px;
+        border-bottom: 0;
+        gap: 0;
+    }
+    html[data-rr] table.tablebg[data-rr-navlist] > tbody > tr > td { width: 100% !important; }
+    html[data-rr] table.tablebg[data-rr-navlist] a.nav,
+    html[data-rr] table.tablebg[data-rr-navlist] b.nav { font-size: var(--rr-fs-sm); line-height: 1.5; }
+    html[data-rr] table.tablebg[data-rr-navlist] b.nav { display: block; margin-top: var(--rr-s2); color: var(--rr-text-strong); }
+    html[data-rr] table.tablebg[data-rr-pm-legend] > tbody > tr {
+        align-items: center;
+        gap: var(--rr-s2);
+        font-size: var(--rr-fs-xs);
+        color: var(--rr-muted);
+    }
+    /* The legend's swatch cell holds nothing; the colour is a stripe
+       forum.css paints down its edge. As a block with no content it
+       was 0px tall, so the row showed the words and no colour. */
+    html[data-rr] table.tablebg[data-rr-pm-legend] > tbody > tr > td[class*="pm_"] {
+        flex: none;
+        width: 12px !important;
+        height: 12px;
+        border-radius: 3px;
+        background: var(--rr-pm);
+        box-shadow: none;
+    }
+    /* A roster's meta line: the rank after the count, with a dot. */
+    html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-col="rank"]::before { content: none; }
+
+    /* A post's tools: the number, the two copies and "Reply with
+       quote" lead; the board's own Profile / Send private message /
+       Report follow as quiet words, not as a second row of buttons. */
+    html[data-rr] .rr-posthead .rr-posttools {
+        flex: 1 1 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+        gap: 2px 4px;
+        padding-top: 4px;
+    }
+    html[data-rr] .rr-posttools a.rr-ctl {
+        background: none;
+        border-color: transparent;
+        padding: 4px 6px;
+        font-size: var(--rr-fs-xs);
+        color: var(--rr-muted);
+    }
+
+    /* Leaving this topic: chips on one rhythm rather than words with
+       air between them. */
+    html[data-rr] .rr-topicbar__row[data-rr-row="away"] .rr-btn {
+        padding: 5px 11px;
+        background: var(--rr-surface-2);
+        border: 1px solid var(--rr-line);
+        border-radius: var(--rr-radius-pill);
+    }
+    /* A control inside a rounded box takes the box's corner minus the
+       gap between them, so the two curves are concentric instead of a
+       square end butting a round one. */
+    html[data-rr] input.rr-search__go { border-radius: calc(var(--rr-radius) - 3px); }
+}
+
+/* The board bar, open: a menu. Each group on its own rows, two links
+   to a row, a hairline between groups; More pinned where it was
+   tapped. The wrapped row it used to be read as a soup of links with
+   no groups at all. */
+@media (max-width: 720px) {
+    html[data-rr] .rr-boardbar[data-rr-open] { padding-bottom: var(--rr-s2); }
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__main {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        gap: 0;
+        margin-left: 0;
+    }
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__group {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: center;
+        gap: 0 var(--rr-s3);
+        padding: var(--rr-s2) 0;
+        margin: 0;
+        border-left: 0;
+        border-top: 1px solid var(--rr-line);
+    }
+    /* The fold's control keeps the top line to itself; the groups
+       start under it at full width, so no link has to wrap around it. */
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__group:first-child {
+        border-top: 0;
+        padding-top: 38px;
+        padding-right: 0;
+    }
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__link:not(.rr-boardbar__donate) {
+        padding: 8px 0;
+        white-space: normal;
+        line-height: 1.3;
+    }
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__donate { justify-self: start; margin: 4px 0; }
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__end { margin: var(--rr-s2) 0 0; }
+}
+
+/* The settings panel on a phone: a sheet, not a two-column window.
+   The rail of categories becomes a strip of tabs across the top that
+   scrolls sideways, each field stacks its control under its words,
+   and the footer wraps. It was the desktop's 186px rail beside a
+   column too narrow for its own labels, which wrapped letter by
+   letter down the screen. */
+@media (max-width: 640px) {
+    html[data-rr] .rr-panel__head { gap: var(--rr-s2); padding: var(--rr-s3); }
+    html[data-rr] .rr-panel__search { flex: 1 1 100px; }
+    html[data-rr] .rr-panel__body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    html[data-rr] .rr-panel__rail {
+        flex-direction: row;
+        gap: 4px;
+        padding: var(--rr-s2) var(--rr-s3);
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-right: 0;
+        border-bottom: 1px solid var(--rr-line);
+        scrollbar-width: none;
+    }
+    html[data-rr] .rr-panel__rail::-webkit-scrollbar { display: none; }
+    html[data-rr] .rr-panel__tab { width: auto; flex: none; padding: 7px 10px; white-space: nowrap; }
+    html[data-rr] .rr-panel__pages { padding: var(--rr-s3) var(--rr-s4) var(--rr-s5); }
+    html[data-rr] .rr-group__note { max-width: none; }
+    html[data-rr] .rr-field {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--rr-s2);
+        padding: var(--rr-s3) 0;
+    }
+    /* A switch stays beside its words: on and off need no room. */
+    html[data-rr] .rr-field:has(> .rr-field__control > .rr-switch) {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--rr-s3);
+    }
+    html[data-rr] .rr-field__desc { max-width: none; }
+    html[data-rr] .rr-field__control { flex-wrap: wrap; padding-top: 0; }
+    html[data-rr] .rr-seg { flex-wrap: wrap; }
+    html[data-rr] .rr-rangewrap { width: 100%; }
+    html[data-rr] .rr-range { flex: 1; width: auto; }
+    html[data-rr] .rr-panel__foot { flex-wrap: wrap; gap: var(--rr-s2); padding: var(--rr-s3); }
+    html[data-rr] .rr-panel__foot .rr-spacer { display: none; }
 }`;
 
 /* ================= src/core/store.js ================= */
@@ -6031,6 +6267,7 @@ const RU_WORDS = {
 
     // The top bar
     "More": "Ещё",
+    "Less": "Свернуть",
     "More board links": "Ещё ссылки",
     "Board links": "Ссылки форума",
     "Search or jump to": "Поиск или переход",
@@ -6253,7 +6490,7 @@ const STATUS_RE = /(global|announce|sticky|topic|forum)_(un)?read|topic_moved/;
 /* Images that sit beside a label saying the same thing, or that draw
    nothing at all: the 12px menu bullets, the page-jump target, the
    1px spacers subsilver2 uses for table corners. */
-const DECORATION_RE = /icon_mini_|icon_donate|spacer\.gif|icon_post_target|\/arrow_|subforum_/;
+const DECORATION_RE = /icon_mini_|icon_donate|spacer\.gif|icon_post_target|\/arrow_|subforum_|whosonline/;
 
 function statusDot(img) {
     const src = img.getAttribute("src") || "";
@@ -7263,6 +7500,7 @@ function buildBoardBar() {
 
     more.addEventListener("click", () => {
         const open = bar.toggleAttribute("data-rr-open");
+        more.firstChild.textContent = t(open ? "Less" : "More");
         more.setAttribute("aria-expanded", open ? "true" : "false");
     });
 
@@ -7729,6 +7967,9 @@ function labelColumns(table) {
             return;
         }
 
+        // The member list is the one roster whose date column is a
+        // joining date; the phone card says so in front of it.
+        if (text === "joined" || text === "зарегистрирован") table.setAttribute("data-rr-joined", "");
         columns.push(COLUMN_NAMES[text] || null);
     });
     if (!columns.length) return;
@@ -8380,6 +8621,32 @@ function markShapes() {
         }
     }
 
+    // Tables that are lists of links rather than data — the control
+    // panel's Options column, the message folders — and the
+    // message-colour legend beside them. On a phone each row is a card
+    // otherwise, and a menu of nine cards is a wall.
+    for (const table of document.querySelectorAll("#wrapcentre table.tablebg")) {
+        const cells = Array.from(table.querySelectorAll(":scope > tbody > tr > td"));
+        if (!cells.length) continue;
+        if (cells.every((cell) => cell.querySelector("a.nav, b.nav, span.nav") && !cell.querySelector("input, select, .postbody"))) {
+            table.setAttribute("data-rr-navlist", "");
+        }
+        const swatch = (cell) => /(^|\s)pm_\w+_colour(\s|$)/.test(cell.className);
+        if (cells.some(swatch) && cells.every((cell) => swatch(cell) || cell.children.length <= 1)) {
+            table.setAttribute("data-rr-pm-legend", "");
+        }
+    }
+
+    // The permissions notice ("You can post new topics…") is the table
+    // right after the one holding the jump-to form, with nothing between
+    // them. Named here so the stylesheet can give it its gap without a
+    // :has() on a table.
+    const jump = document.querySelector('form[name="jumpbox"]');
+    const jumpTable = jump && jump.closest("table");
+    if (jumpTable && jumpTable.nextElementSibling && jumpTable.nextElementSibling.tagName === "TABLE") {
+        jumpTable.nextElementSibling.setAttribute("data-rr-after-jump", "");
+    }
+
     // A form row that is a checkbox or radio alone in its first cell,
     // with the words in the next.
     for (const input of document.querySelectorAll(
@@ -8496,6 +8763,17 @@ function hideEmptyProfileRows() {
     }
 }
 
+/* The template pads a roster's e-mail and website cells with &nbsp;
+   whether or not the member has one; on a phone each of those became
+   an empty dark chip in the card. */
+function markEmptyCells(table) {
+    for (const cell of table.querySelectorAll(":scope > tbody > tr > td")) {
+        if (cell.textContent.replace(/[\s\u00a0]+/g, "")) continue;
+        if (cell.querySelector("a, img, input, button, select, svg")) continue;
+        cell.setAttribute("data-rr-empty", "");
+    }
+}
+
 function initLists() {
     markShapes();
     groupSortControls();
@@ -8505,9 +8783,17 @@ function initLists() {
         // stylesheet needs to know which is which: row1/row2 alternate
         // down a listing and wrap whole posts in a topic, so the same
         // two classes mean opposite things on the two kinds of page.
-        if (table.querySelector("a.topictitle, a.forumlink") || isRoster(table)) {
+        const roster = isRoster(table);
+        if (table.querySelector("a.topictitle, a.forumlink") || roster) {
             table.setAttribute("data-rr-list", "");
             groupListingNumbers(table);
+        }
+        // A roster of members — the member list, Who is online — as
+        // opposed to a folder of messages: the phone lays its cards out
+        // name first, and drops the cells the template left empty.
+        if (roster && !table.querySelector(".topictitle a, a.topictitle, a.forumlink")) {
+            table.setAttribute("data-rr-roster", "");
+            markEmptyCells(table);
         }
     }
     if (settings.get("rowClick")) initRowClick();
@@ -13397,7 +13683,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.9.1";
+const RR_VERSION = "0.9.2";
 
 function injectStyles() {
     const host = document.head || document.documentElement;

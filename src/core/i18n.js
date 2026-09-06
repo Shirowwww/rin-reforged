@@ -159,6 +159,7 @@ const RU_WORDS = {
 
     // The top bar
     "More": "Ещё",
+    "Less": "Свернуть",
     "More board links": "Ещё ссылки",
     "Board links": "Ссылки форума",
     "Search or jump to": "Поиск или переход",

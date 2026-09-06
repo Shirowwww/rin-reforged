@@ -103,6 +103,9 @@ function labelColumns(table) {
             return;
         }
 
+        // The member list is the one roster whose date column is a
+        // joining date; the phone card says so in front of it.
+        if (text === "joined" || text === "зарегистрирован") table.setAttribute("data-rr-joined", "");
         columns.push(COLUMN_NAMES[text] || null);
     });
     if (!columns.length) return;
@@ -754,6 +757,32 @@ function markShapes() {
         }
     }
 
+    // Tables that are lists of links rather than data — the control
+    // panel's Options column, the message folders — and the
+    // message-colour legend beside them. On a phone each row is a card
+    // otherwise, and a menu of nine cards is a wall.
+    for (const table of document.querySelectorAll("#wrapcentre table.tablebg")) {
+        const cells = Array.from(table.querySelectorAll(":scope > tbody > tr > td"));
+        if (!cells.length) continue;
+        if (cells.every((cell) => cell.querySelector("a.nav, b.nav, span.nav") && !cell.querySelector("input, select, .postbody"))) {
+            table.setAttribute("data-rr-navlist", "");
+        }
+        const swatch = (cell) => /(^|\s)pm_\w+_colour(\s|$)/.test(cell.className);
+        if (cells.some(swatch) && cells.every((cell) => swatch(cell) || cell.children.length <= 1)) {
+            table.setAttribute("data-rr-pm-legend", "");
+        }
+    }
+
+    // The permissions notice ("You can post new topics…") is the table
+    // right after the one holding the jump-to form, with nothing between
+    // them. Named here so the stylesheet can give it its gap without a
+    // :has() on a table.
+    const jump = document.querySelector('form[name="jumpbox"]');
+    const jumpTable = jump && jump.closest("table");
+    if (jumpTable && jumpTable.nextElementSibling && jumpTable.nextElementSibling.tagName === "TABLE") {
+        jumpTable.nextElementSibling.setAttribute("data-rr-after-jump", "");
+    }
+
     // A form row that is a checkbox or radio alone in its first cell,
     // with the words in the next.
     for (const input of document.querySelectorAll(
@@ -870,6 +899,17 @@ function hideEmptyProfileRows() {
     }
 }
 
+/* The template pads a roster's e-mail and website cells with &nbsp;
+   whether or not the member has one; on a phone each of those became
+   an empty dark chip in the card. */
+function markEmptyCells(table) {
+    for (const cell of table.querySelectorAll(":scope > tbody > tr > td")) {
+        if (cell.textContent.replace(/[\s\u00a0]+/g, "")) continue;
+        if (cell.querySelector("a, img, input, button, select, svg")) continue;
+        cell.setAttribute("data-rr-empty", "");
+    }
+}
+
 function initLists() {
     markShapes();
     groupSortControls();
@@ -879,9 +919,17 @@ function initLists() {
         // stylesheet needs to know which is which: row1/row2 alternate
         // down a listing and wrap whole posts in a topic, so the same
         // two classes mean opposite things on the two kinds of page.
-        if (table.querySelector("a.topictitle, a.forumlink") || isRoster(table)) {
+        const roster = isRoster(table);
+        if (table.querySelector("a.topictitle, a.forumlink") || roster) {
             table.setAttribute("data-rr-list", "");
             groupListingNumbers(table);
+        }
+        // A roster of members — the member list, Who is online — as
+        // opposed to a folder of messages: the phone lays its cards out
+        // name first, and drops the cells the template left empty.
+        if (roster && !table.querySelector(".topictitle a, a.topictitle, a.forumlink")) {
+            table.setAttribute("data-rr-roster", "");
+            markEmptyCells(table);
         }
     }
     if (settings.get("rowClick")) initRowClick();

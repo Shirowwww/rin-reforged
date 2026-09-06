@@ -16,7 +16,7 @@ const STATUS_RE = /(global|announce|sticky|topic|forum)_(un)?read|topic_moved/;
 /* Images that sit beside a label saying the same thing, or that draw
    nothing at all: the 12px menu bullets, the page-jump target, the
    1px spacers subsilver2 uses for table corners. */
-const DECORATION_RE = /icon_mini_|icon_donate|spacer\.gif|icon_post_target|\/arrow_|subforum_/;
+const DECORATION_RE = /icon_mini_|icon_donate|spacer\.gif|icon_post_target|\/arrow_|subforum_|whosonline/;
 
 function statusDot(img) {
     const src = img.getAttribute("src") || "";

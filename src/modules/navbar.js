@@ -459,6 +459,7 @@ function buildBoardBar() {
 
     more.addEventListener("click", () => {
         const open = bar.toggleAttribute("data-rr-open");
+        more.firstChild.textContent = t(open ? "Less" : "More");
         more.setAttribute("aria-expanded", open ? "true" : "false");
     });
 

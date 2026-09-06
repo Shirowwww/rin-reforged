@@ -63,6 +63,10 @@ checks this repository and offers new versions on its own.
   actually hit, profile rows that say nothing hidden, and Subscribe /
   Bookmark / E-mail friend in the topic bar rather than in a strip of their
   own.
+- **On a phone** the same pages are cards with one rhythm — the board
+  bar folds into a real menu, the member list and the control panel are
+  lists rather than stacks of cards, and the settings panel is a sheet
+  with its categories as tabs.
 - **Works on the Russian interface too.** Half the board reads it. Column
   names, page counters, weekdays, "Joined / Posts" and "Posted" are read in
   both languages, so a Russian page gets the same grouped numbers, one-line
