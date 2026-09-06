@@ -299,6 +299,7 @@ function describeRelease(post, page) {
         versionNamed: scored.versionNamed,
         build: scored.build,
         links: scored.links,
+        hosts: scored.hosts,
         kinds: kinds.map((kind) => kind.id),
         labels: kinds.map((kind) => kind.label),
         excerpt: text.slice(0, 180),
@@ -827,10 +828,23 @@ function releaseRow(row, latest) {
        prints "Wednesday, 02 Sep 2026, 09:49" on every row while the
        listing two clicks away prints "02 Sep 2026" is two answers to
        one question. */
+    /* Which host it is on is half the decision a reader makes about a
+       release, and until now it took opening the post to find out. */
+    const hosts = el("span.rr-releases__hosts");
+    for (const name of (row.hosts || []).slice(0, 3)) {
+        hosts.append(el("span.rr-releases__host", {}, [name]));
+    }
+    if ((row.hosts || []).length > 3) {
+        hosts.append(el("span.rr-releases__host.rr-releases__host--more", {
+            title: row.hosts.join(", "),
+        }, ["+" + (row.hosts.length - 3)]));
+    }
+
     const when = row.date || "";
     const link = el("a.rr-releases__link", { href: target, title: row.excerpt }, [
         releaseVersion(row, latest),
         tags,
+        hosts,
         el("span.rr-releases__who", {}, [row.author]),
         el("span.rr-releases__when", { title: when }, [shortenPostMeta(when)]),
         el("span.rr-releases__page", {}, [t("p.") + row.page]),
@@ -985,13 +999,37 @@ function initReleases() {
     const linkFilter = buildLinkFilter(all, pageRows);
     linkFilter.classList.add("rr-releases__only");
 
+    /* What the panel says, as text. Passing "the current version is X,
+       posted by Y on page Z" to somebody else meant retyping it. */
+    const copyList = labelled(
+        el("button.rr-icon-btn.rr-releases__copy", { type: "button" }, [icon("copy", 14)]),
+        t("Copy this list"));
+    copyList.addEventListener("click", () => {
+        const lines = Array.from(document.querySelectorAll(".rr-releases__list > li"))
+            .filter((item) => !item.hasAttribute("data-rr-hidden") && item.getClientRects().length)
+            .map((item) => {
+                const link = item.querySelector("a");
+                const cell = (name) => {
+                    const node = item.querySelector(".rr-releases__" + name);
+                    return node ? node.textContent.replace(/\s+/g, " ").trim() : "";
+                };
+                const parts = [cell("version") || "\u2014", cell("tags"), cell("hosts"), cell("who"), cell("when")]
+                    .filter(Boolean);
+                const href = link ? new URL(link.getAttribute("href"), location.href).href : "";
+                return parts.join(" \u00b7 ") + (href ? "  " + href : "");
+            });
+        if (!lines.length) return;
+        copyText(document.title.replace(/^.*?View topic - /, "") + "\n" + lines.join("\n"),
+            t("{n} lines copied", { n: lines.length }));
+    });
+
     const body = el("div.rr-releases__body");
     panel.append(
         el("div.rr-releases__head", {}, [
             icon("layers", 14),
             el("h3", {}, [t("Releases")]),
             count,
-            el("div.rr-releases__controls", {}, [scope, linkFilter]),
+            el("div.rr-releases__controls", {}, [scope, linkFilter, copyList]),
         ]),
         body,
     );

@@ -70,9 +70,11 @@ html[data-rr] a.rr-unread-jump {
     height: 22px;
     margin-left: 2px;
     vertical-align: middle;
-    color: var(--rr-accent-text, var(--rr-accent));
+    /* --rr-accent-text is the ink for text *on* the accent: near-black
+       on every dark theme, which is what this arrow was painted in. */
+    color: var(--rr-muted);
 }
-html[data-rr] a.rr-unread-jump:hover { color: var(--rr-text-strong); background: var(--rr-surface-3); }
+html[data-rr] a.rr-unread-jump:hover { color: var(--rr-accent); background: var(--rr-surface-3); }
 html[data-rr] tr[data-rr-unread] a.rr-unread-jump { display: none; }
 html[data-rr] .rr-posttools .rr-postnum {
     display: inline-flex;
@@ -1005,6 +1007,10 @@ html[data-rr] a.rr-postnum:hover {
 }
 .rr-palette {
     width: min(640px, calc(100vw - 32px));
+    /* The overlay is a flex row, so without this the box stretches to
+       the height it is allowed rather than to the height it needs, and
+       a search with one answer drew 500px of empty panel under it. */
+    align-self: flex-start;
     max-height: min(60vh, 520px);
     margin-top: 12vh;
     display: flex;
@@ -1514,13 +1520,15 @@ html[data-rr] #wrapcentre form[name="sortmsg"] {
 /* The topic search under the posts: the template floats its box, and
    the button wrapped under the input in the width the float left it.
    One line, beside the sort form. */
-html[data-rr] #search-box_thread {
+html[data-rr] #search-box_thread,
+html[data-rr] #wrapcentre #search-box:not([data-rr-dupe]) {
     float: none !important;
     display: inline-flex;
     width: auto !important;
     vertical-align: middle;
     margin: 0 var(--rr-s4) 0 0;
 }
+html[data-rr] #wrapcentre #search-box:not([data-rr-dupe]) form,
 html[data-rr] #search-box_thread form {
     display: inline-flex;
     flex-wrap: nowrap;
@@ -1533,8 +1541,137 @@ html[data-rr] #search-box_thread form {
 /* The field carries the floor every board text field gets (a size="22"
    in ems); here that floor is wider than the line the box has, and the
    button went under it. A fixed width, no floor, no growing. */
-html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] #search-box_thread input[type="text"] {
+html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] #search-box_thread input[type="text"],
+html[data-rr] #wrapcentre #search-box:not([data-rr-dupe]) input[type="text"] {
     width: 14em !important;
     min-width: 0 !important;
     flex: 0 0 auto !important;
+}
+
+/* ---- A post's header, on a desktop ------------------------------- */
+
+/* The strip is name, rank, meta, then the tools and the date. Left to
+   wrap, the tools dropped to a second line while the date stayed alone
+   at the right of the first — two lines saying what fits on one. The
+   meta line is the part with something to give: it already ends in an
+   ellipsis, and it is the only thing here that is not a control. */
+@media (min-width: 861px) {
+    html[data-rr] .rr-posthead { flex-wrap: nowrap; }
+    /* The meta gives way first — it is the only thing here that is not
+       a control, and it already ends in an ellipsis. The tools may
+       still wrap inside themselves rather than push the page sideways,
+       which is what a 1280px window with a long "Location:" did. */
+    html[data-rr] .rr-posthead__meta { flex: 0 100 auto; }
+    html[data-rr] .rr-posthead .rr-posttools { flex: 0 1 auto; }
+}
+/* Wide enough that the controls always fit once the meta has given way:
+   they stop shrinking, so the last icon no longer drops to a line of
+   its own. Below this the tools may still wrap inside themselves,
+   which is the one thing that must never push the page sideways. */
+@media (min-width: 1100px) {
+    html[data-rr] .rr-posthead .rr-posttools { flex: 0 0 auto; }
+}
+
+/* ---- Strips of links the template joins with pipes ---------------- */
+
+/* "Previous PM in history | Next PM | …", "[ Add friend | Add foe ]",
+   "Mark all :: Unmark all": a row of links and the punctuation between
+   them. The punctuation goes and the gap says the same thing. */
+html[data-rr] .rr-linkrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--rr-s2) var(--rr-s3);
+}
+html[data-rr] .rr-linkrow > a {
+    color: var(--rr-muted);
+    font-size: var(--rr-fs-sm);
+    font-weight: 500;
+    text-decoration: none;
+}
+html[data-rr] .rr-linkrow > a:hover { color: var(--rr-text-strong); }
+html[data-rr] td[align="right"] > .rr-linkrow,
+html[data-rr] .rr-linkrow[data-rr-align="right"] { justify-content: flex-end; }
+
+/* ---- A listing's headings ---------------------------------------- */
+
+/* Kept in view while their own listing is on screen. The top bar is
+   48px of sticky chrome above them when it is drawn. */
+html[data-rr][data-rr-sticky="on"] table[data-rr-list] > tbody > tr[data-rr-head] > th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--rr-surface-2);
+}
+html[data-rr][data-rr-sticky="on"][data-rr-nav="on"] table[data-rr-list] > tbody > tr[data-rr-head] > th {
+    top: var(--rr-nav-h, 48px);
+}
+
+/* A heading that sorts. It is a button, and reads as the heading it
+   replaced until it is pointed at. */
+html[data-rr] th[data-rr-sortable] { padding: 0; }
+html[data-rr] button.rr-sortbtn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    padding: var(--rr-s2) var(--rr-s3);
+    background: none;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-align: inherit;
+    cursor: pointer;
+}
+html[data-rr] th[data-rr-col="replies"] button.rr-sortbtn,
+html[data-rr] th[data-rr-col="views"] button.rr-sortbtn,
+html[data-rr] th[data-rr-col="topics"] button.rr-sortbtn,
+html[data-rr] th[data-rr-col="posts"] button.rr-sortbtn,
+html[data-rr] th[data-rr-col="num"] button.rr-sortbtn { justify-content: flex-end; }
+html[data-rr] button.rr-sortbtn:hover { color: var(--rr-text-strong); }
+html[data-rr] button.rr-sortbtn:focus-visible { outline: 2px solid var(--rr-accent); outline-offset: -2px; }
+html[data-rr] th[data-rr-sorted] button.rr-sortbtn { color: var(--rr-text-strong); }
+.rr-sortmark { font-size: var(--rr-fs-xs); line-height: 1; opacity: .9; }
+
+/* Mark everything in a folder. */
+html[data-rr] input.rr-markall { margin: 0; vertical-align: middle; accent-color: var(--rr-accent); }
+
+/* The chip for rows with something new in them. */
+html[data-rr] .rr-tag--unread { display: inline-flex; align-items: center; }
+html[data-rr] .rr-tag--unread::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    margin-right: 5px;
+    border-radius: 50%;
+    background: var(--rr-accent);
+}
+
+/* ---- The lightbox, with more than one picture in it --------------- */
+
+html[data-rr] .rr-lightbox__step {
+    position: absolute;
+    top: 50%;
+    left: 16px;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(20, 22, 26, .72);
+    color: #fff;
+    border-radius: 50%;
+}
+html[data-rr] .rr-lightbox__step--next { left: auto; right: 16px; }
+html[data-rr] .rr-lightbox__step:hover { background: rgba(40, 42, 48, .9); }
+html[data-rr] .rr-lightbox__step:focus-visible { outline: 2px solid var(--rr-accent); outline-offset: 2px; }
+.rr-lightbox__count {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 3px 10px;
+    border-radius: var(--rr-radius-pill);
+    background: rgba(20, 22, 26, .72);
+    color: #fff;
+    font: 500 var(--rr-fs-xs) / 1.6 var(--rr-font);
 }

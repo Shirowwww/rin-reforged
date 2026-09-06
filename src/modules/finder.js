@@ -226,6 +226,106 @@ function spaceOutLines(copy) {
  * What a post looks like at a glance: how many off-site links it
  * carries, whether it names a version, and which release words it uses.
  */
+/* The archive password.
+
+   Almost every release post on this board ends with one — "Password:
+   cs.rin.ru", "unrar pass: something", "Пароль: …" — and it is
+   routinely three screens below the link or inside a spoiler with ten
+   others. What is read here is the post's own words: a label, a
+   separator, and the run of characters after it.
+
+   "No password needed" is the other thing posts say, and it is not a
+   password; a line that denies one is refused. */
+const PASSWORD_LABEL = "(?:archive\\s+|unrar\\s+|unzip\\s+|rar\\s+|zip\\s+|extraction\\s+)?(?:password|passwd|pass|pwd|pw|пароль)";
+/* What a post says instead of a password: "the standard password",
+   "same as above", "password required". None of those is one, and
+   reading one out as the password is worse than saying nothing. */
+const NOT_A_PASSWORD = new Set([
+    "standard", "usual", "same", "above", "below", "none", "forum", "default",
+    "required", "needed", "protected", "correct", "wrong", "here", "link",
+    "file", "archive", "yes", "no", "is", "the", "a", "unknown", "obvious",
+]);
+const PASSWORD_RE = new RegExp(
+    /* A separator is required — a colon, an equals, a dash, or the
+       word "is". Without one, "password protected" reads as a password
+       called "protected". */
+    "(^|[\\s>(\\[])" + PASSWORD_LABEL + "\\s*(?:is\\b\\s*|[:=\\-]\\s*)+([^\\s<>\\n\\r]{1,48})",
+    "i",
+);
+const NO_PASSWORD_RE = new RegExp(
+    "\\b(?:no|none|without|not?)\\s+(?:" + PASSWORD_LABEL + ")|" + PASSWORD_LABEL + "\\s*[:=\\-]?\\s*(?:none|no|n/a|нет)\\b",
+    "i",
+);
+
+function passwordIn(text) {
+    const said = String(text || "");
+    for (const line of said.split(/[\n\r]+/)) {
+        if (NO_PASSWORD_RE.test(line)) continue;
+        const match = PASSWORD_RE.exec(line);
+        if (!match) continue;
+        const value = match[2]
+            .replace(/^[\u0022\u0027`]+|[\u0022\u0027`,;:!?)\]]+$/g, "")
+            .replace(/\.$/, "");
+        if (value.length < 2 || NOT_A_PASSWORD.has(value.toLowerCase())) continue;
+        /* A password is a token: something with a dot, a dash, a digit
+           or an underscore in it, or one long run of letters. A word in
+           the middle of a sentence is neither. */
+        if (!/[.\-_@\d]/.test(value) && value.length < 6) continue;
+        return value;
+    }
+    return null;
+}
+
+/* Which file host a link leads to, in the words the board uses for it.
+   Anything unrecognised keeps its own domain, without the suffix. */
+const HOST_NAMES = {
+    "mega.nz": "MEGA", "mega.co.nz": "MEGA",
+    "1fichier.com": "1fichier",
+    "gofile.io": "GoFile",
+    "pixeldrain.com": "PixelDrain",
+    "buzzheavier.com": "Buzzheavier",
+    "datanodes.to": "DataNodes",
+    "mediafire.com": "MediaFire",
+    "drive.google.com": "Drive",
+    "dropbox.com": "Dropbox",
+    "workupload.com": "WorkUpload",
+    "krakenfiles.com": "KrakenFiles",
+    "send.cm": "Send.cm",
+    "qiwi.gg": "Qiwi",
+    "multiup.io": "MultiUp", "multiup.org": "MultiUp",
+    "torrent.rin.ru": "Torrent",
+    "github.com": "GitHub",
+    "archive.org": "Archive.org",
+};
+
+/* Where a release is not: a store page, a video, a screenshot, an
+   article. Listing those beside the hosts would say a post is on five
+   mirrors when it is on two. */
+const NOT_HOSTS = /(?:steampowered|steamcommunity|steamdb|steamcharts|protondb|pcgamingwiki|youtube|youtu\.be|imgur|ibb\.co|prnt\.sc|gyazo|postimg|twitter|x\.com|reddit|wikipedia|discord|patreon|paypal|google\.[a-z]+|bing|duckduckgo|pcgamebenchmark|blockchair|mempool)/i;
+
+function hostName(href) {
+    let host;
+    try { host = new URL(href, location.href).hostname.replace(/^www\./, ""); }
+    catch { return null; }
+    if (NOT_HOSTS.test(host)) return null;
+    if (HOST_NAMES[host]) return HOST_NAMES[host];
+    const bare = host.replace(/\.(?:com|net|org|io|to|cc|gg|nz|co|me|ru|de|fr|is|se|sh|cm|xyz|top|link|site|online|download)$/i, "");
+    const last = bare.split(".").pop();
+    if (!last || last.length < 2) return null;
+    return last.charAt(0).toUpperCase() + last.slice(1);
+}
+
+/* Magnet links have no host at all. */
+function linkHosts(links) {
+    const out = [];
+    for (const link of links) {
+        const href = link.getAttribute("href") || "";
+        const name = /^magnet:/i.test(href) ? "Torrent" : hostName(href);
+        if (name && !out.includes(name)) out.push(name);
+    }
+    return out;
+}
+
 function describePost(post) {
     const own = ownContent(post.body);
     const text = own.textContent;
@@ -261,6 +361,8 @@ function describePost(post) {
     return {
         post,
         links: links.length + hidden,
+        hosts: linkHosts(links),
+        password: passwordIn(text),
         words,
         version: named.version,
         versionNamed: named.named,

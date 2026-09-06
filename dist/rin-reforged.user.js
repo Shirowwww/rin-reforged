@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.9.3
+// @version         0.10.0
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -496,6 +496,10 @@ html[data-rr] table.forumline {
     overflow: hidden;
     width: 100%;
 }
+/* A listing clips its corners the same way, but \`clip\` does not make
+   the table a scroll container — which \`hidden\` does, and a heading
+   inside a scroll container that never scrolls can never stick. */
+html[data-rr] table.tablebg[data-rr-list] { overflow: clip; }
 
 /* The original stylesheet paints \`th a\` #CCCCCC: on the light theme the
    member list's sortable headers were pale grey on paler grey while
@@ -1454,6 +1458,32 @@ html[data-rr] table[data-rr-list] td .rr-ctl {
     background: transparent;
 }
 
+
+/* ---- What the template leaves between things --------------------- */
+
+/* A 1px spacer row: an <img src="spacer.gif"> in a cell the board
+   paints black. The image is dropped further up; the cell was still
+   drawing a black band across a private message and between two
+   search results. */
+html[data-rr] td.spacer {
+    background: none !important;
+    height: 0;
+    padding: 0;
+    /* A zero line box, not a zero font: the size floor this stylesheet
+       guarantees is measured on every cell, spacers included. */
+    line-height: 0;
+}
+
+/* The rule that replaces the board's run of underscores (topic.js,
+   replaceUnderscoreRules) — the same weight as a signature's. */
+html[data-rr] hr.rr-rule {
+    margin: var(--rr-s3) 0;
+    border: 0;
+    border-top: 1px solid var(--rr-line);
+    background: none;
+    height: 0;
+}
+
 /* == ui.css == */
 /* ------------------------------------------------------------------
    Components the script injects. Everything here is prefixed .rr- and
@@ -1527,9 +1557,11 @@ html[data-rr] a.rr-unread-jump {
     height: 22px;
     margin-left: 2px;
     vertical-align: middle;
-    color: var(--rr-accent-text, var(--rr-accent));
+    /* --rr-accent-text is the ink for text *on* the accent: near-black
+       on every dark theme, which is what this arrow was painted in. */
+    color: var(--rr-muted);
 }
-html[data-rr] a.rr-unread-jump:hover { color: var(--rr-text-strong); background: var(--rr-surface-3); }
+html[data-rr] a.rr-unread-jump:hover { color: var(--rr-accent); background: var(--rr-surface-3); }
 html[data-rr] tr[data-rr-unread] a.rr-unread-jump { display: none; }
 html[data-rr] .rr-posttools .rr-postnum {
     display: inline-flex;
@@ -2462,6 +2494,10 @@ html[data-rr] a.rr-postnum:hover {
 }
 .rr-palette {
     width: min(640px, calc(100vw - 32px));
+    /* The overlay is a flex row, so without this the box stretches to
+       the height it is allowed rather than to the height it needs, and
+       a search with one answer drew 500px of empty panel under it. */
+    align-self: flex-start;
     max-height: min(60vh, 520px);
     margin-top: 12vh;
     display: flex;
@@ -2971,13 +3007,15 @@ html[data-rr] #wrapcentre form[name="sortmsg"] {
 /* The topic search under the posts: the template floats its box, and
    the button wrapped under the input in the width the float left it.
    One line, beside the sort form. */
-html[data-rr] #search-box_thread {
+html[data-rr] #search-box_thread,
+html[data-rr] #wrapcentre #search-box:not([data-rr-dupe]) {
     float: none !important;
     display: inline-flex;
     width: auto !important;
     vertical-align: middle;
     margin: 0 var(--rr-s4) 0 0;
 }
+html[data-rr] #wrapcentre #search-box:not([data-rr-dupe]) form,
 html[data-rr] #search-box_thread form {
     display: inline-flex;
     flex-wrap: nowrap;
@@ -2990,10 +3028,139 @@ html[data-rr] #search-box_thread form {
 /* The field carries the floor every board text field gets (a size="22"
    in ems); here that floor is wider than the line the box has, and the
    button went under it. A fixed width, no floor, no growing. */
-html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] #search-box_thread input[type="text"] {
+html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] #search-box_thread input[type="text"],
+html[data-rr] #wrapcentre #search-box:not([data-rr-dupe]) input[type="text"] {
     width: 14em !important;
     min-width: 0 !important;
     flex: 0 0 auto !important;
+}
+
+/* ---- A post's header, on a desktop ------------------------------- */
+
+/* The strip is name, rank, meta, then the tools and the date. Left to
+   wrap, the tools dropped to a second line while the date stayed alone
+   at the right of the first — two lines saying what fits on one. The
+   meta line is the part with something to give: it already ends in an
+   ellipsis, and it is the only thing here that is not a control. */
+@media (min-width: 861px) {
+    html[data-rr] .rr-posthead { flex-wrap: nowrap; }
+    /* The meta gives way first — it is the only thing here that is not
+       a control, and it already ends in an ellipsis. The tools may
+       still wrap inside themselves rather than push the page sideways,
+       which is what a 1280px window with a long "Location:" did. */
+    html[data-rr] .rr-posthead__meta { flex: 0 100 auto; }
+    html[data-rr] .rr-posthead .rr-posttools { flex: 0 1 auto; }
+}
+/* Wide enough that the controls always fit once the meta has given way:
+   they stop shrinking, so the last icon no longer drops to a line of
+   its own. Below this the tools may still wrap inside themselves,
+   which is the one thing that must never push the page sideways. */
+@media (min-width: 1100px) {
+    html[data-rr] .rr-posthead .rr-posttools { flex: 0 0 auto; }
+}
+
+/* ---- Strips of links the template joins with pipes ---------------- */
+
+/* "Previous PM in history | Next PM | …", "[ Add friend | Add foe ]",
+   "Mark all :: Unmark all": a row of links and the punctuation between
+   them. The punctuation goes and the gap says the same thing. */
+html[data-rr] .rr-linkrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--rr-s2) var(--rr-s3);
+}
+html[data-rr] .rr-linkrow > a {
+    color: var(--rr-muted);
+    font-size: var(--rr-fs-sm);
+    font-weight: 500;
+    text-decoration: none;
+}
+html[data-rr] .rr-linkrow > a:hover { color: var(--rr-text-strong); }
+html[data-rr] td[align="right"] > .rr-linkrow,
+html[data-rr] .rr-linkrow[data-rr-align="right"] { justify-content: flex-end; }
+
+/* ---- A listing's headings ---------------------------------------- */
+
+/* Kept in view while their own listing is on screen. The top bar is
+   48px of sticky chrome above them when it is drawn. */
+html[data-rr][data-rr-sticky="on"] table[data-rr-list] > tbody > tr[data-rr-head] > th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--rr-surface-2);
+}
+html[data-rr][data-rr-sticky="on"][data-rr-nav="on"] table[data-rr-list] > tbody > tr[data-rr-head] > th {
+    top: var(--rr-nav-h, 48px);
+}
+
+/* A heading that sorts. It is a button, and reads as the heading it
+   replaced until it is pointed at. */
+html[data-rr] th[data-rr-sortable] { padding: 0; }
+html[data-rr] button.rr-sortbtn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    padding: var(--rr-s2) var(--rr-s3);
+    background: none;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-align: inherit;
+    cursor: pointer;
+}
+html[data-rr] th[data-rr-col="replies"] button.rr-sortbtn,
+html[data-rr] th[data-rr-col="views"] button.rr-sortbtn,
+html[data-rr] th[data-rr-col="topics"] button.rr-sortbtn,
+html[data-rr] th[data-rr-col="posts"] button.rr-sortbtn,
+html[data-rr] th[data-rr-col="num"] button.rr-sortbtn { justify-content: flex-end; }
+html[data-rr] button.rr-sortbtn:hover { color: var(--rr-text-strong); }
+html[data-rr] button.rr-sortbtn:focus-visible { outline: 2px solid var(--rr-accent); outline-offset: -2px; }
+html[data-rr] th[data-rr-sorted] button.rr-sortbtn { color: var(--rr-text-strong); }
+.rr-sortmark { font-size: var(--rr-fs-xs); line-height: 1; opacity: .9; }
+
+/* Mark everything in a folder. */
+html[data-rr] input.rr-markall { margin: 0; vertical-align: middle; accent-color: var(--rr-accent); }
+
+/* The chip for rows with something new in them. */
+html[data-rr] .rr-tag--unread { display: inline-flex; align-items: center; }
+html[data-rr] .rr-tag--unread::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    margin-right: 5px;
+    border-radius: 50%;
+    background: var(--rr-accent);
+}
+
+/* ---- The lightbox, with more than one picture in it --------------- */
+
+html[data-rr] .rr-lightbox__step {
+    position: absolute;
+    top: 50%;
+    left: 16px;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(20, 22, 26, .72);
+    color: #fff;
+    border-radius: 50%;
+}
+html[data-rr] .rr-lightbox__step--next { left: auto; right: 16px; }
+html[data-rr] .rr-lightbox__step:hover { background: rgba(40, 42, 48, .9); }
+html[data-rr] .rr-lightbox__step:focus-visible { outline: 2px solid var(--rr-accent); outline-offset: 2px; }
+.rr-lightbox__count {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 3px 10px;
+    border-radius: var(--rr-radius-pill);
+    background: rgba(20, 22, 26, .72);
+    color: #fff;
+    font: 500 var(--rr-fs-xs) / 1.6 var(--rr-font);
 }
 
 /* == features.css == */
@@ -3083,6 +3250,13 @@ html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead__date { display: none; }
 
    A flex row on the cell puts the three on one line properly, and the
    message is then a flex item, which is a box that can be clipped. */
+/* Blocks, not a table. The message is one nowrap line, and a table
+   sizes itself to its content: on a desktop the folded post grew to
+   2044px and pushed the whole page sideways. As blocks the row is the
+   width it is given and the message is clipped inside it. */
+html[data-rr] table.tablebg[data-rr-quiet],
+html[data-rr] table.tablebg[data-rr-quiet] > tbody,
+html[data-rr] table.tablebg[data-rr-quiet] > tbody > tr { display: block; }
 html[data-rr] table.tablebg[data-rr-quiet] td:has(> .postbody) {
     display: flex;
     align-items: baseline;
@@ -3715,7 +3889,7 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
     font: 600 var(--rr-fs-xs) / 1.4 var(--rr-font-mono);
     color: var(--rr-faint);
 }
-.rr-releases__empty { margin: 0; padding: var(--rr-s5) var(--rr-card-pad); color: var(--rr-faint); font-size: var(--rr-fs-sm); }
+.rr-releases__empty { margin: 0; padding: var(--rr-s3) var(--rr-card-pad); color: var(--rr-faint); font-size: var(--rr-fs-sm); }
 
 @media (max-width: 720px) {
     /* Two lines: what it is, then who and where. The five-column line
@@ -3733,6 +3907,62 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
 
 /* "Only posts with links" (finder.js) reaches the panel's rows too. */
 .rr-releases__row[data-rr-nolink] { display: none; }
+
+/* ---- The archive password ----------------------------------------- */
+
+/* Read off the post by finder.js and offered where the post's other
+   controls are, because that is where a reader is already looking. */
+html[data-rr] button.rr-pass {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 25px;
+    padding: 0 8px;
+    background: var(--rr-accent-soft);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-pill);
+    color: var(--rr-accent-ink, var(--rr-text-strong));
+    cursor: pointer;
+    font: 500 var(--rr-fs-xs) / 1 var(--rr-font);
+}
+html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
+.rr-pass__label { color: var(--rr-muted); }
+.rr-pass__value { font-family: var(--rr-mono, ui-monospace, monospace); font-size: var(--rr-fs-xs); }
+
+/* ---- New since your last visit ------------------------------------ */
+
+/* The divider a mail client draws, in a thread that has none: this
+   browser knows which post was newest here last time. */
+.rr-since {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s3);
+    margin: var(--rr-post-gap) 0;
+    color: var(--rr-accent);
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
+}
+.rr-since::before,
+.rr-since::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--rr-accent);
+    opacity: .45;
+}
+.rr-since__label { white-space: nowrap; }
+
+/* ---- Which host a release is on ----------------------------------- */
+
+.rr-releases__hosts { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.rr-releases__host {
+    padding: 1px 7px;
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-pill);
+    color: var(--rr-muted);
+    font-size: var(--rr-fs-xs);
+    white-space: nowrap;
+}
+.rr-releases__host--more { color: var(--rr-faint); }
 
 /* == responsive.css == */
 /* ------------------------------------------------------------------
@@ -5083,6 +5313,11 @@ const SETTINGS_SCHEMA = [
                 desc: "Lists the posts on the page that carry links, a version number or a reupload, newest first. Answers \"where is the current version\" without reading 19 pages.",
             },
             {
+                id: "passwordFinder", label: "Find the archive password", type: "toggle", default: true,
+                desc: "Almost every release post ends with \"Password: cs.rin.ru\" somewhere, often inside a spoiler. Where a post names one, it is offered beside that post's other controls, with a copy button.",
+                when: "finder",
+            },
+            {
                 id: "topicIndex", label: "Index the whole topic", type: "toggle", default: true,
                 desc: "Adds a control that reads every page of a topic once and lists everything posted in it — each release, update, repack, crack, reupload and tool — with its version, what kind of thing it is, who posted it, when, and which page. Never runs on its own: it is a click, the answer is kept per topic, and Escape stops it.",
                 when: "finder",
@@ -5122,6 +5357,18 @@ const SETTINGS_SCHEMA = [
             {
                 id: "hideAnnouncements", label: "Collapse global announcements", type: "toggle", default: false,
                 desc: "Folds the pinned announcements at the head of a listing into one line.",
+            },
+            {
+                id: "stickyHeads", label: "Keep the column headings in view", type: "toggle", default: true,
+                desc: "A hundred rows scroll past the headings that name them. They stay at the top of the window while their own listing is on screen.",
+            },
+            {
+                id: "sortColumns", label: "Sort a listing by clicking a column", type: "toggle", default: true,
+                desc: "Replies, Views, Author, Last post and the rest. The rows already on the page are reordered here; nothing is fetched and nothing is sent. Announcements keep their own section. Click again to reverse, a third time for the board's own order.",
+            },
+            {
+                id: "rememberFilter", label: "Remember the prefix filter per forum", type: "toggle", default: false,
+                desc: "Coming back to a forum restores the [Release] or [Info] chip that was pressed there last time.",
             },
         ],
     },
@@ -5181,6 +5428,11 @@ const SETTINGS_SCHEMA = [
                 when: "quietPosts",
             },
             {
+                id: "resumeReading", label: "Remember where you stopped reading", type: "toggle", default: true,
+                desc: "A topic you have read before opens with a control back to the page you were on, and the first post newer than your last visit is marked. Kept in this browser, so it works logged out; needs \"Remember topics you open\".",
+                when: "history",
+            },
+            {
                 id: "unreadJump", label: "Jump to the first unread post", type: "toggle", default: true,
                 desc: "The board offers this from a topic list but not from inside a topic.",
             },
@@ -5220,6 +5472,10 @@ const SETTINGS_SCHEMA = [
             {
                 id: "selectionQuote", label: "Quote what you select", type: "toggle", default: true,
                 desc: "Highlight text in a post and a Quote button appears. It goes straight into the reply box when one is open.",
+            },
+            {
+                id: "postingMemory", label: "Remember the posting options", type: "toggle", default: true,
+                desc: "Notify me, Attach a signature, Disable BBCode and the rest: whatever was ticked the last time a post was written is ticked again on the next one. Editing an existing post is left alone.",
             },
             {
                 id: "hideUsers", label: "Hide posts by someone", type: "toggle", default: true,
@@ -6473,6 +6729,23 @@ const RU_WORDS = {
     // The top bar
     "More": "Ещё",
     "Less": "Свернуть",
+    "Unread": "Новое",
+    "Password": "Пароль",
+    "Copy the password": "Скопировать пароль",
+    "Password copied": "Пароль скопирован",
+    "Copy every link in this post": "Скопировать все ссылки этого сообщения",
+    "Copy this list": "Скопировать список",
+    "Previous image": "Предыдущее изображение",
+    "Next image": "Следующее изображение",
+    "New since your last visit": "Новое с вашего последнего визита",
+    "New since {when}": "Новое с {when}",
+    "Back to page {n}": "Назад к странице {n}",
+    "You were reading page {n} of this topic": "Вы читали страницу {n} этой темы",
+    "{n} link copied": "{n} ссылка скопирована",
+    "{n} links copied": "{n} ссылок скопировано",
+    "{n} lines copied": "{n} строк скопировано",
+    "Show only the topics with unread posts": "Показать только темы с новыми сообщениями",
+    "Mark everything on this page": "Отметить всё на этой странице",
     "More board links": "Ещё ссылки",
     "Board links": "Ссылки форума",
     "Search or jump to": "Поиск или переход",
@@ -6555,6 +6828,7 @@ function applyTheme() {
     root.setAttribute("data-rr-page", PAGE.isTopic ? "topic" : PAGE.isForum ? "forum" : PAGE.isIndex ? "index" : PAGE.isSearch ? "search" : "other");
     root.setAttribute("data-rr-icons", settings.get("modernIcons") ? "on" : "off");
     root.setAttribute("data-rr-nav", settings.get("navbar") ? "on" : "off");
+    root.setAttribute("data-rr-sticky", settings.get("stickyHeads") ? "on" : "off");
     root.toggleAttribute("data-rr-still", Boolean(settings.get("reduceMotion")));
 
     root.style.setProperty("--rr-fs", settings.get("fontSize") + "px");
@@ -8023,6 +8297,21 @@ function tidySeparators(strip) {
 const SEPARATOR_STRIPS = "#wrapcentre td.gensmall, #wrapcentre td.nav, #wrapcentre td.cat,"
     + " #wrapcentre p.searchbar, #wrapcentre span.gensmall, #wrapcentre .postbody + .gensmall";
 
+/* A cell that is one column of a data table.
+
+   Hiding such a cell does not blank the column, it removes it: every
+   cell after it in that row slides one place left, out from under its
+   own header. The Team page, where the board leaves the e-mail cell of
+   a member with no address holding one &nbsp;, drew four values under
+   five headings because of it. */
+function isGridCell(cell) {
+    if (cell.tagName !== "TD") return false;
+    const row = cell.parentElement;
+    if (!row || row.children.length < 3) return false;
+    const table = cell.closest("table");
+    return Boolean(table && table.querySelector(":scope > tbody > tr > th"));
+}
+
 /**
  * Runs after every module, for the same reason dropStrayBreaks() does:
  * a strip is only stranded once something has been moved out of it.
@@ -8036,6 +8325,7 @@ function dropStraySeparators() {
         const empty = tidySeparators(strip);
         if (!empty) continue;
         if (strip.querySelector("form, input, select, textarea, img")) continue;
+        if (isGridCell(strip)) continue;
         if (strip.tagName === "TD") strip.style.display = "none";
     }
 }
@@ -8128,6 +8418,9 @@ const COLUMN_NAMES = {
 function labelColumns(table) {
     const headRow = table.querySelector("tr:has(th)") || table.querySelector("th")?.parentElement;
     if (!headRow) return;
+    /* Named, because it is not always the table's first row: a forum
+       listing opens with the "Mark forums read" strip above it. */
+    headRow.setAttribute("data-rr-head", "");
 
     /* Only a listing reads a spanning header as the title column. A
        profile's "User statistics" spans its label and value cells, and
@@ -8436,8 +8729,16 @@ function dedupeSearchBoxes() {
  * it the bar is only a home for the board's own refine box — see
  * FILTER_MIN_ROWS.
  */
+/* Where a forum's last-used chip is kept, so coming back to it finds
+   the page filtered the way it was left. */
+function filterMemoryKey() {
+    if (PAGE.forumId) return "filter:f" + PAGE.forumId;
+    if (PAGE.isSearch) return "filter:search";
+    return null;
+}
+
 function buildToolbar(entries, prefixes, rich) {
-    const state = { text: "", tag: null };
+    const state = { text: "", tag: null, unread: false };
 
     const count = el("span.rr-toolbar__count");
 
@@ -8446,7 +8747,8 @@ function buildToolbar(entries, prefixes, rich) {
         for (const entry of entries) {
             const matchesText = matchesWords(entry.title, state.text);
             const matchesTag = !state.tag || entry.row.getAttribute("data-rr-prefix") === state.tag;
-            const visible = matchesText && matchesTag;
+            const matchesUnread = !state.unread || entry.unread;
+            const visible = matchesText && matchesTag && matchesUnread;
             entry.row.toggleAttribute("data-rr-hidden", !visible);
             if (visible) shown += 1;
         }
@@ -8473,6 +8775,24 @@ function buildToolbar(entries, prefixes, rich) {
         }
         apply();
     };
+    /* Everything on this page with something new in it. The board says
+       so with a dot beside the row and gives no way to ask for only
+       those. */
+    const unreadCount = entries.filter((entry) => entry.unread).length;
+    if (unreadCount && unreadCount < entries.length) {
+        const unreadChip = el("button.rr-tag.rr-tag--unread", {
+            type: "button",
+            "aria-pressed": "false",
+            title: t("Show only the topics with unread posts"),
+        }, [t("Unread")]);
+        unreadChip.addEventListener("click", () => {
+            state.unread = !state.unread;
+            unreadChip.setAttribute("aria-pressed", state.unread ? "true" : "false");
+            apply();
+        });
+        tagRow.append(unreadChip);
+    }
+
     for (const [name, kind] of prefixes) {
         const button = el("button.rr-tag", {
             type: "button",
@@ -8490,7 +8810,7 @@ function buildToolbar(entries, prefixes, rich) {
         bar.append(el("div.rr-toolbar__filter", {}, [icon("filter"), input]));
         // One chip filters every row down to every row. Chips are worth
         // their line only once there is a choice to make between them.
-        if (prefixes.length > 1) bar.append(tagRow);
+        if (tagRow.children.length > 1) bar.append(tagRow);
         bar.append(count);
     }
 
@@ -8508,7 +8828,7 @@ function buildToolbar(entries, prefixes, rich) {
     }
 
     apply();
-    return { bar, setTag, empty: !bar.children.length };
+    return { bar, setTag, tag: () => state.tag, empty: !bar.children.length };
 }
 
 /* ---- Forum action bar --------------------------------------------- */
@@ -9032,6 +9352,14 @@ function chipPager(holder) {
 
 function tidyPagers() {
     for (const p of document.querySelectorAll('td[data-rr-col="title"] p.gensmall')) chipPager(p);
+    /* "[ Go to page: 1 … 263, 264, 265 ]" under a subscribed topic or a
+       bookmark: the same shape as the one under a listing title, in a
+       cell this script does not label. Matched by its words instead. */
+    for (const strip of document.querySelectorAll("#wrapcentre p.gensmall, #wrapcentre span.gensmall")) {
+        if (strip.closest(".rr-topicbar, .rr-minipager, .rr-releases")) continue;
+        if (!/(?:Go to page|На страницу)\s*:/.test(strip.textContent)) continue;
+        chipPager(strip);
+    }
     for (const jump of document.querySelectorAll('#wrapcentre a[onclick*="jumpto"]')) {
         if (jump.closest(".rr-topicbar, .rr-minipager")) continue;
         const holder = jump.closest("b") || jump.closest("td, p, span");
@@ -9046,6 +9374,51 @@ function tidyPagers() {
     }
 }
 
+/* A data table whose header says five columns and whose rows draw four.
+
+   The board hides a cell outright — `style="display: none"` in the
+   markup it sends — where a member has no e-mail address on the Team
+   page. In a real table that does not blank the column, it removes it:
+   every cell after it slides one column left and the row stops lining
+   up with its own header. The cell is put back, empty, wherever the
+   row and the header still agree on how many cells there are.
+
+   Only the board's own inline hiding is undone, and only before this
+   script hides anything of its own. */
+function restoreGridCells(table) {
+    const header = table.querySelector(":scope > tbody > tr[data-rr-head], :scope > tbody > tr:first-child");
+    if (!header) return;
+    const columns = header.querySelectorAll(":scope > th, :scope > td").length;
+    if (columns < 3) return;
+    for (const row of table.querySelectorAll(":scope > tbody > tr")) {
+        const cells = row.querySelectorAll(":scope > td");
+        if (cells.length !== columns) continue;
+        for (const cell of cells) {
+            if (cell.style.display === "none") cell.style.removeProperty("display");
+        }
+    }
+}
+
+/* A roster's header sits over cells the template centres. Left over a
+   centred column, a header names nothing in particular. */
+function alignRosterHeaders(table) {
+    const header = table.querySelector(":scope > tbody > tr[data-rr-head], :scope > tbody > tr:first-child");
+    if (!header) return;
+    const heads = Array.from(header.querySelectorAll(":scope > th"));
+    if (!heads.length) return;
+    const rows = Array.from(table.querySelectorAll(":scope > tbody > tr"));
+    const body = rows.slice(rows.indexOf(header) + 1)
+        .find((row) => row.querySelectorAll(":scope > td").length === heads.length
+            && !row.querySelector(":scope > td[colspan]"));
+    if (!body) return;
+    const cells = body.querySelectorAll(":scope > td");
+    heads.forEach((head, index) => {
+        if (head.hasAttribute("data-rr-col")) return;
+        const align = (cells[index].getAttribute("align") || "").toLowerCase();
+        if (align === "center" || align === "right") head.style.textAlign = align;
+    });
+}
+
 /* The template pads a roster's e-mail and website cells with &nbsp;
    whether or not the member has one; on a phone each of those became
    an empty dark chip in the card. */
@@ -9057,10 +9430,274 @@ function markEmptyCells(table) {
     }
 }
 
+/* A cell that is a row of links and the punctuation between them.
+
+   The template writes "Previous PM in history | Next PM in history |
+   Previous PM | Next PM", "[ Add friend | Add foe ]" and "Mark all ::
+   Unmark all" as bare text around the links. Read out, that punctuation
+   is noise; on the page it is a row of pipes at four different heights.
+   The links become a row with a gap, which is what the pipes were for. */
+const LINK_STRIP_JUNK = /^[\s |:·,;\[\]()–—-]*$/;
+
+function tidyLinkStrips() {
+    const cells = document.querySelectorAll(
+        "#wrapcentre td.gen, #wrapcentre td.gensmall, #wrapcentre td.genmed, #wrapcentre td.nav,"
+        + " #wrapcentre p.gensmall, #wrapcentre span.gensmall, #wrapcentre div.gensmall",
+    );
+    for (const cell of cells) {
+        if (cell.closest(".rr-topicbar, .rr-toolbar, .rr-releases, .postbody, table[data-rr-list]")) continue;
+        if (cell.querySelector("img, input, select, textarea, table, .rr-minipager")) continue;
+        const links = Array.from(cell.children).filter((node) => node.tagName === "A");
+        if (links.length < 2 || links.length !== cell.children.length) continue;
+        // Only punctuation between them, or this is a sentence with
+        // links in it rather than a strip of controls.
+        if (!Array.from(cell.childNodes).every((node) => node.nodeType !== 3 || LINK_STRIP_JUNK.test(node.textContent))) continue;
+        for (const node of Array.from(cell.childNodes)) {
+            if (node.nodeType === 3) node.remove();
+        }
+        const row = el("span.rr-linkrow");
+        if ((cell.getAttribute("align") || "").toLowerCase() === "right") row.setAttribute("data-rr-align", "right");
+        cell.append(row);
+        for (const link of links) row.append(link);
+    }
+}
+
+/* An image the board points at nothing — the avatar box of a member
+   who has none — draws as the browser's broken-image mark. Only the
+   board's own furniture is dropped; a picture inside a post is the
+   poster's, and a hole where it was is the honest thing to show. */
+function dropBrokenImages() {
+    for (const img of document.querySelectorAll("#wrapcentre img")) {
+        if (img.closest(".postbody, .rr-game, .rr-lightbox")) continue;
+        const drop = () => { img.style.display = "none"; };
+        const src = img.getAttribute("src");
+        // No source at all, or one the browser has already given up on.
+        if (!src || (img.complete && img.naturalWidth === 0)) drop();
+        else img.addEventListener("error", drop, { once: true });
+    }
+}
+
+/* ---- Sorting the page you are on ---------------------------------- */
+
+/* phpBB offers no way to reorder the hundred rows it has already sent.
+   The headings of a listing become controls that do — in this browser,
+   on the rows that are here: nothing is fetched and nothing is sent.
+
+   Rows are sorted inside each run of them, and the template's own
+   section rows ("Global Announcements", "Announcements") end a run, so
+   a pinned announcement never lands in the middle of the topics. */
+const SORT_KIND = {
+    replies: "number", views: "number", topics: "number", posts: "number", num: "number",
+    date: "date", last: "date",
+    title: "text", author: "text", rank: "text",
+};
+
+const SORT_MONTHS = {
+    jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+    jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+};
+
+/* "02 Sep 2026, 09:49", which is what the board writes and what this
+   script leaves after the weekday goes. A row that says "4 minutes
+   ago" carries the whole date on its title, put there when it was
+   shortened; a row that says "Today" is today. */
+function boardTime(text) {
+    const said = String(text || "");
+    const match = /(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{4})(?:,\s*(\d{1,2}):(\d{2}))?/.exec(said);
+    if (match) {
+        const month = SORT_MONTHS[match[2].toLowerCase()];
+        if (month !== undefined) {
+            return Date.UTC(Number(match[3]), month, Number(match[1]), Number(match[4] || 0), Number(match[5] || 0));
+        }
+    }
+    if (/^\s*(?:today|сегодня)/i.test(said) || /\bago\b|назад/i.test(said)) return Date.now();
+    return null;
+}
+
+function sortKey(row, index, kind) {
+    const cell = row.children[index];
+    if (!cell) return kind === "text" ? "" : -Infinity;
+    if (kind === "number") {
+        const digits = cell.textContent.replace(/[\s\u00a0\u202f,]/g, "");
+        const value = parseFloat(digits);
+        return Number.isFinite(value) ? value : -Infinity;
+    }
+    if (kind === "date") {
+        const dated = cell.hasAttribute("title") ? cell : cell.querySelector("[title]");
+        const time = boardTime(dated ? dated.getAttribute("title") : "") ?? boardTime(cell.textContent);
+        return time === null ? -Infinity : time;
+    }
+    return cell.textContent.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+/* The stripes are drawn from row1 / row2, which the template hands out
+   in the order it sent the rows. Reordered rows keep their own class
+   and the listing ends up with two dark rows together. */
+function restripe(rows) {
+    rows.forEach((row, index) => {
+        const want = index % 2 === 0 ? "row1" : "row2";
+        const other = want === "row1" ? "row2" : "row1";
+        const swap = (node) => {
+            if (!node.classList.contains("row1") && !node.classList.contains("row2")) return;
+            node.classList.remove(other);
+            node.classList.add(want);
+        };
+        swap(row);
+        for (const cell of row.children) swap(cell);
+    });
+}
+
+function initColumnSort(table) {
+    const head = table.querySelector(":scope > tbody > tr[data-rr-head]");
+    if (!head || !head.querySelector("th")) return;
+    /* Columns, not cells: a listing spans its first heading over the
+       unread marker and the title, so five headings sit over six
+       cells. */
+    const width = Array.from(head.children)
+        .reduce((total, cell) => total + parseInt(cell.getAttribute("colspan") || "1", 10), 0);
+
+    const all = Array.from(table.querySelectorAll(":scope > tbody > tr"));
+    const runs = [];
+    let run = null;
+    for (const row of all.slice(all.indexOf(head) + 1)) {
+        const data = row.children.length === width
+            && !row.querySelector("th")
+            && !row.hasAttribute("data-rr-cat-row")
+            && !row.querySelector(":scope > td[colspan]");
+        if (!data) { run = null; continue; }
+        if (!run) { run = []; runs.push(run); }
+        run.push(row);
+    }
+    const sortable = runs.filter((rows) => rows.length > 2);
+    if (!sortable.length) return;
+    const original = sortable.map((rows) => rows.slice());
+    /* Where the run ends, read once. Read again after a sort it would
+       be whichever row had moved to the end, and putting the rows back
+       in the board's order would scatter them through their own run. */
+    const anchors = sortable.map((rows) => rows[rows.length - 1].nextSibling);
+    /* The "#" column is the board's own count down the page, not a
+       property of the row: reordered rows keep the numbers where they
+       were rather than carrying them along. */
+    const numbers = sortable.map((rows) => rows.map((row) => {
+        const cell = row.querySelector(':scope > td[data-rr-col="num"]');
+        return cell ? cell.textContent : null;
+    }));
+
+    let current = null;
+
+    const place = (rows, at) => {
+        const parent = rows[0].parentElement;
+        for (const row of rows) parent.insertBefore(row, anchors[at]);
+        restripe(rows);
+        rows.forEach((row, index) => {
+            const text = numbers[at][index];
+            if (text === null) return;
+            const cell = row.querySelector(':scope > td[data-rr-col="num"]');
+            if (cell) cell.textContent = text;
+        });
+    };
+
+    const apply = (index, kind, direction) => {
+        sortable.forEach((rows, at) => {
+            const order = original[at];
+            if (!direction) { place(order.slice(), at); return; }
+            const decorated = order.map((row, position) => ({ row, position, key: sortKey(row, index, kind) }));
+            decorated.sort((a, b) => {
+                let side = 0;
+                if (typeof a.key === "string" || typeof b.key === "string") {
+                    side = String(a.key).localeCompare(String(b.key), undefined, { numeric: true, sensitivity: "base" });
+                } else {
+                    side = a.key === b.key ? 0 : (a.key < b.key ? -1 : 1);
+                }
+                // A stable tie: two rows with the same count keep the
+                // order the board sent them in.
+                return (direction === "asc" ? side : -side) || a.position - b.position;
+            });
+            place(decorated.map((entry) => entry.row), at);
+        });
+    };
+
+    let at = 0;
+    for (const th of head.children) {
+        const span = parseInt(th.getAttribute("colspan") || "1", 10);
+        // A spanning heading names the last of the columns it covers —
+        // the title, where the ones before it are the marker gutter.
+        const index = span > 1 ? at + span - 1 : at;
+        at += span;
+        if (th.tagName !== "TH") continue;
+        const kind = SORT_KIND[th.getAttribute("data-rr-col")];
+        if (!kind || !th.textContent.trim()) continue;
+
+        const mark = el("span.rr-sortmark", { "aria-hidden": "true" });
+        const button = el("button.rr-sortbtn", { type: "button" });
+        while (th.firstChild) button.append(th.firstChild);
+        button.append(mark);
+        th.append(button);
+        th.setAttribute("data-rr-sortable", "");
+
+        button.addEventListener("click", () => {
+            const same = current && current.th === th;
+            const direction = !same ? "asc" : current.direction === "asc" ? "desc" : null;
+            for (const other of head.children) {
+                other.removeAttribute("data-rr-sorted");
+                const otherMark = other.querySelector(".rr-sortmark");
+                if (otherMark) otherMark.textContent = "";
+            }
+            apply(index, kind, direction);
+            current = direction ? { th, direction } : null;
+            if (direction) {
+                th.setAttribute("data-rr-sorted", direction);
+                mark.textContent = direction === "asc" ? "\u2191" : "\u2193";
+                th.setAttribute("aria-sort", direction === "asc" ? "ascending" : "descending");
+            } else {
+                th.removeAttribute("aria-sort");
+            }
+        });
+    }
+}
+
+/* ---- A folder's Mark column --------------------------------------- */
+
+/* One checkbox a row, no way to take them all and no way to take a run
+   of them: deleting a dozen old messages was a dozen clicks. A control
+   in the heading takes the page, and shift-click takes a range, the
+   way every mail client has since 1996. */
+function initMarkColumn(table) {
+    const boxes = Array.from(table.querySelectorAll(':scope > tbody > tr > td input[type="checkbox"]'));
+    if (boxes.length < 3) return;
+    const head = table.querySelector(':scope > tbody > tr[data-rr-head] > th[data-rr-col="mark"]');
+    if (!head || head.querySelector("input")) return;
+
+    const all = el("input.rr-markall", { type: "checkbox", title: t("Mark everything on this page") });
+    all.addEventListener("change", () => {
+        for (const box of boxes) {
+            if (box.checked === all.checked) continue;
+            box.checked = all.checked;
+            box.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+    });
+    head.append(all);
+
+    let anchor = null;
+    for (const box of boxes) {
+        box.addEventListener("click", (event) => {
+            if (event.shiftKey && anchor && anchor !== box) {
+                const from = boxes.indexOf(anchor);
+                const to = boxes.indexOf(box);
+                for (let i = Math.min(from, to); i <= Math.max(from, to); i += 1) {
+                    boxes[i].checked = box.checked;
+                }
+            }
+            anchor = box;
+        });
+    }
+}
+
 function initLists() {
     markShapes();
     groupSortControls();
     for (const table of document.querySelectorAll("table.tablebg")) {
+        restoreGridCells(table);
         labelColumns(table);
         // A listing, as opposed to a post or a strip of chrome. The
         // stylesheet needs to know which is which: row1/row2 alternate
@@ -9076,7 +9713,12 @@ function initLists() {
         // name first, and drops the cells the template left empty.
         if (roster && !table.querySelector(".topictitle a, a.topictitle, a.forumlink")) {
             table.setAttribute("data-rr-roster", "");
+            alignRosterHeaders(table);
             markEmptyCells(table);
+        }
+        if (table.hasAttribute("data-rr-list")) {
+            if (settings.get("sortColumns")) initColumnSort(table);
+            initMarkColumn(table);
         }
     }
     if (settings.get("rowClick")) initRowClick();
@@ -9111,6 +9753,17 @@ function initLists() {
     if (sortTable && !sortTable.matches(".tablebg, .forumline")) sortTable.setAttribute("data-rr-sortfoot", "");
 
     dedupeSearchBoxes();
+    tidyLinkStrips();
+    dropBrokenImages();
+
+    /* A private message draws its signature divider as a run of
+       underscores in the body, with no signature node for the topic
+       pass to find. Posts are left alone: there the divider is already
+       a rule, and a run of underscores inside a message is the poster's
+       own drawing. */
+    if (!PAGE.isTopic) {
+        for (const body of document.querySelectorAll("#wrapcentre .postbody")) replaceUnderscoreRules(body);
+    }
 
     /* Before the page-kind gate: the member list, the message folders
        and the control panel are none of those kinds and were getting
@@ -9147,6 +9800,9 @@ function initLists() {
 
     let setTag = () => {};
     for (const entry of entries) {
+        // Read once, here: the chip that filters on it and the routing
+        // below both want the answer and it does not change.
+        entry.unread = rowIsUnread(entry.row);
         if (settings.get("prefixTags")) {
             const { prefix, kind } = splitPrefix(entry.title);
             const applied = decorateTitle(entry, filtering ? (value) => setTag(value) : null);
@@ -9165,6 +9821,19 @@ function initLists() {
             .slice(0, 8);
         const toolbar = buildToolbar(entries, prefixes, filtering);
         setTag = toolbar.setTag;
+
+        /* The chip this forum was left on. Restored only where the page
+           still offers it, and visibly pressed, so a filtered listing
+           never reads as a short one. */
+        const memoryKey = settings.get("rememberFilter") && filtering ? filterMemoryKey() : null;
+        if (memoryKey) {
+            const remembered = store.get(memoryKey, null);
+            if (remembered && prefixes.some(([name]) => name.toLowerCase() === remembered)) toolbar.setTag(remembered);
+            setTag = (value) => {
+                toolbar.setTag(value);
+                store.set(memoryKey, toolbar.tag());
+            };
+        }
 
         // The action bar and the filter bar carry one job between them
         // and sat as two separate cards with a gap, one above the other:
@@ -10083,7 +10752,7 @@ function modernisePost(post) {
         const summary = meta
             .map((node) => node.textContent.replace(/\s+/g, " ").trim())
             .join(" · ")
-            .replace(/(\S)\s*((?:Posts|Location|Gender|Age|Occupation|Interests|Website|Сообщения|Откуда|Пол|Возраст|Род занятий|Интересы|Сайт):)/g, "$1 · $2");
+            .replace(/(\S)\s*((?:Posts|Location|Gender|Age|Occupation|Interests|Website|Joined|Warnings|Rank|Сообщения|Откуда|Пол|Возраст|Род занятий|Интересы|Сайт|Зарегистрирован|Предупреждения):)/g, "$1 · $2");
         head.append(el("span.rr-posthead__meta", { title: summary }, [shortenPostMeta(summary)]));
     }
 
@@ -10279,6 +10948,38 @@ function addPostTools(post, index) {
     linkButton.addEventListener("click", () => copyText(postUrl(post.id), "Post link copied"));
     tools.append(linkButton);
 
+    /* Every mirror in this post, one to a line. A release post carries
+       three to six of them and queueing them in a download manager
+       meant opening each in turn. */
+    const own = ownContent(post.body);
+    const mirrors = Array.from(own.querySelectorAll("a[href]"))
+        .map((a) => a.getAttribute("href"))
+        .filter((href) => href && isOffsite(href));
+    const unique = mirrors.filter((href, at) => mirrors.indexOf(href) === at);
+    if (unique.length > 1) {
+        const linksButton = labelled(
+            el("button.rr-icon-btn", { type: "button" }, [icon("layers")]),
+            t("Copy every link in this post"));
+        linksButton.addEventListener("click", () => {
+            copyText(unique.map((href) => new URL(href, location.href).href).join("\n"),
+                t(unique.length === 1 ? "{n} link copied" : "{n} links copied", { n: unique.length }));
+        });
+        tools.append(linksButton);
+    }
+
+    /* The archive password this post names, if it names one. */
+    if (settings.get("finder") && settings.get("passwordFinder")) {
+        const password = passwordIn(own.textContent);
+        if (password) {
+            const chip = el("button.rr-pass", {
+                type: "button",
+                title: t("Copy the password"),
+            }, [el("span.rr-pass__label", {}, [t("Password")]), el("code.rr-pass__value", {}, [password])]);
+            chip.addEventListener("click", () => copyText(password, t("Password copied")));
+            tools.append(chip);
+        }
+    }
+
     const quoteButton = labelled(
         el("button.rr-icon-btn", { type: "button" }, [icon("quote")]), t("Copy as a quote"));
     quoteButton.addEventListener("click", () => {
@@ -10334,7 +11035,77 @@ function addPostTools(post, index) {
     labelPostTools(tools);
 }
 
+/* ---- Where you stopped reading ------------------------------------ */
+
+/* phpBB tracks unread posts for members and for nobody else, and even
+   for a member it says so with a bold row in a listing rather than a
+   line in the thread. This browser knows which post was the newest
+   here the last time this topic was open; the first one after it gets
+   the divider a mail client would draw. */
+function markNewSince(all, seen) {
+    if (!seen || !seen.lastPost || !seen.at) return;
+    const fresh = all.find((post) => (Number(post.id) || 0) > seen.lastPost);
+    if (!fresh || fresh === all[0]) return;
+    /* The board's language, not the browser's: "New since 4 sept." in
+       an English interface is one word in the wrong tongue. */
+    const locale = /^ru/i.test(document.documentElement.lang || "") ? "ru-RU" : "en-GB";
+    const when = new Date(seen.at);
+    const label = Number.isFinite(when.getTime())
+        ? t("New since {when}", { when: when.toLocaleDateString(locale, { day: "numeric", month: "short" }) })
+        : t("New since your last visit");
+    const rule = el("div.rr-since", { role: "separator", "aria-label": label }, [
+        el("span.rr-since__label", {}, [label]),
+    ]);
+    fresh.table.before(rule);
+}
+
+/* The page this topic was left on. A forty page thread opens at page
+   one however far in you were, and the board's own "first unread"
+   needs an account. */
+function offerResume(seen) {
+    const here = pagination();
+    if (!seen || !seen.page || !here.total || here.total < 2) return;
+    if (seen.page === here.current || seen.page > here.total) return;
+    const href = pageHref(seen.page);
+    if (!href) return;
+    const row = document.querySelector('.rr-topicbar__row[data-rr-row="here"]');
+    if (!row) return;
+    const link = el("a.rr-btn.rr-resume", {
+        href,
+        "data-variant": "quiet",
+        title: t("You were reading page {n} of this topic", { n: seen.page }),
+    }, [icon("clock", 13), t("Back to page {n}", { n: seen.page })]);
+    const spacer = row.querySelector(".rr-topicbar__spacer");
+    if (spacer) spacer.before(link);
+    else row.append(link);
+}
+
 /* ---- Signatures --------------------------------------------------- */
+
+/* The board draws a signature's divider as a run of underscores in the
+   message body. collapseSignature drops it on a post, where the
+   signature is a node of its own; a private message has no such node
+   and kept the underscores. Anywhere one is left, it becomes the rule
+   the rest of the script draws. */
+function replaceUnderscoreRules(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const found = [];
+    let node;
+    while ((node = walker.nextNode())) {
+        if (/^\s*_{5,}\s*$/.test(node.textContent)) found.push(node);
+    }
+    for (const text of found) {
+        const rule = el("hr.rr-rule");
+        text.replaceWith(rule);
+        // The <br> the template puts on either side of it would leave
+        // the rule floating in a band of its own.
+        for (const side of ["previousSibling", "nextSibling"]) {
+            const sibling = rule[side];
+            if (sibling && sibling.nodeType === 1 && sibling.tagName === "BR") sibling.remove();
+        }
+    }
+}
+
 
 function collapseSignature(post) {
     if (!post.signature) return;
@@ -10408,23 +11179,61 @@ function initLightbox() {
            closes it, the keyboard kept inside while it is open, and the
            focus given back to the image's post when it goes. */
         const previous = document.activeElement;
+
+        /* The other pictures in the same post: a repack's screenshots
+           and a proof-it-works set are posted in a row, and opening
+           them one at a time meant closing the box between each. */
+        const holder = img.closest(".postbody, .rr-game") || document;
+        const gallery = Array.from(holder.querySelectorAll("img")).filter((node) => {
+            if (node.closest("a")) return false;
+            return node === img || node.naturalWidth >= 200;
+        });
+        let at = Math.max(0, gallery.indexOf(img));
+
+        const shown = el("img", { src: img.currentSrc || img.src, alt: img.alt || "" });
         const closeButton = el("button.rr-icon-btn.rr-lightbox__close", {
             type: "button",
             "aria-label": t("Close the image"),
         }, [icon("close")]);
+        const counter = el("span.rr-lightbox__count");
+        const back = el("button.rr-icon-btn.rr-lightbox__step", {
+            type: "button", "aria-label": t("Previous image"),
+        }, [icon("chevronL")]);
+        const forward = el("button.rr-icon-btn.rr-lightbox__step.rr-lightbox__step--next", {
+            type: "button", "aria-label": t("Next image"),
+        }, [icon("chevron")]);
+        const show = (index) => {
+            at = (index + gallery.length) % gallery.length;
+            const next = gallery[at];
+            shown.src = next.currentSrc || next.src;
+            shown.alt = next.alt || "";
+            counter.textContent = (at + 1) + " / " + gallery.length;
+        };
+
         const box = el("div.rr-lightbox", {
             role: "dialog",
             "aria-modal": "true",
             "aria-label": img.alt || t("Image"),
             tabindex: "-1",
-        }, [
-            el("img", { src: img.currentSrc || img.src, alt: img.alt || "" }),
-            closeButton,
-        ]);
+        }, [shown, closeButton]);
+        if (gallery.length > 1) {
+            box.append(back, forward, counter);
+            show(at);
+        }
+
         let release = () => {};
         const close = () => { box.remove(); document.removeEventListener("keydown", onKey); release(); };
-        const onKey = (e) => { if (e.key === "Escape") close(); };
-        box.addEventListener("click", close);
+        const onKey = (e) => {
+            if (e.key === "Escape") close();
+            else if (gallery.length > 1 && e.key === "ArrowRight") { e.preventDefault(); show(at + 1); }
+            else if (gallery.length > 1 && e.key === "ArrowLeft") { e.preventDefault(); show(at - 1); }
+        };
+        // A click on the picture or a control is not a click on the way
+        // out; everything else closes it, as it did before.
+        box.addEventListener("click", (e) => { if (e.target === box) close(); });
+        shown.addEventListener("click", () => { if (gallery.length > 1) show(at + 1); else close(); });
+        back.addEventListener("click", () => show(at - 1));
+        forward.addEventListener("click", () => show(at + 1));
         document.addEventListener("keydown", onKey);
         document.body.append(box);
         release = trapFocus(box, previous instanceof HTMLElement ? previous : null);
@@ -10475,22 +11284,35 @@ function markExternalLinks() {
 function initTopic() {
     if (!PAGE.isTopic) return;
 
+    /* Read before it is written over: where this topic was left, and
+       which post was the newest here at the time. */
+    let seen = null;
+    if (settings.get("history") && PAGE.topicId) {
+        seen = store.get("history", []).find((item) => item.id === String(PAGE.topicId)) || null;
+    }
+
+    const all = posts();
+
     if (settings.get("history") && PAGE.topicId) {
         markVisited(String(PAGE.topicId));
         const heading = document.querySelector("#pageheader h2 a.titles, #pageheader h2");
         if (heading) {
             const list = store.get("history", []).filter((item) => item.id !== String(PAGE.topicId));
+            const here = pagination();
+            const newest = all.reduce((top, post) => Math.max(top, Number(post.id) || 0), 0);
             list.unshift({
                 id: String(PAGE.topicId),
                 title: heading.textContent.trim(),
                 href: "./viewtopic.php?t=" + PAGE.topicId,
                 at: Date.now(),
+                page: here.current || 1,
+                // Never lower: coming back to page 1 of a topic already
+                // read to the end does not un-read it.
+                lastPost: Math.max(Number(seen && seen.lastPost) || 0, newest),
             });
             store.set("history", list.slice(0, settings.get("historyLimit")));
         }
     }
-
-    const all = posts();
 
     const modern = settings.get("postLayout") === "modern";
     if (modern) {
@@ -10535,6 +11357,10 @@ function initTopic() {
     });
 
     if (settings.get("lightbox")) initLightbox();
+    if (settings.get("history") && settings.get("resumeReading")) {
+        markNewSince(all, seen);
+        offerResume(seen);
+    }
     if (settings.get("linkifyBare")) markExternalLinks();
 }
 
@@ -10767,6 +11593,106 @@ function spaceOutLines(copy) {
  * What a post looks like at a glance: how many off-site links it
  * carries, whether it names a version, and which release words it uses.
  */
+/* The archive password.
+
+   Almost every release post on this board ends with one — "Password:
+   cs.rin.ru", "unrar pass: something", "Пароль: …" — and it is
+   routinely three screens below the link or inside a spoiler with ten
+   others. What is read here is the post's own words: a label, a
+   separator, and the run of characters after it.
+
+   "No password needed" is the other thing posts say, and it is not a
+   password; a line that denies one is refused. */
+const PASSWORD_LABEL = "(?:archive\\s+|unrar\\s+|unzip\\s+|rar\\s+|zip\\s+|extraction\\s+)?(?:password|passwd|pass|pwd|pw|пароль)";
+/* What a post says instead of a password: "the standard password",
+   "same as above", "password required". None of those is one, and
+   reading one out as the password is worse than saying nothing. */
+const NOT_A_PASSWORD = new Set([
+    "standard", "usual", "same", "above", "below", "none", "forum", "default",
+    "required", "needed", "protected", "correct", "wrong", "here", "link",
+    "file", "archive", "yes", "no", "is", "the", "a", "unknown", "obvious",
+]);
+const PASSWORD_RE = new RegExp(
+    /* A separator is required — a colon, an equals, a dash, or the
+       word "is". Without one, "password protected" reads as a password
+       called "protected". */
+    "(^|[\\s>(\\[])" + PASSWORD_LABEL + "\\s*(?:is\\b\\s*|[:=\\-]\\s*)+([^\\s<>\\n\\r]{1,48})",
+    "i",
+);
+const NO_PASSWORD_RE = new RegExp(
+    "\\b(?:no|none|without|not?)\\s+(?:" + PASSWORD_LABEL + ")|" + PASSWORD_LABEL + "\\s*[:=\\-]?\\s*(?:none|no|n/a|нет)\\b",
+    "i",
+);
+
+function passwordIn(text) {
+    const said = String(text || "");
+    for (const line of said.split(/[\n\r]+/)) {
+        if (NO_PASSWORD_RE.test(line)) continue;
+        const match = PASSWORD_RE.exec(line);
+        if (!match) continue;
+        const value = match[2]
+            .replace(/^[\u0022\u0027`]+|[\u0022\u0027`,;:!?)\]]+$/g, "")
+            .replace(/\.$/, "");
+        if (value.length < 2 || NOT_A_PASSWORD.has(value.toLowerCase())) continue;
+        /* A password is a token: something with a dot, a dash, a digit
+           or an underscore in it, or one long run of letters. A word in
+           the middle of a sentence is neither. */
+        if (!/[.\-_@\d]/.test(value) && value.length < 6) continue;
+        return value;
+    }
+    return null;
+}
+
+/* Which file host a link leads to, in the words the board uses for it.
+   Anything unrecognised keeps its own domain, without the suffix. */
+const HOST_NAMES = {
+    "mega.nz": "MEGA", "mega.co.nz": "MEGA",
+    "1fichier.com": "1fichier",
+    "gofile.io": "GoFile",
+    "pixeldrain.com": "PixelDrain",
+    "buzzheavier.com": "Buzzheavier",
+    "datanodes.to": "DataNodes",
+    "mediafire.com": "MediaFire",
+    "drive.google.com": "Drive",
+    "dropbox.com": "Dropbox",
+    "workupload.com": "WorkUpload",
+    "krakenfiles.com": "KrakenFiles",
+    "send.cm": "Send.cm",
+    "qiwi.gg": "Qiwi",
+    "multiup.io": "MultiUp", "multiup.org": "MultiUp",
+    "torrent.rin.ru": "Torrent",
+    "github.com": "GitHub",
+    "archive.org": "Archive.org",
+};
+
+/* Where a release is not: a store page, a video, a screenshot, an
+   article. Listing those beside the hosts would say a post is on five
+   mirrors when it is on two. */
+const NOT_HOSTS = /(?:steampowered|steamcommunity|steamdb|steamcharts|protondb|pcgamingwiki|youtube|youtu\.be|imgur|ibb\.co|prnt\.sc|gyazo|postimg|twitter|x\.com|reddit|wikipedia|discord|patreon|paypal|google\.[a-z]+|bing|duckduckgo|pcgamebenchmark|blockchair|mempool)/i;
+
+function hostName(href) {
+    let host;
+    try { host = new URL(href, location.href).hostname.replace(/^www\./, ""); }
+    catch { return null; }
+    if (NOT_HOSTS.test(host)) return null;
+    if (HOST_NAMES[host]) return HOST_NAMES[host];
+    const bare = host.replace(/\.(?:com|net|org|io|to|cc|gg|nz|co|me|ru|de|fr|is|se|sh|cm|xyz|top|link|site|online|download)$/i, "");
+    const last = bare.split(".").pop();
+    if (!last || last.length < 2) return null;
+    return last.charAt(0).toUpperCase() + last.slice(1);
+}
+
+/* Magnet links have no host at all. */
+function linkHosts(links) {
+    const out = [];
+    for (const link of links) {
+        const href = link.getAttribute("href") || "";
+        const name = /^magnet:/i.test(href) ? "Torrent" : hostName(href);
+        if (name && !out.includes(name)) out.push(name);
+    }
+    return out;
+}
+
 function describePost(post) {
     const own = ownContent(post.body);
     const text = own.textContent;
@@ -10802,6 +11728,8 @@ function describePost(post) {
     return {
         post,
         links: links.length + hidden,
+        hosts: linkHosts(links),
+        password: passwordIn(text),
         words,
         version: named.version,
         versionNamed: named.named,
@@ -11185,6 +12113,7 @@ function describeRelease(post, page) {
         versionNamed: scored.versionNamed,
         build: scored.build,
         links: scored.links,
+        hosts: scored.hosts,
         kinds: kinds.map((kind) => kind.id),
         labels: kinds.map((kind) => kind.label),
         excerpt: text.slice(0, 180),
@@ -11713,10 +12642,23 @@ function releaseRow(row, latest) {
        prints "Wednesday, 02 Sep 2026, 09:49" on every row while the
        listing two clicks away prints "02 Sep 2026" is two answers to
        one question. */
+    /* Which host it is on is half the decision a reader makes about a
+       release, and until now it took opening the post to find out. */
+    const hosts = el("span.rr-releases__hosts");
+    for (const name of (row.hosts || []).slice(0, 3)) {
+        hosts.append(el("span.rr-releases__host", {}, [name]));
+    }
+    if ((row.hosts || []).length > 3) {
+        hosts.append(el("span.rr-releases__host.rr-releases__host--more", {
+            title: row.hosts.join(", "),
+        }, ["+" + (row.hosts.length - 3)]));
+    }
+
     const when = row.date || "";
     const link = el("a.rr-releases__link", { href: target, title: row.excerpt }, [
         releaseVersion(row, latest),
         tags,
+        hosts,
         el("span.rr-releases__who", {}, [row.author]),
         el("span.rr-releases__when", { title: when }, [shortenPostMeta(when)]),
         el("span.rr-releases__page", {}, [t("p.") + row.page]),
@@ -11871,13 +12813,37 @@ function initReleases() {
     const linkFilter = buildLinkFilter(all, pageRows);
     linkFilter.classList.add("rr-releases__only");
 
+    /* What the panel says, as text. Passing "the current version is X,
+       posted by Y on page Z" to somebody else meant retyping it. */
+    const copyList = labelled(
+        el("button.rr-icon-btn.rr-releases__copy", { type: "button" }, [icon("copy", 14)]),
+        t("Copy this list"));
+    copyList.addEventListener("click", () => {
+        const lines = Array.from(document.querySelectorAll(".rr-releases__list > li"))
+            .filter((item) => !item.hasAttribute("data-rr-hidden") && item.getClientRects().length)
+            .map((item) => {
+                const link = item.querySelector("a");
+                const cell = (name) => {
+                    const node = item.querySelector(".rr-releases__" + name);
+                    return node ? node.textContent.replace(/\s+/g, " ").trim() : "";
+                };
+                const parts = [cell("version") || "\u2014", cell("tags"), cell("hosts"), cell("who"), cell("when")]
+                    .filter(Boolean);
+                const href = link ? new URL(link.getAttribute("href"), location.href).href : "";
+                return parts.join(" \u00b7 ") + (href ? "  " + href : "");
+            });
+        if (!lines.length) return;
+        copyText(document.title.replace(/^.*?View topic - /, "") + "\n" + lines.join("\n"),
+            t("{n} lines copied", { n: lines.length }));
+    });
+
     const body = el("div.rr-releases__body");
     panel.append(
         el("div.rr-releases__head", {}, [
             icon("layers", 14),
             el("h3", {}, [t("Releases")]),
             count,
-            el("div.rr-releases__controls", {}, [scope, linkFilter]),
+            el("div.rr-releases__controls", {}, [scope, linkFilter, copyList]),
         ]),
         body,
     );
@@ -13093,6 +14059,38 @@ function initCompose() {
     if (settings.get("selectionQuote")) initSelectionQuote();
 }
 
+/* ---- The posting options ------------------------------------------ */
+
+/* "Notify me when a reply is posted", "Attach a signature", "Disable
+   BBCode": five checkboxes under every message box, reset to the
+   board's defaults every single time. Whatever was ticked when a post
+   was last written is ticked again on the next one.
+
+   Only when writing something new. Editing an existing post loads that
+   post's own options, and overwriting them would quietly change what
+   is already published. */
+const POSTING_OPTIONS = ["disable_bbcode", "disable_smilies", "disable_magic_url", "attach_sig", "notify"];
+
+function initPostingMemory() {
+    if (!PAGE.isPosting && !PAGE.isUCP) return;
+    if (!settings.get("postingMemory")) return;
+    if (/mode=edit|mode=delete|mode=quote_edit/.test(location.search)) return;
+
+    const remembered = store.get("posting", null);
+    for (const name of POSTING_OPTIONS) {
+        const box = document.querySelector('#wrapcentre input[type="checkbox"][name="' + name + '"]');
+        if (!box) continue;
+        if (remembered && Object.prototype.hasOwnProperty.call(remembered, name)) {
+            box.checked = Boolean(remembered[name]);
+        }
+        box.addEventListener("change", () => {
+            const next = store.get("posting", {}) || {};
+            next[name] = box.checked;
+            store.set("posting", next);
+        });
+    }
+}
+
 /* ================= src/modules/people.js ================= */
 /* ------------------------------------------------------------------
    People.
@@ -13994,7 +14992,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.9.3";
+const RR_VERSION = "0.10.0";
 
 function injectStyles() {
     const host = document.head || document.documentElement;
@@ -14040,6 +15038,7 @@ function bootLate() {
     guard("quiet", initQuiet);
     guard("steam", initSteamPreview);
     guard("compose", initCompose);
+    guard("posting", initPostingMemory);
     guard("people", initPeople);
     guard("palette", initPalette);
     guard("shortcuts", initShortcuts);

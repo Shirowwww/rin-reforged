@@ -777,6 +777,21 @@ function tidySeparators(strip) {
 const SEPARATOR_STRIPS = "#wrapcentre td.gensmall, #wrapcentre td.nav, #wrapcentre td.cat,"
     + " #wrapcentre p.searchbar, #wrapcentre span.gensmall, #wrapcentre .postbody + .gensmall";
 
+/* A cell that is one column of a data table.
+
+   Hiding such a cell does not blank the column, it removes it: every
+   cell after it in that row slides one place left, out from under its
+   own header. The Team page, where the board leaves the e-mail cell of
+   a member with no address holding one &nbsp;, drew four values under
+   five headings because of it. */
+function isGridCell(cell) {
+    if (cell.tagName !== "TD") return false;
+    const row = cell.parentElement;
+    if (!row || row.children.length < 3) return false;
+    const table = cell.closest("table");
+    return Boolean(table && table.querySelector(":scope > tbody > tr > th"));
+}
+
 /**
  * Runs after every module, for the same reason dropStrayBreaks() does:
  * a strip is only stranded once something has been moved out of it.
@@ -790,6 +805,7 @@ function dropStraySeparators() {
         const empty = tidySeparators(strip);
         if (!empty) continue;
         if (strip.querySelector("form, input, select, textarea, img")) continue;
+        if (isGridCell(strip)) continue;
         if (strip.tagName === "TD") strip.style.display = "none";
     }
 }

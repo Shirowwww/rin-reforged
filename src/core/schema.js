@@ -153,6 +153,11 @@ const SETTINGS_SCHEMA = [
                 desc: "Lists the posts on the page that carry links, a version number or a reupload, newest first. Answers \"where is the current version\" without reading 19 pages.",
             },
             {
+                id: "passwordFinder", label: "Find the archive password", type: "toggle", default: true,
+                desc: "Almost every release post ends with \"Password: cs.rin.ru\" somewhere, often inside a spoiler. Where a post names one, it is offered beside that post's other controls, with a copy button.",
+                when: "finder",
+            },
+            {
                 id: "topicIndex", label: "Index the whole topic", type: "toggle", default: true,
                 desc: "Adds a control that reads every page of a topic once and lists everything posted in it — each release, update, repack, crack, reupload and tool — with its version, what kind of thing it is, who posted it, when, and which page. Never runs on its own: it is a click, the answer is kept per topic, and Escape stops it.",
                 when: "finder",
@@ -192,6 +197,18 @@ const SETTINGS_SCHEMA = [
             {
                 id: "hideAnnouncements", label: "Collapse global announcements", type: "toggle", default: false,
                 desc: "Folds the pinned announcements at the head of a listing into one line.",
+            },
+            {
+                id: "stickyHeads", label: "Keep the column headings in view", type: "toggle", default: true,
+                desc: "A hundred rows scroll past the headings that name them. They stay at the top of the window while their own listing is on screen.",
+            },
+            {
+                id: "sortColumns", label: "Sort a listing by clicking a column", type: "toggle", default: true,
+                desc: "Replies, Views, Author, Last post and the rest. The rows already on the page are reordered here; nothing is fetched and nothing is sent. Announcements keep their own section. Click again to reverse, a third time for the board's own order.",
+            },
+            {
+                id: "rememberFilter", label: "Remember the prefix filter per forum", type: "toggle", default: false,
+                desc: "Coming back to a forum restores the [Release] or [Info] chip that was pressed there last time.",
             },
         ],
     },
@@ -251,6 +268,11 @@ const SETTINGS_SCHEMA = [
                 when: "quietPosts",
             },
             {
+                id: "resumeReading", label: "Remember where you stopped reading", type: "toggle", default: true,
+                desc: "A topic you have read before opens with a control back to the page you were on, and the first post newer than your last visit is marked. Kept in this browser, so it works logged out; needs \"Remember topics you open\".",
+                when: "history",
+            },
+            {
                 id: "unreadJump", label: "Jump to the first unread post", type: "toggle", default: true,
                 desc: "The board offers this from a topic list but not from inside a topic.",
             },
@@ -290,6 +312,10 @@ const SETTINGS_SCHEMA = [
             {
                 id: "selectionQuote", label: "Quote what you select", type: "toggle", default: true,
                 desc: "Highlight text in a post and a Quote button appears. It goes straight into the reply box when one is open.",
+            },
+            {
+                id: "postingMemory", label: "Remember the posting options", type: "toggle", default: true,
+                desc: "Notify me, Attach a signature, Disable BBCode and the rest: whatever was ticked the last time a post was written is ticked again on the next one. Editing an existing post is left alone.",
             },
             {
                 id: "hideUsers", label: "Hide posts by someone", type: "toggle", default: true,

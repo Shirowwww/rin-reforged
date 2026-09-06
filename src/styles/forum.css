@@ -125,6 +125,10 @@ html[data-rr] table.forumline {
     overflow: hidden;
     width: 100%;
 }
+/* A listing clips its corners the same way, but `clip` does not make
+   the table a scroll container — which `hidden` does, and a heading
+   inside a scroll container that never scrolls can never stick. */
+html[data-rr] table.tablebg[data-rr-list] { overflow: clip; }
 
 /* The original stylesheet paints `th a` #CCCCCC: on the light theme the
    member list's sortable headers were pale grey on paler grey while
@@ -1081,4 +1085,30 @@ html[data-rr] table[data-rr-list] td .rr-ctl {
     padding: 1px 8px;
     font-size: var(--rr-fs-xs);
     background: transparent;
+}
+
+
+/* ---- What the template leaves between things --------------------- */
+
+/* A 1px spacer row: an <img src="spacer.gif"> in a cell the board
+   paints black. The image is dropped further up; the cell was still
+   drawing a black band across a private message and between two
+   search results. */
+html[data-rr] td.spacer {
+    background: none !important;
+    height: 0;
+    padding: 0;
+    /* A zero line box, not a zero font: the size floor this stylesheet
+       guarantees is measured on every cell, spacers included. */
+    line-height: 0;
+}
+
+/* The rule that replaces the board's run of underscores (topic.js,
+   replaceUnderscoreRules) — the same weight as a signature's. */
+html[data-rr] hr.rr-rule {
+    margin: var(--rr-s3) 0;
+    border: 0;
+    border-top: 1px solid var(--rr-line);
+    background: none;
+    height: 0;
 }

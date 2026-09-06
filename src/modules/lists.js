@@ -59,6 +59,9 @@ const COLUMN_NAMES = {
 function labelColumns(table) {
     const headRow = table.querySelector("tr:has(th)") || table.querySelector("th")?.parentElement;
     if (!headRow) return;
+    /* Named, because it is not always the table's first row: a forum
+       listing opens with the "Mark forums read" strip above it. */
+    headRow.setAttribute("data-rr-head", "");
 
     /* Only a listing reads a spanning header as the title column. A
        profile's "User statistics" spans its label and value cells, and
@@ -367,8 +370,16 @@ function dedupeSearchBoxes() {
  * it the bar is only a home for the board's own refine box — see
  * FILTER_MIN_ROWS.
  */
+/* Where a forum's last-used chip is kept, so coming back to it finds
+   the page filtered the way it was left. */
+function filterMemoryKey() {
+    if (PAGE.forumId) return "filter:f" + PAGE.forumId;
+    if (PAGE.isSearch) return "filter:search";
+    return null;
+}
+
 function buildToolbar(entries, prefixes, rich) {
-    const state = { text: "", tag: null };
+    const state = { text: "", tag: null, unread: false };
 
     const count = el("span.rr-toolbar__count");
 
@@ -377,7 +388,8 @@ function buildToolbar(entries, prefixes, rich) {
         for (const entry of entries) {
             const matchesText = matchesWords(entry.title, state.text);
             const matchesTag = !state.tag || entry.row.getAttribute("data-rr-prefix") === state.tag;
-            const visible = matchesText && matchesTag;
+            const matchesUnread = !state.unread || entry.unread;
+            const visible = matchesText && matchesTag && matchesUnread;
             entry.row.toggleAttribute("data-rr-hidden", !visible);
             if (visible) shown += 1;
         }
@@ -404,6 +416,24 @@ function buildToolbar(entries, prefixes, rich) {
         }
         apply();
     };
+    /* Everything on this page with something new in it. The board says
+       so with a dot beside the row and gives no way to ask for only
+       those. */
+    const unreadCount = entries.filter((entry) => entry.unread).length;
+    if (unreadCount && unreadCount < entries.length) {
+        const unreadChip = el("button.rr-tag.rr-tag--unread", {
+            type: "button",
+            "aria-pressed": "false",
+            title: t("Show only the topics with unread posts"),
+        }, [t("Unread")]);
+        unreadChip.addEventListener("click", () => {
+            state.unread = !state.unread;
+            unreadChip.setAttribute("aria-pressed", state.unread ? "true" : "false");
+            apply();
+        });
+        tagRow.append(unreadChip);
+    }
+
     for (const [name, kind] of prefixes) {
         const button = el("button.rr-tag", {
             type: "button",
@@ -421,7 +451,7 @@ function buildToolbar(entries, prefixes, rich) {
         bar.append(el("div.rr-toolbar__filter", {}, [icon("filter"), input]));
         // One chip filters every row down to every row. Chips are worth
         // their line only once there is a choice to make between them.
-        if (prefixes.length > 1) bar.append(tagRow);
+        if (tagRow.children.length > 1) bar.append(tagRow);
         bar.append(count);
     }
 
@@ -439,7 +469,7 @@ function buildToolbar(entries, prefixes, rich) {
     }
 
     apply();
-    return { bar, setTag, empty: !bar.children.length };
+    return { bar, setTag, tag: () => state.tag, empty: !bar.children.length };
 }
 
 /* ---- Forum action bar --------------------------------------------- */
@@ -963,6 +993,14 @@ function chipPager(holder) {
 
 function tidyPagers() {
     for (const p of document.querySelectorAll('td[data-rr-col="title"] p.gensmall')) chipPager(p);
+    /* "[ Go to page: 1 … 263, 264, 265 ]" under a subscribed topic or a
+       bookmark: the same shape as the one under a listing title, in a
+       cell this script does not label. Matched by its words instead. */
+    for (const strip of document.querySelectorAll("#wrapcentre p.gensmall, #wrapcentre span.gensmall")) {
+        if (strip.closest(".rr-topicbar, .rr-minipager, .rr-releases")) continue;
+        if (!/(?:Go to page|На страницу)\s*:/.test(strip.textContent)) continue;
+        chipPager(strip);
+    }
     for (const jump of document.querySelectorAll('#wrapcentre a[onclick*="jumpto"]')) {
         if (jump.closest(".rr-topicbar, .rr-minipager")) continue;
         const holder = jump.closest("b") || jump.closest("td, p, span");
@@ -977,6 +1015,51 @@ function tidyPagers() {
     }
 }
 
+/* A data table whose header says five columns and whose rows draw four.
+
+   The board hides a cell outright — `style="display: none"` in the
+   markup it sends — where a member has no e-mail address on the Team
+   page. In a real table that does not blank the column, it removes it:
+   every cell after it slides one column left and the row stops lining
+   up with its own header. The cell is put back, empty, wherever the
+   row and the header still agree on how many cells there are.
+
+   Only the board's own inline hiding is undone, and only before this
+   script hides anything of its own. */
+function restoreGridCells(table) {
+    const header = table.querySelector(":scope > tbody > tr[data-rr-head], :scope > tbody > tr:first-child");
+    if (!header) return;
+    const columns = header.querySelectorAll(":scope > th, :scope > td").length;
+    if (columns < 3) return;
+    for (const row of table.querySelectorAll(":scope > tbody > tr")) {
+        const cells = row.querySelectorAll(":scope > td");
+        if (cells.length !== columns) continue;
+        for (const cell of cells) {
+            if (cell.style.display === "none") cell.style.removeProperty("display");
+        }
+    }
+}
+
+/* A roster's header sits over cells the template centres. Left over a
+   centred column, a header names nothing in particular. */
+function alignRosterHeaders(table) {
+    const header = table.querySelector(":scope > tbody > tr[data-rr-head], :scope > tbody > tr:first-child");
+    if (!header) return;
+    const heads = Array.from(header.querySelectorAll(":scope > th"));
+    if (!heads.length) return;
+    const rows = Array.from(table.querySelectorAll(":scope > tbody > tr"));
+    const body = rows.slice(rows.indexOf(header) + 1)
+        .find((row) => row.querySelectorAll(":scope > td").length === heads.length
+            && !row.querySelector(":scope > td[colspan]"));
+    if (!body) return;
+    const cells = body.querySelectorAll(":scope > td");
+    heads.forEach((head, index) => {
+        if (head.hasAttribute("data-rr-col")) return;
+        const align = (cells[index].getAttribute("align") || "").toLowerCase();
+        if (align === "center" || align === "right") head.style.textAlign = align;
+    });
+}
+
 /* The template pads a roster's e-mail and website cells with &nbsp;
    whether or not the member has one; on a phone each of those became
    an empty dark chip in the card. */
@@ -988,10 +1071,274 @@ function markEmptyCells(table) {
     }
 }
 
+/* A cell that is a row of links and the punctuation between them.
+
+   The template writes "Previous PM in history | Next PM in history |
+   Previous PM | Next PM", "[ Add friend | Add foe ]" and "Mark all ::
+   Unmark all" as bare text around the links. Read out, that punctuation
+   is noise; on the page it is a row of pipes at four different heights.
+   The links become a row with a gap, which is what the pipes were for. */
+const LINK_STRIP_JUNK = /^[\s |:·,;\[\]()–—-]*$/;
+
+function tidyLinkStrips() {
+    const cells = document.querySelectorAll(
+        "#wrapcentre td.gen, #wrapcentre td.gensmall, #wrapcentre td.genmed, #wrapcentre td.nav,"
+        + " #wrapcentre p.gensmall, #wrapcentre span.gensmall, #wrapcentre div.gensmall",
+    );
+    for (const cell of cells) {
+        if (cell.closest(".rr-topicbar, .rr-toolbar, .rr-releases, .postbody, table[data-rr-list]")) continue;
+        if (cell.querySelector("img, input, select, textarea, table, .rr-minipager")) continue;
+        const links = Array.from(cell.children).filter((node) => node.tagName === "A");
+        if (links.length < 2 || links.length !== cell.children.length) continue;
+        // Only punctuation between them, or this is a sentence with
+        // links in it rather than a strip of controls.
+        if (!Array.from(cell.childNodes).every((node) => node.nodeType !== 3 || LINK_STRIP_JUNK.test(node.textContent))) continue;
+        for (const node of Array.from(cell.childNodes)) {
+            if (node.nodeType === 3) node.remove();
+        }
+        const row = el("span.rr-linkrow");
+        if ((cell.getAttribute("align") || "").toLowerCase() === "right") row.setAttribute("data-rr-align", "right");
+        cell.append(row);
+        for (const link of links) row.append(link);
+    }
+}
+
+/* An image the board points at nothing — the avatar box of a member
+   who has none — draws as the browser's broken-image mark. Only the
+   board's own furniture is dropped; a picture inside a post is the
+   poster's, and a hole where it was is the honest thing to show. */
+function dropBrokenImages() {
+    for (const img of document.querySelectorAll("#wrapcentre img")) {
+        if (img.closest(".postbody, .rr-game, .rr-lightbox")) continue;
+        const drop = () => { img.style.display = "none"; };
+        const src = img.getAttribute("src");
+        // No source at all, or one the browser has already given up on.
+        if (!src || (img.complete && img.naturalWidth === 0)) drop();
+        else img.addEventListener("error", drop, { once: true });
+    }
+}
+
+/* ---- Sorting the page you are on ---------------------------------- */
+
+/* phpBB offers no way to reorder the hundred rows it has already sent.
+   The headings of a listing become controls that do — in this browser,
+   on the rows that are here: nothing is fetched and nothing is sent.
+
+   Rows are sorted inside each run of them, and the template's own
+   section rows ("Global Announcements", "Announcements") end a run, so
+   a pinned announcement never lands in the middle of the topics. */
+const SORT_KIND = {
+    replies: "number", views: "number", topics: "number", posts: "number", num: "number",
+    date: "date", last: "date",
+    title: "text", author: "text", rank: "text",
+};
+
+const SORT_MONTHS = {
+    jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+    jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+};
+
+/* "02 Sep 2026, 09:49", which is what the board writes and what this
+   script leaves after the weekday goes. A row that says "4 minutes
+   ago" carries the whole date on its title, put there when it was
+   shortened; a row that says "Today" is today. */
+function boardTime(text) {
+    const said = String(text || "");
+    const match = /(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{4})(?:,\s*(\d{1,2}):(\d{2}))?/.exec(said);
+    if (match) {
+        const month = SORT_MONTHS[match[2].toLowerCase()];
+        if (month !== undefined) {
+            return Date.UTC(Number(match[3]), month, Number(match[1]), Number(match[4] || 0), Number(match[5] || 0));
+        }
+    }
+    if (/^\s*(?:today|сегодня)/i.test(said) || /\bago\b|назад/i.test(said)) return Date.now();
+    return null;
+}
+
+function sortKey(row, index, kind) {
+    const cell = row.children[index];
+    if (!cell) return kind === "text" ? "" : -Infinity;
+    if (kind === "number") {
+        const digits = cell.textContent.replace(/[\s\u00a0\u202f,]/g, "");
+        const value = parseFloat(digits);
+        return Number.isFinite(value) ? value : -Infinity;
+    }
+    if (kind === "date") {
+        const dated = cell.hasAttribute("title") ? cell : cell.querySelector("[title]");
+        const time = boardTime(dated ? dated.getAttribute("title") : "") ?? boardTime(cell.textContent);
+        return time === null ? -Infinity : time;
+    }
+    return cell.textContent.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+/* The stripes are drawn from row1 / row2, which the template hands out
+   in the order it sent the rows. Reordered rows keep their own class
+   and the listing ends up with two dark rows together. */
+function restripe(rows) {
+    rows.forEach((row, index) => {
+        const want = index % 2 === 0 ? "row1" : "row2";
+        const other = want === "row1" ? "row2" : "row1";
+        const swap = (node) => {
+            if (!node.classList.contains("row1") && !node.classList.contains("row2")) return;
+            node.classList.remove(other);
+            node.classList.add(want);
+        };
+        swap(row);
+        for (const cell of row.children) swap(cell);
+    });
+}
+
+function initColumnSort(table) {
+    const head = table.querySelector(":scope > tbody > tr[data-rr-head]");
+    if (!head || !head.querySelector("th")) return;
+    /* Columns, not cells: a listing spans its first heading over the
+       unread marker and the title, so five headings sit over six
+       cells. */
+    const width = Array.from(head.children)
+        .reduce((total, cell) => total + parseInt(cell.getAttribute("colspan") || "1", 10), 0);
+
+    const all = Array.from(table.querySelectorAll(":scope > tbody > tr"));
+    const runs = [];
+    let run = null;
+    for (const row of all.slice(all.indexOf(head) + 1)) {
+        const data = row.children.length === width
+            && !row.querySelector("th")
+            && !row.hasAttribute("data-rr-cat-row")
+            && !row.querySelector(":scope > td[colspan]");
+        if (!data) { run = null; continue; }
+        if (!run) { run = []; runs.push(run); }
+        run.push(row);
+    }
+    const sortable = runs.filter((rows) => rows.length > 2);
+    if (!sortable.length) return;
+    const original = sortable.map((rows) => rows.slice());
+    /* Where the run ends, read once. Read again after a sort it would
+       be whichever row had moved to the end, and putting the rows back
+       in the board's order would scatter them through their own run. */
+    const anchors = sortable.map((rows) => rows[rows.length - 1].nextSibling);
+    /* The "#" column is the board's own count down the page, not a
+       property of the row: reordered rows keep the numbers where they
+       were rather than carrying them along. */
+    const numbers = sortable.map((rows) => rows.map((row) => {
+        const cell = row.querySelector(':scope > td[data-rr-col="num"]');
+        return cell ? cell.textContent : null;
+    }));
+
+    let current = null;
+
+    const place = (rows, at) => {
+        const parent = rows[0].parentElement;
+        for (const row of rows) parent.insertBefore(row, anchors[at]);
+        restripe(rows);
+        rows.forEach((row, index) => {
+            const text = numbers[at][index];
+            if (text === null) return;
+            const cell = row.querySelector(':scope > td[data-rr-col="num"]');
+            if (cell) cell.textContent = text;
+        });
+    };
+
+    const apply = (index, kind, direction) => {
+        sortable.forEach((rows, at) => {
+            const order = original[at];
+            if (!direction) { place(order.slice(), at); return; }
+            const decorated = order.map((row, position) => ({ row, position, key: sortKey(row, index, kind) }));
+            decorated.sort((a, b) => {
+                let side = 0;
+                if (typeof a.key === "string" || typeof b.key === "string") {
+                    side = String(a.key).localeCompare(String(b.key), undefined, { numeric: true, sensitivity: "base" });
+                } else {
+                    side = a.key === b.key ? 0 : (a.key < b.key ? -1 : 1);
+                }
+                // A stable tie: two rows with the same count keep the
+                // order the board sent them in.
+                return (direction === "asc" ? side : -side) || a.position - b.position;
+            });
+            place(decorated.map((entry) => entry.row), at);
+        });
+    };
+
+    let at = 0;
+    for (const th of head.children) {
+        const span = parseInt(th.getAttribute("colspan") || "1", 10);
+        // A spanning heading names the last of the columns it covers —
+        // the title, where the ones before it are the marker gutter.
+        const index = span > 1 ? at + span - 1 : at;
+        at += span;
+        if (th.tagName !== "TH") continue;
+        const kind = SORT_KIND[th.getAttribute("data-rr-col")];
+        if (!kind || !th.textContent.trim()) continue;
+
+        const mark = el("span.rr-sortmark", { "aria-hidden": "true" });
+        const button = el("button.rr-sortbtn", { type: "button" });
+        while (th.firstChild) button.append(th.firstChild);
+        button.append(mark);
+        th.append(button);
+        th.setAttribute("data-rr-sortable", "");
+
+        button.addEventListener("click", () => {
+            const same = current && current.th === th;
+            const direction = !same ? "asc" : current.direction === "asc" ? "desc" : null;
+            for (const other of head.children) {
+                other.removeAttribute("data-rr-sorted");
+                const otherMark = other.querySelector(".rr-sortmark");
+                if (otherMark) otherMark.textContent = "";
+            }
+            apply(index, kind, direction);
+            current = direction ? { th, direction } : null;
+            if (direction) {
+                th.setAttribute("data-rr-sorted", direction);
+                mark.textContent = direction === "asc" ? "\u2191" : "\u2193";
+                th.setAttribute("aria-sort", direction === "asc" ? "ascending" : "descending");
+            } else {
+                th.removeAttribute("aria-sort");
+            }
+        });
+    }
+}
+
+/* ---- A folder's Mark column --------------------------------------- */
+
+/* One checkbox a row, no way to take them all and no way to take a run
+   of them: deleting a dozen old messages was a dozen clicks. A control
+   in the heading takes the page, and shift-click takes a range, the
+   way every mail client has since 1996. */
+function initMarkColumn(table) {
+    const boxes = Array.from(table.querySelectorAll(':scope > tbody > tr > td input[type="checkbox"]'));
+    if (boxes.length < 3) return;
+    const head = table.querySelector(':scope > tbody > tr[data-rr-head] > th[data-rr-col="mark"]');
+    if (!head || head.querySelector("input")) return;
+
+    const all = el("input.rr-markall", { type: "checkbox", title: t("Mark everything on this page") });
+    all.addEventListener("change", () => {
+        for (const box of boxes) {
+            if (box.checked === all.checked) continue;
+            box.checked = all.checked;
+            box.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+    });
+    head.append(all);
+
+    let anchor = null;
+    for (const box of boxes) {
+        box.addEventListener("click", (event) => {
+            if (event.shiftKey && anchor && anchor !== box) {
+                const from = boxes.indexOf(anchor);
+                const to = boxes.indexOf(box);
+                for (let i = Math.min(from, to); i <= Math.max(from, to); i += 1) {
+                    boxes[i].checked = box.checked;
+                }
+            }
+            anchor = box;
+        });
+    }
+}
+
 function initLists() {
     markShapes();
     groupSortControls();
     for (const table of document.querySelectorAll("table.tablebg")) {
+        restoreGridCells(table);
         labelColumns(table);
         // A listing, as opposed to a post or a strip of chrome. The
         // stylesheet needs to know which is which: row1/row2 alternate
@@ -1007,7 +1354,12 @@ function initLists() {
         // name first, and drops the cells the template left empty.
         if (roster && !table.querySelector(".topictitle a, a.topictitle, a.forumlink")) {
             table.setAttribute("data-rr-roster", "");
+            alignRosterHeaders(table);
             markEmptyCells(table);
+        }
+        if (table.hasAttribute("data-rr-list")) {
+            if (settings.get("sortColumns")) initColumnSort(table);
+            initMarkColumn(table);
         }
     }
     if (settings.get("rowClick")) initRowClick();
@@ -1042,6 +1394,17 @@ function initLists() {
     if (sortTable && !sortTable.matches(".tablebg, .forumline")) sortTable.setAttribute("data-rr-sortfoot", "");
 
     dedupeSearchBoxes();
+    tidyLinkStrips();
+    dropBrokenImages();
+
+    /* A private message draws its signature divider as a run of
+       underscores in the body, with no signature node for the topic
+       pass to find. Posts are left alone: there the divider is already
+       a rule, and a run of underscores inside a message is the poster's
+       own drawing. */
+    if (!PAGE.isTopic) {
+        for (const body of document.querySelectorAll("#wrapcentre .postbody")) replaceUnderscoreRules(body);
+    }
 
     /* Before the page-kind gate: the member list, the message folders
        and the control panel are none of those kinds and were getting
@@ -1078,6 +1441,9 @@ function initLists() {
 
     let setTag = () => {};
     for (const entry of entries) {
+        // Read once, here: the chip that filters on it and the routing
+        // below both want the answer and it does not change.
+        entry.unread = rowIsUnread(entry.row);
         if (settings.get("prefixTags")) {
             const { prefix, kind } = splitPrefix(entry.title);
             const applied = decorateTitle(entry, filtering ? (value) => setTag(value) : null);
@@ -1096,6 +1462,19 @@ function initLists() {
             .slice(0, 8);
         const toolbar = buildToolbar(entries, prefixes, filtering);
         setTag = toolbar.setTag;
+
+        /* The chip this forum was left on. Restored only where the page
+           still offers it, and visibly pressed, so a filtered listing
+           never reads as a short one. */
+        const memoryKey = settings.get("rememberFilter") && filtering ? filterMemoryKey() : null;
+        if (memoryKey) {
+            const remembered = store.get(memoryKey, null);
+            if (remembered && prefixes.some(([name]) => name.toLowerCase() === remembered)) toolbar.setTag(remembered);
+            setTag = (value) => {
+                toolbar.setTag(value);
+                store.set(memoryKey, toolbar.tag());
+            };
+        }
 
         // The action bar and the filter bar carry one job between them
         // and sat as two separate cards with a gap, one above the other:

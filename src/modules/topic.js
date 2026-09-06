@@ -650,7 +650,7 @@ function modernisePost(post) {
         const summary = meta
             .map((node) => node.textContent.replace(/\s+/g, " ").trim())
             .join(" · ")
-            .replace(/(\S)\s*((?:Posts|Location|Gender|Age|Occupation|Interests|Website|Сообщения|Откуда|Пол|Возраст|Род занятий|Интересы|Сайт):)/g, "$1 · $2");
+            .replace(/(\S)\s*((?:Posts|Location|Gender|Age|Occupation|Interests|Website|Joined|Warnings|Rank|Сообщения|Откуда|Пол|Возраст|Род занятий|Интересы|Сайт|Зарегистрирован|Предупреждения):)/g, "$1 · $2");
         head.append(el("span.rr-posthead__meta", { title: summary }, [shortenPostMeta(summary)]));
     }
 
@@ -846,6 +846,38 @@ function addPostTools(post, index) {
     linkButton.addEventListener("click", () => copyText(postUrl(post.id), "Post link copied"));
     tools.append(linkButton);
 
+    /* Every mirror in this post, one to a line. A release post carries
+       three to six of them and queueing them in a download manager
+       meant opening each in turn. */
+    const own = ownContent(post.body);
+    const mirrors = Array.from(own.querySelectorAll("a[href]"))
+        .map((a) => a.getAttribute("href"))
+        .filter((href) => href && isOffsite(href));
+    const unique = mirrors.filter((href, at) => mirrors.indexOf(href) === at);
+    if (unique.length > 1) {
+        const linksButton = labelled(
+            el("button.rr-icon-btn", { type: "button" }, [icon("layers")]),
+            t("Copy every link in this post"));
+        linksButton.addEventListener("click", () => {
+            copyText(unique.map((href) => new URL(href, location.href).href).join("\n"),
+                t(unique.length === 1 ? "{n} link copied" : "{n} links copied", { n: unique.length }));
+        });
+        tools.append(linksButton);
+    }
+
+    /* The archive password this post names, if it names one. */
+    if (settings.get("finder") && settings.get("passwordFinder")) {
+        const password = passwordIn(own.textContent);
+        if (password) {
+            const chip = el("button.rr-pass", {
+                type: "button",
+                title: t("Copy the password"),
+            }, [el("span.rr-pass__label", {}, [t("Password")]), el("code.rr-pass__value", {}, [password])]);
+            chip.addEventListener("click", () => copyText(password, t("Password copied")));
+            tools.append(chip);
+        }
+    }
+
     const quoteButton = labelled(
         el("button.rr-icon-btn", { type: "button" }, [icon("quote")]), t("Copy as a quote"));
     quoteButton.addEventListener("click", () => {
@@ -901,7 +933,77 @@ function addPostTools(post, index) {
     labelPostTools(tools);
 }
 
+/* ---- Where you stopped reading ------------------------------------ */
+
+/* phpBB tracks unread posts for members and for nobody else, and even
+   for a member it says so with a bold row in a listing rather than a
+   line in the thread. This browser knows which post was the newest
+   here the last time this topic was open; the first one after it gets
+   the divider a mail client would draw. */
+function markNewSince(all, seen) {
+    if (!seen || !seen.lastPost || !seen.at) return;
+    const fresh = all.find((post) => (Number(post.id) || 0) > seen.lastPost);
+    if (!fresh || fresh === all[0]) return;
+    /* The board's language, not the browser's: "New since 4 sept." in
+       an English interface is one word in the wrong tongue. */
+    const locale = /^ru/i.test(document.documentElement.lang || "") ? "ru-RU" : "en-GB";
+    const when = new Date(seen.at);
+    const label = Number.isFinite(when.getTime())
+        ? t("New since {when}", { when: when.toLocaleDateString(locale, { day: "numeric", month: "short" }) })
+        : t("New since your last visit");
+    const rule = el("div.rr-since", { role: "separator", "aria-label": label }, [
+        el("span.rr-since__label", {}, [label]),
+    ]);
+    fresh.table.before(rule);
+}
+
+/* The page this topic was left on. A forty page thread opens at page
+   one however far in you were, and the board's own "first unread"
+   needs an account. */
+function offerResume(seen) {
+    const here = pagination();
+    if (!seen || !seen.page || !here.total || here.total < 2) return;
+    if (seen.page === here.current || seen.page > here.total) return;
+    const href = pageHref(seen.page);
+    if (!href) return;
+    const row = document.querySelector('.rr-topicbar__row[data-rr-row="here"]');
+    if (!row) return;
+    const link = el("a.rr-btn.rr-resume", {
+        href,
+        "data-variant": "quiet",
+        title: t("You were reading page {n} of this topic", { n: seen.page }),
+    }, [icon("clock", 13), t("Back to page {n}", { n: seen.page })]);
+    const spacer = row.querySelector(".rr-topicbar__spacer");
+    if (spacer) spacer.before(link);
+    else row.append(link);
+}
+
 /* ---- Signatures --------------------------------------------------- */
+
+/* The board draws a signature's divider as a run of underscores in the
+   message body. collapseSignature drops it on a post, where the
+   signature is a node of its own; a private message has no such node
+   and kept the underscores. Anywhere one is left, it becomes the rule
+   the rest of the script draws. */
+function replaceUnderscoreRules(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const found = [];
+    let node;
+    while ((node = walker.nextNode())) {
+        if (/^\s*_{5,}\s*$/.test(node.textContent)) found.push(node);
+    }
+    for (const text of found) {
+        const rule = el("hr.rr-rule");
+        text.replaceWith(rule);
+        // The <br> the template puts on either side of it would leave
+        // the rule floating in a band of its own.
+        for (const side of ["previousSibling", "nextSibling"]) {
+            const sibling = rule[side];
+            if (sibling && sibling.nodeType === 1 && sibling.tagName === "BR") sibling.remove();
+        }
+    }
+}
+
 
 function collapseSignature(post) {
     if (!post.signature) return;
@@ -975,23 +1077,61 @@ function initLightbox() {
            closes it, the keyboard kept inside while it is open, and the
            focus given back to the image's post when it goes. */
         const previous = document.activeElement;
+
+        /* The other pictures in the same post: a repack's screenshots
+           and a proof-it-works set are posted in a row, and opening
+           them one at a time meant closing the box between each. */
+        const holder = img.closest(".postbody, .rr-game") || document;
+        const gallery = Array.from(holder.querySelectorAll("img")).filter((node) => {
+            if (node.closest("a")) return false;
+            return node === img || node.naturalWidth >= 200;
+        });
+        let at = Math.max(0, gallery.indexOf(img));
+
+        const shown = el("img", { src: img.currentSrc || img.src, alt: img.alt || "" });
         const closeButton = el("button.rr-icon-btn.rr-lightbox__close", {
             type: "button",
             "aria-label": t("Close the image"),
         }, [icon("close")]);
+        const counter = el("span.rr-lightbox__count");
+        const back = el("button.rr-icon-btn.rr-lightbox__step", {
+            type: "button", "aria-label": t("Previous image"),
+        }, [icon("chevronL")]);
+        const forward = el("button.rr-icon-btn.rr-lightbox__step.rr-lightbox__step--next", {
+            type: "button", "aria-label": t("Next image"),
+        }, [icon("chevron")]);
+        const show = (index) => {
+            at = (index + gallery.length) % gallery.length;
+            const next = gallery[at];
+            shown.src = next.currentSrc || next.src;
+            shown.alt = next.alt || "";
+            counter.textContent = (at + 1) + " / " + gallery.length;
+        };
+
         const box = el("div.rr-lightbox", {
             role: "dialog",
             "aria-modal": "true",
             "aria-label": img.alt || t("Image"),
             tabindex: "-1",
-        }, [
-            el("img", { src: img.currentSrc || img.src, alt: img.alt || "" }),
-            closeButton,
-        ]);
+        }, [shown, closeButton]);
+        if (gallery.length > 1) {
+            box.append(back, forward, counter);
+            show(at);
+        }
+
         let release = () => {};
         const close = () => { box.remove(); document.removeEventListener("keydown", onKey); release(); };
-        const onKey = (e) => { if (e.key === "Escape") close(); };
-        box.addEventListener("click", close);
+        const onKey = (e) => {
+            if (e.key === "Escape") close();
+            else if (gallery.length > 1 && e.key === "ArrowRight") { e.preventDefault(); show(at + 1); }
+            else if (gallery.length > 1 && e.key === "ArrowLeft") { e.preventDefault(); show(at - 1); }
+        };
+        // A click on the picture or a control is not a click on the way
+        // out; everything else closes it, as it did before.
+        box.addEventListener("click", (e) => { if (e.target === box) close(); });
+        shown.addEventListener("click", () => { if (gallery.length > 1) show(at + 1); else close(); });
+        back.addEventListener("click", () => show(at - 1));
+        forward.addEventListener("click", () => show(at + 1));
         document.addEventListener("keydown", onKey);
         document.body.append(box);
         release = trapFocus(box, previous instanceof HTMLElement ? previous : null);
@@ -1042,22 +1182,35 @@ function markExternalLinks() {
 function initTopic() {
     if (!PAGE.isTopic) return;
 
+    /* Read before it is written over: where this topic was left, and
+       which post was the newest here at the time. */
+    let seen = null;
+    if (settings.get("history") && PAGE.topicId) {
+        seen = store.get("history", []).find((item) => item.id === String(PAGE.topicId)) || null;
+    }
+
+    const all = posts();
+
     if (settings.get("history") && PAGE.topicId) {
         markVisited(String(PAGE.topicId));
         const heading = document.querySelector("#pageheader h2 a.titles, #pageheader h2");
         if (heading) {
             const list = store.get("history", []).filter((item) => item.id !== String(PAGE.topicId));
+            const here = pagination();
+            const newest = all.reduce((top, post) => Math.max(top, Number(post.id) || 0), 0);
             list.unshift({
                 id: String(PAGE.topicId),
                 title: heading.textContent.trim(),
                 href: "./viewtopic.php?t=" + PAGE.topicId,
                 at: Date.now(),
+                page: here.current || 1,
+                // Never lower: coming back to page 1 of a topic already
+                // read to the end does not un-read it.
+                lastPost: Math.max(Number(seen && seen.lastPost) || 0, newest),
             });
             store.set("history", list.slice(0, settings.get("historyLimit")));
         }
     }
-
-    const all = posts();
 
     const modern = settings.get("postLayout") === "modern";
     if (modern) {
@@ -1102,5 +1255,9 @@ function initTopic() {
     });
 
     if (settings.get("lightbox")) initLightbox();
+    if (settings.get("history") && settings.get("resumeReading")) {
+        markNewSince(all, seen);
+        offerResume(seen);
+    }
     if (settings.get("linkifyBare")) markExternalLinks();
 }

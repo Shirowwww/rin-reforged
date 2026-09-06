@@ -472,6 +472,58 @@ work had never looked.
   whole line and set the date down letter by letter; the folder's export
   controls, two floats in a cell, spilled over the sort form under them
   and are a card of their own.
+- **0.10.0** is two passes at once: every defect a full desktop tour
+  turned up, and the quality-of-life work that tour kept suggesting.
+  A corpus of 124 screenshots was taken first — every page type, four
+  widths from 1280 to 2560, four themes, both densities, the three
+  content widths, the classic post layout, the largest text size, and
+  the script's own panels — and read against the source.
+
+  What was wrong. The template's 1px spacer rows are cells the board
+  paints black, and they drew a black band across every private
+  message and between every search result. A cell this script empties
+  was then hidden, which in a data table does not blank a column but
+  removes it: the Team page drew four values under five headings, and
+  the board does the same thing itself to the e-mail cell of a member
+  who has none. Both are put back, and a roster's headings now sit
+  over their own columns rather than left of them. A folded short
+  reply is one line that does not wrap, and inside a table that made
+  the table 2044px wide and pushed the whole page sideways; those
+  posts are blocks now. A post's header dropped its controls to a
+  second line while the date stayed alone on the first — the meta line
+  gives way instead, and on a roomy window the controls do not shrink
+  at all. "Warnings: 1/3Joined: 14 May 2017" was missing its
+  separator. The arrow to the first unread post was painted in the ink
+  meant for text *on* the accent, which is near-black on every dark
+  theme. The board's own search box put its Search button under its
+  field, because the field carries a floor wider than the line it has.
+  The command palette drew 500px of empty box under a search with one
+  answer, because a flex child stretches to the height it is allowed.
+  A private message kept the run of underscores the board draws a
+  signature divider with. Strips of links joined by pipes — "Previous
+  PM in history | Next PM", "[ Add friend | Add foe ]" — are a row
+  with a gap. An image the board points at nothing drew as the
+  browser's broken-image mark.
+
+  What is new. A listing sorts by clicking a column: Replies, Views,
+  Author, Last post, Posts, Rank, the lot, on the rows already on the
+  page, with announcements kept in their own section and a third click
+  for the board's own order. The column headings stay in view while
+  their listing is on screen. A listing with unread rows gets an
+  Unread chip beside the prefix chips, and the prefix chip can be
+  remembered per forum. A message folder gets a control that marks the
+  page and shift-click for a range. A topic you have read before opens
+  with a control back to the page you were on and a divider before the
+  first post newer than your last visit — kept in this browser, so it
+  works logged out, where phpBB's own unread tracking does not exist.
+  A post that names an archive password offers it with a copy button,
+  read strictly enough that "the standard password" and "password
+  protected" name nothing. A post with several mirrors can copy them
+  all at once. The Releases panel says which host each release is on
+  and can copy its list as text. The lightbox is a gallery: the other
+  pictures in the same post, with arrow keys. And the posting options
+  — Notify me, Attach a signature, Disable BBCode — are remembered
+  between posts, except when editing, where they belong to the post.
 
 ### It reads Russian
 

@@ -312,3 +312,35 @@ function initCompose() {
 
     if (settings.get("selectionQuote")) initSelectionQuote();
 }
+
+/* ---- The posting options ------------------------------------------ */
+
+/* "Notify me when a reply is posted", "Attach a signature", "Disable
+   BBCode": five checkboxes under every message box, reset to the
+   board's defaults every single time. Whatever was ticked when a post
+   was last written is ticked again on the next one.
+
+   Only when writing something new. Editing an existing post loads that
+   post's own options, and overwriting them would quietly change what
+   is already published. */
+const POSTING_OPTIONS = ["disable_bbcode", "disable_smilies", "disable_magic_url", "attach_sig", "notify"];
+
+function initPostingMemory() {
+    if (!PAGE.isPosting && !PAGE.isUCP) return;
+    if (!settings.get("postingMemory")) return;
+    if (/mode=edit|mode=delete|mode=quote_edit/.test(location.search)) return;
+
+    const remembered = store.get("posting", null);
+    for (const name of POSTING_OPTIONS) {
+        const box = document.querySelector('#wrapcentre input[type="checkbox"][name="' + name + '"]');
+        if (!box) continue;
+        if (remembered && Object.prototype.hasOwnProperty.call(remembered, name)) {
+            box.checked = Boolean(remembered[name]);
+        }
+        box.addEventListener("change", () => {
+            const next = store.get("posting", {}) || {};
+            next[name] = box.checked;
+            store.set("posting", next);
+        });
+    }
+}

@@ -28,6 +28,17 @@ checks this repository and offers new versions on its own.
 
 ## What it does
 
+- **Sorts a listing where the board cannot.** Click Replies, Views, Author or
+  Last post to reorder the rows already on the page; the headings stay in view
+  as you scroll, and an **Unread** chip narrows a hundred rows to the ones with
+  something new in them.
+- **Remembers where you stopped.** A topic you have read before opens with a
+  control back to the page you were on and a divider before the first post
+  newer than your last visit — in this browser, so it works logged out too.
+- **Reads the release for you.** The Releases panel names the file host behind
+  every entry and copies the list as text; a post that states an archive
+  password offers it with a copy button, and a post with several mirrors copies
+  them all at once.
 - **Four themes** — Native (the board's own black/grey/red, the default),
   Slate, Carbon and a real light theme — six accent colours, three densities
   and an adjustable text size.

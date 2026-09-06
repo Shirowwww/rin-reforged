@@ -33,6 +33,7 @@ function applyTheme() {
     root.setAttribute("data-rr-page", PAGE.isTopic ? "topic" : PAGE.isForum ? "forum" : PAGE.isIndex ? "index" : PAGE.isSearch ? "search" : "other");
     root.setAttribute("data-rr-icons", settings.get("modernIcons") ? "on" : "off");
     root.setAttribute("data-rr-nav", settings.get("navbar") ? "on" : "off");
+    root.setAttribute("data-rr-sticky", settings.get("stickyHeads") ? "on" : "off");
     root.toggleAttribute("data-rr-still", Boolean(settings.get("reduceMotion")));
 
     root.style.setProperty("--rr-fs", settings.get("fontSize") + "px");

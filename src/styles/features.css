@@ -84,6 +84,13 @@ html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead__date { display: none; }
 
    A flex row on the cell puts the three on one line properly, and the
    message is then a flex item, which is a box that can be clipped. */
+/* Blocks, not a table. The message is one nowrap line, and a table
+   sizes itself to its content: on a desktop the folded post grew to
+   2044px and pushed the whole page sideways. As blocks the row is the
+   width it is given and the message is clipped inside it. */
+html[data-rr] table.tablebg[data-rr-quiet],
+html[data-rr] table.tablebg[data-rr-quiet] > tbody,
+html[data-rr] table.tablebg[data-rr-quiet] > tbody > tr { display: block; }
 html[data-rr] table.tablebg[data-rr-quiet] td:has(> .postbody) {
     display: flex;
     align-items: baseline;
@@ -716,7 +723,7 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
     font: 600 var(--rr-fs-xs) / 1.4 var(--rr-font-mono);
     color: var(--rr-faint);
 }
-.rr-releases__empty { margin: 0; padding: var(--rr-s5) var(--rr-card-pad); color: var(--rr-faint); font-size: var(--rr-fs-sm); }
+.rr-releases__empty { margin: 0; padding: var(--rr-s3) var(--rr-card-pad); color: var(--rr-faint); font-size: var(--rr-fs-sm); }
 
 @media (max-width: 720px) {
     /* Two lines: what it is, then who and where. The five-column line
@@ -734,3 +741,59 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
 
 /* "Only posts with links" (finder.js) reaches the panel's rows too. */
 .rr-releases__row[data-rr-nolink] { display: none; }
+
+/* ---- The archive password ----------------------------------------- */
+
+/* Read off the post by finder.js and offered where the post's other
+   controls are, because that is where a reader is already looking. */
+html[data-rr] button.rr-pass {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 25px;
+    padding: 0 8px;
+    background: var(--rr-accent-soft);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-pill);
+    color: var(--rr-accent-ink, var(--rr-text-strong));
+    cursor: pointer;
+    font: 500 var(--rr-fs-xs) / 1 var(--rr-font);
+}
+html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
+.rr-pass__label { color: var(--rr-muted); }
+.rr-pass__value { font-family: var(--rr-mono, ui-monospace, monospace); font-size: var(--rr-fs-xs); }
+
+/* ---- New since your last visit ------------------------------------ */
+
+/* The divider a mail client draws, in a thread that has none: this
+   browser knows which post was newest here last time. */
+.rr-since {
+    display: flex;
+    align-items: center;
+    gap: var(--rr-s3);
+    margin: var(--rr-post-gap) 0;
+    color: var(--rr-accent);
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
+}
+.rr-since::before,
+.rr-since::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--rr-accent);
+    opacity: .45;
+}
+.rr-since__label { white-space: nowrap; }
+
+/* ---- Which host a release is on ----------------------------------- */
+
+.rr-releases__hosts { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.rr-releases__host {
+    padding: 1px 7px;
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-pill);
+    color: var(--rr-muted);
+    font-size: var(--rr-fs-xs);
+    white-space: nowrap;
+}
+.rr-releases__host--more { color: var(--rr-faint); }
