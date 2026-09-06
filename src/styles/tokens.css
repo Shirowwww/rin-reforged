@@ -60,7 +60,6 @@ html[data-rr] {
     --rr-danger:        #d9635a;
 
     --rr-selection:     #2f4a63;
-    --rr-mark:          #5a4a1e;
 
     /* Type */
     --rr-font: "Inter", "Inter var", ui-sans-serif, "Segoe UI Variable Text",
@@ -75,7 +74,6 @@ html[data-rr] {
     --rr-fs-sm:         max(12px, calc(var(--rr-fs) - 2px));
     --rr-fs-xs:         max(11px, calc(var(--rr-fs) - 3px));
     --rr-fs-lg:         calc(var(--rr-fs) + 3px);
-    --rr-fs-h1:         calc(var(--rr-fs) + 9px);
     --rr-lh:            1.7;
     /* Leading for supporting detail — the author line under a topic
        title, the joined last-post line, the pagination strip. It was
@@ -95,7 +93,6 @@ html[data-rr] {
     --rr-s4: 16px;
     --rr-s5: 24px;
     --rr-s6: 32px;
-    --rr-s7: 48px;
 
     /* The sticky top bar's height, so anything that has to sit on its
        edge does not carry its own copy of the number. */
@@ -111,7 +108,6 @@ html[data-rr] {
     /* Only genuinely floating things cast a shadow. Surfaces separate
        by value and a hairline instead. */
     --rr-shadow-pop: 0 8px 24px -6px rgba(0, 0, 0, .55), 0 2px 6px rgba(0, 0, 0, .35);
-    --rr-shadow-bar: 0 1px 0 var(--rr-line);
 
     /* Vertical padding on a listing cell.
 
@@ -127,24 +123,13 @@ html[data-rr] {
     --rr-row-pad:     9px;
     --rr-post-gap:    var(--rr-s5);
 
-    /* How wide the page frame gets.
+    /* How wide the page frame gets. Fluid with a ceiling, because a
+       fixed column is right for prose and wrong for a frame that also
+       holds a six-column listing, a pager and the releases panel.
 
-       This was a flat 1200px, and on a 1900px window that is 350px of
-       nothing down each side — on every page, including the index,
-       where it left the board's own masthead art stranded in the
-       middle of a black field. A fixed column is the right answer for
-       prose and the wrong one for a frame that also has to hold a
-       listing with six columns, a pager, an action bar and the
-       releases panel.
-
-       So the frame is fluid with a ceiling, and the two jobs are split
-       between two tokens: this one sizes the frame, --rr-measure still
-       caps the line length of anything that is actually read as prose.
-       Widening the frame therefore does not lengthen a line of a post.
-
-       1560px is the ceiling and 95vw the slope, which lands the frame
-       at the window's width up to about 1640px and holds it there
-       above. */
+       Two tokens, two jobs: this sizes the frame, --rr-measure caps
+       the line length of anything read as prose, so widening one does
+       not lengthen the other. */
     --rr-content-max: min(1560px, 95vw);
 
     /* The inside edge of a card the script draws. Two passes of
@@ -270,7 +255,6 @@ html[data-rr][data-rr-theme="paper"] {
     --rr-warn:          #96660f;
     --rr-danger:        #a83c2c;
     --rr-selection:     #cfe0f0;
-    --rr-mark:          #fbeaae;
     --rr-shadow-pop: 0 8px 24px -8px rgba(20, 26, 34, .22), 0 2px 6px rgba(20, 26, 34, .10);
 }
 

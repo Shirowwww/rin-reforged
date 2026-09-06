@@ -1,38 +1,25 @@
 /* ------------------------------------------------------------------
    Folding low-value replies.
 
-   A release thread on this board runs to hundreds of posts and a good
-   half of them are "thanks!", "+1", or a single emoji. They are not
-   spam and they are not worth deleting — people say thank you and that
-   is fine — but scrolling past forty of them to reach the next mirror
-   is the second-worst thing about reading a long topic here.
+   Half a long release thread is "thanks!", "+1" and a lone emoji, and
+   scrolling past forty of them to reach the next mirror is most of
+   what makes one hard to read.
 
-   The prior art for this is a script that hid every post except the
-   ones by a hardcoded list of trusted uploaders. That gets the right
-   page for the wrong reason: the list ages badly, it silently buries
-   whoever is not on it, and the day a regular posts a working mirror
-   it is invisible. Nothing here knows who anybody is.
+   What is read is what a post says, never who wrote it: a post
+   carrying a link, a version, code, a real image, a question mark or a
+   word that reports a problem is never folded, whatever its length.
+   The prior art here is a script that hid everyone not on a list of
+   trusted uploaders, which ages badly and buries the day's working
+   mirror.
 
-   What it reads instead is what the post says. A post carrying a link,
-   a version number, code, a real image, a question mark or a word that
-   reports a problem is never folded, whatever its length. What is left
-   is short, says nothing on its own, and folds to one dim line that
-   opens on a click.
-
-   Folded, not removed: the reply stays where it is, laid out, in the
-   accessibility tree and findable by find-in-page. The box drawn
-   around it is smaller. That is the whole of it.
+   Folded, not removed: the reply stays laid out, in the accessibility
+   tree and findable by find-in-page, with a smaller box around it.
    ------------------------------------------------------------------ */
 
 /* A short post that still reports something. "Link is dead" is four
    words and it is the most useful thing on the page. */
 const QUIET_EXCLUDE_RE =
     /\b(dead|down|broken|offline|expired|removed|missing|error|crash(?:es|ing)?|fail(?:s|ed|ing)?|bug|fix(?:ed|es)?|issue|problem|virus|malware|help|404|not work|doesn'?t work|does not work|won'?t (?:start|launch|run)|please)\b/i;
-
-/** Everything the post says on its own, quotes excluded. */
-function quietText(post) {
-    return ownContent(post.body).textContent.replace(/\s+/g, " ").trim();
-}
 
 /**
  * Is this reply short enough, and empty enough, to fold?
@@ -67,13 +54,6 @@ function isQuietPost(post, limit) {
     if (QUIET_EXCLUDE_RE.test(text)) return false;
 
     return true;
-}
-
-/** The one line a folded reply shows. */
-function quietPreview(post) {
-    const text = quietText(post);
-    if (!text) return "(no text)";
-    return text.length > 90 ? text.slice(0, 87) + "…" : text;
 }
 
 function setQuiet(post, folded) {

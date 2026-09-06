@@ -95,7 +95,6 @@ html[data-rr] {
     --rr-danger:        #d9635a;
 
     --rr-selection:     #2f4a63;
-    --rr-mark:          #5a4a1e;
 
     /* Type */
     --rr-font: "Inter", "Inter var", ui-sans-serif, "Segoe UI Variable Text",
@@ -110,7 +109,6 @@ html[data-rr] {
     --rr-fs-sm:         max(12px, calc(var(--rr-fs) - 2px));
     --rr-fs-xs:         max(11px, calc(var(--rr-fs) - 3px));
     --rr-fs-lg:         calc(var(--rr-fs) + 3px);
-    --rr-fs-h1:         calc(var(--rr-fs) + 9px);
     --rr-lh:            1.7;
     /* Leading for supporting detail — the author line under a topic
        title, the joined last-post line, the pagination strip. It was
@@ -130,7 +128,6 @@ html[data-rr] {
     --rr-s4: 16px;
     --rr-s5: 24px;
     --rr-s6: 32px;
-    --rr-s7: 48px;
 
     /* The sticky top bar's height, so anything that has to sit on its
        edge does not carry its own copy of the number. */
@@ -146,7 +143,6 @@ html[data-rr] {
     /* Only genuinely floating things cast a shadow. Surfaces separate
        by value and a hairline instead. */
     --rr-shadow-pop: 0 8px 24px -6px rgba(0, 0, 0, .55), 0 2px 6px rgba(0, 0, 0, .35);
-    --rr-shadow-bar: 0 1px 0 var(--rr-line);
 
     /* Vertical padding on a listing cell.
 
@@ -162,24 +158,13 @@ html[data-rr] {
     --rr-row-pad:     9px;
     --rr-post-gap:    var(--rr-s5);
 
-    /* How wide the page frame gets.
+    /* How wide the page frame gets. Fluid with a ceiling, because a
+       fixed column is right for prose and wrong for a frame that also
+       holds a six-column listing, a pager and the releases panel.
 
-       This was a flat 1200px, and on a 1900px window that is 350px of
-       nothing down each side — on every page, including the index,
-       where it left the board's own masthead art stranded in the
-       middle of a black field. A fixed column is the right answer for
-       prose and the wrong one for a frame that also has to hold a
-       listing with six columns, a pager, an action bar and the
-       releases panel.
-
-       So the frame is fluid with a ceiling, and the two jobs are split
-       between two tokens: this one sizes the frame, --rr-measure still
-       caps the line length of anything that is actually read as prose.
-       Widening the frame therefore does not lengthen a line of a post.
-
-       1560px is the ceiling and 95vw the slope, which lands the frame
-       at the window's width up to about 1640px and holds it there
-       above. */
+       Two tokens, two jobs: this sizes the frame, --rr-measure caps
+       the line length of anything read as prose, so widening one does
+       not lengthen the other. */
     --rr-content-max: min(1560px, 95vw);
 
     /* The inside edge of a card the script draws. Two passes of
@@ -305,7 +290,6 @@ html[data-rr][data-rr-theme="paper"] {
     --rr-warn:          #96660f;
     --rr-danger:        #a83c2c;
     --rr-selection:     #cfe0f0;
-    --rr-mark:          #fbeaae;
     --rr-shadow-pop: 0 8px 24px -8px rgba(20, 26, 34, .22), 0 2px 6px rgba(20, 26, 34, .10);
 }
 
@@ -397,24 +381,18 @@ html[data-rr] body.ltr {
 
 html[data-rr] ::selection { background: var(--rr-selection); color: var(--rr-text-strong); }
 
-/* Held back until the script has rebuilt the page (main.js, markReady).
-   What the browser painted first was the board's own layout in these
-   colours — masthead gone, tables restyled, nothing else yet — and a
-   frame later everything jumped into place. Nothing is drawn until it
-   is in place; the attribute lands whatever happens, on a watchdog if
-   nothing else, so this can never leave a blank page.
+/* Held back until the script has rebuilt the page (main.js,
+   markReady), so the board's own layout in these colours is never
+   painted for a frame before everything jumps into place. The
+   attribute lands whatever happens, on a watchdog if nothing else, so
+   this can never leave a blank page.
 
-   The root carries the page colour as well as the body, so the moment
-   the stylesheet lands the window is the theme's own dark rather than
-   the browser's white — with the body hidden there is nothing else to
-   paint it.
+   The root carries the page colour too: with the body hidden there is
+   nothing else to paint the window the theme's own dark.
 
-   \`opacity\`, not \`visibility\`, and the difference is 44ms of style
-   work on a listing. \`visibility\` is an inherited property: taking
-   the gate off changes it on <body>, and every one of the four
-   thousand elements under it has to be recalculated. \`opacity\` is
-   not inherited, so the same flip touches one element. Measured
-   both ways against test/perf.js — 106ms and 62ms on viewforum. */
+   \`opacity\`, not \`visibility\`, and the difference measured 44ms on a
+   listing: \`visibility\` is inherited, so lifting the gate recalculates
+   every element under <body>. \`opacity\` is not. */
 html[data-rr] { background: var(--rr-bg); }
 html[data-rr]:not([data-rr-ready]) body,
 html[data-rr]:not([data-rr-ready]) body.ltr { opacity: 0; }
@@ -703,14 +681,25 @@ html[data-rr] td.row5 { background: var(--rr-surface-2); }
 
 /* Alternating rows.
 
-   The board alternates row1 and row2 down every listing, and that
-   banding is how a reader tracks one topic's title across to its last
-   post without losing the line. Painting both the same colour is what
-   made a 108-topic page read as one undifferentiated block.
+   Banding is how a reader tracks one topic's title across to its last
+   post without losing the line, and the board's own row1/row2 cannot
+   draw it: it alternates them across the columns of a single row. So
+   the shade is read off an attribute lists.js writes on the row
+   (restripe), which covers every cell of it — the marker gutter the
+   template gives a class of its own included.
 
-   Only listings get it: lists.js marks those tables, because in a topic
-   the same two classes wrap whole posts and striping those would band
-   the thread rather than the rows. */
+   Only listings: in a topic the same classes wrap whole posts, and
+   striping those would band the thread rather than the rows. */
+/* Only while the table is still a grid. On a phone a row is a card,
+   the shade is the card's, and the counters are painted out with
+   !important — a stripe on the cells there would draw half a row. */
+@media (min-width: 861px) {
+    html[data-rr] table[data-rr-list] > tbody > tr[data-rr-stripe] > td { background: var(--rr-surface); }
+    html[data-rr] table[data-rr-list] > tbody > tr[data-rr-stripe="b"] > td { background: var(--rr-surface-2); }
+    html[data-rr] table[data-rr-list] > tbody > tr[data-rr-stripe]:hover > td { background: var(--rr-surface-3); }
+}
+/* Under that width, and on a listing this script could not read the
+   shape of, the board's own banding is what is left. */
 html[data-rr] table[data-rr-list] td.row2 { background: var(--rr-surface-2); }
 /* On the member list the post count sits right-aligned against the
    rank's left edge — "147 Advanced forumer" read as one string. A
@@ -718,8 +707,8 @@ html[data-rr] table[data-rr-list] td.row2 { background: var(--rr-surface-2); }
 html[data-rr] table[data-rr-list] th[data-rr-col="posts"],
 html[data-rr] table[data-rr-list] td[data-rr-col="posts"] { padding-right: 28px; }
 
-/* The member list stripes its rows, not its cells: <tr class="row2">
-   over plain td.gen. The same shade, read off the row. */
+/* The member list stripes its rows rather than its cells: <tr
+   class="row2"> over plain td.gen. The same shade, read off the row. */
 html[data-rr] table[data-rr-list] > tbody > tr.row2 > td { background: var(--rr-surface-2); }
 html[data-rr] table[data-rr-list] > tbody > tr.row1:hover > td,
 html[data-rr] table[data-rr-list] > tbody > tr.row2:hover > td { background: var(--rr-surface-3); }
@@ -886,7 +875,7 @@ html[data-rr] [data-rr-date] { white-space: nowrap; }
    above paints as body text: Profile, Board preferences and the rest
    read as headings and nobody clicks a heading. They are links. */
 html[data-rr] a.nav { color: var(--rr-link); }
-html[data-rr] a.nav:hover { color: var(--rr-link-hover, var(--rr-link)); text-decoration: underline; }
+html[data-rr] a.nav:hover { color: var(--rr-link); text-decoration: underline; }
 
 /* The posting form's filehost warning sits at 10.4px, under the floor
    everything else in the interface keeps to. */
@@ -1091,6 +1080,15 @@ html[data-rr] .spoiler input[type="button"] {
 
 html[data-rr] .postbody a { color: var(--rr-link); }
 html[data-rr] .postbody a:visited { color: var(--rr-link-visited); }
+/* Where an off-site link goes, said after it (topic.js). A rule of its
+   own rather than inherited from the link, so it stays quiet on hover
+   too. */
+html[data-rr] .rr-host {
+    margin-left: 5px;
+    font-size: var(--rr-fs-xs);
+    font-family: var(--rr-font-mono);
+    color: var(--rr-faint);
+}
 
 /* Quotes: a rule and a tint, not a boxed card. */
 html[data-rr] blockquote,
@@ -1816,6 +1814,11 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     position: sticky;
     top: 0;
     z-index: 900;
+    /* --rr-nav-h is what a sticky column heading offsets itself by and
+       what scroll-padding-top is worked out from, so it has to be the
+       whole bar: border-box, or the rule under it makes the bar a
+       pixel taller than everything measuring it believes. */
+    box-sizing: border-box;
     height: var(--rr-nav-h);
     padding: 0 var(--rr-s4);
     background: color-mix(in srgb, var(--rr-bg) 88%, transparent);
@@ -1837,29 +1840,44 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     margin: 0 auto;
     min-width: 0;
 }
-/* The name, as type, quietly. A hairline after it is what separates
-   "whose board" from "where on it", where a grey badge used to. */
+/* The wordmark, then a hairline: "whose board" separated from "where
+   on it".
+
+   The box is taller than the wordmark on purpose — a link 15px tall is
+   a hard thing to hit — and the hairline is drawn rather than
+   bordered, so growing the target does not grow the rule with it. 18px
+   is the height .rr-nav__divide uses at the other end of the bar. */
 .rr-nav__brand {
+    position: relative;
     display: flex;
     align-items: center;
     flex: none;
+    height: 34px;
     padding-right: var(--rr-s3);
-    border-right: 1px solid var(--rr-line);
     line-height: 1;
+}
+.rr-nav__brand::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 0;
+    width: 1px;
+    height: 18px;
+    margin-top: -9px;
+    background: var(--rr-line);
 }
 /* \`html[data-rr] a\` outranks a bare class, and painted the name in
    the board's link red. */
 html[data-rr] a.rr-nav__brand { color: var(--rr-text); }
 html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-text-strong); }
 
-/* The board sets its name in wide-tracked caps; that tracking is most
-   of what makes the wordmark recognisable, so it is kept rather than
-   the tight default the rest of the interface uses. */
-.rr-nav__word {
-    font-weight: 700;
-    letter-spacing: .13em;
-    font-size: var(--rr-fs-xs);
-    text-transform: uppercase;
+/* The wordmark, built as an inline <svg> in navbar.js and filled with
+   currentColor. Height is the only number to set — the viewBox gives
+   the width. */
+.rr-nav__logo {
+    display: block;
+    height: 15px;
+    width: auto;
 }
 
 /* ---- Board links -------------------------------------------------- */
@@ -3701,10 +3719,12 @@ html[data-rr] .rr-bbtool--menu select { height: 30px; padding: 0 6px; }
    every button, and a removed one throws on all of them — and stops
    being a field the eye reads as a second Subject box. */
 html[data-rr] input[data-rr-helpbox] { display: none; }
-/* Its row also carries the heading over the colour palette, so the row
-   stays and closes up to the height of that one word. */
 html[data-rr] tr[data-rr-helprow] > td { padding: 0 0 var(--rr-s2); }
-html[data-rr] tr[data-rr-helprow] > td.genmed {
+
+/* The heading over the colour palette, moved into the swatches' own
+   cell (compose.js, movePaletteHeading). */
+html[data-rr] .rr-palette-head {
+    margin-bottom: var(--rr-s2);
     color: var(--rr-faint);
     font-size: var(--rr-fs-xs);
     letter-spacing: .04em;
@@ -4417,13 +4437,13 @@ html[data-rr] button.rr-pass {
     background: var(--rr-accent-soft);
     border: 1px solid var(--rr-line);
     border-radius: var(--rr-radius-pill);
-    color: var(--rr-accent-ink, var(--rr-text-strong));
+    color: var(--rr-text-strong);
     cursor: pointer;
     font: 500 var(--rr-fs-xs) / 1 var(--rr-font);
 }
 html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
 .rr-pass__label { color: var(--rr-muted); }
-.rr-pass__value { font-family: var(--rr-mono, ui-monospace, monospace); font-size: var(--rr-fs-xs); }
+.rr-pass__value { font-family: var(--rr-font-mono); font-size: var(--rr-fs-xs); }
 
 /* ---- New since your last visit ------------------------------------ */
 
@@ -4511,6 +4531,14 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
     html[data-rr] #wrapcentre { padding-top: var(--rr-s3); }
 
     html[data-rr] .rr-nav { padding: 0 var(--rr-s2); gap: var(--rr-s2); }
+    /* The wordmark is 10 times as wide as it is tall, so a couple of
+       pixels off its height is 20px of a 390px bar. */
+    html[data-rr] .rr-nav__logo { height: 12px; }
+    html[data-rr] .rr-nav__brand { height: 34px; padding-right: var(--rr-s2); }
+
+    /* The prefix chips are a filter here, not a label on a title: 18px
+       is a fine badge and a poor thing to hit with a thumb. */
+    html[data-rr] .rr-toolbar__tags .rr-tag { height: 26px; padding: 0 10px; }
     /* Collapsed to a bare glyph, this control kept the desktop pill's
        frame — a border and a sunken fill — so it sat in the bar as a
        boxed search field beside two borderless icon buttons: three
@@ -4621,8 +4649,7 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
     html[data-rr] td[data-rr-col="title"] a.topictitle,
     html[data-rr] td[data-rr-col="title"] a.forumlink { font-weight: 600; line-height: 1.35; }
     html[data-rr] td[data-rr-col="title"] p.forumdesc,
-    html[data-rr] td[data-rr-col="title"] p.gensmall,
-    html[data-rr] td[data-rr-col="title"] .rr-in {
+    html[data-rr] td[data-rr-col="title"] p.gensmall {
         display: block;
         margin: 3px 0 0;
         font-size: var(--rr-fs-xs);
@@ -4761,7 +4788,7 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
 }
 
 @media (max-width: 480px) {
-    html[data-rr] { --rr-fs: 15px; --rr-fs-h1: calc(var(--rr-fs) + 5px); }
+    html[data-rr] { --rr-fs: 15px; }
 
     /* Once the bar wraps, the divider before the board search separates
        nothing. */
@@ -4841,52 +4868,33 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
 }
 
 /* ------------------------------------------------------------------
-   The listing card's marker gutter, revisited.
+   The listing card's marker gutter.
 
    The gutter cell holds the read/unread dot and, on a bookmarkable
-   row, the star: two flex children of one cell (lists.js appends the
-   star beside the dot, on purpose — see addBookmarkStar). On a phone
-   card the gutter and the title are both order:0 flex children of the
-   same cell, meant to share the first line; with the star's 34px tap
-   target added to the dot's width, the two together no longer left
-   the title's own 80% minimum room beside them, so the title dropped
-   to a line of its own under a line that was just a dot and a star.
+   row, the star (lists.js appends it there on purpose — see
+   addBookmarkStar). On a phone card the gutter and the title share the
+   first line, and the star's 34px tap target beside the dot left the
+   title under its own 80% minimum, so the title dropped to a line of
+   its own under a line that was a dot and a star.
 
-   The star moves to the card's own top-right corner instead — out of
-   the gutter's width entirely — so the gutter goes back to being just
-   the dot's width and the dot and the title share the first line the
-   way every other listing shape on this board does.
+   The star moves to the card's top-right corner instead, out of the
+   gutter's width, and the dot and the title share the first line
+   again.
    ------------------------------------------------------------------ */
 @media (max-width: 860px) {
     html[data-rr] table.tablebg > tbody > tr { position: relative; }
 
-    /* forum.css floors this cell at 44px so a listing's marker column
-       does not get squeezed onto the marker on a wide table — right
-       for a column, far too wide for a card the star no longer lives
-       in. Repeating the phone selector here (same specificity as the
-       block above, so it wins on being later) drops the floor back to
-       the dot's own width, which is what leaves the title's 80%
-       minimum room beside it on the first line.
+    /* forum.css floors this cell at 44px, which is right for a column
+       and far too wide for a card. Repeating the phone selector here
+       (same specificity, later, so it wins) drops the floor to the
+       dot's own width and leaves the title its 80% beside it.
 
-       The star is still a child of this cell in the markup — moving it
-       in lists.js just to give it a new home in CSS was more than the
-       fix needed — so its box (below, position:absolute against the
-       row) still has to fit *inside* this cell's own box: a child
-       drawn past its parent's edge is exactly the shape the "no cell
-       draws its content outside itself" check exists to catch, and an
-       earlier version of this rule that shrank the gutter down to the
-       dot's height alone tripped it, star and all. align-self and
-       min-height give the gutter the star's own height and pin it to
-       the row's top edge, which is enough room.
-
-       That still leaves the dot, the gutter's one real flex child: at
-       the inherited align-items: center it rode the middle of this
-       now-taller box, which was close enough for a one-line title and
-       wrong for anything else — on a wrapped one the dot sat between
-       the first line and the second rather than beside either.
-       align-items: flex-start here says where the *dot* sits within
-       the tall box, independently of why the box is tall: at its own
-       top, which is where the title's first line starts too. */
+       The star is still a child of this cell, and its absolutely
+       positioned box has to fit inside this one or it trips the "no
+       cell draws outside itself" check — hence align-self and
+       min-height. align-items then says where the *dot* sits in that
+       taller box: at its top, beside the title's first line, rather
+       than centred between a wrapped title's two lines. */
     html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="icon"] {
         min-width: 0;
         align-self: flex-start;
@@ -4905,25 +4913,15 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
         margin: 0;
     }
 
-    /* Room for the star's corner, on the rows that actually carry one
-       (data-rr-star, set beside it in lists.js) — a card with no star
-       keeps the title's full width. The chain down through tr and td
-       matches the generic cell rule's own specificity above, which sets
-       this same padding to 0 and would otherwise win over a shorter
-       selector.
+    /* Room for the star's corner, on the rows that carry one — the
+       chain down through tr and td matches the generic cell rule's
+       specificity above, which sets this same padding to 0.
 
        min-width drops the 80% floor the generic title rule sets. That
-       floor exists so the counters (replies, views, author) cannot
-       climb onto the marker's own line — a fixed percentage of a
-       390px card and a fixed percentage of an 860px one are two very
-       different numbers, and at exactly 390px it was landing a
-       handful of pixels past what the line actually had left once the
-       gutter shrank, tipping the *title* onto a line of its own under
-       the marker: the very shape this rule exists to prevent, just
-       aimed at the wrong neighbour. The spacer below takes over that
-       job instead, so this can drop to nothing and let the title sit
-       beside the dot the way the marker's line was always meant to
-       read. */
+       floor keeps the counters off the marker's line, but a percentage
+       of a 390px card and of an 860px one are different numbers, and
+       at 390px it tipped the title itself onto a line of its own. The
+       spacer below does that job instead. */
     html[data-rr] table.tablebg > tbody > tr[data-rr-star] > td[data-rr-col="title"] {
         min-width: 0;
         padding-right: 40px;
@@ -5010,25 +5008,18 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
         flex: 0 0 auto;
     }
 
-    /* form[name=jumpbox]: "Jump to:" label, the forum select and Go are
-       inline content of one unclassed cell in an unclassed table, and
-       the generic table-unpacking rules above turn that cell into a
-       block — three inline-level things then wrap on their own once
-       the select's width and the label's text no longer fit beside
-       Go. The extra :not()s match the specificity of the rule being
-       overridden: #wrapcentre and !important on both sides means the
-       tie is broken on class count, not source order. */
-    /* wrap, not nowrap: on the search results page this same form sits
-       beside a floated sibling the board's own markup never clears (a
-       bare <br clear="all"> is the thing that would have cleared it,
-       and it is one of the spacer breaks this stylesheet hides), which
-       leaves the row well under 342px. A select sizes to its longest
-       option — a forum name — so \`flex: 1 1 auto\` counted that full
-       width when deciding whether the row overflows, and Go wrapped
-       away alone rather than share a line with it. A 0% basis asks the
-       question with only the 6em floor on the table, so the row fits
-       label, select and Go at 342px and wraps at the narrower one
-       instead of crushing the select to a handful of letters. */
+    /* form[name=jumpbox]: the label, the select and Go are inline
+       content of one unclassed cell, which the unpacking rules above
+       turn into a block, and the three then wrap on their own. The
+       extra :not()s match the specificity of the rule being
+       overridden — both sides carry #wrapcentre and !important, so the
+       tie breaks on class count rather than source order.
+
+       wrap, not nowrap: on the search results page this form sits
+       beside a floated sibling the board never clears, so the row is
+       well under 342px. A select sizes to its longest option, so
+       \`flex: 1 1 auto\` counted a forum name's full width and wrapped
+       Go away alone; a 0% basis asks with only the 6em floor. */
     html[data-rr] #wrapcentre form[name="jumpbox"] table:not(.tablebg):not(.forumline) > tbody > tr > td {
         display: flex !important;
         flex-wrap: wrap;
@@ -5270,16 +5261,18 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
         font-size: var(--rr-fs-xs);
         color: var(--rr-muted);
     }
-    /* The legend's swatch cell holds nothing; the colour is a stripe
-       forum.css paints down its edge. As a block with no content it
-       was 0px tall, so the row showed the words and no colour. */
+    /* The colour class is on the same cell as the words — phpBB writes
+       \`<td class="row1 pm_marked_colour"><span>Marked message</span>\`
+       — so the cell cannot be squeezed into a swatch: at 12px it drew
+       the label one character to a line. The stripe down its leading
+       edge carries the colour here exactly as it does on a wide
+       screen, and the row gives up its own padding so the stripe lands
+       on the card's edge rather than floating inside it. */
+    html[data-rr] table.tablebg[data-rr-pm-legend] > tbody > tr { padding: 3px 0; }
     html[data-rr] table.tablebg[data-rr-pm-legend] > tbody > tr > td[class*="pm_"] {
-        flex: none;
-        width: 12px !important;
-        height: 12px;
-        border-radius: 3px;
-        background: var(--rr-pm);
-        box-shadow: none;
+        width: 100% !important;
+        padding: 3px 14px;
+        box-shadow: inset 3px 0 0 var(--rr-pm);
     }
     /* A roster's meta line: the rank after the count, with a dot. */
     html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-col="rank"]::before { content: none; }
@@ -5728,15 +5721,10 @@ function defaultFor(id) {
    id, so moving a field between groups costs nothing and needs no
    migration.
 
-   What is *not* here any more, and why. A setting is a question put to
-   every reader who opens the panel, and several of these were
-   questions with one sensible answer: the skip link, joining the last
-   post's two lines, the lookups on the game card, the password chip,
-   how many topics the palette remembers, how long a Steam lookup is
-   kept. Those are simply how the script behaves now. Where a search
-   looks is asked in the search box itself; which listing sections are
-   folded is remembered from folding them. A value somebody stored for
-   a field that has gone is ignored, never an error.
+   A setting is a question put to every reader who opens the panel, so
+   anything with one sensible answer is not one: those are simply how
+   the script behaves. A value stored for a field that has since gone
+   is ignored, never an error.
    ------------------------------------------------------------------ */
 
 const SETTINGS_SCHEMA = [
@@ -6071,9 +6059,6 @@ const SETTINGS_SCHEMA = [
    DOMParser both throw.
    ------------------------------------------------------------------ */
 
-const $ = (selector, root = document) => root.querySelector(selector);
-const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
-
 /**
  * Build an element.
  *   el("button.rr-btn", { onclick, "aria-pressed": "true" }, ["Save"])
@@ -6210,26 +6195,17 @@ function scrollBehaviour() { return motionAllowed() ? "smooth" : "auto"; }
 
 /* ---- Parsing a page this script fetched --------------------------- */
 
-/* Two features fetch a page of the board and read it: the quick reply
-   lifts the real form out of posting.php, and the releases panel walks
-   a topic. Both need HTML turned into a document, and there is exactly
-   one way to do that — DOMParser.
+/* Two features fetch a page of the board and read it — the quick
+   reply, and the releases walk — and DOMParser is the only way to turn
+   HTML into a document.
 
-   Under `require-trusted-types-for 'script'` DOMParser.parseFromString
-   throws, verified rather than assumed: a page served with that header
-   refuses parseFromString, innerHTML, and innerHTML on a document from
-   createHTMLDocument, all three with "This document requires
-   'TrustedHTML'". cs.rin.ru does not send it today. The embedded video
-   players in a game thread do, and @noframes keeps this out of those,
-   but a board can add a header any day.
-
-   The escape hatch is the one Trusted Types is designed around: a
-   policy. It works whenever the CSP does not also name an allow-list
-   that excludes it — checked the same way, and `createPolicy` then
-   returns a wrapper whose output parseFromString accepts. Where even
-   that is refused, this returns null and the caller says so, which is
-   the difference between a feature that reports it cannot run and one
-   that throws inside a click handler. */
+   Under `require-trusted-types-for 'script'` parseFromString throws,
+   verified rather than assumed. cs.rin.ru does not send that header
+   today; the video players a game thread embeds do, and a board can
+   add one any day. The escape hatch is a policy, which works unless
+   the CSP also names an allow-list that excludes it — and where even
+   that is refused this returns null and the caller says so, rather
+   than throwing inside a click handler. */
 let htmlPolicy;
 
 function trustedHtml(html) {
@@ -6262,18 +6238,14 @@ function parseDocument(html) {
 
 /* ---- Colour ------------------------------------------------------- */
 
-/* The board paints usernames from their group: administrators red,
-   moderators green, the upload crew its own colour, each written as an
-   inline style on the link. Several of those are #BF0000 and darker on
-   a near-black page — 2.5:1, against the 4.5 that 13px text is held
-   to — and they are on the header of every post and the last line of
-   every listing row.
- *
- * Keeping them is not in question: those colours are how this board
- * tells you who is talking. What follows keeps the hue and the
- * saturation and moves only the lightness, by the smallest step that
- * makes the name readable on whatever is actually behind it. A red
- * name stays a red name. */
+/* The board paints usernames from their group, as an inline style on
+   the link, and several of those are #BF0000 or darker on a near-black
+   page — 2.5:1, against the 4.5 that 13px text is held to.
+
+   Those colours are how the board tells you who is talking, so what
+   follows keeps the hue and the saturation and moves only the
+   lightness, by the smallest step that makes the name readable on
+   whatever is actually behind it. A red name stays a red name. */
 
 function parseColour(text) {
     const raw = String(text).trim();
@@ -6420,32 +6392,21 @@ function backdropOf(node) {
    number stops being read and becomes a length — nobody reads 3097072,
    they see "long". Grouped, it is three million at a glance.
 
-   The separator is a narrow no-break space (U+202F): the typographic
-   one, and no-break, so it can never leave a lone digit at the end of a
-   wrapped line. Not a comma — a comma is the decimal separator for half
-   this board's readers, to whom 3,097,072 is a number with two decimal
-   points in it.
+   The separator is a narrow no-break space (U+202F) and not a comma: a
+   comma is the decimal separator for half this board's readers, to
+   whom 3,097,072 has two decimal points in it. No-break, so it cannot
+   leave a lone digit at the end of a wrapped line.
 
-   The digits are regrouped, never rounded or abbreviated: "3.1M" is a
-   different fact from 3 097 072, and the exact figure is what a
-   counting column is for. And only quantities — a Steam build id, an
-   AppID or a post number is a name that happens to be spelled in
-   digits, and grouping one would be like putting a comma in a
-   postcode. Nothing here runs over a page; every caller names what it
-   is handing in. */
+   Regrouped, never rounded: "3.1M" is a different fact. And only
+   quantities — a build id, an AppID or a post number is a name spelled
+   in digits — so nothing here sweeps a page; every caller names what
+   it is handing in. */
 const DIGIT_GROUP = "\u202f";
 
-/* Where the grouping starts.
-
-   Four digits, where the caller knows the number is a count: in a
-   column, 2393 sitting between 545 and 16 736 is the only one that has
-   to be counted rather than read.
-
-   Five, where the caller only knows it is *probably* a count — a
-   figure inside the board's own markup rather than a cell this script
-   built. 2026 is a year, and a year is a name for a year; grouping one
-   would be an error the reader has to undo. Nothing between 1000 and
-   9999 is worth that risk when the element could be anything. */
+/* Where the grouping starts. Four digits where the caller knows the
+   number is a count; five where it only knows it probably is, because
+   2026 is a year and a year is a name — grouping one is an error the
+   reader has to undo. */
 const GROUP_FROM_COUNT = 4;
 const GROUP_FROM_GUESS = 5;
 
@@ -6551,20 +6512,12 @@ const ICON_PATHS = {
 /* Each icon's shapes, built once as real nodes and cloned after.
 
    The definitions above are written as markup because that is how they
-   are read and edited. Getting them into the page is another matter:
-   under a Content Security Policy with require-trusted-types-for, both
-   svg.innerHTML and DOMParser.parseFromString throw. This script draws
-   its entire interface with these, and a throw inside icon() takes the
-   whole calling module with it — the top bar included — so neither is
-   a route worth depending on.
-
-   The vocabulary here is three self-closing tags with plain attributes
-   and nothing else, all of them written in this file. Reading that back
-   with a pair of expressions and createElementNS is exact for what it
-   has to handle, and there is no markup sink left to be gated.
-
-   (Verified against the live board, where the video embeds in a game
-   thread do enforce such a policy: the icons survive it.) */
+   are read and edited, but neither svg.innerHTML nor DOMParser
+   survives a require-trusted-types-for policy — and a throw inside
+   icon() takes the whole calling module with it, top bar included. The
+   vocabulary is three self-closing tags with plain attributes, all
+   written in this file, so two expressions and createElementNS read it
+   back exactly and leave no markup sink to be gated. */
 const SHAPE_RE = /<([a-z]+)\s+([^>]*?)\s*\/>/gi;
 const ATTR_RE = /([\w-]+)="([^"]*)"/g;
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -6595,7 +6548,7 @@ function iconShapes(name) {
 /** An inline SVG icon. The shapes are literals defined above, never
     user content. */
 function icon(name, size) {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const svg = document.createElementNS(SVG_NS, "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("fill", "none");
     svg.setAttribute("stroke", "currentColor");
@@ -6718,25 +6671,10 @@ const PAGE = (() => {
     };
 })();
 
-/** The session id phpBB threads through every link, when present. */
-function sessionId() {
-    const link = document.querySelector('a[href*="sid="]');
-    if (!link) return null;
-    const match = link.getAttribute("href").match(/[?&]sid=([a-f0-9]+)/);
-    return match ? match[1] : null;
-}
-
 /** phpBB hides links behind a placeholder for guests; several features
     only make sense once the reader is logged in. */
 function isLoggedIn() {
     return Boolean(document.querySelector('a[href*="mode=logout"]'));
-}
-
-function currentUser() {
-    const link = document.querySelector('a[href*="mode=logout"]');
-    if (!link) return null;
-    const profile = document.querySelector('a[href*="ucp.php"][href*="i=pm"], a[href*="mode=viewprofile"]');
-    return { name: profile ? profile.textContent.trim() : null };
 }
 
 /** Unread private messages, read off the UCP link phpBB renders. */
@@ -6796,13 +6734,11 @@ function forumRows() {
  * of it — see releases.js. Nothing in here touches the document it is
  * given, so a detached parse is as valid a subject as the live page.
  *
- * `head` is the header strip the modern layout builds, when one is
- * there. Reading it back off the page rather than only setting it when
- * this module builds it matters: every caller runs its own posts()
- * pass, so a module running after topic.js used to get objects with no
- * head at all and fall through to the template's own header row —
- * which the modern layout hides. That is how the "hide posts by
- * someone" control ended up appended to a row nobody could see.
+ * `head` is read back off the page rather than only set when topic.js
+ * builds it: every caller runs its own posts() pass, and one running
+ * afterwards would otherwise fall through to the template's header
+ * row, which the modern layout hides. That is how the "hide posts by
+ * someone" control ended up on a row nobody could see.
  */
 function posts(root = document) {
     const out = [];
@@ -7452,27 +7388,19 @@ function initTheme() {
 
 /* ---- The board's own colours, kept and made readable --------------- */
 
-/* Every colour the *script* paints is measured against WCAG AA by
-   test/contrast.js and every one of them passes. The board's own are a
-   different matter and not the script's to redesign — except that they
-   are on the same page, in the same type sizes, and several of them
-   are genuinely hard to read: group-coloured usernames come out at
-   2.5:1 on the dark themes and 1.9:1 on the light one, and the
-   "[[Please login to see this link.]]" marker at 3.1.
- *
- * So they are kept and lifted: same hue, same saturation, the smallest
- * change in lightness that reaches the threshold against whatever is
- * behind them. Only colours the board wrote inline, only where they
- * fail, and never more than they have to. The original is kept on the
- * element so nothing is lost.
- *
- * It has its own switch, because a board's colours are part of how it
- * looks and somebody may prefer them exactly as they are. */
-/* 4.5 for everything, including the large text WCAG lets off at 3.
-   Two thresholds meant the pass and test/contrast.js could disagree
-   about one span in a signature and each be right, which is a bad way
-   to spend an afternoon; and being stricter than the standard on
-   somebody else's colours only ever makes them easier to read. */
+/* The board's own inline colours, kept and lifted.
+
+   Group-coloured usernames come out at 2.5:1 on the dark themes and
+   1.9:1 on the light one, and the "[[Please login to see this link.]]"
+   marker at 3.1. Each keeps its hue and its saturation and moves only
+   in lightness, by the smallest step that reads against whatever is
+   actually behind it. Only colours the board wrote inline, only where
+   they fail; the original stays on the element.
+
+   One threshold for everything, a little over the 4.5 the rest of the
+   web is held to and well over the 3 WCAG allows large text: two
+   thresholds meant this pass and test/contrast.js could disagree about
+   one span in a signature and both be right. */
 const INK_TARGET = 4.75;
 
 function readableBoardInk() {
@@ -7504,8 +7432,7 @@ function readableBoardInk() {
         if (!lifted) continue;
 
         node.setAttribute("data-rr-ink", written);
-        node.style.color = "rgb(" + [lifted.r, lifted.g, lifted.b]
-            .map((v) => Math.round(v)).join(", ") + ")";
+        node.style.color = rgbText(lifted);
     }
 }
 
@@ -7831,20 +7758,14 @@ function buildField(field) {
     // looks for "linkifyBare". The id is in there anyway, for whoever
     // read it in an export.
     row.dataset.search = (field.label + " " + (field.desc || "") + " " + field.id).toLowerCase();
-    // Two attributes for one fact, because the stylesheet reads the
-    // prefixed one and dataset.dep would have written data-dep, which
-    // matches nothing.
-    if (field.when) {
-        row.dataset.when = field.when;
-        row.setAttribute("data-rr-dep", field.when);
-    }
+    if (field.when) row.setAttribute("data-rr-dep", field.when);
     return row;
 }
 
 /** A field is only shown when the field it depends on is on. */
 function syncDependencies(body) {
-    for (const row of body.querySelectorAll("[data-when]")) {
-        row.toggleAttribute("data-rr-dep-off", !settings.get(row.dataset.when));
+    for (const row of body.querySelectorAll("[data-rr-dep]")) {
+        row.toggleAttribute("data-rr-dep-off", !settings.get(row.getAttribute("data-rr-dep")));
     }
 }
 
@@ -7991,7 +7912,7 @@ function buildPanelBody() {
     };
 
     select(current);
-    return { rail, pages, search, groups, select };
+    return { rail, pages, search };
 }
 
 function openSettings() {
@@ -8160,48 +8081,52 @@ function findLogo() {
     );
 }
 
-/* The name in the bar, set as type.
+/* The board's wordmark, traced off its own art into one path.
 
-   An earlier version cropped the wordmark out of the board's masthead
-   art and showed that: 26px of a PNG on the dark plate it is painted
-   on, which read as a grey badge stuck to the left of every page. The
-   board's own art belongs on the index, at the size the board draws it
-   (see buildMasthead); the bar only needs the name, quietly, in the
-   wide tracking the wordmark uses so it is still recognisably the
-   board's. */
+   Not an <img>, and not a CSS mask either: the board sends `img-src
+   'self'`, so a data: URI is refused in both — checked on the live
+   board, where the masked version drew a filled grey rectangle where
+   the name should be. An inline <svg> is DOM rather than a fetched
+   image and is not governed by that directive, which is what the icon
+   set already relies on.
+
+   Filled with currentColor, so the mark is the bar's own ink on every
+   theme rather than the light grey the file is painted in, and there
+   is no plate behind it. */
+const BRAND_MARK = "M26 0h13v1h-13zM99 0h4v1h-4zM113 0h3v1h-3zM2 0h14v2h-14zM62 0h14v2h-14zM86 0h3v2h-3zM26 1h14v1h-14zM137 0h15v3h-15zM99 1h5v2h-5zM1 2h15v1h-15zM25 2h15v1h-15zM61 2h16v1h-16zM1 3h4v1h-4zM12 3h4v1h-4zM25 3h4v1h-4zM36 3h4v1h-4zM61 3h5v1h-5zM72 3h5v1h-5zM99 3h6v1h-6zM112 1h4v4h-4zM137 3h4v2h-4zM37 4h2v1h-2zM73 4h3v1h-3zM99 4h7v1h-7zM161 0h4v6h-4zM1 4h3v2h-3zM13 4h3v2h-3zM25 4h3v2h-3zM99 5h8v1h-8zM173 0h4v7h-4zM148 3h4v4h-4zM61 4h4v3h-4zM72 5h4v2h-4zM137 5h3v2h-3zM25 6h13v1h-13zM99 6h9v1h-9zM85 2h4v6h-4zM112 5h3v3h-3zM161 6h3v2h-3zM103 7h6v1h-6zM136 7h16v1h-16zM25 7h14v2h-14zM61 7h15v2h-15zM98 7h4v2h-4zM104 8h5v1h-5zM111 8h4v1h-4zM85 8h3v2h-3zM136 8h15v2h-15zM26 9h13v1h-13zM61 9h14v1h-14zM105 9h10v1h-10zM12 10h3v1h-3zM66 10h6v1h-6zM106 10h9v1h-9zM142 10h7v1h-7zM136 10h4v2h-4zM24 11h3v1h-3zM67 11h5v1h-5zM107 11h7v1h-7zM123 11h4v1h-4zM143 11h5v1h-5zM0 6h4v7h-4zM172 7h4v6h-4zM160 8h4v5h-4zM98 9h3v4h-3zM36 10h3v3h-3zM11 11h4v2h-4zM23 12h4v1h-4zM68 12h5v1h-5zM144 12h5v1h-5zM60 10h4v4h-4zM47 11h4v3h-4zM108 12h6v2h-6zM136 12h3v2h-3zM23 13h16v1h-16zM145 13h4v1h-4zM84 10h4v5h-4zM0 13h15v2h-15zM69 13h5v2h-5zM160 13h15v2h-15zM23 14h15v1h-15zM109 14h5v1h-5zM145 14h5v1h-5zM122 12h5v4h-5zM97 13h4v3h-4zM46 14h5v2h-5zM135 14h4v2h-4zM0 15h14v1h-14zM24 15h14v1h-14zM70 15h5v1h-5zM110 15h4v1h-4zM146 15h5v1h-5zM160 15h14v1h-14zM60 14h3v3h-3zM84 15h3v2h-3zM1 16h11v1h-11zM25 16h11v1h-11zM47 16h3v1h-3zM71 16h4v1h-4zM98 16h2v1h-2zM123 16h3v1h-3zM136 16h2v1h-2zM147 16h3v1h-3zM162 16h11v1h-11z";
+
 function buildBrand() {
     const strapline = document.querySelector("#logodesc h1, #wrapheader h1");
     const brand = el("a.rr-nav__brand", {
         href: "./index.php",
-        "aria-label": "Board index",
+        "aria-label": "CS.RIN.RU — board index",
         title: strapline ? strapline.textContent.replace(/\s+/g, " ").trim() : "CS RIN - Steam Underground",
     });
-    brand.append(el("span.rr-nav__word", {}, ["CS.RIN.RU"]));
+
+    const mark = document.createElementNS(SVG_NS, "svg");
+    mark.setAttribute("viewBox", "0 0 177 17");
+    mark.setAttribute("fill", "currentColor");
+    mark.setAttribute("aria-hidden", "true");
+    mark.classList.add("rr-nav__logo");
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("d", BRAND_MARK);
+    mark.append(path);
+
+    brand.append(mark);
     return brand;
 }
 
 /* ---- One search shape ---------------------------------------------- */
 
-/* There were two.
+/* The board's own search form, given the frame the palette trigger
+   has: one field with the search glyph at its head and whatever it
+   submits with tucked inside its right edge. Two boxes doing the same
+   job in two visual languages was the thing to fix; the rule the rest
+   of the interface follows is that a control has the button radius and
+   a pill is a label.
 
-   The palette trigger in the top bar was a fully rounded pill with a
-   `Ctrl K` chip — the command-palette look every editor written since
-   2020 has. The board's own search boxes, which this script moves into
-   the topic bar and the listing toolbar, are a rectangular input beside
-   a rectangular submit button. Both on screen at once, doing the same
-   job, in two different visual languages, next to a `Reply` button with
-   a third corner radius.
-
-   The rule now is the one the rest of the interface already follows:
-   **a control has the button radius; a pill is a label.** Tags, filter
-   chips and the "latest version" badge stay pills because they are read
-   rather than pressed. Everything you click is 7px.
-
-   This is the second half: the board's form, given the same frame as
-   the palette trigger — one field with the search glyph at its head and
-   whatever it submits with tucked inside its right edge. The form is
-   the board's own, moved, so its action, its hidden inputs and its
-   tokens are untouched. */
+   The form is the board's own, moved, so its action, its hidden inputs
+   and its tokens are untouched. */
 function adoptBoardSearch(form) {
     if (!form || form.closest(".rr-search")) return form;
 
@@ -8386,6 +8311,38 @@ function addSearchOptions(frame, form, field, submit) {
     apply();
 }
 
+/** Frame one of the board's own search boxes where it stands, rather
+    than at the end of whatever cell it was in. */
+function frameBoardSearch(form) {
+    if (!form || form.closest(".rr-search")) return null;
+    const parent = form.parentElement;
+    const after = form.nextSibling;
+    const framed = adoptBoardSearch(form);
+    if (framed === form || !parent) return null;
+    parent.insertBefore(framed, after);
+    return framed;
+}
+
+/**
+ * The board writes `#topic-search` three times on a topic page: into
+ * the breadcrumb strip at each end, and into the sort strip under the
+ * posts. The first goes to the topic bar and the last is hidden as a
+ * duplicate; the one in the sort strip is left where it is, and it was
+ * the only search box on the board still wearing the template's shape
+ * — a bare field beside a bordered button, beside three select menus
+ * that have been redrawn.
+ *
+ * Runs after every module, so a box another one has already moved is
+ * left alone.
+ */
+function frameStraySearch() {
+    for (const form of document.querySelectorAll(
+        "#wrapcentre form#topic-search, #wrapcentre form#forum-search, #wrapcentre #search-box form")) {
+        if (!form.getClientRects().length) continue;
+        frameBoardSearch(form);
+    }
+}
+
 /* ---- Board bar ---------------------------------------------------- */
 
 /* The masthead is the board's only route to its rules, its FAQ, the
@@ -8442,25 +8399,19 @@ function boardBarLink(link) {
     return link;
 }
 
-/* Twelve links in a row, in the order the masthead happened to print
-   them, is a list of twelve things rather than a menu. They are three
-   different kinds of thing and always were:
+/* Twelve links in the order the masthead printed them is a list, not a
+   menu. They are three kinds of thing:
 
      views    — ways of looking at threads (unanswered, active, search)
-     board    — what the board is (rules, FAQ, chat, donate, and
-                anything else the masthead carries)
+     board    — what the board is (rules, FAQ, chat, donate, the rest)
      account  — you (register, log in, log out, profile)
 
-   Grouping them is also what stops `Logout [ name ]` landing alone on
-   a second line: it was the twelfth item in one wrapping flex row, so
-   it wrapped, and one word on its own line reads as a mistake. In the
-   account group it sits with the two links it belongs with.
+   In that order, so the account group ends the row beside the language
+   switch, where the things about the reader sit together. Grouping is
+   also what stops `Logout [ name ]` wrapping alone onto a second line.
 
-   Classified by destination, not by label, because the labels are
-   translated and the hrefs are not. */
-/* Views first, then the board, then you — the account group ends the
-   row, beside the language switch, where the things about the reader
-   rather than the board sit together. */
+   Classified by destination, not by label: the labels are translated
+   and the hrefs are not. */
 const BOARD_BAR_GROUPS = [
     { id: "views", label: "Threads", re: /search\.php/ },
     { id: "board", label: "Board", re: null },      // whatever is neither of the others
@@ -8702,20 +8653,14 @@ function buildNavbar() {
 /**
  * The board's face, kept.
  *
- * The 340px masthead is replaced by a 48px bar, and that trade is
- * worth making on every page of a thread. But the art in it is not
- * chrome: a crosshair over a Steam valve with CS.RIN.RU set beside it
- * is what the board looks like, and a redesign that shows a 26px crop
- * of the wordmark and nothing else looks like any forum at all.
+ * The 340px masthead is traded for a 48px bar on every page of a
+ * thread, but the art in it is not chrome — the crosshair over a Steam
+ * valve is what the board looks like. So it comes back once, on the
+ * index, at the size the board draws it.
  *
- * So it comes back once, on the index, at the size the board draws it.
- * One page, 109px, where you land — everywhere else the bar carries
- * the wordmark and the content starts at the top.
- *
- * The node is a new <img> pointing at the same file rather than the
- * original moved out of #wrapheader: that block is hidden rather than
- * removed precisely because other userscripts read it, and this must
- * not be the thing that breaks them.
+ * A new <img> at the same file rather than the original moved out of
+ * #wrapheader: that block is hidden rather than removed precisely
+ * because other userscripts read it.
  */
 function buildMasthead() {
     const source = findLogo();
@@ -8833,27 +8778,16 @@ function dropStrayBreaks() {
 
 /* ---- Separators the template left behind --------------------------- */
 
-/* subsilver2 writes its little link strips as literal text:
+/* subsilver2 types the bars between its link strips into the template
+   beside each link rather than generating them between the links that
+   survive, and the links are conditional. So a reader who cannot see
+   one gets its separator anyway — "Unsubscribe topic | Bookmark topic
+   | | E-mail friend", or a lone `|` at the end of a cell that is still
+   100% wide. Neither is visible logged out, which is why they survived
+   this long.
 
-       <a ...>Unsubscribe topic</a>&nbsp;|&nbsp;
-       <a ...>Bookmark topic</a>&nbsp;|&nbsp;
-       <a ...>E-mail friend</a>
-
-   The links are conditional. The bars between them are not — they are
-   typed into the template beside each link rather than generated
-   between the ones that survive. So a reader who cannot see one of
-   those links gets its separator anyway, and the strip reads
-   "Unsubscribe topic | Bookmark topic | | E-mail friend"; where the
-   missing link is the last one, the bar is left hanging on its own at
-   the far end of a cell that is still 100% wide, which is the lone `|`
-   floating in an acre of nothing.
-   
-   Both were reported from the live board and neither is visible logged
-   out, which is why they survived this long.
-
-   This is the same job dropStrayBreaks() does for the template's <br>
-   spacing, on the other thing it uses as punctuation: a separator only
-   belongs between two things that are actually there. */
+   Same job dropStrayBreaks() does for the template's <br> spacing: a
+   separator only belongs between two things that are there. */
 /* A text node made of nothing but spacing and bars, holding at least
    one bar. It has to allow several: `</a>&nbsp;|&nbsp; &nbsp;|&nbsp;
    <a>` is a *single* text node in the DOM, so a rule written for one
@@ -8992,12 +8926,7 @@ function tidyCrumbStrip() {
            beside a bordered button — which is the shape everything
            else was moved away from. */
         strip.setAttribute("data-rr-crumbstrip", "");
-        const form = strip.querySelector("#search-box form, form#forum-search, form#topic-search");
-        if (form && !form.closest(".rr-search")) {
-            const holder = form.parentElement;
-            const framed = adoptBoardSearch(form);
-            if (framed !== form && holder) holder.append(framed);
-        }
+        frameBoardSearch(strip.querySelector("#search-box form, form#forum-search, form#topic-search"));
     }
 }
 
@@ -9493,19 +9422,10 @@ function buildForumBar() {
         bar.append(buildPagerGroup(info));
     }
 
-    // "[ 61469 topics ]" is worth keeping, but not on its own line.
-    for (const cell of document.querySelectorAll("#wrapcentre td.gensmall, #wrapcentre span.gensmall")) {
-        const match = cell.textContent.match(/\[\s*([\d\s]+)\s*(topics|posts)\s*\]/i);
-        if (!match) continue;
-        bar.append(el("span.rr-topicbar__count", {}, [match[1].trim() + " " + match[2].toLowerCase()]));
-        cell.style.display = "none";
-        break;
-    }
-
     heading.after(bar);
-    // The board's own "Page 1 of 615" and "[ 61469 topics ]" strips,
-    // which the bar now carries. The topic page had this pass and the
-    // listing did not, and the sweep found the band on every forum.
+    /* "Page 1 of 615" and "[ 61469 topics ]", which the bar now
+       carries: the same pass the topic page uses, so the count is
+       lifted here in whichever language the board printed it. */
     tidyBoardPagerStrip(bar, bar);
 
     /* "Go to page 1, 2, 3, 4, 5 … 137  Next", right-aligned above the
@@ -10290,26 +10210,32 @@ function sortKey(row, index, kind) {
     return cell.textContent.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
-/* The stripes are drawn from row1 / row2, which the template hands out
-   in the order it sent the rows. Reordered rows keep their own class
-   and the listing ends up with two dark rows together. */
+/* Which shade each row is drawn in.
+
+   subsilver2 hands out row1 and row2 by hand and alternates them
+   *across the columns* of one row: a topic row comes out as six
+   vertical bands, and every row of the index is split in two at the
+   counts. Banding is meant to carry the eye from a title across to its
+   last post, and drawn that way it cuts the line up instead.
+
+   So the shade is written on the row, in an attribute of this
+   script's own — the board's classes are left exactly as they are,
+   since they carry nothing but the shade and another script may be
+   reading them — and a sort simply writes it again. */
 function restripe(rows) {
-    rows.forEach((row, index) => {
-        const want = index % 2 === 0 ? "row1" : "row2";
-        const other = want === "row1" ? "row2" : "row1";
-        const swap = (node) => {
-            if (!node.classList.contains("row1") && !node.classList.contains("row2")) return;
-            node.classList.remove(other);
-            node.classList.add(want);
-        };
-        swap(row);
-        for (const cell of row.children) swap(cell);
-    });
+    rows.forEach((row, index) => row.setAttribute("data-rr-stripe", index % 2 ? "b" : "a"));
 }
 
-function initColumnSort(table) {
+/**
+ * The data rows of a listing, in the runs the template separates with
+ * its own section rows ("Global Announcements", "Topics").
+ *
+ * A run is what a sort reorders inside, so a pinned announcement never
+ * lands among the topics, and it is what the stripe runs down.
+ */
+function listingRuns(table) {
     const head = table.querySelector(":scope > tbody > tr[data-rr-head]");
-    if (!head || !head.querySelector("th")) return;
+    if (!head || !head.querySelector("th")) return [];
     /* Columns, not cells: a listing spans its first heading over the
        unread marker and the title, so five headings sit over six
        cells. */
@@ -10328,7 +10254,13 @@ function initColumnSort(table) {
         if (!run) { run = []; runs.push(run); }
         run.push(row);
     }
-    const sortable = runs.filter((rows) => rows.length > 2);
+    return runs;
+}
+
+function initColumnSort(table) {
+    const head = table.querySelector(":scope > tbody > tr[data-rr-head]");
+    if (!head || !head.querySelector("th")) return;
+    const sortable = listingRuns(table).filter((rows) => rows.length > 2);
     if (!sortable.length) return;
     const original = sortable.map((rows) => rows.slice());
     /* Where the run ends, read once. Read again after a sort it would
@@ -10477,6 +10409,7 @@ function initLists() {
             markEmptyCells(table);
         }
         if (table.hasAttribute("data-rr-list")) {
+            for (const run of listingRuns(table)) restripe(run);
             if (settings.get("sortColumns")) initColumnSort(table);
             initMarkColumn(table);
             if (table.querySelector("a.topictitle")) initSectionFolds(table);
@@ -10746,29 +10679,17 @@ function dropDuplicateSearch() {
 /* ---- Category collapse ------------------------------------------- */
 
 /**
- * The board's own "collapse this category" control.
+ * The board's own "collapse this category" control: an `<input
+ * type="button">` carrying `value=" "` and drawn by a 12x12 background
+ * image the board injects in a <style> block.
  *
- * It is an `<input type="button">` carrying `value=" "` — a single
- * space — and drawn entirely by a 12x12 background image the board
- * injects in a <style> block. Two things follow, and neither was being
- * handled.
+ * So it has no accessible name — a space is not one — and the heading
+ * beside it becomes that name. And it cannot be redrawn from the
+ * stylesheet: an <input> is a replaced element, `::before` generates
+ * nothing on it, so the chevron has to be the value.
  *
- * It has no accessible name. `value` is what names an input button,
- * and a space is not a name: a screen reader reaches a button and can
- * say nothing about it, on the one control that folds a whole category
- * of the board away. The heading beside it is the name, so that is what
- * goes on it.
- *
- * And it cannot be redrawn from the stylesheet alone. An <input> is a
- * replaced element: `::before` and `::after` generate nothing on it, so
- * the chevron an earlier version of this drew that way rendered as an
- * empty box with a border — worse than the GIF it replaced, and on the
- * light theme invisible. The glyph therefore has to be the value, which
- * is where the board already puts one.
- *
- * The board's own handler is untouched: the click is still its click,
- * and `flipf()` reads the class rather than the value, so writing one
- * cannot confuse it.
+ * The board's own handler is untouched: `flipf()` reads the class
+ * rather than the value, so writing one cannot confuse it.
  */
 function tidyCategoryToggles() {
     for (const toggle of document.querySelectorAll("#wrapcentre .ccclose, #wrapcentre .ccopen")) {
@@ -10982,39 +10903,21 @@ function topicTitle() {
     return splitPrefix((link || heading).textContent.trim()).rest;
 }
 
-/**
- * One action bar for the topic.
- *
- * The template scatters these across four strips: a search box in its
- * own full-width table, a reply image button, "Page 1 of 19", and the
- * numbered page links. They belong on one line.
- */
-/* One card, two rows, and the rule is written down rather than left to
-   whatever fits.
+/* One action bar for the topic, out of the four strips the template
+   scatters: the search box in a full-width table of its own, the reply
+   image button, "Page 1 of 19", and the numbered page links.
 
-   What was here was a single wrapping flex row holding, in the order
-   the template happened to print them: a filled Reply button, the
-   words "Page 1 of 1", four bare links, an outlined button with the
-   same weight as Reply, and a search box. Three kinds of control on
-   one line with nothing saying which mattered, one flexible spacer
-   opening an arbitrary gap in the middle of the links, and a layout
-   that reacted to how many controls a topic happened to have: on a one
-   page topic the search sat inline, on a thirty-three page one the
-   pager pushed it on to a line of its own. Same interface, two shapes,
-   for a reason no reader could name.
+   Two rows, and which one a control lands in is fixed rather than left
+   to what fits — so the bar is the same shape on a one page thread and
+   a thirty-three page one:
 
-   The rule now:
+     Row 1 - this topic. Reply, what you can do to what is on screen,
+             and where in the topic you are.
+     Row 2 - everywhere else. The topic before and after, the print
+             view, and the box that searches inside it.
 
-     Row 1 - this topic. What you do here (Reply), what you can do to
-             what is on screen (open the spoilers, jump to your first
-             unread), and where in the topic you are (the pager).
-     Row 2 - everywhere else. The topic before and after this one, the
-             print view, and the box that searches inside it.
-
-   Both rows exist on every topic, whatever its page count, so the bar
-   is the same shape on a one page thread and a thirty-three page one.
-   A row nothing landed in is not drawn - but nothing moves between
-   rows to make that happen. */
+   A row nothing landed in is not drawn, but nothing moves between rows
+   to make that happen. */
 function topicBarRow(name) {
     return el("div.rr-topicbar__row", { "data-rr-row": name });
 }
@@ -11152,12 +11055,29 @@ function buildTopicBar() {
     }
 
     header.after(bar);
+    // Before the strips are tidied, so a strip this empties is one of
+    // the empty ones hideEmptyBoardStrips() then takes away.
+    dropPagerAbovePosts();
     tidyBoardPagerStrip(bar, here);
+}
 
-    // The numbered strip under the title says the same thing as the
-    // pager, less usefully.
-    for (const strip of header.querySelectorAll("p.gensmall, span.gensmall")) {
-        if (/Go to page|На страницу/.test(strip.textContent)) strip.style.display = "none";
+/* The board's numbered "Go to page 1, 2, 3 … 19" strip, where it sits
+   above the posts: the bar's own pager says the same thing two lines
+   higher. The copy under the posts stays — that is where a reader who
+   has reached the end of the page wants it — and so does everything,
+   here or there, when the bar draws no pager of its own.
+
+   Two shapes carry it: a p.gensmall under the title, and the
+   right-hand cell of the board's own strip. */
+function dropPagerAbovePosts() {
+    if (!settings.get("quickPager")) return;
+    const first = posts()[0];
+    const strips = document.querySelectorAll(
+        "#wrapcentre p.gensmall, #wrapcentre span.gensmall, #wrapcentre td.gensmall");
+    for (const strip of strips) {
+        if (!/^\s*(?:Go to page|На страницу)/.test(strip.textContent)) continue;
+        if (first && !(strip.compareDocumentPosition(first.table) & Node.DOCUMENT_POSITION_FOLLOWING)) continue;
+        strip.style.display = "none";
     }
 }
 
@@ -11403,7 +11323,7 @@ function buildPagerGroup(info) {
    Russian for "no rank". So an English forum shows a Russian phrase
    under a name, and for most posters the phrase means the field is
    empty.
-   
+
    Where a rank carries both languages, the page's own language decides
    which half to show. Where it carries only one it is left alone: a
    rank that is Latin-only is not a translation of anything, and
@@ -12072,14 +11992,7 @@ function markExternalLinks() {
         // a link whose text is the address already says where it goes.
         if (link.textContent.toLowerCase().includes(host.replace(/^www\./, "").toLowerCase())) continue;
 
-        link.append(el("span.rr-host", {
-            style: {
-                marginLeft: "5px",
-                fontSize: "var(--rr-fs-xs)",
-                color: "var(--rr-faint)",
-                fontFamily: "var(--rr-font-mono)",
-            },
-        }, [host.replace(/^www\./, "")]));
+        link.append(el("span.rr-host", {}, [host.replace(/^www\./, "")]));
         link.setAttribute("rel", "noopener noreferrer");
     }
 }
@@ -12289,28 +12202,14 @@ const RELEASE_WORDS = [
 ];
 
 /* Three ways a post names which one it is, and they are not the same
-   thing.
- *
- * The first is a version with a v on it: v1.4.2, ver. 2.0, version
- * 1.10.
- *
- * The second is a Steam build id, which is eight digits and beats
- * every real version it is compared against — kept apart so nothing
- * downstream has to guess which it is holding.
- *
- * The third is the one this board actually uses for the games it cares
- * most about, and it has no v anywhere in it. Ubisoft ships **Title
- * Updates**, and the release posts say so in the publisher's words:
- * "Game version is Title Update 1.0.7",
- * "Assassins.Creed.Black.Flag.Resynced.Title.Update.1.0.4.zip",
- * "to make space for Title Update 1.0.5". Read by a pattern that
- * required a v, all thirty-three pages of that topic had no version in
- * them at all. The number after the label is the game's version — the
- * post says as much — so that is what it is read as, and it compares
- * with every other version the same way.
- *
- * The label has to be followed by a *dotted* number, so "update 2 of
- * 3" and "patch to 4 files" are not versions. */
+   thing: a version with a v on it (v1.4.2, ver. 2.0), a Steam build id
+   (eight digits, kept apart so nothing downstream mistakes it for a
+   very large version), and a labelled number with no v anywhere — the
+   form this board uses most, because Ubisoft ships "Title Update
+   1.0.7" and the release posts say so in the publisher's words.
+
+   A label has to be followed by a *dotted* number, so "update 2 of 3"
+   and "patch to 4 files" are not versions. */
 /* What may follow the digits.
 
    A single letter — 1.4.2b is a version — but only one, and only where
@@ -12459,21 +12358,12 @@ function ownContent(body) {
     return copy;
 }
 
-/* A <br> contributes no text.
-
-   The board writes a release post as one line per fact separated by
-   <br>, so `textContent` returns them welded together: "Game version
-   is Title Update 1.0.7Learn more here on HV releases". Two things go
-   wrong at every one of those seams, and both were live on the board.
-
-   The version comes back short. `1.0.7` followed immediately by a
-   letter has no word boundary after it, so the pattern backtracks to
-   the longest ending that does have one — `1.0` — and the panel
-   reported a game on 1.0 that was on 1.0.7.
-
-   And release words stop matching. `\bupdate\b` needs a boundary in
-   front of it, and there is none in the middle of "filesUpdate", so a
-   post offering clean Steam files and an update came back as neither.
+/* A <br> contributes no text, so a release post written one fact per
+   line comes back welded: "Game version is Title Update 1.0.7Learn
+   more here on HV releases". Both halves of this module then fail at
+   every seam — 1.0.7 followed by a letter has no word boundary and the
+   pattern backtracks to 1.0, and a release word needs one in front of
+   it and finds none in the middle of "filesUpdate".
 
    One space per line break fixes both, on the detached copy only.
    Block elements get one at each end for the same reason. */
@@ -12712,33 +12602,14 @@ function buildLinkFilter(all, rows) {
 /* ------------------------------------------------------------------
    Releases: one panel, two scopes.
 
-   This started as two. "On this page" answered "is there a release in
-   front of me", read straight out of the DOM and free. "Posted in this
-   topic" walked every page and answered "what has been posted here, in
-   what order, and which of it is current".
+   **This page** is read straight out of the DOM and costs nothing.
+   **All N pages** walks the topic once, on a click, and remembers what
+   it found — a nineteen page topic is nineteen requests to a board
+   that runs on donations, so it is never a page load and never twice
+   in a row. Escape stops it.
 
-   They were two panels one under the other, listing the same kind of
-   thing about the same posts in two different row shapes, and the
-   second was strictly the first plus a page number. So there is one
-   panel now, with a scope you switch: **This page**, instant and
-   asking nobody anything, and **All N pages**, which reads the topic
-   once, on a click, and remembers what it found.
-
-   Everything either of them had is here. From the page half: the jump
-   that scrolls to the post and flashes it, and the filter that hides
-   every post without a link. From the topic half: the version, what
-   kind of thing each post is, who posted it, when, which page, the
-   highest version anybody posted, filters by kind, and the note saying
-   when the topic was last read.
-
-   How the walk behaves is the part worth stating plainly. The page you
-   are on is never fetched — it is already parsed and in front of you.
-   The rest are fetched one at a time, spaced out, and only when asked:
-   a nineteen page topic is nineteen requests to a board that runs on
-   donations, so it is a click, never a page load, and never twice in a
-   row. Escape stops it. And nothing is guessed: a post is read for
-   what it says, with quoted text excluded, because a reply quoting a
-   release is not a release.
+   finder.js decides what a post is; this file shows it. Quoted text is
+   excluded there, because a reply quoting a release is not a release.
    ------------------------------------------------------------------ */
 
 /* What the board's uploaders actually post, in the words they use.
@@ -12779,20 +12650,9 @@ const RELEASE_KINDS = [
     { id: "denuvo", label: "Denuvo", re: /\bdenuvo\b|денуво/i },
 ];
 
-/* What each kind *is*, so the colour carries the same meaning
-   everywhere it appears.
-
-   Five of the eleven kinds were coloured and six were grey, which
-   looked like a taxonomy and was actually a list of the ones somebody
-   had got round to: a Trainer sat neutral in a row where Crack, Update
-   and Clean Steam files were all coloured, and the filter chips above
-   those rows were grey to a kind — the same word, twice on the same
-   screen, in two different colours.
-
-   So every kind belongs to a family, the families are what the
-   stylesheet paints, and a test fails if a kind is ever added without
-   one. Five families, and each answers a different question about a
-   post:
+/* Every kind belongs to a family, and the families are what the
+   stylesheet paints, so the same word is the same colour wherever it
+   appears. A test fails if a kind is ever added without one.
 
      game    what you install          Clean Steam files, Repack
      run     what makes it start       Crack, Online fix
@@ -12801,13 +12661,10 @@ const RELEASE_KINDS = [
      beside  what sits next to it      Trainer, Tool
      block   what stops it             Denuvo
 
-   The tokens they map to are theme-wide, so Paper gets its own version
-   of all six rather than a dark palette on a light page — and the six
-   have to stay six on every theme. The first mapping put `run` on
-   --rr-tag-important and `block` on --rr-tag-problem, which are the
-   same red on the board's own palette: two families, one colour, and
-   a Crack that looked like a warning. A check compares all six on
-   every theme now. */
+   The six have to stay six on every theme: the first mapping put
+   `run` and `block` on two tokens that are the same red on the
+   board's own palette, and a Crack looked like a warning. A check
+   compares all six per theme. */
 const RELEASE_FAMILY = {
     steamfiles: "game",
     repack: "game",
@@ -12834,56 +12691,21 @@ const RELEASE_MAX_PAGES = 80;
 
 /* ---- How the walk asks the board for pages -------------------------
 
-   The board is one man's server paid for by donations, and it is
-   asking for them right now. Reading a thirty-three page topic is
-   thirty-two requests however it is arranged, so the only question is
-   the shape of them; the answer here is bounded on three axes at once,
-   and none of the three is negotiable for speed.
+   The board runs on donations, so the walk is bounded three ways: at
+   most three requests in flight, no two started closer together than
+   RELEASE_START_GAP, and a 429 or 503 stops it where it is rather
+   than retrying into it.
 
-   **How many at a time.** Strictly one at a time with a gap is what
-   this did, and on a thirty-four page topic that measured 21.8 seconds
-   against the live board — because 95% of it was waiting: a page of
-   that topic is 417 ms to first byte and 2.4 ms to parse. The
-   published guidance for a host with no crawl-delay of its own is two
-   to five connections; the conservative end of that is three, and
-   three is what this uses. It is worth adding that the board answers
-   HTTP/2 and advertises HTTP/3, so three requests in flight share one
-   connection rather than opening three.
+   The fourth bound is this board in particular. It never answers 429;
+   it queues, and six requests sent together come back at two, four,
+   six, eight, ten and twelve seconds — one slot at a time. So the
+   walk times its own answers: the first few set what prompt means
+   today, and once one is several times slower than that it drops to a
+   single request with a much wider gap and stays there.
 
-   **How fast they may start.** Concurrency alone still allows a burst:
-   three requests leaving in the same millisecond, three more the
-   moment they land. So no two requests may start closer together than
-   RELEASE_START_GAP, which caps the rate at about six a second at the
-   very worst and holds it near three in practice — against roughly one
-   a second before, for a run that is over in seconds either way.
-
-   **What happens when the board says no.** A 429 or a 503 stops the
-   walk where it is rather than retrying into it, and the panel says
-   the topic was only read as far as it got.
-
-   **And what happens when it says no without saying so.** This board
-   does not answer 429. It queues: after a few dozen requests in quick
-   succession it starts serialising everything from that address, and
-   six requests sent together come back at two, four, six, eight, ten
-   and twelve seconds — a staircase, each step one slot in a queue.
-   Measured, from a browser, with none of this script running.
-
-   That is the important finding about this particular board, and it
-   makes concurrency worth much less than it looks: against a server
-   handing out one slot every two seconds, three requests in flight
-   finish no sooner than one and leave three sitting in its queue
-   instead of one. So the walk watches its own timings — the first few
-   answers set what "prompt" means for today, and once answers are
-   several times slower than that, it drops to a single request at a
-   time with a much wider gap and stays there. Fast board: three at a
-   time and done in seconds. Board under load: out of its way.
-
-   There is no conditional-request path to take here, and that was
-   checked rather than assumed: cs.rin.ru sends no ETag and no
-   Last-Modified on viewtopic.php, and answers `Cache-Control: private,
-   no-cache="set-cookie"` with `Expires: 0`. An If-None-Match round
-   trip would cost exactly as much as the page. The saving has to come
-   from not asking at all, which is what the page cache below does. */
+   No conditional-request path exists to take: viewtopic.php sends no
+   ETag and no Last-Modified. The saving has to come from not asking
+   at all, which is what the page cache below is for. */
 const RELEASE_IN_FLIGHT = 3;
 const RELEASE_START_GAP = 160;        /* between request starts, ms   */
 /* Where it goes when the board starts queueing. */
@@ -13108,23 +12930,19 @@ function readTopicPage(found, page) {
 
 /* ---- Pages this browser has already read --------------------------- */
 
-/* A page of a phpBB topic is not a moving target. The board paginates
-   by post index, so a reply lands on the last page and leaves every
-   page before it byte-for-byte the same. That is what makes reading a
-   topic a second time nearly free — as long as the assumption is
-   checked rather than trusted, because a *deleted* post shifts every
-   page after it back by one.
+/* phpBB paginates by post index, so a reply lands on the last page and
+   leaves every page before it byte-for-byte the same — which makes
+   reading a topic twice nearly free. A *deleted* post breaks that: it
+   shifts every page after it back by one.
 
    So each page is kept with the id of the post it opens with, and a
-   rescan re-reads two pages: the last one, which is where new replies
-   are, and the highest page below it, whose opening post id is the
-   canary. If that canary still opens with the post it opened with
-   before, nothing has shifted and every page between them is still
-   what it was. If it does not, the whole cache for the topic is
-   dropped and the topic is read again from the start.
+   rescan re-reads two: the last, where new replies are, and the
+   highest page below it as a canary. If the canary still opens with
+   the post it did, nothing between them has moved; if it does not, the
+   topic's cache is dropped and it is read again from the start.
 
-   Kept for fewer topics than the row index is: this holds every page
-   of a topic rather than the answer. */
+   Kept for fewer topics than the row index: this holds every page of a
+   topic rather than the answer. */
 const RELEASE_PAGES_KEY = "topicPages";
 const RELEASE_PAGES_TOPICS = 4;
 
@@ -13438,26 +13256,18 @@ function versionNewer(a, b) {
     return false;
 }
 
-/* Which rows are allowed to answer "what version is the game on".
+/* Which rows may answer "what version is the game on".
 
-   Not every version in a topic is the game's. Found on the live board,
-   in the thirty-three page Black Flag Resynced thread: a post
-   explaining how to get achievement popups says "Download v1.6.0 or
-   later lightweight AchievementOverlay by Oleg Savelyev". That is the
-   version of somebody else's utility, and read as the game's it beats
-   1.0.7 on the second digit — so the panel's headline, the one line
-   the whole thread exists to answer, said the game was on 1.6.0.
+   Not every version in a topic is the game's: a post recommending
+   "v1.6.0 or later lightweight AchievementOverlay" beats 1.0.7 on the
+   second digit, and that is how the headline once announced a game as
+   being on 1.6.0. A trainer, a cheat table and an overlay all carry
+   their own numbers; a crack, a repack, an update, clean Steam files
+   and a DLC pack are versioned against the game.
 
-   The rule: a row may set the headline only if the finder could say
-   what kind of thing it is, and only if that kind is about the game
-   rather than beside it. A trainer, a cheat table and an overlay all
-   carry their own version numbers and none of them is the game's;
-   "cheat tables for 1.0.4" and "AchievementOverlay v1.6.0" are the
-   same sentence about two different products. A crack, a repack, an
-   update, clean Steam files, a DLC pack — those are versioned against
-   the game, and they are what the question is about.
-
-   Everything still appears in the list. This decides one line. */
+   So a row sets the headline only if its kind is about the game rather
+   than beside it. Everything still appears in the list; this decides
+   one line. */
 const VERSION_EVIDENCE = new Set(["game", "run", "change", "extra", "block"]);
 
 function saysGameVersion(row) {
@@ -13923,22 +13733,17 @@ function initReleases() {
 /* ------------------------------------------------------------------
    Folding quotes.
 
-   A reply that quotes three paragraphs to add one line reads as four
-   paragraphs, and a page of those is most of what makes a long thread
-   hard to skim. Every script that has tried to fix this on this board
-   has done it by rebuilding the quote node — read the text out, throw
-   the node away, put a new one back. That loses whatever was inside:
-   the links, the nested quotes, the handlers another script attached,
-   and, under a Trusted Types policy, it does not run at all.
+   A reply that quotes three paragraphs to add one line reads as four,
+   and a page of those is most of what makes a long thread hard to
+   skim. Every other script on this board fixes it by rebuilding the
+   quote node, which loses the links, the nested quotes and whatever
+   another script attached — and does not run at all under a Trusted
+   Types policy.
 
-   Nothing here removes anything. A folded quote is the same nodes in
-   the same place with a smaller box drawn around them: `overflow` and
-   a mask do the folding, so the text stays laid out, stays in the
-   accessibility tree, stays findable by the browser's own find-in-page,
-   and stays visible to the finder, which reads the DOM.
-
-   That is the whole difference between "folded" and "gone", and it is
-   the reason the earlier attempt was refused.
+   Nothing here removes anything: a folded quote is the same nodes with
+   `overflow` and a mask drawing a smaller box around them, so the text
+   stays laid out, in the accessibility tree, findable by find-in-page,
+   and visible to the finder, which reads the DOM.
    ------------------------------------------------------------------ */
 
 /** Quote blocks in post content, outermost first. */
@@ -14061,38 +13866,25 @@ function initQuotes() {
 /* ------------------------------------------------------------------
    Folding low-value replies.
 
-   A release thread on this board runs to hundreds of posts and a good
-   half of them are "thanks!", "+1", or a single emoji. They are not
-   spam and they are not worth deleting — people say thank you and that
-   is fine — but scrolling past forty of them to reach the next mirror
-   is the second-worst thing about reading a long topic here.
+   Half a long release thread is "thanks!", "+1" and a lone emoji, and
+   scrolling past forty of them to reach the next mirror is most of
+   what makes one hard to read.
 
-   The prior art for this is a script that hid every post except the
-   ones by a hardcoded list of trusted uploaders. That gets the right
-   page for the wrong reason: the list ages badly, it silently buries
-   whoever is not on it, and the day a regular posts a working mirror
-   it is invisible. Nothing here knows who anybody is.
+   What is read is what a post says, never who wrote it: a post
+   carrying a link, a version, code, a real image, a question mark or a
+   word that reports a problem is never folded, whatever its length.
+   The prior art here is a script that hid everyone not on a list of
+   trusted uploaders, which ages badly and buries the day's working
+   mirror.
 
-   What it reads instead is what the post says. A post carrying a link,
-   a version number, code, a real image, a question mark or a word that
-   reports a problem is never folded, whatever its length. What is left
-   is short, says nothing on its own, and folds to one dim line that
-   opens on a click.
-
-   Folded, not removed: the reply stays where it is, laid out, in the
-   accessibility tree and findable by find-in-page. The box drawn
-   around it is smaller. That is the whole of it.
+   Folded, not removed: the reply stays laid out, in the accessibility
+   tree and findable by find-in-page, with a smaller box around it.
    ------------------------------------------------------------------ */
 
 /* A short post that still reports something. "Link is dead" is four
    words and it is the most useful thing on the page. */
 const QUIET_EXCLUDE_RE =
     /\b(dead|down|broken|offline|expired|removed|missing|error|crash(?:es|ing)?|fail(?:s|ed|ing)?|bug|fix(?:ed|es)?|issue|problem|virus|malware|help|404|not work|doesn'?t work|does not work|won'?t (?:start|launch|run)|please)\b/i;
-
-/** Everything the post says on its own, quotes excluded. */
-function quietText(post) {
-    return ownContent(post.body).textContent.replace(/\s+/g, " ").trim();
-}
 
 /**
  * Is this reply short enough, and empty enough, to fold?
@@ -14127,13 +13919,6 @@ function isQuietPost(post, limit) {
     if (QUIET_EXCLUDE_RE.test(text)) return false;
 
     return true;
-}
-
-/** The one line a folded reply shows. */
-function quietPreview(post) {
-    const text = quietText(post);
-    if (!text) return "(no text)";
-    return text.length > 90 ? text.slice(0, 87) + "…" : text;
 }
 
 function setQuiet(post, folded) {
@@ -14226,32 +14011,15 @@ function initQuiet() {
 /* ------------------------------------------------------------------
    Steam preview on hover.
 
-   Three separate community scripts exist for this board whose whole
-   purpose is putting a game's cover, score and release date next to a
-   topic title, which makes it the clearest thing the board's readers
-   have asked for that this script did not do.
+   The cheap half is free: the game card already reads an AppID out of
+   the first post of every game topic, and it is written down against
+   the topic id, so a topic you have opened previews from this browser
+   with nothing asked of anyone.
 
-   Two things about the way it is done here.
-
-   First, the cheap half comes free. The game info card already reads
-   an AppID out of the first post of every game topic it opens; that
-   AppID is now written down against the topic id. So a topic you have
-   opened previews instantly, from this browser, with nothing asked of
-   any server. That is most of what a regular reader hovers.
-
-   Second, the expensive half is opt-in and says so. Everything else in
-   this script reads the page you are already on — the README promises
-   that in as many words — and looking a game up on Steam breaks that
-   promise. So the feature is off by default, the network half has its
-   own switch on top, the settings panel says what it contacts, and on
-   the Tor mirror the network half is refused outright whatever the
-   setting says: someone reading this board over Tor did not ask to
-   open a connection to Valve.
-
-   CS.RIN.RU Enhanced also has a `topic_preview`, and this does not
-   stand down for it: that one previews the text of a post in the
-   thread, this one previews the game. They answer different questions,
-   and Enhanced ships its own switched off.
+   The expensive half — asking Steam about a game this browser has not
+   seen — is the one thing in the script that leaves the page you are
+   on, so it is off by default, has its own switch on top, and is
+   refused outright on the Tor mirror whatever the setting says.
    ------------------------------------------------------------------ */
 
 const STEAM_APPS_KEY = "steamApps";       /* topic id -> AppID          */
@@ -14282,8 +14050,6 @@ function steamBlockedBecause() {
     if (typeof GM_xmlhttpRequest !== "function") return "nogrant";
     return null;
 }
-
-function steamNetworkAllowed() { return steamBlockedBecause() === null; }
 
 /* ---- The cache ---------------------------------------------------- */
 
@@ -15019,21 +14785,16 @@ function initPostingMemory() {
 /* ---- The writing toolbar -------------------------------------------
 
    The board's own BBCode bar is sixteen grey rectangles reading "s",
-   "[*]", "List=", "spoiler=" and "Generate SteamInfo BBCode", laid out
-   in two undivided rows. What each one does is written nowhere on it:
-   the board puts the explanation in a read-only text field under the
-   bar, the full width of the form, which sits exactly where a second
-   Subject box would and reads as one. People fill in a form; they do
-   not hover a field to be told things.
+   "[*]", "List=" and "spoiler=", and what each one does is written
+   nowhere on it: the explanation goes into a read-only field under the
+   bar, full width, which reads as a second Subject box. So the caption
+   says what the button makes, an icon repeats it, the bar is cut into
+   groups, and the explanation becomes the same tooltip every other
+   control here uses.
 
-   So: the caption says what the button makes, an icon repeats it, the
-   bar is cut into groups, and the explanation is a small label above
-   the button that names it — the same tooltip every other control in
-   this script already uses.
-
-   Nothing about the button changes but its face. `bbstyle()` works off
-   the `bbtags` array and never off a caption, the accesskeys stay, the
-   onclick stays, and the helpbox stays in the page (hidden) because
+   Nothing about the button changes but its face: `bbstyle()` works off
+   the `bbtags` array and never off a caption, the accesskeys and the
+   onclick stay, and the helpbox stays in the page (hidden) because
    `helpline()` writes into it on every mouseover.
    -------------------------------------------------------------------- */
 
@@ -15085,7 +14846,7 @@ const BB_GROUPS = [
  */
 function boardHelpLines() {
     const table = {};
-    for (const script of $$("script:not([src])")) {
+    for (const script of document.querySelectorAll("script:not([src])")) {
         const text = script.textContent || "";
         const at = text.indexOf("help_line");
         if (at < 0 || !/var\s+help_line\s*=/.test(text)) continue;
@@ -15146,7 +14907,7 @@ function clampTip(holder) {
 }
 
 function initPostingToolbar() {
-    const buttons = $$("#wrapcentre input.btnbbcode");
+    const buttons = Array.from(document.querySelectorAll("#wrapcentre input.btnbbcode"));
     if (!buttons.length) return;
 
     /* Where the buttons came from, read before any of them is moved:
@@ -15237,13 +14998,39 @@ function initPostingToolbar() {
         helpbox.setAttribute("data-rr-helpbox", "");
         helpbox.setAttribute("tabindex", "-1");
         helpbox.setAttribute("aria-hidden", "true");
-        /* Its row is shared with the "Font colour" heading over the
-           palette, which has to stay where it is. Named, so the row
-           can be closed up to the label rather than keeping the height
-           a field used to need. */
         const row = helpbox.closest("tr");
         if (row) row.setAttribute("data-rr-helprow", "");
     }
+
+    movePaletteHeading();
+}
+
+/**
+ * "Font colour" belongs to the swatches, so it goes in their cell.
+ *
+ * The board writes it in the cell above them — the row that also
+ * carries the help field — which reads correctly only while the two
+ * rows are drawn as a grid. On a phone the rows unpack and the heading
+ * lands above the message box with its swatches a screen below it.
+ *
+ * Found by position rather than by its words, which are translated:
+ * the cell in the same column, one row up. markShapes() (lists.js) has
+ * named the palette by the time this runs.
+ */
+function movePaletteHeading() {
+    const palette = document.querySelector("#wrapcentre table[data-rr-palette]");
+    const cell = palette && palette.closest("td");
+    const row = cell && cell.closest("tr");
+    const above = row && row.previousElementSibling;
+    if (!above || above.tagName !== "TR") return;
+
+    const heading = above.children[Array.prototype.indexOf.call(row.children, cell)];
+    const words = heading && heading.textContent.replace(/\s+/g, " ").trim();
+    if (!words || heading.querySelector("input, select, textarea, table, a")) return;
+
+    palette.before(el("div.rr-palette-head", {}, [words]));
+    heading.textContent = "";
+    above.hidden = true;
 }
 
 /* ---- The topic review ----------------------------------------------
@@ -15263,7 +15050,7 @@ function initTopicReview() {
     /* By shape, not by the heading: "Topic review" is one string in
        English and another in Russian, and the box is the only scroller
        on the page holding posts. */
-    const scroller = $$("#wrapcentre div").find((node) =>
+    const scroller = Array.from(document.querySelectorAll("#wrapcentre div")).find((node) =>
         /auto|scroll/.test(node.style.overflow || "") && node.querySelector(".postbody"));
     if (!scroller) return;
 
@@ -15304,19 +15091,17 @@ function initTopicReview() {
 /* ------------------------------------------------------------------
    People.
 
-   phpBB has a foe list, but it lives four clicks deep in the control
-   panel and only takes effect on the next page load. This is the local
-   version: a per-post control, applied immediately, stored in this
-   browser, and never sent anywhere.
+   phpBB's foe list is four clicks deep in the control panel and only
+   takes effect on the next page load. This is the local version: a
+   per-post control, applied immediately, kept in this browser.
 
-   Hidden posts are collapsed to one line rather than removed, so a
-   thread does not silently lose replies people are answering.
+   Hidden posts collapse to one line rather than going, so a thread
+   does not silently lose replies people are answering.
 
-   Entries key on the member id the board threads through every profile
-   link, not on the display name, because a name is not a person: this
-   board renames, and the first version of this lost the entry the day
-   somebody did. The name is stored alongside so the list stays
-   readable in an export, and so a post with no profile link — a
+   Entries key on the member id in the profile link rather than on the
+   display name, because this board renames and the first version lost
+   the entry the day somebody did. The name is kept alongside so an
+   export stays readable, and so a post with no profile link — a
    deleted account, a guest — can still be matched on what it has.
    ------------------------------------------------------------------ */
 
@@ -15528,23 +15313,14 @@ let paletteHost = null;
 
 /* ---- Searching the board ------------------------------------------ */
 
-/* phpBB takes two parameters that decide whether a search answers with
-   one row per topic or one row per matching post, and how deep in a
-   post it looks. The board's own boxes set them: "Search this forum"
-   ships sr=topics and sf=titleonly, and has done for years.
+/* Left unset, phpBB searches with sr=posts and sf=all — the raw text
+   of every post, quotes included, so a thread twelve people quoted the
+   same release in came back as twelve results pointing at it. The
+   board's own boxes have shipped sr=topics for years; this asks for
+   the same. How deep to look is a real choice, so sf is remembered.
 
-   This script's own search box did not. Left unset, phpBB falls back to
-   sr=posts and sf=all, which searches the raw text of every post — and
-   the raw text of a post includes the quote it opens with. A thread
-   where twelve people quoted the same release came back as twelve
-   results, all pointing at the same thread. Same duplication as the
-   finder had, one layer down.
-
-   sr=topics is the answer to that and costs nothing: a topic that
-   matches is still a topic that matches. sf decides how deep to look,
-   and that is a real choice, so it is a setting. */
-/* Keyed by the board's own sf value, which is what the search box's
-   options (navbar.js, addSearchOptions) remember. */
+   Keyed by the board's own sf value, which is what the search box's
+   options (navbar.js, addSearchOptions) store. */
 const SEARCH_DEPTH = {
     titleonly: { sf: "titleonly", hint: "titles" },
     firstpost: { sf: "firstpost", hint: "titles + first post" },
@@ -16073,24 +15849,11 @@ function initShortcuts() {
 /**
  * How far down the page you are.
  *
- * This is a *reading* indicator and it was drawn exactly like a
- * *loading* one: a thin accent-coloured bar pinned to the top left
- * corner of the window, which is where every browser and half the web
- * puts the thing that fills up while a page arrives. On a long topic
- * opened at a saved position it therefore appeared already part-filled
- * and then sat there, and read as a download that had stalled at 15%
- * and never finished — which is exactly what it was reported as.
- *
- * Nothing about the measurement was wrong. Three things about the
- * presentation were:
- *
- *  - it floated at y=0 rather than belonging to anything, so it now
- *    sits on the bottom edge of the sticky top bar and reads as that
- *    bar's own rule filling in;
- *  - it appeared at page load already part-way along, so it now stays
- *    out of the way until the page has actually been scrolled;
- *  - it said nothing about itself, so it is a real progressbar with a
- *    name and a value that can be read aloud and asserted in a test.
+ * A reading indicator drawn at y=0 and part-filled at load is a
+ * loading indicator that has stalled, which is how this one was
+ * reported. So it sits on the bottom edge of the sticky bar rather
+ * than floating, stays out of the way until the page has actually been
+ * scrolled, and is a real progressbar with a name and a value.
  */
 function initProgress() {
     if (!settings.get("progress")) return;
@@ -16274,6 +16037,7 @@ function bootLate() {
     guard("palette", initPalette);
     guard("shortcuts", initShortcuts);
     guard("crumbs", tidyCrumbStrip);
+    guard("search", frameStraySearch);
     guard("spacing", dropStrayBreaks);
     guard("separators", dropStraySeparators);
     guard("numbers", groupBoardNumbers);

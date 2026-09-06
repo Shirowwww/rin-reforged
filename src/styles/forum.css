@@ -23,24 +23,18 @@ html[data-rr] body.ltr {
 
 html[data-rr] ::selection { background: var(--rr-selection); color: var(--rr-text-strong); }
 
-/* Held back until the script has rebuilt the page (main.js, markReady).
-   What the browser painted first was the board's own layout in these
-   colours — masthead gone, tables restyled, nothing else yet — and a
-   frame later everything jumped into place. Nothing is drawn until it
-   is in place; the attribute lands whatever happens, on a watchdog if
-   nothing else, so this can never leave a blank page.
+/* Held back until the script has rebuilt the page (main.js,
+   markReady), so the board's own layout in these colours is never
+   painted for a frame before everything jumps into place. The
+   attribute lands whatever happens, on a watchdog if nothing else, so
+   this can never leave a blank page.
 
-   The root carries the page colour as well as the body, so the moment
-   the stylesheet lands the window is the theme's own dark rather than
-   the browser's white — with the body hidden there is nothing else to
-   paint it.
+   The root carries the page colour too: with the body hidden there is
+   nothing else to paint the window the theme's own dark.
 
-   `opacity`, not `visibility`, and the difference is 44ms of style
-   work on a listing. `visibility` is an inherited property: taking
-   the gate off changes it on <body>, and every one of the four
-   thousand elements under it has to be recalculated. `opacity` is
-   not inherited, so the same flip touches one element. Measured
-   both ways against test/perf.js — 106ms and 62ms on viewforum. */
+   `opacity`, not `visibility`, and the difference measured 44ms on a
+   listing: `visibility` is inherited, so lifting the gate recalculates
+   every element under <body>. `opacity` is not. */
 html[data-rr] { background: var(--rr-bg); }
 html[data-rr]:not([data-rr-ready]) body,
 html[data-rr]:not([data-rr-ready]) body.ltr { opacity: 0; }
@@ -329,14 +323,25 @@ html[data-rr] td.row5 { background: var(--rr-surface-2); }
 
 /* Alternating rows.
 
-   The board alternates row1 and row2 down every listing, and that
-   banding is how a reader tracks one topic's title across to its last
-   post without losing the line. Painting both the same colour is what
-   made a 108-topic page read as one undifferentiated block.
+   Banding is how a reader tracks one topic's title across to its last
+   post without losing the line, and the board's own row1/row2 cannot
+   draw it: it alternates them across the columns of a single row. So
+   the shade is read off an attribute lists.js writes on the row
+   (restripe), which covers every cell of it — the marker gutter the
+   template gives a class of its own included.
 
-   Only listings get it: lists.js marks those tables, because in a topic
-   the same two classes wrap whole posts and striping those would band
-   the thread rather than the rows. */
+   Only listings: in a topic the same classes wrap whole posts, and
+   striping those would band the thread rather than the rows. */
+/* Only while the table is still a grid. On a phone a row is a card,
+   the shade is the card's, and the counters are painted out with
+   !important — a stripe on the cells there would draw half a row. */
+@media (min-width: 861px) {
+    html[data-rr] table[data-rr-list] > tbody > tr[data-rr-stripe] > td { background: var(--rr-surface); }
+    html[data-rr] table[data-rr-list] > tbody > tr[data-rr-stripe="b"] > td { background: var(--rr-surface-2); }
+    html[data-rr] table[data-rr-list] > tbody > tr[data-rr-stripe]:hover > td { background: var(--rr-surface-3); }
+}
+/* Under that width, and on a listing this script could not read the
+   shape of, the board's own banding is what is left. */
 html[data-rr] table[data-rr-list] td.row2 { background: var(--rr-surface-2); }
 /* On the member list the post count sits right-aligned against the
    rank's left edge — "147 Advanced forumer" read as one string. A
@@ -344,8 +349,8 @@ html[data-rr] table[data-rr-list] td.row2 { background: var(--rr-surface-2); }
 html[data-rr] table[data-rr-list] th[data-rr-col="posts"],
 html[data-rr] table[data-rr-list] td[data-rr-col="posts"] { padding-right: 28px; }
 
-/* The member list stripes its rows, not its cells: <tr class="row2">
-   over plain td.gen. The same shade, read off the row. */
+/* The member list stripes its rows rather than its cells: <tr
+   class="row2"> over plain td.gen. The same shade, read off the row. */
 html[data-rr] table[data-rr-list] > tbody > tr.row2 > td { background: var(--rr-surface-2); }
 html[data-rr] table[data-rr-list] > tbody > tr.row1:hover > td,
 html[data-rr] table[data-rr-list] > tbody > tr.row2:hover > td { background: var(--rr-surface-3); }
@@ -512,7 +517,7 @@ html[data-rr] [data-rr-date] { white-space: nowrap; }
    above paints as body text: Profile, Board preferences and the rest
    read as headings and nobody clicks a heading. They are links. */
 html[data-rr] a.nav { color: var(--rr-link); }
-html[data-rr] a.nav:hover { color: var(--rr-link-hover, var(--rr-link)); text-decoration: underline; }
+html[data-rr] a.nav:hover { color: var(--rr-link); text-decoration: underline; }
 
 /* The posting form's filehost warning sits at 10.4px, under the floor
    everything else in the interface keeps to. */
@@ -717,6 +722,15 @@ html[data-rr] .spoiler input[type="button"] {
 
 html[data-rr] .postbody a { color: var(--rr-link); }
 html[data-rr] .postbody a:visited { color: var(--rr-link-visited); }
+/* Where an off-site link goes, said after it (topic.js). A rule of its
+   own rather than inherited from the link, so it stays quiet on hover
+   too. */
+html[data-rr] .rr-host {
+    margin-left: 5px;
+    font-size: var(--rr-fs-xs);
+    font-family: var(--rr-font-mono);
+    color: var(--rr-faint);
+}
 
 /* Quotes: a rule and a tint, not a boxed card. */
 html[data-rr] blockquote,

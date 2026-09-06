@@ -25,28 +25,14 @@ const RELEASE_WORDS = [
 ];
 
 /* Three ways a post names which one it is, and they are not the same
-   thing.
- *
- * The first is a version with a v on it: v1.4.2, ver. 2.0, version
- * 1.10.
- *
- * The second is a Steam build id, which is eight digits and beats
- * every real version it is compared against — kept apart so nothing
- * downstream has to guess which it is holding.
- *
- * The third is the one this board actually uses for the games it cares
- * most about, and it has no v anywhere in it. Ubisoft ships **Title
- * Updates**, and the release posts say so in the publisher's words:
- * "Game version is Title Update 1.0.7",
- * "Assassins.Creed.Black.Flag.Resynced.Title.Update.1.0.4.zip",
- * "to make space for Title Update 1.0.5". Read by a pattern that
- * required a v, all thirty-three pages of that topic had no version in
- * them at all. The number after the label is the game's version — the
- * post says as much — so that is what it is read as, and it compares
- * with every other version the same way.
- *
- * The label has to be followed by a *dotted* number, so "update 2 of
- * 3" and "patch to 4 files" are not versions. */
+   thing: a version with a v on it (v1.4.2, ver. 2.0), a Steam build id
+   (eight digits, kept apart so nothing downstream mistakes it for a
+   very large version), and a labelled number with no v anywhere — the
+   form this board uses most, because Ubisoft ships "Title Update
+   1.0.7" and the release posts say so in the publisher's words.
+
+   A label has to be followed by a *dotted* number, so "update 2 of 3"
+   and "patch to 4 files" are not versions. */
 /* What may follow the digits.
 
    A single letter — 1.4.2b is a version — but only one, and only where
@@ -195,21 +181,12 @@ function ownContent(body) {
     return copy;
 }
 
-/* A <br> contributes no text.
-
-   The board writes a release post as one line per fact separated by
-   <br>, so `textContent` returns them welded together: "Game version
-   is Title Update 1.0.7Learn more here on HV releases". Two things go
-   wrong at every one of those seams, and both were live on the board.
-
-   The version comes back short. `1.0.7` followed immediately by a
-   letter has no word boundary after it, so the pattern backtracks to
-   the longest ending that does have one — `1.0` — and the panel
-   reported a game on 1.0 that was on 1.0.7.
-
-   And release words stop matching. `\bupdate\b` needs a boundary in
-   front of it, and there is none in the middle of "filesUpdate", so a
-   post offering clean Steam files and an update came back as neither.
+/* A <br> contributes no text, so a release post written one fact per
+   line comes back welded: "Game version is Title Update 1.0.7Learn
+   more here on HV releases". Both halves of this module then fail at
+   every seam — 1.0.7 followed by a letter has no word boundary and the
+   pattern backtracks to 1.0, and a release word needs one in front of
+   it and finds none in the middle of "filesUpdate".
 
    One space per line break fixes both, on the detached copy only.
    Block elements get one at each end for the same reason. */

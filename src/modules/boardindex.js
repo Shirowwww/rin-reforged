@@ -105,29 +105,17 @@ function dropDuplicateSearch() {
 /* ---- Category collapse ------------------------------------------- */
 
 /**
- * The board's own "collapse this category" control.
+ * The board's own "collapse this category" control: an `<input
+ * type="button">` carrying `value=" "` and drawn by a 12x12 background
+ * image the board injects in a <style> block.
  *
- * It is an `<input type="button">` carrying `value=" "` — a single
- * space — and drawn entirely by a 12x12 background image the board
- * injects in a <style> block. Two things follow, and neither was being
- * handled.
+ * So it has no accessible name — a space is not one — and the heading
+ * beside it becomes that name. And it cannot be redrawn from the
+ * stylesheet: an <input> is a replaced element, `::before` generates
+ * nothing on it, so the chevron has to be the value.
  *
- * It has no accessible name. `value` is what names an input button,
- * and a space is not a name: a screen reader reaches a button and can
- * say nothing about it, on the one control that folds a whole category
- * of the board away. The heading beside it is the name, so that is what
- * goes on it.
- *
- * And it cannot be redrawn from the stylesheet alone. An <input> is a
- * replaced element: `::before` and `::after` generate nothing on it, so
- * the chevron an earlier version of this drew that way rendered as an
- * empty box with a border — worse than the GIF it replaced, and on the
- * light theme invisible. The glyph therefore has to be the value, which
- * is where the board already puts one.
- *
- * The board's own handler is untouched: the click is still its click,
- * and `flipf()` reads the class rather than the value, so writing one
- * cannot confuse it.
+ * The board's own handler is untouched: `flipf()` reads the class
+ * rather than the value, so writing one cannot confuse it.
  */
 function tidyCategoryToggles() {
     for (const toggle of document.querySelectorAll("#wrapcentre .ccclose, #wrapcentre .ccopen")) {

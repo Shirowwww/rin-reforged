@@ -8,9 +8,6 @@
    DOMParser both throw.
    ------------------------------------------------------------------ */
 
-const $ = (selector, root = document) => root.querySelector(selector);
-const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
-
 /**
  * Build an element.
  *   el("button.rr-btn", { onclick, "aria-pressed": "true" }, ["Save"])
@@ -147,26 +144,17 @@ function scrollBehaviour() { return motionAllowed() ? "smooth" : "auto"; }
 
 /* ---- Parsing a page this script fetched --------------------------- */
 
-/* Two features fetch a page of the board and read it: the quick reply
-   lifts the real form out of posting.php, and the releases panel walks
-   a topic. Both need HTML turned into a document, and there is exactly
-   one way to do that — DOMParser.
+/* Two features fetch a page of the board and read it — the quick
+   reply, and the releases walk — and DOMParser is the only way to turn
+   HTML into a document.
 
-   Under `require-trusted-types-for 'script'` DOMParser.parseFromString
-   throws, verified rather than assumed: a page served with that header
-   refuses parseFromString, innerHTML, and innerHTML on a document from
-   createHTMLDocument, all three with "This document requires
-   'TrustedHTML'". cs.rin.ru does not send it today. The embedded video
-   players in a game thread do, and @noframes keeps this out of those,
-   but a board can add a header any day.
-
-   The escape hatch is the one Trusted Types is designed around: a
-   policy. It works whenever the CSP does not also name an allow-list
-   that excludes it — checked the same way, and `createPolicy` then
-   returns a wrapper whose output parseFromString accepts. Where even
-   that is refused, this returns null and the caller says so, which is
-   the difference between a feature that reports it cannot run and one
-   that throws inside a click handler. */
+   Under `require-trusted-types-for 'script'` parseFromString throws,
+   verified rather than assumed. cs.rin.ru does not send that header
+   today; the video players a game thread embeds do, and a board can
+   add one any day. The escape hatch is a policy, which works unless
+   the CSP also names an allow-list that excludes it — and where even
+   that is refused this returns null and the caller says so, rather
+   than throwing inside a click handler. */
 let htmlPolicy;
 
 function trustedHtml(html) {
@@ -199,18 +187,14 @@ function parseDocument(html) {
 
 /* ---- Colour ------------------------------------------------------- */
 
-/* The board paints usernames from their group: administrators red,
-   moderators green, the upload crew its own colour, each written as an
-   inline style on the link. Several of those are #BF0000 and darker on
-   a near-black page — 2.5:1, against the 4.5 that 13px text is held
-   to — and they are on the header of every post and the last line of
-   every listing row.
- *
- * Keeping them is not in question: those colours are how this board
- * tells you who is talking. What follows keeps the hue and the
- * saturation and moves only the lightness, by the smallest step that
- * makes the name readable on whatever is actually behind it. A red
- * name stays a red name. */
+/* The board paints usernames from their group, as an inline style on
+   the link, and several of those are #BF0000 or darker on a near-black
+   page — 2.5:1, against the 4.5 that 13px text is held to.
+
+   Those colours are how the board tells you who is talking, so what
+   follows keeps the hue and the saturation and moves only the
+   lightness, by the smallest step that makes the name readable on
+   whatever is actually behind it. A red name stays a red name. */
 
 function parseColour(text) {
     const raw = String(text).trim();
@@ -357,32 +341,21 @@ function backdropOf(node) {
    number stops being read and becomes a length — nobody reads 3097072,
    they see "long". Grouped, it is three million at a glance.
 
-   The separator is a narrow no-break space (U+202F): the typographic
-   one, and no-break, so it can never leave a lone digit at the end of a
-   wrapped line. Not a comma — a comma is the decimal separator for half
-   this board's readers, to whom 3,097,072 is a number with two decimal
-   points in it.
+   The separator is a narrow no-break space (U+202F) and not a comma: a
+   comma is the decimal separator for half this board's readers, to
+   whom 3,097,072 has two decimal points in it. No-break, so it cannot
+   leave a lone digit at the end of a wrapped line.
 
-   The digits are regrouped, never rounded or abbreviated: "3.1M" is a
-   different fact from 3 097 072, and the exact figure is what a
-   counting column is for. And only quantities — a Steam build id, an
-   AppID or a post number is a name that happens to be spelled in
-   digits, and grouping one would be like putting a comma in a
-   postcode. Nothing here runs over a page; every caller names what it
-   is handing in. */
+   Regrouped, never rounded: "3.1M" is a different fact. And only
+   quantities — a build id, an AppID or a post number is a name spelled
+   in digits — so nothing here sweeps a page; every caller names what
+   it is handing in. */
 const DIGIT_GROUP = "\u202f";
 
-/* Where the grouping starts.
-
-   Four digits, where the caller knows the number is a count: in a
-   column, 2393 sitting between 545 and 16 736 is the only one that has
-   to be counted rather than read.
-
-   Five, where the caller only knows it is *probably* a count — a
-   figure inside the board's own markup rather than a cell this script
-   built. 2026 is a year, and a year is a name for a year; grouping one
-   would be an error the reader has to undo. Nothing between 1000 and
-   9999 is worth that risk when the element could be anything. */
+/* Where the grouping starts. Four digits where the caller knows the
+   number is a count; five where it only knows it probably is, because
+   2026 is a year and a year is a name — grouping one is an error the
+   reader has to undo. */
 const GROUP_FROM_COUNT = 4;
 const GROUP_FROM_GUESS = 5;
 
@@ -488,20 +461,12 @@ const ICON_PATHS = {
 /* Each icon's shapes, built once as real nodes and cloned after.
 
    The definitions above are written as markup because that is how they
-   are read and edited. Getting them into the page is another matter:
-   under a Content Security Policy with require-trusted-types-for, both
-   svg.innerHTML and DOMParser.parseFromString throw. This script draws
-   its entire interface with these, and a throw inside icon() takes the
-   whole calling module with it — the top bar included — so neither is
-   a route worth depending on.
-
-   The vocabulary here is three self-closing tags with plain attributes
-   and nothing else, all of them written in this file. Reading that back
-   with a pair of expressions and createElementNS is exact for what it
-   has to handle, and there is no markup sink left to be gated.
-
-   (Verified against the live board, where the video embeds in a game
-   thread do enforce such a policy: the icons survive it.) */
+   are read and edited, but neither svg.innerHTML nor DOMParser
+   survives a require-trusted-types-for policy — and a throw inside
+   icon() takes the whole calling module with it, top bar included. The
+   vocabulary is three self-closing tags with plain attributes, all
+   written in this file, so two expressions and createElementNS read it
+   back exactly and leave no markup sink to be gated. */
 const SHAPE_RE = /<([a-z]+)\s+([^>]*?)\s*\/>/gi;
 const ATTR_RE = /([\w-]+)="([^"]*)"/g;
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -532,7 +497,7 @@ function iconShapes(name) {
 /** An inline SVG icon. The shapes are literals defined above, never
     user content. */
 function icon(name, size) {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const svg = document.createElementNS(SVG_NS, "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("fill", "none");
     svg.setAttribute("stroke", "currentColor");

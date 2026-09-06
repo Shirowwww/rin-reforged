@@ -160,8 +160,12 @@ Every release in a five page thread, read once:
 
 ### It gets you around
 
-- **The board's own wordmark**, cropped out of the masthead art it ships
-  rather than redrawn, so the name in the bar is the name on the board.
+- **The board's own wordmark** in the top bar, traced off the art it ships
+  rather than redrawn, so the name in the bar is the name on the board. It is
+  an inline `<svg>` filled with `currentColor` — the board sends
+  `img-src 'self'`, so the same art as a data URI, whether in an `<img>` or a
+  CSS mask, is refused; and drawn from the bar's own ink it needs no plate
+  behind it and reads on the light theme as well as the dark ones.
 - **Every masthead link stays one click away.** Forum rules, Donate, Chat,
   FAQ, Register and the English/Russian switch move into a slim row under the
   top bar rather than disappearing with the 340px header they lived in. On a
@@ -1009,10 +1013,13 @@ asks about inputs and buttons now.
 `live.js` runs the built bundle against cs.rin.ru with `addInitScript`, which
 executes it at document-start the way a userscript manager does. It is
 read-only: it opens pages, reads the DOM and closes. It has already earned its
-place twice — the board serves two different masthead files and the wordmark
-sits in a different place in each, and the video embeds in a game thread
+place three times — the board serves two different masthead files and the
+wordmark sits in a different place in each; the video embeds in a game thread
 enforce a Trusted Types policy that `innerHTML` and `DOMParser` both fall foul
-of. Neither is visible from the fixtures.
+of; and the board's `img-src 'self'` refuses a data URI, which turned a masked
+wordmark into a filled grey rectangle across the top of every page. None of
+the three is visible from the fixtures, which are served without the board's
+headers.
 
 They are a starting point, not a substitute for the live board. The harness
 inlines the bundle at the end of `<body>`, while the real script runs at

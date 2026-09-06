@@ -1,22 +1,17 @@
 /* ------------------------------------------------------------------
    Folding quotes.
 
-   A reply that quotes three paragraphs to add one line reads as four
-   paragraphs, and a page of those is most of what makes a long thread
-   hard to skim. Every script that has tried to fix this on this board
-   has done it by rebuilding the quote node — read the text out, throw
-   the node away, put a new one back. That loses whatever was inside:
-   the links, the nested quotes, the handlers another script attached,
-   and, under a Trusted Types policy, it does not run at all.
+   A reply that quotes three paragraphs to add one line reads as four,
+   and a page of those is most of what makes a long thread hard to
+   skim. Every other script on this board fixes it by rebuilding the
+   quote node, which loses the links, the nested quotes and whatever
+   another script attached — and does not run at all under a Trusted
+   Types policy.
 
-   Nothing here removes anything. A folded quote is the same nodes in
-   the same place with a smaller box drawn around them: `overflow` and
-   a mask do the folding, so the text stays laid out, stays in the
-   accessibility tree, stays findable by the browser's own find-in-page,
-   and stays visible to the finder, which reads the DOM.
-
-   That is the whole difference between "folded" and "gone", and it is
-   the reason the earlier attempt was refused.
+   Nothing here removes anything: a folded quote is the same nodes with
+   `overflow` and a mask drawing a smaller box around them, so the text
+   stays laid out, in the accessibility tree, findable by find-in-page,
+   and visible to the finder, which reads the DOM.
    ------------------------------------------------------------------ */
 
 /** Quote blocks in post content, outermost first. */

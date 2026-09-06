@@ -1,32 +1,15 @@
 /* ------------------------------------------------------------------
    Steam preview on hover.
 
-   Three separate community scripts exist for this board whose whole
-   purpose is putting a game's cover, score and release date next to a
-   topic title, which makes it the clearest thing the board's readers
-   have asked for that this script did not do.
+   The cheap half is free: the game card already reads an AppID out of
+   the first post of every game topic, and it is written down against
+   the topic id, so a topic you have opened previews from this browser
+   with nothing asked of anyone.
 
-   Two things about the way it is done here.
-
-   First, the cheap half comes free. The game info card already reads
-   an AppID out of the first post of every game topic it opens; that
-   AppID is now written down against the topic id. So a topic you have
-   opened previews instantly, from this browser, with nothing asked of
-   any server. That is most of what a regular reader hovers.
-
-   Second, the expensive half is opt-in and says so. Everything else in
-   this script reads the page you are already on — the README promises
-   that in as many words — and looking a game up on Steam breaks that
-   promise. So the feature is off by default, the network half has its
-   own switch on top, the settings panel says what it contacts, and on
-   the Tor mirror the network half is refused outright whatever the
-   setting says: someone reading this board over Tor did not ask to
-   open a connection to Valve.
-
-   CS.RIN.RU Enhanced also has a `topic_preview`, and this does not
-   stand down for it: that one previews the text of a post in the
-   thread, this one previews the game. They answer different questions,
-   and Enhanced ships its own switched off.
+   The expensive half — asking Steam about a game this browser has not
+   seen — is the one thing in the script that leaves the page you are
+   on, so it is off by default, has its own switch on top, and is
+   refused outright on the Tor mirror whatever the setting says.
    ------------------------------------------------------------------ */
 
 const STEAM_APPS_KEY = "steamApps";       /* topic id -> AppID          */
@@ -57,8 +40,6 @@ function steamBlockedBecause() {
     if (typeof GM_xmlhttpRequest !== "function") return "nogrant";
     return null;
 }
-
-function steamNetworkAllowed() { return steamBlockedBecause() === null; }
 
 /* ---- The cache ---------------------------------------------------- */
 

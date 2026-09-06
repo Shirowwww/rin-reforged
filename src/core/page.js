@@ -38,25 +38,10 @@ const PAGE = (() => {
     };
 })();
 
-/** The session id phpBB threads through every link, when present. */
-function sessionId() {
-    const link = document.querySelector('a[href*="sid="]');
-    if (!link) return null;
-    const match = link.getAttribute("href").match(/[?&]sid=([a-f0-9]+)/);
-    return match ? match[1] : null;
-}
-
 /** phpBB hides links behind a placeholder for guests; several features
     only make sense once the reader is logged in. */
 function isLoggedIn() {
     return Boolean(document.querySelector('a[href*="mode=logout"]'));
-}
-
-function currentUser() {
-    const link = document.querySelector('a[href*="mode=logout"]');
-    if (!link) return null;
-    const profile = document.querySelector('a[href*="ucp.php"][href*="i=pm"], a[href*="mode=viewprofile"]');
-    return { name: profile ? profile.textContent.trim() : null };
 }
 
 /** Unread private messages, read off the UCP link phpBB renders. */
@@ -116,13 +101,11 @@ function forumRows() {
  * of it — see releases.js. Nothing in here touches the document it is
  * given, so a detached parse is as valid a subject as the live page.
  *
- * `head` is the header strip the modern layout builds, when one is
- * there. Reading it back off the page rather than only setting it when
- * this module builds it matters: every caller runs its own posts()
- * pass, so a module running after topic.js used to get objects with no
- * head at all and fall through to the template's own header row —
- * which the modern layout hides. That is how the "hide posts by
- * someone" control ended up appended to a row nobody could see.
+ * `head` is read back off the page rather than only set when topic.js
+ * builds it: every caller runs its own posts() pass, and one running
+ * afterwards would otherwise fall through to the template's header
+ * row, which the modern layout hides. That is how the "hide posts by
+ * someone" control ended up on a row nobody could see.
  */
 function posts(root = document) {
     const out = [];

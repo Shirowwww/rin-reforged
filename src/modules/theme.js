@@ -93,27 +93,19 @@ function initTheme() {
 
 /* ---- The board's own colours, kept and made readable --------------- */
 
-/* Every colour the *script* paints is measured against WCAG AA by
-   test/contrast.js and every one of them passes. The board's own are a
-   different matter and not the script's to redesign — except that they
-   are on the same page, in the same type sizes, and several of them
-   are genuinely hard to read: group-coloured usernames come out at
-   2.5:1 on the dark themes and 1.9:1 on the light one, and the
-   "[[Please login to see this link.]]" marker at 3.1.
- *
- * So they are kept and lifted: same hue, same saturation, the smallest
- * change in lightness that reaches the threshold against whatever is
- * behind them. Only colours the board wrote inline, only where they
- * fail, and never more than they have to. The original is kept on the
- * element so nothing is lost.
- *
- * It has its own switch, because a board's colours are part of how it
- * looks and somebody may prefer them exactly as they are. */
-/* 4.5 for everything, including the large text WCAG lets off at 3.
-   Two thresholds meant the pass and test/contrast.js could disagree
-   about one span in a signature and each be right, which is a bad way
-   to spend an afternoon; and being stricter than the standard on
-   somebody else's colours only ever makes them easier to read. */
+/* The board's own inline colours, kept and lifted.
+
+   Group-coloured usernames come out at 2.5:1 on the dark themes and
+   1.9:1 on the light one, and the "[[Please login to see this link.]]"
+   marker at 3.1. Each keeps its hue and its saturation and moves only
+   in lightness, by the smallest step that reads against whatever is
+   actually behind it. Only colours the board wrote inline, only where
+   they fail; the original stays on the element.
+
+   One threshold for everything, a little over the 4.5 the rest of the
+   web is held to and well over the 3 WCAG allows large text: two
+   thresholds meant this pass and test/contrast.js could disagree about
+   one span in a signature and both be right. */
 const INK_TARGET = 4.75;
 
 function readableBoardInk() {
@@ -145,8 +137,7 @@ function readableBoardInk() {
         if (!lifted) continue;
 
         node.setAttribute("data-rr-ink", written);
-        node.style.color = "rgb(" + [lifted.r, lifted.g, lifted.b]
-            .map((v) => Math.round(v)).join(", ") + ")";
+        node.style.color = rgbText(lifted);
     }
 }
 

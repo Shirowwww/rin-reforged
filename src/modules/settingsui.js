@@ -133,20 +133,14 @@ function buildField(field) {
     // looks for "linkifyBare". The id is in there anyway, for whoever
     // read it in an export.
     row.dataset.search = (field.label + " " + (field.desc || "") + " " + field.id).toLowerCase();
-    // Two attributes for one fact, because the stylesheet reads the
-    // prefixed one and dataset.dep would have written data-dep, which
-    // matches nothing.
-    if (field.when) {
-        row.dataset.when = field.when;
-        row.setAttribute("data-rr-dep", field.when);
-    }
+    if (field.when) row.setAttribute("data-rr-dep", field.when);
     return row;
 }
 
 /** A field is only shown when the field it depends on is on. */
 function syncDependencies(body) {
-    for (const row of body.querySelectorAll("[data-when]")) {
-        row.toggleAttribute("data-rr-dep-off", !settings.get(row.dataset.when));
+    for (const row of body.querySelectorAll("[data-rr-dep]")) {
+        row.toggleAttribute("data-rr-dep-off", !settings.get(row.getAttribute("data-rr-dep")));
     }
 }
 
@@ -293,7 +287,7 @@ function buildPanelBody() {
     };
 
     select(current);
-    return { rail, pages, search, groups, select };
+    return { rail, pages, search };
 }
 
 function openSettings() {

@@ -1,33 +1,14 @@
 /* ------------------------------------------------------------------
    Releases: one panel, two scopes.
 
-   This started as two. "On this page" answered "is there a release in
-   front of me", read straight out of the DOM and free. "Posted in this
-   topic" walked every page and answered "what has been posted here, in
-   what order, and which of it is current".
+   **This page** is read straight out of the DOM and costs nothing.
+   **All N pages** walks the topic once, on a click, and remembers what
+   it found — a nineteen page topic is nineteen requests to a board
+   that runs on donations, so it is never a page load and never twice
+   in a row. Escape stops it.
 
-   They were two panels one under the other, listing the same kind of
-   thing about the same posts in two different row shapes, and the
-   second was strictly the first plus a page number. So there is one
-   panel now, with a scope you switch: **This page**, instant and
-   asking nobody anything, and **All N pages**, which reads the topic
-   once, on a click, and remembers what it found.
-
-   Everything either of them had is here. From the page half: the jump
-   that scrolls to the post and flashes it, and the filter that hides
-   every post without a link. From the topic half: the version, what
-   kind of thing each post is, who posted it, when, which page, the
-   highest version anybody posted, filters by kind, and the note saying
-   when the topic was last read.
-
-   How the walk behaves is the part worth stating plainly. The page you
-   are on is never fetched — it is already parsed and in front of you.
-   The rest are fetched one at a time, spaced out, and only when asked:
-   a nineteen page topic is nineteen requests to a board that runs on
-   donations, so it is a click, never a page load, and never twice in a
-   row. Escape stops it. And nothing is guessed: a post is read for
-   what it says, with quoted text excluded, because a reply quoting a
-   release is not a release.
+   finder.js decides what a post is; this file shows it. Quoted text is
+   excluded there, because a reply quoting a release is not a release.
    ------------------------------------------------------------------ */
 
 /* What the board's uploaders actually post, in the words they use.
@@ -68,20 +49,9 @@ const RELEASE_KINDS = [
     { id: "denuvo", label: "Denuvo", re: /\bdenuvo\b|денуво/i },
 ];
 
-/* What each kind *is*, so the colour carries the same meaning
-   everywhere it appears.
-
-   Five of the eleven kinds were coloured and six were grey, which
-   looked like a taxonomy and was actually a list of the ones somebody
-   had got round to: a Trainer sat neutral in a row where Crack, Update
-   and Clean Steam files were all coloured, and the filter chips above
-   those rows were grey to a kind — the same word, twice on the same
-   screen, in two different colours.
-
-   So every kind belongs to a family, the families are what the
-   stylesheet paints, and a test fails if a kind is ever added without
-   one. Five families, and each answers a different question about a
-   post:
+/* Every kind belongs to a family, and the families are what the
+   stylesheet paints, so the same word is the same colour wherever it
+   appears. A test fails if a kind is ever added without one.
 
      game    what you install          Clean Steam files, Repack
      run     what makes it start       Crack, Online fix
@@ -90,13 +60,10 @@ const RELEASE_KINDS = [
      beside  what sits next to it      Trainer, Tool
      block   what stops it             Denuvo
 
-   The tokens they map to are theme-wide, so Paper gets its own version
-   of all six rather than a dark palette on a light page — and the six
-   have to stay six on every theme. The first mapping put `run` on
-   --rr-tag-important and `block` on --rr-tag-problem, which are the
-   same red on the board's own palette: two families, one colour, and
-   a Crack that looked like a warning. A check compares all six on
-   every theme now. */
+   The six have to stay six on every theme: the first mapping put
+   `run` and `block` on two tokens that are the same red on the
+   board's own palette, and a Crack looked like a warning. A check
+   compares all six per theme. */
 const RELEASE_FAMILY = {
     steamfiles: "game",
     repack: "game",
@@ -123,56 +90,21 @@ const RELEASE_MAX_PAGES = 80;
 
 /* ---- How the walk asks the board for pages -------------------------
 
-   The board is one man's server paid for by donations, and it is
-   asking for them right now. Reading a thirty-three page topic is
-   thirty-two requests however it is arranged, so the only question is
-   the shape of them; the answer here is bounded on three axes at once,
-   and none of the three is negotiable for speed.
+   The board runs on donations, so the walk is bounded three ways: at
+   most three requests in flight, no two started closer together than
+   RELEASE_START_GAP, and a 429 or 503 stops it where it is rather
+   than retrying into it.
 
-   **How many at a time.** Strictly one at a time with a gap is what
-   this did, and on a thirty-four page topic that measured 21.8 seconds
-   against the live board — because 95% of it was waiting: a page of
-   that topic is 417 ms to first byte and 2.4 ms to parse. The
-   published guidance for a host with no crawl-delay of its own is two
-   to five connections; the conservative end of that is three, and
-   three is what this uses. It is worth adding that the board answers
-   HTTP/2 and advertises HTTP/3, so three requests in flight share one
-   connection rather than opening three.
+   The fourth bound is this board in particular. It never answers 429;
+   it queues, and six requests sent together come back at two, four,
+   six, eight, ten and twelve seconds — one slot at a time. So the
+   walk times its own answers: the first few set what prompt means
+   today, and once one is several times slower than that it drops to a
+   single request with a much wider gap and stays there.
 
-   **How fast they may start.** Concurrency alone still allows a burst:
-   three requests leaving in the same millisecond, three more the
-   moment they land. So no two requests may start closer together than
-   RELEASE_START_GAP, which caps the rate at about six a second at the
-   very worst and holds it near three in practice — against roughly one
-   a second before, for a run that is over in seconds either way.
-
-   **What happens when the board says no.** A 429 or a 503 stops the
-   walk where it is rather than retrying into it, and the panel says
-   the topic was only read as far as it got.
-
-   **And what happens when it says no without saying so.** This board
-   does not answer 429. It queues: after a few dozen requests in quick
-   succession it starts serialising everything from that address, and
-   six requests sent together come back at two, four, six, eight, ten
-   and twelve seconds — a staircase, each step one slot in a queue.
-   Measured, from a browser, with none of this script running.
-
-   That is the important finding about this particular board, and it
-   makes concurrency worth much less than it looks: against a server
-   handing out one slot every two seconds, three requests in flight
-   finish no sooner than one and leave three sitting in its queue
-   instead of one. So the walk watches its own timings — the first few
-   answers set what "prompt" means for today, and once answers are
-   several times slower than that, it drops to a single request at a
-   time with a much wider gap and stays there. Fast board: three at a
-   time and done in seconds. Board under load: out of its way.
-
-   There is no conditional-request path to take here, and that was
-   checked rather than assumed: cs.rin.ru sends no ETag and no
-   Last-Modified on viewtopic.php, and answers `Cache-Control: private,
-   no-cache="set-cookie"` with `Expires: 0`. An If-None-Match round
-   trip would cost exactly as much as the page. The saving has to come
-   from not asking at all, which is what the page cache below does. */
+   No conditional-request path exists to take: viewtopic.php sends no
+   ETag and no Last-Modified. The saving has to come from not asking
+   at all, which is what the page cache below is for. */
 const RELEASE_IN_FLIGHT = 3;
 const RELEASE_START_GAP = 160;        /* between request starts, ms   */
 /* Where it goes when the board starts queueing. */
@@ -397,23 +329,19 @@ function readTopicPage(found, page) {
 
 /* ---- Pages this browser has already read --------------------------- */
 
-/* A page of a phpBB topic is not a moving target. The board paginates
-   by post index, so a reply lands on the last page and leaves every
-   page before it byte-for-byte the same. That is what makes reading a
-   topic a second time nearly free — as long as the assumption is
-   checked rather than trusted, because a *deleted* post shifts every
-   page after it back by one.
+/* phpBB paginates by post index, so a reply lands on the last page and
+   leaves every page before it byte-for-byte the same — which makes
+   reading a topic twice nearly free. A *deleted* post breaks that: it
+   shifts every page after it back by one.
 
    So each page is kept with the id of the post it opens with, and a
-   rescan re-reads two pages: the last one, which is where new replies
-   are, and the highest page below it, whose opening post id is the
-   canary. If that canary still opens with the post it opened with
-   before, nothing has shifted and every page between them is still
-   what it was. If it does not, the whole cache for the topic is
-   dropped and the topic is read again from the start.
+   rescan re-reads two: the last, where new replies are, and the
+   highest page below it as a canary. If the canary still opens with
+   the post it did, nothing between them has moved; if it does not, the
+   topic's cache is dropped and it is read again from the start.
 
-   Kept for fewer topics than the row index is: this holds every page
-   of a topic rather than the answer. */
+   Kept for fewer topics than the row index: this holds every page of a
+   topic rather than the answer. */
 const RELEASE_PAGES_KEY = "topicPages";
 const RELEASE_PAGES_TOPICS = 4;
 
@@ -727,26 +655,18 @@ function versionNewer(a, b) {
     return false;
 }
 
-/* Which rows are allowed to answer "what version is the game on".
+/* Which rows may answer "what version is the game on".
 
-   Not every version in a topic is the game's. Found on the live board,
-   in the thirty-three page Black Flag Resynced thread: a post
-   explaining how to get achievement popups says "Download v1.6.0 or
-   later lightweight AchievementOverlay by Oleg Savelyev". That is the
-   version of somebody else's utility, and read as the game's it beats
-   1.0.7 on the second digit — so the panel's headline, the one line
-   the whole thread exists to answer, said the game was on 1.6.0.
+   Not every version in a topic is the game's: a post recommending
+   "v1.6.0 or later lightweight AchievementOverlay" beats 1.0.7 on the
+   second digit, and that is how the headline once announced a game as
+   being on 1.6.0. A trainer, a cheat table and an overlay all carry
+   their own numbers; a crack, a repack, an update, clean Steam files
+   and a DLC pack are versioned against the game.
 
-   The rule: a row may set the headline only if the finder could say
-   what kind of thing it is, and only if that kind is about the game
-   rather than beside it. A trainer, a cheat table and an overlay all
-   carry their own version numbers and none of them is the game's;
-   "cheat tables for 1.0.4" and "AchievementOverlay v1.6.0" are the
-   same sentence about two different products. A crack, a repack, an
-   update, clean Steam files, a DLC pack — those are versioned against
-   the game, and they are what the question is about.
-
-   Everything still appears in the list. This decides one line. */
+   So a row sets the headline only if its kind is about the game rather
+   than beside it. Everything still appears in the list; this decides
+   one line. */
 const VERSION_EVIDENCE = new Set(["game", "run", "change", "extra", "block"]);
 
 function saysGameVersion(row) {

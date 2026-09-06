@@ -65,48 +65,52 @@ function findLogo() {
     );
 }
 
-/* The name in the bar, set as type.
+/* The board's wordmark, traced off its own art into one path.
 
-   An earlier version cropped the wordmark out of the board's masthead
-   art and showed that: 26px of a PNG on the dark plate it is painted
-   on, which read as a grey badge stuck to the left of every page. The
-   board's own art belongs on the index, at the size the board draws it
-   (see buildMasthead); the bar only needs the name, quietly, in the
-   wide tracking the wordmark uses so it is still recognisably the
-   board's. */
+   Not an <img>, and not a CSS mask either: the board sends `img-src
+   'self'`, so a data: URI is refused in both — checked on the live
+   board, where the masked version drew a filled grey rectangle where
+   the name should be. An inline <svg> is DOM rather than a fetched
+   image and is not governed by that directive, which is what the icon
+   set already relies on.
+
+   Filled with currentColor, so the mark is the bar's own ink on every
+   theme rather than the light grey the file is painted in, and there
+   is no plate behind it. */
+const BRAND_MARK = "M26 0h13v1h-13zM99 0h4v1h-4zM113 0h3v1h-3zM2 0h14v2h-14zM62 0h14v2h-14zM86 0h3v2h-3zM26 1h14v1h-14zM137 0h15v3h-15zM99 1h5v2h-5zM1 2h15v1h-15zM25 2h15v1h-15zM61 2h16v1h-16zM1 3h4v1h-4zM12 3h4v1h-4zM25 3h4v1h-4zM36 3h4v1h-4zM61 3h5v1h-5zM72 3h5v1h-5zM99 3h6v1h-6zM112 1h4v4h-4zM137 3h4v2h-4zM37 4h2v1h-2zM73 4h3v1h-3zM99 4h7v1h-7zM161 0h4v6h-4zM1 4h3v2h-3zM13 4h3v2h-3zM25 4h3v2h-3zM99 5h8v1h-8zM173 0h4v7h-4zM148 3h4v4h-4zM61 4h4v3h-4zM72 5h4v2h-4zM137 5h3v2h-3zM25 6h13v1h-13zM99 6h9v1h-9zM85 2h4v6h-4zM112 5h3v3h-3zM161 6h3v2h-3zM103 7h6v1h-6zM136 7h16v1h-16zM25 7h14v2h-14zM61 7h15v2h-15zM98 7h4v2h-4zM104 8h5v1h-5zM111 8h4v1h-4zM85 8h3v2h-3zM136 8h15v2h-15zM26 9h13v1h-13zM61 9h14v1h-14zM105 9h10v1h-10zM12 10h3v1h-3zM66 10h6v1h-6zM106 10h9v1h-9zM142 10h7v1h-7zM136 10h4v2h-4zM24 11h3v1h-3zM67 11h5v1h-5zM107 11h7v1h-7zM123 11h4v1h-4zM143 11h5v1h-5zM0 6h4v7h-4zM172 7h4v6h-4zM160 8h4v5h-4zM98 9h3v4h-3zM36 10h3v3h-3zM11 11h4v2h-4zM23 12h4v1h-4zM68 12h5v1h-5zM144 12h5v1h-5zM60 10h4v4h-4zM47 11h4v3h-4zM108 12h6v2h-6zM136 12h3v2h-3zM23 13h16v1h-16zM145 13h4v1h-4zM84 10h4v5h-4zM0 13h15v2h-15zM69 13h5v2h-5zM160 13h15v2h-15zM23 14h15v1h-15zM109 14h5v1h-5zM145 14h5v1h-5zM122 12h5v4h-5zM97 13h4v3h-4zM46 14h5v2h-5zM135 14h4v2h-4zM0 15h14v1h-14zM24 15h14v1h-14zM70 15h5v1h-5zM110 15h4v1h-4zM146 15h5v1h-5zM160 15h14v1h-14zM60 14h3v3h-3zM84 15h3v2h-3zM1 16h11v1h-11zM25 16h11v1h-11zM47 16h3v1h-3zM71 16h4v1h-4zM98 16h2v1h-2zM123 16h3v1h-3zM136 16h2v1h-2zM147 16h3v1h-3zM162 16h11v1h-11z";
+
 function buildBrand() {
     const strapline = document.querySelector("#logodesc h1, #wrapheader h1");
     const brand = el("a.rr-nav__brand", {
         href: "./index.php",
-        "aria-label": "Board index",
+        "aria-label": "CS.RIN.RU — board index",
         title: strapline ? strapline.textContent.replace(/\s+/g, " ").trim() : "CS RIN - Steam Underground",
     });
-    brand.append(el("span.rr-nav__word", {}, ["CS.RIN.RU"]));
+
+    const mark = document.createElementNS(SVG_NS, "svg");
+    mark.setAttribute("viewBox", "0 0 177 17");
+    mark.setAttribute("fill", "currentColor");
+    mark.setAttribute("aria-hidden", "true");
+    mark.classList.add("rr-nav__logo");
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("d", BRAND_MARK);
+    mark.append(path);
+
+    brand.append(mark);
     return brand;
 }
 
 /* ---- One search shape ---------------------------------------------- */
 
-/* There were two.
+/* The board's own search form, given the frame the palette trigger
+   has: one field with the search glyph at its head and whatever it
+   submits with tucked inside its right edge. Two boxes doing the same
+   job in two visual languages was the thing to fix; the rule the rest
+   of the interface follows is that a control has the button radius and
+   a pill is a label.
 
-   The palette trigger in the top bar was a fully rounded pill with a
-   `Ctrl K` chip — the command-palette look every editor written since
-   2020 has. The board's own search boxes, which this script moves into
-   the topic bar and the listing toolbar, are a rectangular input beside
-   a rectangular submit button. Both on screen at once, doing the same
-   job, in two different visual languages, next to a `Reply` button with
-   a third corner radius.
-
-   The rule now is the one the rest of the interface already follows:
-   **a control has the button radius; a pill is a label.** Tags, filter
-   chips and the "latest version" badge stay pills because they are read
-   rather than pressed. Everything you click is 7px.
-
-   This is the second half: the board's form, given the same frame as
-   the palette trigger — one field with the search glyph at its head and
-   whatever it submits with tucked inside its right edge. The form is
-   the board's own, moved, so its action, its hidden inputs and its
-   tokens are untouched. */
+   The form is the board's own, moved, so its action, its hidden inputs
+   and its tokens are untouched. */
 function adoptBoardSearch(form) {
     if (!form || form.closest(".rr-search")) return form;
 
@@ -291,6 +295,38 @@ function addSearchOptions(frame, form, field, submit) {
     apply();
 }
 
+/** Frame one of the board's own search boxes where it stands, rather
+    than at the end of whatever cell it was in. */
+function frameBoardSearch(form) {
+    if (!form || form.closest(".rr-search")) return null;
+    const parent = form.parentElement;
+    const after = form.nextSibling;
+    const framed = adoptBoardSearch(form);
+    if (framed === form || !parent) return null;
+    parent.insertBefore(framed, after);
+    return framed;
+}
+
+/**
+ * The board writes `#topic-search` three times on a topic page: into
+ * the breadcrumb strip at each end, and into the sort strip under the
+ * posts. The first goes to the topic bar and the last is hidden as a
+ * duplicate; the one in the sort strip is left where it is, and it was
+ * the only search box on the board still wearing the template's shape
+ * — a bare field beside a bordered button, beside three select menus
+ * that have been redrawn.
+ *
+ * Runs after every module, so a box another one has already moved is
+ * left alone.
+ */
+function frameStraySearch() {
+    for (const form of document.querySelectorAll(
+        "#wrapcentre form#topic-search, #wrapcentre form#forum-search, #wrapcentre #search-box form")) {
+        if (!form.getClientRects().length) continue;
+        frameBoardSearch(form);
+    }
+}
+
 /* ---- Board bar ---------------------------------------------------- */
 
 /* The masthead is the board's only route to its rules, its FAQ, the
@@ -347,25 +383,19 @@ function boardBarLink(link) {
     return link;
 }
 
-/* Twelve links in a row, in the order the masthead happened to print
-   them, is a list of twelve things rather than a menu. They are three
-   different kinds of thing and always were:
+/* Twelve links in the order the masthead printed them is a list, not a
+   menu. They are three kinds of thing:
 
      views    — ways of looking at threads (unanswered, active, search)
-     board    — what the board is (rules, FAQ, chat, donate, and
-                anything else the masthead carries)
+     board    — what the board is (rules, FAQ, chat, donate, the rest)
      account  — you (register, log in, log out, profile)
 
-   Grouping them is also what stops `Logout [ name ]` landing alone on
-   a second line: it was the twelfth item in one wrapping flex row, so
-   it wrapped, and one word on its own line reads as a mistake. In the
-   account group it sits with the two links it belongs with.
+   In that order, so the account group ends the row beside the language
+   switch, where the things about the reader sit together. Grouping is
+   also what stops `Logout [ name ]` wrapping alone onto a second line.
 
-   Classified by destination, not by label, because the labels are
-   translated and the hrefs are not. */
-/* Views first, then the board, then you — the account group ends the
-   row, beside the language switch, where the things about the reader
-   rather than the board sit together. */
+   Classified by destination, not by label: the labels are translated
+   and the hrefs are not. */
 const BOARD_BAR_GROUPS = [
     { id: "views", label: "Threads", re: /search\.php/ },
     { id: "board", label: "Board", re: null },      // whatever is neither of the others
@@ -607,20 +637,14 @@ function buildNavbar() {
 /**
  * The board's face, kept.
  *
- * The 340px masthead is replaced by a 48px bar, and that trade is
- * worth making on every page of a thread. But the art in it is not
- * chrome: a crosshair over a Steam valve with CS.RIN.RU set beside it
- * is what the board looks like, and a redesign that shows a 26px crop
- * of the wordmark and nothing else looks like any forum at all.
+ * The 340px masthead is traded for a 48px bar on every page of a
+ * thread, but the art in it is not chrome — the crosshair over a Steam
+ * valve is what the board looks like. So it comes back once, on the
+ * index, at the size the board draws it.
  *
- * So it comes back once, on the index, at the size the board draws it.
- * One page, 109px, where you land — everywhere else the bar carries
- * the wordmark and the content starts at the top.
- *
- * The node is a new <img> pointing at the same file rather than the
- * original moved out of #wrapheader: that block is hidden rather than
- * removed precisely because other userscripts read it, and this must
- * not be the thing that breaks them.
+ * A new <img> at the same file rather than the original moved out of
+ * #wrapheader: that block is hidden rather than removed precisely
+ * because other userscripts read it.
  */
 function buildMasthead() {
     const source = findLogo();
@@ -738,27 +762,16 @@ function dropStrayBreaks() {
 
 /* ---- Separators the template left behind --------------------------- */
 
-/* subsilver2 writes its little link strips as literal text:
+/* subsilver2 types the bars between its link strips into the template
+   beside each link rather than generating them between the links that
+   survive, and the links are conditional. So a reader who cannot see
+   one gets its separator anyway — "Unsubscribe topic | Bookmark topic
+   | | E-mail friend", or a lone `|` at the end of a cell that is still
+   100% wide. Neither is visible logged out, which is why they survived
+   this long.
 
-       <a ...>Unsubscribe topic</a>&nbsp;|&nbsp;
-       <a ...>Bookmark topic</a>&nbsp;|&nbsp;
-       <a ...>E-mail friend</a>
-
-   The links are conditional. The bars between them are not — they are
-   typed into the template beside each link rather than generated
-   between the ones that survive. So a reader who cannot see one of
-   those links gets its separator anyway, and the strip reads
-   "Unsubscribe topic | Bookmark topic | | E-mail friend"; where the
-   missing link is the last one, the bar is left hanging on its own at
-   the far end of a cell that is still 100% wide, which is the lone `|`
-   floating in an acre of nothing.
-   
-   Both were reported from the live board and neither is visible logged
-   out, which is why they survived this long.
-
-   This is the same job dropStrayBreaks() does for the template's <br>
-   spacing, on the other thing it uses as punctuation: a separator only
-   belongs between two things that are actually there. */
+   Same job dropStrayBreaks() does for the template's <br> spacing: a
+   separator only belongs between two things that are there. */
 /* A text node made of nothing but spacing and bars, holding at least
    one bar. It has to allow several: `</a>&nbsp;|&nbsp; &nbsp;|&nbsp;
    <a>` is a *single* text node in the DOM, so a rule written for one
@@ -897,11 +910,6 @@ function tidyCrumbStrip() {
            beside a bordered button — which is the shape everything
            else was moved away from. */
         strip.setAttribute("data-rr-crumbstrip", "");
-        const form = strip.querySelector("#search-box form, form#forum-search, form#topic-search");
-        if (form && !form.closest(".rr-search")) {
-            const holder = form.parentElement;
-            const framed = adoptBoardSearch(form);
-            if (framed !== form && holder) holder.append(framed);
-        }
+        frameBoardSearch(strip.querySelector("#search-box form, form#forum-search, form#topic-search"));
     }
 }

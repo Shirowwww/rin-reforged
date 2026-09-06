@@ -13,23 +13,14 @@ let paletteHost = null;
 
 /* ---- Searching the board ------------------------------------------ */
 
-/* phpBB takes two parameters that decide whether a search answers with
-   one row per topic or one row per matching post, and how deep in a
-   post it looks. The board's own boxes set them: "Search this forum"
-   ships sr=topics and sf=titleonly, and has done for years.
+/* Left unset, phpBB searches with sr=posts and sf=all — the raw text
+   of every post, quotes included, so a thread twelve people quoted the
+   same release in came back as twelve results pointing at it. The
+   board's own boxes have shipped sr=topics for years; this asks for
+   the same. How deep to look is a real choice, so sf is remembered.
 
-   This script's own search box did not. Left unset, phpBB falls back to
-   sr=posts and sf=all, which searches the raw text of every post — and
-   the raw text of a post includes the quote it opens with. A thread
-   where twelve people quoted the same release came back as twelve
-   results, all pointing at the same thread. Same duplication as the
-   finder had, one layer down.
-
-   sr=topics is the answer to that and costs nothing: a topic that
-   matches is still a topic that matches. sf decides how deep to look,
-   and that is a real choice, so it is a setting. */
-/* Keyed by the board's own sf value, which is what the search box's
-   options (navbar.js, addSearchOptions) remember. */
+   Keyed by the board's own sf value, which is what the search box's
+   options (navbar.js, addSearchOptions) store. */
 const SEARCH_DEPTH = {
     titleonly: { sf: "titleonly", hint: "titles" },
     firstpost: { sf: "firstpost", hint: "titles + first post" },

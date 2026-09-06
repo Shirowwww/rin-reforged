@@ -48,6 +48,14 @@
     html[data-rr] #wrapcentre { padding-top: var(--rr-s3); }
 
     html[data-rr] .rr-nav { padding: 0 var(--rr-s2); gap: var(--rr-s2); }
+    /* The wordmark is 10 times as wide as it is tall, so a couple of
+       pixels off its height is 20px of a 390px bar. */
+    html[data-rr] .rr-nav__logo { height: 12px; }
+    html[data-rr] .rr-nav__brand { height: 34px; padding-right: var(--rr-s2); }
+
+    /* The prefix chips are a filter here, not a label on a title: 18px
+       is a fine badge and a poor thing to hit with a thumb. */
+    html[data-rr] .rr-toolbar__tags .rr-tag { height: 26px; padding: 0 10px; }
     /* Collapsed to a bare glyph, this control kept the desktop pill's
        frame — a border and a sunken fill — so it sat in the bar as a
        boxed search field beside two borderless icon buttons: three
@@ -158,8 +166,7 @@
     html[data-rr] td[data-rr-col="title"] a.topictitle,
     html[data-rr] td[data-rr-col="title"] a.forumlink { font-weight: 600; line-height: 1.35; }
     html[data-rr] td[data-rr-col="title"] p.forumdesc,
-    html[data-rr] td[data-rr-col="title"] p.gensmall,
-    html[data-rr] td[data-rr-col="title"] .rr-in {
+    html[data-rr] td[data-rr-col="title"] p.gensmall {
         display: block;
         margin: 3px 0 0;
         font-size: var(--rr-fs-xs);
@@ -298,7 +305,7 @@
 }
 
 @media (max-width: 480px) {
-    html[data-rr] { --rr-fs: 15px; --rr-fs-h1: calc(var(--rr-fs) + 5px); }
+    html[data-rr] { --rr-fs: 15px; }
 
     /* Once the bar wraps, the divider before the board search separates
        nothing. */
@@ -378,52 +385,33 @@
 }
 
 /* ------------------------------------------------------------------
-   The listing card's marker gutter, revisited.
+   The listing card's marker gutter.
 
    The gutter cell holds the read/unread dot and, on a bookmarkable
-   row, the star: two flex children of one cell (lists.js appends the
-   star beside the dot, on purpose — see addBookmarkStar). On a phone
-   card the gutter and the title are both order:0 flex children of the
-   same cell, meant to share the first line; with the star's 34px tap
-   target added to the dot's width, the two together no longer left
-   the title's own 80% minimum room beside them, so the title dropped
-   to a line of its own under a line that was just a dot and a star.
+   row, the star (lists.js appends it there on purpose — see
+   addBookmarkStar). On a phone card the gutter and the title share the
+   first line, and the star's 34px tap target beside the dot left the
+   title under its own 80% minimum, so the title dropped to a line of
+   its own under a line that was a dot and a star.
 
-   The star moves to the card's own top-right corner instead — out of
-   the gutter's width entirely — so the gutter goes back to being just
-   the dot's width and the dot and the title share the first line the
-   way every other listing shape on this board does.
+   The star moves to the card's top-right corner instead, out of the
+   gutter's width, and the dot and the title share the first line
+   again.
    ------------------------------------------------------------------ */
 @media (max-width: 860px) {
     html[data-rr] table.tablebg > tbody > tr { position: relative; }
 
-    /* forum.css floors this cell at 44px so a listing's marker column
-       does not get squeezed onto the marker on a wide table — right
-       for a column, far too wide for a card the star no longer lives
-       in. Repeating the phone selector here (same specificity as the
-       block above, so it wins on being later) drops the floor back to
-       the dot's own width, which is what leaves the title's 80%
-       minimum room beside it on the first line.
+    /* forum.css floors this cell at 44px, which is right for a column
+       and far too wide for a card. Repeating the phone selector here
+       (same specificity, later, so it wins) drops the floor to the
+       dot's own width and leaves the title its 80% beside it.
 
-       The star is still a child of this cell in the markup — moving it
-       in lists.js just to give it a new home in CSS was more than the
-       fix needed — so its box (below, position:absolute against the
-       row) still has to fit *inside* this cell's own box: a child
-       drawn past its parent's edge is exactly the shape the "no cell
-       draws its content outside itself" check exists to catch, and an
-       earlier version of this rule that shrank the gutter down to the
-       dot's height alone tripped it, star and all. align-self and
-       min-height give the gutter the star's own height and pin it to
-       the row's top edge, which is enough room.
-
-       That still leaves the dot, the gutter's one real flex child: at
-       the inherited align-items: center it rode the middle of this
-       now-taller box, which was close enough for a one-line title and
-       wrong for anything else — on a wrapped one the dot sat between
-       the first line and the second rather than beside either.
-       align-items: flex-start here says where the *dot* sits within
-       the tall box, independently of why the box is tall: at its own
-       top, which is where the title's first line starts too. */
+       The star is still a child of this cell, and its absolutely
+       positioned box has to fit inside this one or it trips the "no
+       cell draws outside itself" check — hence align-self and
+       min-height. align-items then says where the *dot* sits in that
+       taller box: at its top, beside the title's first line, rather
+       than centred between a wrapped title's two lines. */
     html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="icon"] {
         min-width: 0;
         align-self: flex-start;
@@ -442,25 +430,15 @@
         margin: 0;
     }
 
-    /* Room for the star's corner, on the rows that actually carry one
-       (data-rr-star, set beside it in lists.js) — a card with no star
-       keeps the title's full width. The chain down through tr and td
-       matches the generic cell rule's own specificity above, which sets
-       this same padding to 0 and would otherwise win over a shorter
-       selector.
+    /* Room for the star's corner, on the rows that carry one — the
+       chain down through tr and td matches the generic cell rule's
+       specificity above, which sets this same padding to 0.
 
        min-width drops the 80% floor the generic title rule sets. That
-       floor exists so the counters (replies, views, author) cannot
-       climb onto the marker's own line — a fixed percentage of a
-       390px card and a fixed percentage of an 860px one are two very
-       different numbers, and at exactly 390px it was landing a
-       handful of pixels past what the line actually had left once the
-       gutter shrank, tipping the *title* onto a line of its own under
-       the marker: the very shape this rule exists to prevent, just
-       aimed at the wrong neighbour. The spacer below takes over that
-       job instead, so this can drop to nothing and let the title sit
-       beside the dot the way the marker's line was always meant to
-       read. */
+       floor keeps the counters off the marker's line, but a percentage
+       of a 390px card and of an 860px one are different numbers, and
+       at 390px it tipped the title itself onto a line of its own. The
+       spacer below does that job instead. */
     html[data-rr] table.tablebg > tbody > tr[data-rr-star] > td[data-rr-col="title"] {
         min-width: 0;
         padding-right: 40px;
@@ -547,25 +525,18 @@
         flex: 0 0 auto;
     }
 
-    /* form[name=jumpbox]: "Jump to:" label, the forum select and Go are
-       inline content of one unclassed cell in an unclassed table, and
-       the generic table-unpacking rules above turn that cell into a
-       block — three inline-level things then wrap on their own once
-       the select's width and the label's text no longer fit beside
-       Go. The extra :not()s match the specificity of the rule being
-       overridden: #wrapcentre and !important on both sides means the
-       tie is broken on class count, not source order. */
-    /* wrap, not nowrap: on the search results page this same form sits
-       beside a floated sibling the board's own markup never clears (a
-       bare <br clear="all"> is the thing that would have cleared it,
-       and it is one of the spacer breaks this stylesheet hides), which
-       leaves the row well under 342px. A select sizes to its longest
-       option — a forum name — so `flex: 1 1 auto` counted that full
-       width when deciding whether the row overflows, and Go wrapped
-       away alone rather than share a line with it. A 0% basis asks the
-       question with only the 6em floor on the table, so the row fits
-       label, select and Go at 342px and wraps at the narrower one
-       instead of crushing the select to a handful of letters. */
+    /* form[name=jumpbox]: the label, the select and Go are inline
+       content of one unclassed cell, which the unpacking rules above
+       turn into a block, and the three then wrap on their own. The
+       extra :not()s match the specificity of the rule being
+       overridden — both sides carry #wrapcentre and !important, so the
+       tie breaks on class count rather than source order.
+
+       wrap, not nowrap: on the search results page this form sits
+       beside a floated sibling the board never clears, so the row is
+       well under 342px. A select sizes to its longest option, so
+       `flex: 1 1 auto` counted a forum name's full width and wrapped
+       Go away alone; a 0% basis asks with only the 6em floor. */
     html[data-rr] #wrapcentre form[name="jumpbox"] table:not(.tablebg):not(.forumline) > tbody > tr > td {
         display: flex !important;
         flex-wrap: wrap;
@@ -807,16 +778,18 @@
         font-size: var(--rr-fs-xs);
         color: var(--rr-muted);
     }
-    /* The legend's swatch cell holds nothing; the colour is a stripe
-       forum.css paints down its edge. As a block with no content it
-       was 0px tall, so the row showed the words and no colour. */
+    /* The colour class is on the same cell as the words — phpBB writes
+       `<td class="row1 pm_marked_colour"><span>Marked message</span>`
+       — so the cell cannot be squeezed into a swatch: at 12px it drew
+       the label one character to a line. The stripe down its leading
+       edge carries the colour here exactly as it does on a wide
+       screen, and the row gives up its own padding so the stripe lands
+       on the card's edge rather than floating inside it. */
+    html[data-rr] table.tablebg[data-rr-pm-legend] > tbody > tr { padding: 3px 0; }
     html[data-rr] table.tablebg[data-rr-pm-legend] > tbody > tr > td[class*="pm_"] {
-        flex: none;
-        width: 12px !important;
-        height: 12px;
-        border-radius: 3px;
-        background: var(--rr-pm);
-        box-shadow: none;
+        width: 100% !important;
+        padding: 3px 14px;
+        box-shadow: inset 3px 0 0 var(--rr-pm);
     }
     /* A roster's meta line: the rank after the count, with a dot. */
     html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-col="rank"]::before { content: none; }

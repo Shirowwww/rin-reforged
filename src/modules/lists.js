@@ -489,19 +489,10 @@ function buildForumBar() {
         bar.append(buildPagerGroup(info));
     }
 
-    // "[ 61469 topics ]" is worth keeping, but not on its own line.
-    for (const cell of document.querySelectorAll("#wrapcentre td.gensmall, #wrapcentre span.gensmall")) {
-        const match = cell.textContent.match(/\[\s*([\d\s]+)\s*(topics|posts)\s*\]/i);
-        if (!match) continue;
-        bar.append(el("span.rr-topicbar__count", {}, [match[1].trim() + " " + match[2].toLowerCase()]));
-        cell.style.display = "none";
-        break;
-    }
-
     heading.after(bar);
-    // The board's own "Page 1 of 615" and "[ 61469 topics ]" strips,
-    // which the bar now carries. The topic page had this pass and the
-    // listing did not, and the sweep found the band on every forum.
+    /* "Page 1 of 615" and "[ 61469 topics ]", which the bar now
+       carries: the same pass the topic page uses, so the count is
+       lifted here in whichever language the board printed it. */
     tidyBoardPagerStrip(bar, bar);
 
     /* "Go to page 1, 2, 3, 4, 5 … 137  Next", right-aligned above the
@@ -1286,26 +1277,32 @@ function sortKey(row, index, kind) {
     return cell.textContent.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
-/* The stripes are drawn from row1 / row2, which the template hands out
-   in the order it sent the rows. Reordered rows keep their own class
-   and the listing ends up with two dark rows together. */
+/* Which shade each row is drawn in.
+
+   subsilver2 hands out row1 and row2 by hand and alternates them
+   *across the columns* of one row: a topic row comes out as six
+   vertical bands, and every row of the index is split in two at the
+   counts. Banding is meant to carry the eye from a title across to its
+   last post, and drawn that way it cuts the line up instead.
+
+   So the shade is written on the row, in an attribute of this
+   script's own — the board's classes are left exactly as they are,
+   since they carry nothing but the shade and another script may be
+   reading them — and a sort simply writes it again. */
 function restripe(rows) {
-    rows.forEach((row, index) => {
-        const want = index % 2 === 0 ? "row1" : "row2";
-        const other = want === "row1" ? "row2" : "row1";
-        const swap = (node) => {
-            if (!node.classList.contains("row1") && !node.classList.contains("row2")) return;
-            node.classList.remove(other);
-            node.classList.add(want);
-        };
-        swap(row);
-        for (const cell of row.children) swap(cell);
-    });
+    rows.forEach((row, index) => row.setAttribute("data-rr-stripe", index % 2 ? "b" : "a"));
 }
 
-function initColumnSort(table) {
+/**
+ * The data rows of a listing, in the runs the template separates with
+ * its own section rows ("Global Announcements", "Topics").
+ *
+ * A run is what a sort reorders inside, so a pinned announcement never
+ * lands among the topics, and it is what the stripe runs down.
+ */
+function listingRuns(table) {
     const head = table.querySelector(":scope > tbody > tr[data-rr-head]");
-    if (!head || !head.querySelector("th")) return;
+    if (!head || !head.querySelector("th")) return [];
     /* Columns, not cells: a listing spans its first heading over the
        unread marker and the title, so five headings sit over six
        cells. */
@@ -1324,7 +1321,13 @@ function initColumnSort(table) {
         if (!run) { run = []; runs.push(run); }
         run.push(row);
     }
-    const sortable = runs.filter((rows) => rows.length > 2);
+    return runs;
+}
+
+function initColumnSort(table) {
+    const head = table.querySelector(":scope > tbody > tr[data-rr-head]");
+    if (!head || !head.querySelector("th")) return;
+    const sortable = listingRuns(table).filter((rows) => rows.length > 2);
     if (!sortable.length) return;
     const original = sortable.map((rows) => rows.slice());
     /* Where the run ends, read once. Read again after a sort it would
@@ -1473,6 +1476,7 @@ function initLists() {
             markEmptyCells(table);
         }
         if (table.hasAttribute("data-rr-list")) {
+            for (const run of listingRuns(table)) restripe(run);
             if (settings.get("sortColumns")) initColumnSort(table);
             initMarkColumn(table);
             if (table.querySelector("a.topictitle")) initSectionFolds(table);

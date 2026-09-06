@@ -82,6 +82,7 @@ function bootLate() {
     guard("palette", initPalette);
     guard("shortcuts", initShortcuts);
     guard("crumbs", tidyCrumbStrip);
+    guard("search", frameStraySearch);
     guard("spacing", dropStrayBreaks);
     guard("separators", dropStraySeparators);
     guard("numbers", groupBoardNumbers);

@@ -133,6 +133,11 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     position: sticky;
     top: 0;
     z-index: 900;
+    /* --rr-nav-h is what a sticky column heading offsets itself by and
+       what scroll-padding-top is worked out from, so it has to be the
+       whole bar: border-box, or the rule under it makes the bar a
+       pixel taller than everything measuring it believes. */
+    box-sizing: border-box;
     height: var(--rr-nav-h);
     padding: 0 var(--rr-s4);
     background: color-mix(in srgb, var(--rr-bg) 88%, transparent);
@@ -154,29 +159,44 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     margin: 0 auto;
     min-width: 0;
 }
-/* The name, as type, quietly. A hairline after it is what separates
-   "whose board" from "where on it", where a grey badge used to. */
+/* The wordmark, then a hairline: "whose board" separated from "where
+   on it".
+
+   The box is taller than the wordmark on purpose — a link 15px tall is
+   a hard thing to hit — and the hairline is drawn rather than
+   bordered, so growing the target does not grow the rule with it. 18px
+   is the height .rr-nav__divide uses at the other end of the bar. */
 .rr-nav__brand {
+    position: relative;
     display: flex;
     align-items: center;
     flex: none;
+    height: 34px;
     padding-right: var(--rr-s3);
-    border-right: 1px solid var(--rr-line);
     line-height: 1;
+}
+.rr-nav__brand::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 0;
+    width: 1px;
+    height: 18px;
+    margin-top: -9px;
+    background: var(--rr-line);
 }
 /* `html[data-rr] a` outranks a bare class, and painted the name in
    the board's link red. */
 html[data-rr] a.rr-nav__brand { color: var(--rr-text); }
 html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-text-strong); }
 
-/* The board sets its name in wide-tracked caps; that tracking is most
-   of what makes the wordmark recognisable, so it is kept rather than
-   the tight default the rest of the interface uses. */
-.rr-nav__word {
-    font-weight: 700;
-    letter-spacing: .13em;
-    font-size: var(--rr-fs-xs);
-    text-transform: uppercase;
+/* The wordmark, built as an inline <svg> in navbar.js and filled with
+   currentColor. Height is the only number to set — the viewBox gives
+   the width. */
+.rr-nav__logo {
+    display: block;
+    height: 15px;
+    width: auto;
 }
 
 /* ---- Board links -------------------------------------------------- */
@@ -2018,10 +2038,12 @@ html[data-rr] .rr-bbtool--menu select { height: 30px; padding: 0 6px; }
    every button, and a removed one throws on all of them — and stops
    being a field the eye reads as a second Subject box. */
 html[data-rr] input[data-rr-helpbox] { display: none; }
-/* Its row also carries the heading over the colour palette, so the row
-   stays and closes up to the height of that one word. */
 html[data-rr] tr[data-rr-helprow] > td { padding: 0 0 var(--rr-s2); }
-html[data-rr] tr[data-rr-helprow] > td.genmed {
+
+/* The heading over the colour palette, moved into the swatches' own
+   cell (compose.js, movePaletteHeading). */
+html[data-rr] .rr-palette-head {
+    margin-bottom: var(--rr-s2);
     color: var(--rr-faint);
     font-size: var(--rr-fs-xs);
     letter-spacing: .04em;

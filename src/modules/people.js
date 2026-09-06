@@ -1,19 +1,17 @@
 /* ------------------------------------------------------------------
    People.
 
-   phpBB has a foe list, but it lives four clicks deep in the control
-   panel and only takes effect on the next page load. This is the local
-   version: a per-post control, applied immediately, stored in this
-   browser, and never sent anywhere.
+   phpBB's foe list is four clicks deep in the control panel and only
+   takes effect on the next page load. This is the local version: a
+   per-post control, applied immediately, kept in this browser.
 
-   Hidden posts are collapsed to one line rather than removed, so a
-   thread does not silently lose replies people are answering.
+   Hidden posts collapse to one line rather than going, so a thread
+   does not silently lose replies people are answering.
 
-   Entries key on the member id the board threads through every profile
-   link, not on the display name, because a name is not a person: this
-   board renames, and the first version of this lost the entry the day
-   somebody did. The name is stored alongside so the list stays
-   readable in an export, and so a post with no profile link — a
+   Entries key on the member id in the profile link rather than on the
+   display name, because this board renames and the first version lost
+   the entry the day somebody did. The name is kept alongside so an
+   export stays readable, and so a post with no profile link — a
    deleted account, a guest — can still be matched on what it has.
    ------------------------------------------------------------------ */
 

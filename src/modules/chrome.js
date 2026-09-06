@@ -8,24 +8,11 @@
 /**
  * How far down the page you are.
  *
- * This is a *reading* indicator and it was drawn exactly like a
- * *loading* one: a thin accent-coloured bar pinned to the top left
- * corner of the window, which is where every browser and half the web
- * puts the thing that fills up while a page arrives. On a long topic
- * opened at a saved position it therefore appeared already part-filled
- * and then sat there, and read as a download that had stalled at 15%
- * and never finished — which is exactly what it was reported as.
- *
- * Nothing about the measurement was wrong. Three things about the
- * presentation were:
- *
- *  - it floated at y=0 rather than belonging to anything, so it now
- *    sits on the bottom edge of the sticky top bar and reads as that
- *    bar's own rule filling in;
- *  - it appeared at page load already part-way along, so it now stays
- *    out of the way until the page has actually been scrolled;
- *  - it said nothing about itself, so it is a real progressbar with a
- *    name and a value that can be read aloud and asserted in a test.
+ * A reading indicator drawn at y=0 and part-filled at load is a
+ * loading indicator that has stalled, which is how this one was
+ * reported. So it sits on the bottom edge of the sticky bar rather
+ * than floating, stays out of the way until the page has actually been
+ * scrolled, and is a real progressbar with a name and a value.
  */
 function initProgress() {
     if (!settings.get("progress")) return;

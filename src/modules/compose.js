@@ -348,21 +348,16 @@ function initPostingMemory() {
 /* ---- The writing toolbar -------------------------------------------
 
    The board's own BBCode bar is sixteen grey rectangles reading "s",
-   "[*]", "List=", "spoiler=" and "Generate SteamInfo BBCode", laid out
-   in two undivided rows. What each one does is written nowhere on it:
-   the board puts the explanation in a read-only text field under the
-   bar, the full width of the form, which sits exactly where a second
-   Subject box would and reads as one. People fill in a form; they do
-   not hover a field to be told things.
+   "[*]", "List=" and "spoiler=", and what each one does is written
+   nowhere on it: the explanation goes into a read-only field under the
+   bar, full width, which reads as a second Subject box. So the caption
+   says what the button makes, an icon repeats it, the bar is cut into
+   groups, and the explanation becomes the same tooltip every other
+   control here uses.
 
-   So: the caption says what the button makes, an icon repeats it, the
-   bar is cut into groups, and the explanation is a small label above
-   the button that names it — the same tooltip every other control in
-   this script already uses.
-
-   Nothing about the button changes but its face. `bbstyle()` works off
-   the `bbtags` array and never off a caption, the accesskeys stay, the
-   onclick stays, and the helpbox stays in the page (hidden) because
+   Nothing about the button changes but its face: `bbstyle()` works off
+   the `bbtags` array and never off a caption, the accesskeys and the
+   onclick stay, and the helpbox stays in the page (hidden) because
    `helpline()` writes into it on every mouseover.
    -------------------------------------------------------------------- */
 
@@ -414,7 +409,7 @@ const BB_GROUPS = [
  */
 function boardHelpLines() {
     const table = {};
-    for (const script of $$("script:not([src])")) {
+    for (const script of document.querySelectorAll("script:not([src])")) {
         const text = script.textContent || "";
         const at = text.indexOf("help_line");
         if (at < 0 || !/var\s+help_line\s*=/.test(text)) continue;
@@ -475,7 +470,7 @@ function clampTip(holder) {
 }
 
 function initPostingToolbar() {
-    const buttons = $$("#wrapcentre input.btnbbcode");
+    const buttons = Array.from(document.querySelectorAll("#wrapcentre input.btnbbcode"));
     if (!buttons.length) return;
 
     /* Where the buttons came from, read before any of them is moved:
@@ -566,13 +561,39 @@ function initPostingToolbar() {
         helpbox.setAttribute("data-rr-helpbox", "");
         helpbox.setAttribute("tabindex", "-1");
         helpbox.setAttribute("aria-hidden", "true");
-        /* Its row is shared with the "Font colour" heading over the
-           palette, which has to stay where it is. Named, so the row
-           can be closed up to the label rather than keeping the height
-           a field used to need. */
         const row = helpbox.closest("tr");
         if (row) row.setAttribute("data-rr-helprow", "");
     }
+
+    movePaletteHeading();
+}
+
+/**
+ * "Font colour" belongs to the swatches, so it goes in their cell.
+ *
+ * The board writes it in the cell above them — the row that also
+ * carries the help field — which reads correctly only while the two
+ * rows are drawn as a grid. On a phone the rows unpack and the heading
+ * lands above the message box with its swatches a screen below it.
+ *
+ * Found by position rather than by its words, which are translated:
+ * the cell in the same column, one row up. markShapes() (lists.js) has
+ * named the palette by the time this runs.
+ */
+function movePaletteHeading() {
+    const palette = document.querySelector("#wrapcentre table[data-rr-palette]");
+    const cell = palette && palette.closest("td");
+    const row = cell && cell.closest("tr");
+    const above = row && row.previousElementSibling;
+    if (!above || above.tagName !== "TR") return;
+
+    const heading = above.children[Array.prototype.indexOf.call(row.children, cell)];
+    const words = heading && heading.textContent.replace(/\s+/g, " ").trim();
+    if (!words || heading.querySelector("input, select, textarea, table, a")) return;
+
+    palette.before(el("div.rr-palette-head", {}, [words]));
+    heading.textContent = "";
+    above.hidden = true;
 }
 
 /* ---- The topic review ----------------------------------------------
@@ -592,7 +613,7 @@ function initTopicReview() {
     /* By shape, not by the heading: "Topic review" is one string in
        English and another in Russian, and the box is the only scroller
        on the page holding posts. */
-    const scroller = $$("#wrapcentre div").find((node) =>
+    const scroller = Array.from(document.querySelectorAll("#wrapcentre div")).find((node) =>
         /auto|scroll/.test(node.style.overflow || "") && node.querySelector(".postbody"));
     if (!scroller) return;
 

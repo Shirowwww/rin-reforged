@@ -133,39 +133,21 @@ function topicTitle() {
     return splitPrefix((link || heading).textContent.trim()).rest;
 }
 
-/**
- * One action bar for the topic.
- *
- * The template scatters these across four strips: a search box in its
- * own full-width table, a reply image button, "Page 1 of 19", and the
- * numbered page links. They belong on one line.
- */
-/* One card, two rows, and the rule is written down rather than left to
-   whatever fits.
+/* One action bar for the topic, out of the four strips the template
+   scatters: the search box in a full-width table of its own, the reply
+   image button, "Page 1 of 19", and the numbered page links.
 
-   What was here was a single wrapping flex row holding, in the order
-   the template happened to print them: a filled Reply button, the
-   words "Page 1 of 1", four bare links, an outlined button with the
-   same weight as Reply, and a search box. Three kinds of control on
-   one line with nothing saying which mattered, one flexible spacer
-   opening an arbitrary gap in the middle of the links, and a layout
-   that reacted to how many controls a topic happened to have: on a one
-   page topic the search sat inline, on a thirty-three page one the
-   pager pushed it on to a line of its own. Same interface, two shapes,
-   for a reason no reader could name.
+   Two rows, and which one a control lands in is fixed rather than left
+   to what fits — so the bar is the same shape on a one page thread and
+   a thirty-three page one:
 
-   The rule now:
+     Row 1 - this topic. Reply, what you can do to what is on screen,
+             and where in the topic you are.
+     Row 2 - everywhere else. The topic before and after, the print
+             view, and the box that searches inside it.
 
-     Row 1 - this topic. What you do here (Reply), what you can do to
-             what is on screen (open the spoilers, jump to your first
-             unread), and where in the topic you are (the pager).
-     Row 2 - everywhere else. The topic before and after this one, the
-             print view, and the box that searches inside it.
-
-   Both rows exist on every topic, whatever its page count, so the bar
-   is the same shape on a one page thread and a thirty-three page one.
-   A row nothing landed in is not drawn - but nothing moves between
-   rows to make that happen. */
+   A row nothing landed in is not drawn, but nothing moves between rows
+   to make that happen. */
 function topicBarRow(name) {
     return el("div.rr-topicbar__row", { "data-rr-row": name });
 }
@@ -303,12 +285,29 @@ function buildTopicBar() {
     }
 
     header.after(bar);
+    // Before the strips are tidied, so a strip this empties is one of
+    // the empty ones hideEmptyBoardStrips() then takes away.
+    dropPagerAbovePosts();
     tidyBoardPagerStrip(bar, here);
+}
 
-    // The numbered strip under the title says the same thing as the
-    // pager, less usefully.
-    for (const strip of header.querySelectorAll("p.gensmall, span.gensmall")) {
-        if (/Go to page|На страницу/.test(strip.textContent)) strip.style.display = "none";
+/* The board's numbered "Go to page 1, 2, 3 … 19" strip, where it sits
+   above the posts: the bar's own pager says the same thing two lines
+   higher. The copy under the posts stays — that is where a reader who
+   has reached the end of the page wants it — and so does everything,
+   here or there, when the bar draws no pager of its own.
+
+   Two shapes carry it: a p.gensmall under the title, and the
+   right-hand cell of the board's own strip. */
+function dropPagerAbovePosts() {
+    if (!settings.get("quickPager")) return;
+    const first = posts()[0];
+    const strips = document.querySelectorAll(
+        "#wrapcentre p.gensmall, #wrapcentre span.gensmall, #wrapcentre td.gensmall");
+    for (const strip of strips) {
+        if (!/^\s*(?:Go to page|На страницу)/.test(strip.textContent)) continue;
+        if (first && !(strip.compareDocumentPosition(first.table) & Node.DOCUMENT_POSITION_FOLLOWING)) continue;
+        strip.style.display = "none";
     }
 }
 
@@ -554,7 +553,7 @@ function buildPagerGroup(info) {
    Russian for "no rank". So an English forum shows a Russian phrase
    under a name, and for most posters the phrase means the field is
    empty.
-   
+
    Where a rank carries both languages, the page's own language decides
    which half to show. Where it carries only one it is left alone: a
    rank that is Latin-only is not a translation of anything, and
@@ -1223,14 +1222,7 @@ function markExternalLinks() {
         // a link whose text is the address already says where it goes.
         if (link.textContent.toLowerCase().includes(host.replace(/^www\./, "").toLowerCase())) continue;
 
-        link.append(el("span.rr-host", {
-            style: {
-                marginLeft: "5px",
-                fontSize: "var(--rr-fs-xs)",
-                color: "var(--rr-faint)",
-                fontFamily: "var(--rr-font-mono)",
-            },
-        }, [host.replace(/^www\./, "")]));
+        link.append(el("span.rr-host", {}, [host.replace(/^www\./, "")]));
         link.setAttribute("rel", "noopener noreferrer");
     }
 }

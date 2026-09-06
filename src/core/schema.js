@@ -20,15 +20,10 @@
    id, so moving a field between groups costs nothing and needs no
    migration.
 
-   What is *not* here any more, and why. A setting is a question put to
-   every reader who opens the panel, and several of these were
-   questions with one sensible answer: the skip link, joining the last
-   post's two lines, the lookups on the game card, the password chip,
-   how many topics the palette remembers, how long a Steam lookup is
-   kept. Those are simply how the script behaves now. Where a search
-   looks is asked in the search box itself; which listing sections are
-   folded is remembered from folding them. A value somebody stored for
-   a field that has gone is ignored, never an error.
+   A setting is a question put to every reader who opens the panel, so
+   anything with one sensible answer is not one: those are simply how
+   the script behaves. A value stored for a field that has since gone
+   is ignored, never an error.
    ------------------------------------------------------------------ */
 
 const SETTINGS_SCHEMA = [

@@ -703,13 +703,13 @@ html[data-rr] button.rr-pass {
     background: var(--rr-accent-soft);
     border: 1px solid var(--rr-line);
     border-radius: var(--rr-radius-pill);
-    color: var(--rr-accent-ink, var(--rr-text-strong));
+    color: var(--rr-text-strong);
     cursor: pointer;
     font: 500 var(--rr-fs-xs) / 1 var(--rr-font);
 }
 html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
 .rr-pass__label { color: var(--rr-muted); }
-.rr-pass__value { font-family: var(--rr-mono, ui-monospace, monospace); font-size: var(--rr-fs-xs); }
+.rr-pass__value { font-family: var(--rr-font-mono); font-size: var(--rr-fs-xs); }
 
 /* ---- New since your last visit ------------------------------------ */
 
