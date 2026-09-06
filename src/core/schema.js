@@ -19,6 +19,16 @@
    rail needs a name that fits in 150px. Settings are stored flat by
    id, so moving a field between groups costs nothing and needs no
    migration.
+
+   What is *not* here any more, and why. A setting is a question put to
+   every reader who opens the panel, and several of these were
+   questions with one sensible answer: the skip link, joining the last
+   post's two lines, the lookups on the game card, the password chip,
+   how many topics the palette remembers, how long a Steam lookup is
+   kept. Those are simply how the script behaves now. Where a search
+   looks is asked in the search box itself; which listing sections are
+   folded is remembered from folding them. A value somebody stored for
+   a field that has gone is ignored, never an error.
    ------------------------------------------------------------------ */
 
 const SETTINGS_SCHEMA = [
@@ -68,7 +78,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "width", label: "Content width", type: "seg", default: "reading",
-                desc: "The frame follows the window either way. Reading also caps the line length of a post at about 78 characters, which is where long ones stop being tiring; Wide lets the frame grow further and Full lifts the frame's limit altogether, keeping a post's lines under about 120 characters.",
+                desc: "Reading caps a post's lines at about 78 characters; Wide lets the frame grow further; Full lifts the frame's limit altogether.",
                 options: [
                     { value: "reading", label: "Reading" },
                     { value: "wide", label: "Wide" },
@@ -81,7 +91,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "masthead", label: "Show the board's masthead on the index", type: "toggle", default: true,
-                desc: "The crosshair emblem and the CS.RIN.RU wordmark the board draws at the top of every page, kept on the index only. The top bar carries the wordmark everywhere else; this is the board's face, once, where you land.",
+                desc: "The crosshair emblem and the CS.RIN.RU wordmark, kept on the index only. Everywhere else the top bar carries the name.",
             },
         ],
     },
@@ -98,16 +108,11 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "boardLinks", label: "Board links row", type: "toggle", default: true,
-                desc: "Forum rules, FAQ, Chat, Donate and the language switch, which the masthead was the only route to.",
-            },
-            {
-                id: "donateHighlight", label: "Mark the donation link", type: "toggle", default: true,
-                desc: "The board runs on donations and is currently asking for them. This gives that one link an outline and a heart rather than leaving it fifth in a row of grey text.",
-                when: "boardLinks",
+                desc: "Unanswered and active topics, forum rules, FAQ, chat, donate, your account and the language switch, grouped on one line.",
             },
             {
                 id: "quickPager", label: "Jump to last page", type: "toggle", default: true,
-                desc: "Adds first / last page controls next to every pagination strip. phpBB never links the last page, which is where an update thread is read.",
+                desc: "First and last page controls beside every pager. phpBB never links the last page, which is where an update thread is read.",
             },
             {
                 id: "backToTop", label: "Back to top button", type: "toggle", default: true,
@@ -115,7 +120,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "progress", label: "Reading progress bar", type: "toggle", default: true,
-                desc: "A hairline at the top of the window showing position in the page.",
+                desc: "A hairline under the top bar showing how far down the page you are.",
             },
         ],
     },
@@ -124,21 +129,11 @@ const SETTINGS_SCHEMA = [
         title: "Search and finding",
         short: "Search",
         icon: "search",
-        note: "Main Forum holds 61,000 topics across 615 pages, so finding matters more than paging.",
+        note: "Main Forum holds 61,000 topics across 615 pages, so finding matters more than paging. Where a search looks — this forum or the whole board, titles or every post — is chosen in the search box itself.",
         fields: [
             {
                 id: "palette", label: "Command palette", type: "toggle", default: true,
                 desc: "Ctrl+K opens search, forum jumps, bookmarks and every script action in one box.",
-            },
-            {
-                id: "searchDepth", label: "Search looks at", type: "seg", default: "titles",
-                options: [
-                    { value: "titles", label: "Titles" },
-                    { value: "firstpost", label: "+ first post" },
-                    { value: "everything", label: "Every post" },
-                ],
-                desc: "Applies to Ctrl+K. Results are always one row per topic, never one per matching post.",
-                when: "palette",
             },
             {
                 id: "listFilter", label: "Filter box over a listing", type: "toggle", default: true,
@@ -149,17 +144,12 @@ const SETTINGS_SCHEMA = [
                 desc: "Turns [Info], [Release], [Problem] and the rest into coloured tags you can click to filter.",
             },
             {
-                id: "finder", label: "Find files and updates in a topic", type: "toggle", default: true,
-                desc: "Lists the posts on the page that carry links, a version number or a reupload, newest first. Answers \"where is the current version\" without reading 19 pages.",
+                id: "finder", label: "Releases panel", type: "toggle", default: true,
+                desc: "Lists the posts on the page that carry a release, an update or a reupload, with the version and the file host. A post that names an archive password offers it with a copy button.",
             },
             {
-                id: "passwordFinder", label: "Find the archive password", type: "toggle", default: true,
-                desc: "Almost every release post ends with \"Password: cs.rin.ru\" somewhere, often inside a spoiler. Where a post names one, it is offered beside that post's other controls, with a copy button.",
-                when: "finder",
-            },
-            {
-                id: "topicIndex", label: "Index the whole topic", type: "toggle", default: true,
-                desc: "Adds a control that reads every page of a topic once and lists everything posted in it — each release, update, repack, crack, reupload and tool — with its version, what kind of thing it is, who posted it, when, and which page. Never runs on its own: it is a click, the answer is kept per topic, and Escape stops it.",
+                id: "topicIndex", label: "Read the whole topic", type: "toggle", default: true,
+                desc: "The panel can read every page of a topic once, on a click, and list everything ever posted in it. Never runs on its own; Escape stops it.",
                 when: "finder",
             },
         ],
@@ -169,18 +159,15 @@ const SETTINGS_SCHEMA = [
         title: "Topic lists",
         short: "Topic lists",
         icon: "filter",
+        note: "Announcements, stickies and the topics fold on a click on their heading, and stay folded until you open them again.",
         fields: [
             {
-                id: "tightRows", label: "Last post on one line", type: "toggle", default: true,
-                desc: "Joins the date and the poster, which the template stacks. Drops the weekday; the full date stays on hover.",
-            },
-            {
-                id: "unreadFromList", label: "Topic titles open at the first unread post", type: "toggle", default: true,
-                desc: "The board links the first unread post from a small arrow beside the row. This puts it on the title itself, for rows that actually have unread posts. Needs an account; nothing changes when logged out.",
+                id: "unreadFromList", label: "Topic titles open at the first unread post", type: "toggle", default: false,
+                desc: "Off, a title opens the first page of its topic. On, a topic with unread posts opens at the first of them. Needs an account.",
             },
             {
                 id: "hideVisited", label: "Mark topics already opened", type: "toggle", default: true,
-                desc: "Fills in the read/unread mark beside a topic this browser has been to. Uses this browser only, so it works while logged out too.",
+                desc: "Fills in the read/unread mark beside a topic this browser has been to, so it works while logged out too.",
             },
             {
                 id: "bookmarks", label: "Bookmark topics", type: "toggle", default: true,
@@ -192,23 +179,15 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "foldWhoIsOnline", label: "Fold Who is online", type: "toggle", default: true,
-                desc: "The index lists all 500-odd names in full, which is most of the page, and every forum and topic ends with the list of who is browsing it. This keeps the counts and hides the names behind a control.",
-            },
-            {
-                id: "hideAnnouncements", label: "Collapse global announcements", type: "toggle", default: false,
-                desc: "Folds the pinned announcements at the head of a listing into one line.",
+                desc: "Keeps the counts and hides the 500-odd names behind a control, on the index and under every forum and topic.",
             },
             {
                 id: "stickyHeads", label: "Keep the column headings in view", type: "toggle", default: true,
-                desc: "A hundred rows scroll past the headings that name them. They stay at the top of the window while their own listing is on screen.",
+                desc: "The headings stay at the top of the window while their listing is on screen.",
             },
             {
                 id: "sortColumns", label: "Sort a listing by clicking a column", type: "toggle", default: true,
-                desc: "Replies, Views, Author, Last post and the rest. The rows already on the page are reordered here; nothing is fetched and nothing is sent. Announcements keep their own section. Click again to reverse, a third time for the board's own order.",
-            },
-            {
-                id: "rememberFilter", label: "Remember the prefix filter per forum", type: "toggle", default: false,
-                desc: "Coming back to a forum restores the [Release] or [Info] chip that was pressed there last time.",
+                desc: "Replies, Views, Author, Last post and the rest reorder the rows already on the page. Click again to reverse, a third time for the board's own order.",
             },
         ],
     },
@@ -221,17 +200,7 @@ const SETTINGS_SCHEMA = [
         fields: [
             {
                 id: "gameCard", label: "Game info card", type: "toggle", default: true,
-                desc: "Reads the first post and rebuilds it as a compact card: store page, AppID, genres, languages, release date.",
-            },
-            {
-                id: "collapseFirst", label: "Fold the Steam description", type: "toggle", default: true,
-                desc: "Keeps About the Game, system requirements and screenshots one click away.",
-                when: "gameCard",
-            },
-            {
-                id: "externalLinks", label: "External lookups", type: "toggle", default: true,
-                desc: "SteamDB, SteamCharts, PCGamingWiki and ProtonDB buttons built from the AppID.",
-                when: "gameCard",
+                desc: "Reads the first post and draws it as a card: store page, AppID, genres, languages, release date, with lookups to SteamDB, SteamCharts, ProtonDB and PCGamingWiki. The original post stays under it, with a control to fold it.",
             },
             {
                 id: "postLayout", label: "Post layout", type: "seg", default: "modern",
@@ -246,8 +215,16 @@ const SETTINGS_SCHEMA = [
                 desc: "Copy link, copy as a quote, reply with quote, and a post number you can link to.",
             },
             {
+                id: "spoilersOpen", label: "Open spoilers", type: "toggle", default: true,
+                desc: "Every spoiler on the page starts open, so a release post reads top to bottom. The topic bar closes them all again in one click.",
+            },
+            {
+                id: "spoilerAll", label: "Open or close all spoilers button", type: "toggle", default: true,
+                desc: "One control in the topic bar for a post that hides its links behind ten separate spoilers.",
+            },
+            {
                 id: "foldQuotes", label: "Fold long quotes", type: "toggle", default: true,
-                desc: "A quote longer than a few lines is clipped to its opening lines with a control to open it. The text is never taken out of the page: find-in-page, the finder and a screen reader all still read a folded quote in full.",
+                desc: "A quote longer than a few lines is clipped to its opening lines with a control to open it. The text is never taken out of the page.",
             },
             {
                 id: "foldQuotesLines", label: "Fold a quote over", type: "range", default: 6,
@@ -256,20 +233,16 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "quietPosts", label: "Fold short low-value replies", type: "toggle", default: false,
-                desc: "\"thanks!\", \"+1\" and a lone emoji collapse to one dim line you can click open. Decided from what a post says — never from who wrote it. A post carrying a link, a version, code, an image or a problem report is never folded.",
+                desc: "\"thanks!\", \"+1\" and a lone emoji collapse to one dim line you can click open. Decided from what a post says — never from who wrote it.",
             },
             {
                 id: "quietLimit", label: "Fold replies shorter than", type: "range", default: 120,
-                // 400 was a paragraph. At that setting the filter was
-                // folding replies that say something, which is the one
-                // thing it is built not to do — the tests for it all
-                // run at the default and none of them noticed.
                 min: 40, max: 240, step: 10, unit: " chars",
                 when: "quietPosts",
             },
             {
                 id: "resumeReading", label: "Remember where you stopped reading", type: "toggle", default: true,
-                desc: "A topic you have read before opens with a control back to the page you were on, and the first post newer than your last visit is marked. Kept in this browser, so it works logged out; needs \"Remember topics you open\".",
+                desc: "A topic you have read before offers a control back to the page you were on, and the first post newer than your last visit is marked. Needs \"Remember topics you open\".",
                 when: "history",
             },
             {
@@ -279,10 +252,6 @@ const SETTINGS_SCHEMA = [
             {
                 id: "collapseSigs", label: "Fold long signatures", type: "toggle", default: true,
                 desc: "Signatures over a few lines collapse behind a toggle.",
-            },
-            {
-                id: "spoilerAll", label: "Expand all spoilers button", type: "toggle", default: true,
-                desc: "One control in the topic bar for a post that hides its links behind ten separate spoilers.",
             },
             {
                 id: "lightbox", label: "Open images in a lightbox", type: "toggle", default: true,
@@ -306,7 +275,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "saveDraft", label: "Keep an unsent reply", type: "toggle", default: true,
-                desc: "What you have typed into the quick reply is kept in this browser against that topic, so closing the tab or following a link and coming back does not lose it. Cleared when the reply is sent, and never sent anywhere.",
+                desc: "What you have typed into the quick reply is kept in this browser against that topic. Cleared when the reply is sent, and never sent anywhere.",
                 when: "quickReply",
             },
             {
@@ -315,7 +284,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "postingMemory", label: "Remember the posting options", type: "toggle", default: true,
-                desc: "Notify me, Attach a signature, Disable BBCode and the rest: whatever was ticked the last time a post was written is ticked again on the next one. Editing an existing post is left alone.",
+                desc: "Notify me, Attach a signature, Disable BBCode and the rest: whatever was ticked the last time is ticked again on the next post.",
             },
             {
                 id: "hideUsers", label: "Hide posts by someone", type: "toggle", default: true,
@@ -332,16 +301,11 @@ const SETTINGS_SCHEMA = [
         fields: [
             {
                 id: "steamPreview", label: "Preview a game on hover", type: "toggle", default: false,
-                desc: "Hovering a topic title in a listing shows the cover, the review score, the tags, the release date and the opening lines of the store description. Focusing the title with the keyboard does the same; Escape closes it.",
+                desc: "Hovering a topic title in a listing shows the cover, the review score, the tags, the release date and the opening lines of the store description. Escape closes it.",
             },
             {
                 id: "steamLookup", label: "Ask Steam for games it has not seen", type: "toggle", default: true,
-                desc: "Without this the preview only shows games already in this browser's cache — every game topic you have opened, since the info card records its AppID. With it, an unknown title is looked up on Steam's public store API and cached. Nothing but the game name is ever sent, and never over the Tor mirror. Needs your userscript manager to allow GM_xmlhttpRequest: the forum only lets the page talk to itself, so without that grant the request never leaves and the card says so.",
-                when: "steamPreview",
-            },
-            {
-                id: "steamCacheDays", label: "Keep a looked-up game for", type: "range", default: 30,
-                min: 1, max: 120, step: 1, unit: " days",
+                desc: "Without this the preview only shows games this browser has already opened a topic for. With it, an unknown title is looked up on Steam's public store API and kept for a month. Nothing but the game name is ever sent, and never over the Tor mirror.",
                 when: "steamPreview",
             },
         ],
@@ -358,15 +322,11 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "readableInk", label: "Make the board's own colours readable", type: "toggle", default: true,
-                desc: "The board colours a username by the group it is in, and several of those come out at about 2.5:1 against the page — well under what small text needs. This keeps the colour and the hue and lifts only its brightness, by the least it takes to be readable. Off leaves them exactly as the board wrote them.",
-            },
-            {
-                id: "skipLink", label: "Skip to content link", type: "toggle", default: true,
-                desc: "The first thing Tab reaches, so the top bar is not eight tabs in front of the first topic on every page.",
+                desc: "The board colours a username by its group, and several of those come out at about 2.5:1 against the page. This keeps the hue and lifts only the brightness, by the least it takes to be readable.",
             },
             {
                 id: "reduceMotion", label: "Turn off animation", type: "toggle", default: false,
-                desc: "Transitions and smooth scrolling are already dropped when the system asks for reduced motion. This forces it regardless of the system setting.",
+                desc: "Transitions and smooth scrolling are already dropped when the system asks for reduced motion. This forces it regardless.",
             },
         ],
     },
@@ -378,20 +338,15 @@ const SETTINGS_SCHEMA = [
         fields: [
             {
                 id: "history", label: "Remember topics you open", type: "toggle", default: true,
-                desc: "Stored in this browser and never sent anywhere. Powers Recent in the palette.",
-            },
-            {
-                id: "historyLimit", label: "Topics to remember", type: "range", default: 60,
-                min: 10, max: 300, step: 10, unit: "",
-                when: "history",
+                desc: "Stored in this browser and never sent anywhere. Powers Recent in the palette and the reading position.",
             },
             {
                 id: "confirmExternal", label: "Confirm before leaving to another site", type: "toggle", default: false,
-                desc: "Asks first, showing the full address, when a link in a post leads off the forum. Off by default because it adds a click.",
+                desc: "Asks first, showing the full address, when a link in a post leads off the forum.",
             },
             {
                 id: "coexist", label: "Stand down for CS.RIN.RU Enhanced", type: "toggle", default: true,
-                desc: "If the Enhanced userscript is running, leave the Steam header on a game topic to it instead of drawing a second one. The hover preview stays: Enhanced's previews a post, this one previews the game.",
+                desc: "If the Enhanced userscript is running, leave the Steam header on a game topic to it instead of drawing a second one.",
             },
         ],
     },

@@ -370,14 +370,6 @@ function dedupeSearchBoxes() {
  * it the bar is only a home for the board's own refine box — see
  * FILTER_MIN_ROWS.
  */
-/* Where a forum's last-used chip is kept, so coming back to it finds
-   the page filtered the way it was left. */
-function filterMemoryKey() {
-    if (PAGE.forumId) return "filter:f" + PAGE.forumId;
-    if (PAGE.isSearch) return "filter:search";
-    return null;
-}
-
 function buildToolbar(entries, prefixes, rich) {
     const state = { text: "", tag: null, unread: false };
 
@@ -717,29 +709,152 @@ function tightenLastPost(cell) {
     first.setAttribute("title", full);
 }
 
-/* ---- Announcements ------------------------------------------------ */
+/* ---- Sections of a listing ---------------------------------------- */
 
-function collapseAnnouncements(entries) {
-    const pinned = entries.filter((entry) => entry.row.getAttribute("data-rr-prefix") === "important");
-    if (pinned.length < 3) return;
+/* "Global Announcements", "Announcements", "Topics": the template's own
+   section rows, which head a run of topic rows and do nothing else.
+   Each folds its run on a click now, and the fold is remembered by the
+   section's name — fold the announcements once and every listing opens
+   with them folded. The rows are still in the page (find-in-page, the
+   filter, the sort and the keyboard cursor all still see them), only
+   not drawn. The last section of a table is left as it is: a listing
+   whose every topic can be folded away is a listing that reads as
+   empty by accident. */
+const FOLDED_SECTIONS_KEY = "foldedSections";
 
-    let open = false;
-    const toggle = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
-        icon("chevronD"),
-        t("{n} pinned announcements", { n: pinned.length }),
-    ]);
-    const setState = () => {
-        for (const entry of pinned) entry.row.style.display = open ? "" : "none";
-        toggle.firstChild.style.transform = open ? "rotate(180deg)" : "";
-    };
-    toggle.addEventListener("click", () => { open = !open; setState(); });
-    setState();
+function foldedSections() {
+    const kept = store.get(FOLDED_SECTIONS_KEY, null);
+    return kept && typeof kept === "object" ? kept : {};
+}
 
-    const firstRow = pinned[0].row;
-    const holder = el("tr", {}, [
-        el("td", { colspan: String(firstRow.children.length), style: { padding: "6px 12px" } }, [toggle]),
-    ]);
-    firstRow.before(holder);
+/* A listing's section row, in either of the two shapes the template
+   uses: a td.cat with an h4 (search results, the index), or one
+   spanning td.row3 holding a bold word and nothing else (a forum
+   listing's "Global Announcements", "Announcements", "Stickies",
+   "Topics"). The second is named here so the stylesheet can draw it
+   as the section head it is rather than as a row. */
+function sectionOf(row) {
+    let cell = row.querySelector(":scope > td.cat");
+    if (cell) {
+        // Not the index's categories: the board folds those itself.
+        if (row.getAttribute("data-rr-cat-row") !== "" || row.querySelector("td.catdiv, .ccopen, .ccclose")) return null;
+        const heading = cell.querySelector("h4");
+        return heading ? { cell, heading } : null;
+    }
+    if (row.children.length !== 1) return null;
+    cell = row.firstElementChild;
+    if (cell.tagName !== "TD" || !cell.classList.contains("row3") || !cell.hasAttribute("colspan")) return null;
+    const heading = cell.querySelector(":scope > b, :scope > span > b, :scope > strong");
+    if (!heading || cell.querySelector("a, input, select, img") || cell.textContent.trim().length > 60) return null;
+    row.setAttribute("data-rr-cat-row", "section");
+    cell.setAttribute("data-rr-section", "");
+    return { cell, heading };
+}
+
+function initSectionFolds(table) {
+    const rows = Array.from(table.querySelectorAll(":scope > tbody > tr"));
+    // Every section row is named first, then the runs are read: a run
+    // ends at the next section row, which has to be known as one by
+    // then.
+    const heads = rows.map(sectionOf);
+    const sections = [];
+    rows.forEach((row, index) => {
+        const found = heads[index];
+        if (!found) return;
+        const { cell, heading } = found;
+        const run = [];
+        for (let j = index + 1; j < rows.length; j += 1) {
+            const next = rows[j];
+            if (heads[j] || next.hasAttribute("data-rr-cat-row") || next.querySelector(":scope > th")) break;
+            run.push(next);
+        }
+        const topics = run.filter((r) => r.querySelector("a.topictitle")).length;
+        if (topics) sections.push({ row, cell, heading, run, topics });
+    });
+    if (sections.length < 2) return;
+
+    const remembered = foldedSections();
+    for (const section of sections.slice(0, -1)) {
+        const name = section.heading.textContent.replace(/\s+/g, " ").trim();
+        const key = name.toLowerCase();
+        let folded = Boolean(remembered[key]);
+
+        const countLabel = el("span.rr-section__count", {}, [t("{n} topics", { n: section.topics })]);
+        section.cell.classList.add("rr-section");
+        section.cell.prepend(icon("chevronD", 13));
+        section.cell.append(countLabel);
+        section.cell.setAttribute("role", "button");
+        section.cell.setAttribute("tabindex", "0");
+
+        const sync = () => {
+            section.row.toggleAttribute("data-rr-folded", folded);
+            for (const r of section.run) r.toggleAttribute("data-rr-section-folded", folded);
+            section.cell.setAttribute("aria-expanded", folded ? "false" : "true");
+            section.cell.setAttribute("title", t(folded ? "Show this section" : "Fold this section"));
+        };
+        const flip = () => {
+            folded = !folded;
+            const next = foldedSections();
+            if (folded) next[key] = true;
+            else delete next[key];
+            store.set(FOLDED_SECTIONS_KEY, next);
+            sync();
+        };
+        section.cell.addEventListener("click", (event) => {
+            if (event.target instanceof Element && event.target.closest("a, input, select, button")) return;
+            flip();
+        });
+        section.cell.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            flip();
+        });
+        sync();
+    }
+}
+
+/* ---- The control panel's menu ------------------------------------- */
+
+/* The left column of the control panel is a list of sections. The one
+   you are in is bold with its pages under it; the others are links
+   that open theirs. Nothing said so: each was a word on a row, and
+   which words would unfold something was found by clicking. The
+   closed ones carry a chevron pointing at what they open, the open one
+   a chevron pointing down at its pages, and its pages step in under
+   it. */
+function decorateNavLists() {
+    for (const table of document.querySelectorAll("#wrapcentre table.tablebg[data-rr-navlist]")) {
+        for (const cell of table.querySelectorAll(":scope > tbody > tr > td")) {
+            const current = cell.querySelector(":scope > b.nav");
+            const link = cell.querySelector(":scope > a.nav");
+            if (current) {
+                cell.setAttribute("data-rr-navitem", "open");
+                current.prepend(icon("chevronD", 13));
+                for (const marker of cell.querySelectorAll("ul.nav li > b")) {
+                    if (/^[\s »]*$/.test(marker.textContent)) marker.remove();
+                }
+            } else if (link) {
+                cell.setAttribute("data-rr-navitem", "closed");
+                link.append(icon("chevron", 13));
+            }
+        }
+    }
+}
+
+/* The table of sub-forums above a listing has the same "Forum" heading
+   as the index and no name of its own; heading it "Subforums" is what
+   keeps it from reading as a second, shorter, index above the topics. */
+function labelSubforums() {
+    if (!PAGE.isForum) return;
+    for (const table of document.querySelectorAll("#wrapcentre table[data-rr-list]")) {
+        if (!table.querySelector("a.forumlink") || table.querySelector("a.topictitle")) continue;
+        const head = table.querySelector(':scope > tbody > tr[data-rr-head] > th[data-rr-col="title"]');
+        if (!head) continue;
+        // The words may already be inside the sort button (initColumnSort).
+        const holder = head.querySelector("button") || head;
+        const words = Array.from(holder.childNodes).find((node) => node.nodeType === 3 && node.textContent.trim());
+        if (words) words.textContent = " " + t("Subforums") + " ";
+    }
 }
 
 /* ---- Entry point --------------------------------------------------- */
@@ -1360,8 +1475,12 @@ function initLists() {
         if (table.hasAttribute("data-rr-list")) {
             if (settings.get("sortColumns")) initColumnSort(table);
             initMarkColumn(table);
+            if (table.querySelector("a.topictitle")) initSectionFolds(table);
         }
     }
+    decorateNavLists();
+    // After the sort buttons exist, so the words are found inside one.
+    labelSubforums();
     if (settings.get("rowClick")) initRowClick();
     if (profileView()) {
         // Named on the root so the phone can stack the profile's two
@@ -1409,7 +1528,7 @@ function initLists() {
     /* Before the page-kind gate: the member list, the message folders
        and the control panel are none of those kinds and were getting
        none of this. */
-    if (settings.get("tightRows")) tightenDateCells();
+    tightenDateCells();
     localiseRankCells();
     dropLonePageCounters();
     alignMessageMarkers();
@@ -1421,9 +1540,7 @@ function initLists() {
     // early return never ran there, and the Last post column read on
     // one line in a forum listing and on two on the page in front of
     // it. It is the same column.
-    if (settings.get("tightRows")) {
-        for (const cell of document.querySelectorAll('td[data-rr-col="last"]')) tightenLastPost(cell);
-    }
+    for (const cell of document.querySelectorAll('td[data-rr-col="last"]')) tightenLastPost(cell);
 
     const entries = topicRows();
     if (!entries.length) return;
@@ -1463,19 +1580,6 @@ function initLists() {
         const toolbar = buildToolbar(entries, prefixes, filtering);
         setTag = toolbar.setTag;
 
-        /* The chip this forum was left on. Restored only where the page
-           still offers it, and visibly pressed, so a filtered listing
-           never reads as a short one. */
-        const memoryKey = settings.get("rememberFilter") && filtering ? filterMemoryKey() : null;
-        if (memoryKey) {
-            const remembered = store.get(memoryKey, null);
-            if (remembered && prefixes.some(([name]) => name.toLowerCase() === remembered)) toolbar.setTag(remembered);
-            setTag = (value) => {
-                toolbar.setTag(value);
-                store.set(memoryKey, toolbar.tag());
-            };
-        }
-
         // The action bar and the filter bar carry one job between them
         // and sat as two separate cards with a gap, one above the other:
         // 123px of chrome before the first topic on the page. The filter
@@ -1495,8 +1599,6 @@ function initLists() {
             if (table) table.before(toolbar.bar);
         }
     }
-
-    if (settings.get("hideAnnouncements")) collapseAnnouncements(entries);
 }
 
 /* The sort strip's controls are flat siblings — a label, the select

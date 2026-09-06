@@ -266,8 +266,9 @@ of the four reasons it is.
   carry no link, no version, no image, no code and no question collapse
   to one dim line you can click open — decided from what a post says,
   never from who wrote it. Off by default.
-- Long signatures fold. All spoilers open at once. Images open in a lightbox.
-  Off-site links show their destination host.
+- Long signatures fold. Spoilers open at load and close again in one
+  press. Images open in a lightbox. Off-site links show their
+  destination host.
 
 ![A folded quote](screenshots/folded-quote.png)
 
@@ -605,13 +606,115 @@ saturation and produced pure `rgb(255, 38, 38)` — readable, and neon.
 It has its own switch, because a board's colours are part of how it
 looks.
 
+### The polish pass
+
+A reading of the whole interface at 0.11, page by page, against one
+question: does this look like somebody chose it, or like a template?
+What came out of it, and why each one is a choice rather than a tweak.
+
+**Nothing is drawn until it is finished.** Every module that rebuilds
+the page runs at DOM ready, and the browser paints before that: for a
+frame or two a reader saw the board's own layout wearing this
+stylesheet — masthead gone, tables restyled, nothing moved yet — and
+then everything jumped into place. The body is held back until the
+late phase has run, and released whatever happens: at the end of it,
+on a failure inside it, and on a watchdog outside every guard, because
+a page held back and never released is far worse than the flash.
+
+The property matters. `visibility` is inherited, so lifting the gate
+changes it on every one of a listing's four thousand elements and costs
+44ms of style recalculation, measured. `opacity` is not inherited, so
+the same flip touches one element. `test/perf.js` read 106ms and 62ms.
+
+**A control has a name, a group has a box.** The board bar was twelve
+links in a row separated by whitespace; it is three light boxes now —
+ways of looking at threads, what the board is, and you — with a
+hairline between the links inside each. The same shape draws the pager
+and the topic bar's two rows of topic actions: one box says "these are
+one thing" where six loose buttons said "here are six things". The
+donation link lost its outline and its heart and went back into the
+row, because a row where one thing shouts is a row nobody reads.
+
+Written the obvious way — `.rr-cluster > * + *` — those rules cost the
+listing 30ms. A selector whose rightmost part is universal is tested
+against every element on the page. Every child of a cluster carries a
+class instead, put there by the JS that fills it.
+
+**Two kinds of band, two tones.** A listing's column headings and its
+section rows were the same grey, so "Topics / Posts / Last post" and
+"Global Announcements" read as the same kind of thing. The headings are
+darker than the rows now and the sections lighter, with the accent mark
+the board's categories already had — drawn as a short rounded bar
+*inside* the cell rather than a stripe down its edge, which is what was
+being cut at an angle by the card's own rounded corner.
+
+**A section folds.** Global Announcements, Announcements, Stickies and
+Topics each fold their run on a click on the heading, with a count
+beside the name, remembered by name across every listing. The rows stay
+in the page — the filter, the sort, the keyboard cursor and find-in-page
+all still reach them. The last section of a table never folds: a listing
+whose every topic can be folded away is one that reads as empty by
+accident.
+
+**A search box says where it looks.** The board's own boxes are fixed —
+this forum, titles only — and the choice people actually make is two
+hidden inputs away. One control at the end of the field offers it:
+this topic, this forum or the whole board; titles, first post or every
+post. The form submitted is still the board's own, tokens and all; only
+what its hidden fields say changes, and the choice is kept for next
+time. The command palette reads the same choice, so the two cannot
+disagree.
+
+**The author is a band, not a line.** A post header was a name, a rank,
+a join date, a post count, a date and six controls, all the same size
+on the same ground. Pulled out to the post's own edges on the quieter
+surface, it is a header and the message below it is the message. Its
+inset comes from the post's own token, so the two can never drift.
+
+**A post's table stops clipping.** The controls draw their names above
+themselves on hover, and the header they sit in is the top of the
+table: with `overflow: hidden` those labels were cut to a sliver along
+the post's top edge. The table paints its own surface and its cells go
+transparent, so the corners stay round without the clip.
+
+**Open by default, where the reader was going to click anyway.**
+Spoilers on this board are where the links are — a release post hides
+its mirrors, its password and its notes behind five of them. They open
+at load and the topic bar closes them all again in one press. The
+original post under a game card opens too, and closing it is
+remembered.
+
+**A link to a post lands on the post.** Every `#p123456` on this board
+points at an `<a name>` in the author cell, which the modern layout
+hides — and a browser cannot scroll to something that is not drawn, so
+the page loaded, nothing moved, and a second click did nothing either.
+Every post's own table carries the id now. The fragment is also
+honoured again once the top bar, the topic bar and the releases panel
+are in place, because the browser looked for it while they were still
+being built; a link to a post on the page in front of you glides to it
+rather than reloading.
+
 ### Settings
 
-Every feature above has a switch, with a sentence saying what it does
-rather than a variable name. The panel is a rail of nine categories —
-Appearance, Navigation, Search, Topic lists, Reading, Posting, Steam,
-Accessibility, Behaviour — beside the controls, because a flat scroll of
-sixty rows is a list, not a panel.
+Every feature above that is a real choice has a switch, with a sentence
+saying what it does rather than a variable name. The panel is a rail of
+nine categories — Appearance, Navigation, Search, Topic lists, Reading,
+Posting, Steam, Accessibility, Behaviour — beside the controls, because
+a flat scroll of sixty rows is a list, not a panel.
+
+Fourteen switches went at 0.11, and that is the same judgement as the
+rest of this document rather than a tidy-up. A setting is a question
+put to every reader who opens the panel, and several of these had one
+sensible answer: the skip link, joining a last-post line, the lookups
+on a game card, the archive-password chip, how many topics the palette
+remembers, how long a Steam lookup is kept. Those are simply how the
+script behaves. Two others moved to where the question is actually
+asked — where a search looks is chosen in the search box, and which
+sections are folded is remembered from folding them. A value stored for
+a field that has gone is ignored, never an error.
+
+The accent is chosen from named chips rather than six bare squares with
+a ring round one of them: which was which took hovering each in turn.
 
 It is generated from one schema, so it always matches what the script
 actually does; a test fails if a feature is added without a control. The

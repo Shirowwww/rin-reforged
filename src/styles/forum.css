@@ -23,6 +23,28 @@ html[data-rr] body.ltr {
 
 html[data-rr] ::selection { background: var(--rr-selection); color: var(--rr-text-strong); }
 
+/* Held back until the script has rebuilt the page (main.js, markReady).
+   What the browser painted first was the board's own layout in these
+   colours — masthead gone, tables restyled, nothing else yet — and a
+   frame later everything jumped into place. Nothing is drawn until it
+   is in place; the attribute lands whatever happens, on a watchdog if
+   nothing else, so this can never leave a blank page.
+
+   The root carries the page colour as well as the body, so the moment
+   the stylesheet lands the window is the theme's own dark rather than
+   the browser's white — with the body hidden there is nothing else to
+   paint it.
+
+   `opacity`, not `visibility`, and the difference is 44ms of style
+   work on a listing. `visibility` is an inherited property: taking
+   the gate off changes it on <body>, and every one of the four
+   thousand elements under it has to be recalculated. `opacity` is
+   not inherited, so the same flip touches one element. Measured
+   both ways against test/perf.js — 106ms and 62ms on viewforum. */
+html[data-rr] { background: var(--rr-bg); }
+html[data-rr]:not([data-rr-ready]) body,
+html[data-rr]:not([data-rr-ready]) body.ltr { opacity: 0; }
+
 /* phpBB sets 62.5% on <body> and then sizes everything in em. Reset the
    descendants that relied on it so one font-size setting drives it all. */
 html[data-rr] .gen,
@@ -118,7 +140,7 @@ html[data-rr] table.tablebg,
 html[data-rr] table.forumline {
     margin-bottom: var(--rr-post-gap);
     background: var(--rr-line);
-    border: 1px solid var(--rr-line-strong);
+    border: 1px solid var(--rr-line);
     border-radius: var(--rr-radius-lg);
     border-spacing: 0 !important;
     border-collapse: separate;
@@ -130,6 +152,32 @@ html[data-rr] table.forumline {
    inside a scroll container that never scrolls can never stick. */
 html[data-rr] table.tablebg[data-rr-list] { overflow: clip; }
 
+/* A post's table clips nothing. Its controls draw their names above
+   themselves on hover, and the header strip they sit in is the top of
+   the table: with overflow hidden the tooltip was cut to a sliver
+   along the post's top edge, which is what was reported as "the
+   tooltips go behind the post". The table paints its own surface and
+   the cells go transparent, so the corners stay rounded without the
+   clip. */
+html[data-rr] table.tablebg[data-rr-post] {
+    overflow: visible;
+    background: var(--rr-surface);
+    /* The inside edge of a post, named once: the author band pulls
+       itself back out to it (ui.css, .rr-posthead). */
+    --rr-post-pad: 18px;
+    --rr-post-pad-top: 12px;
+}
+html[data-rr] table.tablebg[data-rr-post] > tbody > tr,
+html[data-rr] table.tablebg[data-rr-post] > tbody > tr > td.row1,
+html[data-rr] table.tablebg[data-rr-post] > tbody > tr > td.row2 { background: transparent; }
+/* And a little more room inside than a listing row gets: a post is
+   read, a row is scanned. Not a folded reply, which owns its own
+   padding (features.css) and is one line by design. */
+html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row1,
+html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row2 {
+    padding: var(--rr-post-pad-top) var(--rr-post-pad) 14px;
+}
+
 /* The original stylesheet paints `th a` #CCCCCC: on the light theme the
    member list's sortable headers were pale grey on paler grey while
    the two headers without a link read fine. */
@@ -139,8 +187,12 @@ html[data-rr] table.tablebg[data-rr-list] { overflow: clip; }
 html[data-rr] th a,
 html[data-rr] th a:visited { color: inherit !important; }
 html[data-rr] th a:hover { color: var(--rr-text-strong) !important; text-decoration: none; }
+/* The column headings: a darker strip, small muted caps. Darker than
+   the rows rather than lighter, so it can never be taken for one of
+   the section rows below it, which are the lighter, bolder kind of
+   band. Two kinds of band, two tones, and they used to be one. */
 html[data-rr] th {
-    background: var(--rr-surface-2);
+    background: var(--rr-bg-sunken);
     color: var(--rr-muted);
     font-size: var(--rr-fs-xs);
     font-weight: 600;
@@ -155,24 +207,24 @@ html[data-rr] th {
 }
 
 /* Category bars are the one piece of phpBB furniture worth keeping:
-   every board has them, and a tinted bar with an accent edge reads as
-   a section head at a glance. Toned right down from the original. */
+   every board has them, and a tinted bar with an accent mark reads as
+   a section head at a glance. Toned right down from the original.
+
+   The mark is a short rounded bar drawn inside the cell, not a stripe
+   down its left edge: the stripe ran into the table's rounded corner
+   and came out cut at an angle on the first row of every card. */
 html[data-rr] td.cat,
 html[data-rr] td.catHead,
 html[data-rr] td.catBottom,
 html[data-rr] th.thHead {
-    background: linear-gradient(
-        to right,
-        color-mix(in srgb, var(--rr-accent) 10%, var(--rr-surface-2)),
-        var(--rr-surface-2) 260px
-    );
+    position: relative;
+    background: color-mix(in srgb, var(--rr-accent) 5%, var(--rr-surface-2));
     color: var(--rr-text-strong);
     font-weight: 650;
     font-size: var(--rr-fs-sm);
-    padding: var(--rr-s2) var(--rr-s3);
+    padding: var(--rr-s2) var(--rr-s3) var(--rr-s2) 20px;
     border: 0;
     border-bottom: 1px solid var(--rr-line);
-    box-shadow: inset 2px 0 0 var(--rr-accent);
     /* The board's own stylesheet pins these at `height: 25px`. One line
        of a section heading fits and nothing shows it — but the same
        class carries the "Display posts from previous / Sort by / Go"
@@ -182,6 +234,19 @@ html[data-rr] th.thHead {
        one already had to say the same thing. */
     height: auto;
 }
+html[data-rr] td.cat:not([data-rr-cat])::before,
+html[data-rr] td.catHead::before,
+html[data-rr] th.thHead::before {
+    content: "";
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    width: 3px;
+    height: 14px;
+    margin-top: -7px;
+    border-radius: 2px;
+    background: var(--rr-accent);
+}
 html[data-rr] td.cat h4,
 html[data-rr] td.cat a { color: var(--rr-text-strong); margin: 0; font-size: var(--rr-fs-sm); }
 
@@ -189,9 +254,13 @@ html[data-rr] td.cat a { color: var(--rr-text-strong); margin: 0; font-size: var
    keep its columns. Tinting the whole row stops it reading as a bar
    that runs out halfway across. */
 html[data-rr] tr[data-rr-cat-row] > td {
-    background: var(--rr-surface-2);
+    background: color-mix(in srgb, var(--rr-accent) 5%, var(--rr-surface-2));
     border-bottom: 1px solid var(--rr-line);
 }
+/* The strips that are not section heads — "Mark forums read" alone at
+   the right, the sort controls — are plain. */
+html[data-rr] tr[data-rr-cat-row="plain"] > td,
+html[data-rr] tr[data-rr-cat-row="controls"] > td { background: var(--rr-surface-2); }
 
 /* The collapse control is an <input type="button"> the original theme
    dressed with a background image. Here it becomes a chevron that
@@ -225,7 +294,7 @@ html[data-rr] input.ccclose[type="button"]:hover { background-color: var(--rr-su
    into the cell and the listing wraps in a table. Neither is a heading. */
 html[data-rr] td.cat[data-rr-cat] {
     background: var(--rr-surface-2);
-    box-shadow: none;
+    padding-left: var(--rr-s3);
     font-weight: 400;
 }
 html[data-rr] td.cat[data-rr-cat="controls"] a { color: var(--rr-muted); font-weight: 500; }
@@ -281,9 +350,13 @@ html[data-rr] table[data-rr-list] > tbody > tr.row2 > td { background: var(--rr-
 html[data-rr] table[data-rr-list] > tbody > tr.row1:hover > td,
 html[data-rr] table[data-rr-list] > tbody > tr.row2:hover > td { background: var(--rr-surface-3); }
 
-/* Whole-row hover, which the table markup cannot express by itself. */
-html[data-rr] tr:hover > td.row1,
-html[data-rr] tr:hover > td.row2 { background: var(--rr-surface-3); }
+/* Whole-row hover, which the table markup cannot express by itself.
+   Only on a listing: the same two classes wrap the Who is online
+   block, the login form and a profile's cells, and lighting a whole
+   block up because the pointer crossed it promised a click that led
+   nowhere. */
+html[data-rr] table[data-rr-list] tr:hover > td.row1,
+html[data-rr] table[data-rr-list] tr:hover > td.row2 { background: var(--rr-surface-3); }
 /* And a whole-row click (lists.js): the title cell's empty three
    quarters open the topic too, so the hover is not a promise the row
    fails to keep. */
@@ -946,6 +1019,19 @@ html[data-rr][data-rr-nav="on"] td.row5 {
     border-radius: var(--rr-radius-lg);
 }
 html[data-rr][data-rr-nav="on"] td.row5:has(> #search-box) { display: flex; justify-content: flex-end; }
+
+/* The strip that is left holding nothing but the board's search box
+   (navbar.js, tidyCrumbStrip): on a profile or the member list there
+   is no listing toolbar to move that box into, and the strip drew a
+   full-width card around one field. No card, no fill, no border — a
+   row with a search box at the end of it. */
+html[data-rr] #wrapcentre table.tablebg[data-rr-crumbstrip] {
+    background: none;
+    border: 0;
+    border-radius: 0;
+    margin-bottom: var(--rr-s3);
+}
+html[data-rr] #wrapcentre table[data-rr-crumbstrip] td.row5 { background: none; padding: 0; }
 
 /* The template floats the links inside this paragraph, so without a
    containing block the heading below rides up onto the same line. */

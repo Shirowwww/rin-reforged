@@ -101,8 +101,11 @@ html[data-rr] {
        edge does not carry its own copy of the number. */
     --rr-nav-h: 48px;
 
-    --rr-radius:      7px;
-    --rr-radius-lg:   12px;
+    /* Two radii, one for a control and one for a card, both a shade
+       tighter than they were: 12px corners on every card down a page
+       of cards is most of what made the page read as a template. */
+    --rr-radius:      6px;
+    --rr-radius-lg:   9px;
     --rr-radius-pill: 999px;
 
     /* Only genuinely floating things cast a shadow. Surfaces separate

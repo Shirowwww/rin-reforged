@@ -61,6 +61,7 @@ html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead {
     margin: 0 var(--rr-s2) 0 0;
     padding: 0;
     border: 0;
+    background: none;
     vertical-align: middle;
 }
 html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead__avatar,
@@ -157,89 +158,16 @@ html[data-rr] table.tablebg:not([data-rr-quiet]) .rr-quiet-chip:hover { opacity:
 
 /* ---- The donation link -------------------------------------------- */
 
-/* Present, not loud: an outline in the accent and a heart, in a row
-   where everything else is grey text. The board is asking for money to
-   stay hosted; this is one line of emphasis, not a banner. */
-html[data-rr] .rr-boardbar__donate {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 2px 9px;
-    border: 1px solid color-mix(in srgb, var(--rr-accent) 45%, transparent);
-    /* A control, so the button radius — not the pill it used to be,
-       which put three different corner radii on one bar next to Reply
-       and the search box. */
-    border-radius: var(--rr-radius);
-    background: color-mix(in srgb, var(--rr-accent) 12%, transparent);
-    color: color-mix(in srgb, var(--rr-accent) 88%, var(--rr-text-strong));
-    font-weight: 650;
-}
-html[data-rr] .rr-boardbar__donate:hover {
-    background: color-mix(in srgb, var(--rr-accent) 22%, transparent);
-    border-color: var(--rr-accent);
-    color: var(--rr-accent);
-}
-html[data-rr] .rr-boardbar__donate svg {
-    width: 12px;
-    height: 12px;
-    flex: none;
-    fill: currentColor;
-    stroke-width: 0;
-}
-
-@media (max-width: 720px) {
-    /* Everything past the two entry points folds behind More. This one
-       does not: it is the link the board is asking for, and it fits
-       once it is the heart alone. */
-    html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > [data-rr-donate] {
-        display: flex;
-    }
-    /* Its group is shown for its sake alone, so nothing else in that
-       group comes back with it. */
-    html[data-rr] .rr-boardbar:not([data-rr-open]) [data-rr-donate] > :not(.rr-boardbar__donate) {
-        display: none;
-    }
-    html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__donate-label {
-        /* Off the screen rather than display:none, so the label still
-           belongs to the link for anything reading it aloud. */
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip-path: inset(50%);
-        white-space: nowrap;
-    }
-    html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__donate { padding: 4px 8px; }
-}
+/* One of the board's links, in the board's row, at the row's own
+   weight. It used to carry an outline and a heart; the palette still
+   offers it from anywhere. */
+html[data-rr] .rr-boardbar__donate { font-weight: 600; }
 
 @media (max-width: 560px) {
-    /* On a phone the row is 366px wide and the two entry points, the
-       heart and the More control come to 389. Something has to fold,
-       and the choice is between the second entry point and the word
-       "More" — the second entry point, because it is one tap away
-       behind a control that is still labelled, where a More button
-       reduced to a bare chevron is a control that is not.
-
-       "View unanswered posts" is the one every guide to this board
-       tells people to bookmark, so it is the one that stays.
-
-       Both selectors below read the row as groups, which is what it is
-       now. Written against the flat row it used to be, the first one
-       excluded .rr-boardbar__donate — the class on the *link* — while
-       what sits in __main is the *group* around it, so it folded the
-       group the heart lives in and left the link laid out at zero
-       width inside. And nth-child(n+2) then meant "every group after
-       the first", which on a row whose first group holds both entry
-       points folds nothing at all: the two of them plus the heart plus
-       More come to 357px in a 366px row, and More wrapped to a second
-       line.
-
-       So: every group after the first goes, except the one with the
-       heart in it, and inside the first group only its opening link
-       stays. */
-    html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :nth-child(n+2):not([data-rr-donate]) {
-        display: none;
-    }
+    /* On a phone the row is 366px wide and the two entry points plus
+       the More control do not fit it. "View unanswered posts" is the
+       one every guide to this board tells people to bookmark, so it is
+       the one that stays; the rest are one tap away behind More. */
     html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :first-child > :nth-child(n+2) {
         display: none;
     }
@@ -476,7 +404,6 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
     margin: 0 0 var(--rr-post-gap);
     background: var(--rr-surface);
     border: 1px solid var(--rr-line);
-    border-left: 3px solid var(--rr-accent);
     border-radius: var(--rr-radius-lg);
     overflow: hidden;
 }
@@ -485,13 +412,34 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
     align-items: center;
     gap: var(--rr-s2);
     flex-wrap: wrap;
-    padding: var(--rr-card-pad);
+    padding: 10px var(--rr-card-pad);
     border-bottom: 1px solid var(--rr-line);
 }
 /* `html[data-rr] h3` outranks `.rr-releases__head h3` and kept its
    bottom margin, which centred the box 6px above the icon, the count
    and the controls beside it. */
 html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-height: 1.2; }
+/* The title is the control that folds the panel. */
+html[data-rr] button.rr-releases__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--rr-s2);
+    margin: -4px -6px;
+    padding: 4px 6px;
+    background: none;
+    border: 0;
+    border-radius: var(--rr-radius);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    transition: background var(--rr-speed) ease;
+}
+html[data-rr] button.rr-releases__toggle:hover { background: var(--rr-surface-2); }
+html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); flex: none; }
+.rr-releases[data-rr-folded] .rr-releases__toggle > svg:first-child { transform: rotate(-90deg); }
+.rr-releases[data-rr-folded] .rr-releases__controls { display: none; }
+.rr-releases[data-rr-folded] .rr-releases__head { border-bottom: 0; }
+.rr-releases__body[hidden] { display: none; }
 /* What the panel is showing: how much of the topic, and whether the
    topic itself is filtered down to it. Two controls answering the same
    question, so they sit together rather than at opposite ends of the
@@ -504,7 +452,7 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
     flex-wrap: wrap;
 }
 .rr-releases__only { padding: 4px 10px; font-size: var(--rr-fs-xs); }
-.rr-releases__head svg { color: var(--rr-accent); flex: none; }
+.rr-releases__toggle > svg:nth-child(2) { color: var(--rr-accent); flex: none; }
 .rr-releases__count { color: var(--rr-faint); font-size: var(--rr-fs-xs); }
 
 /* This page / all N pages. The same segmented control the settings

@@ -1024,15 +1024,39 @@ function initReleases() {
     });
 
     const body = el("div.rr-releases__body");
+
+    /* The panel folds. On a topic read for the conversation rather
+       than the files it is a card between the bar and the first post
+       that says nothing the reader came for; folded it is one line
+       that says how many releases there are, and opens on a click.
+       Remembered in this browser, for every topic. */
+    let open = store.get("releasesOpen", true) !== false;
+    const fold = el("button.rr-releases__toggle", { type: "button" }, [
+        icon("chevronD", 14),
+        icon("layers", 14),
+        el("h3", {}, [t("Releases")]),
+        count,
+    ]);
+    const syncFold = () => {
+        panel.toggleAttribute("data-rr-folded", !open);
+        fold.setAttribute("aria-expanded", open ? "true" : "false");
+        fold.setAttribute("title", t(open ? "Fold the Releases panel" : "Open the Releases panel"));
+        body.hidden = !open;
+    };
+    fold.addEventListener("click", () => {
+        open = !open;
+        store.set("releasesOpen", open);
+        syncFold();
+    });
+
     panel.append(
         el("div.rr-releases__head", {}, [
-            icon("layers", 14),
-            el("h3", {}, [t("Releases")]),
-            count,
+            fold,
             el("div.rr-releases__controls", {}, [scope, linkFilter, copyList]),
         ]),
         body,
     );
+    syncFold();
 
     const setCount = (shown, filtered, rows, scoped) => {
         count.textContent = filtered

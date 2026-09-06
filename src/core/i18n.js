@@ -40,6 +40,8 @@ const RU_WORDS = {
     "Next page": "Следующая страница",
     "Last page": "Последняя страница",
     "Go to page": "Перейти к странице",
+    "Previous": "Назад",
+    "Next": "Вперёд",
     "Pages of this topic": "Страницы темы",
     "Could not work out that page": "Не удалось определить страницу",
     "Previous topic": "Предыдущая тема",
@@ -76,7 +78,26 @@ const RU_WORDS = {
     "Filter topics on this page": "Фильтр тем на этой странице",
     "Show only {x}": "Показать только {x}",
     "Bookmark this topic": "В закладки",
-    "{n} pinned announcements": ({ n }) => n + " " + ruPlural(n, "закреплённое объявление", "закреплённых объявления", "закреплённых объявлений"),
+    "{n} topics": ({ n }) => n + " " + ruPlural(n, "тема", "темы", "тем"),
+    "Fold this section": "Свернуть раздел",
+    "Show this section": "Показать раздел",
+    "Subforums": "Подфорумы",
+
+    // The search box
+    "This topic": "Эта тема",
+    "This forum": "Этот форум",
+    "Whole board": "Весь форум",
+    "Where": "Где",
+    "Look in": "Искать в",
+    "Titles": "Названия",
+    "First post": "Первое сообщение",
+    "All posts": "Все сообщения",
+    "Where to search": "Где искать",
+    "What to search": "Что искать",
+    "Search options": "Параметры поиска",
+    "Search this topic": "Поиск в теме",
+    "Search this forum": "Поиск в форуме",
+    "Search the whole board": "Поиск по всему форуму",
 
     // Who is online
     "{n} online": "{n} онлайн",
@@ -89,6 +110,8 @@ const RU_WORDS = {
 
     // The Releases panel
     "Releases": "Релизы",
+    "Fold the Releases panel": "Свернуть панель релизов",
+    "Open the Releases panel": "Открыть панель релизов",
     "{n} release": "{n} релиз",
     "{n} releases": ({ n }) => n + " " + ruPlural(n, "релиз", "релиза", "релизов"),
     " on this page": " на этой странице",

@@ -58,44 +58,6 @@ function buildCrumbs() {
     return wrap;
 }
 
-/* The board's own masthead art, and the window on to it.
-
-   The masthead is 380x109 and mostly picture: an emblem on the left,
-   CS.RIN.RU set in a squared face beside it, a strapline underneath.
-   Shrunk whole to navbar height the wordmark lands at 7px, which is why
-   an earlier version redrew it — and a redraw of a logo is a different
-   logo.
-
-   Cropping it keeps the board's actual art. The window is the wordmark
-   alone: at 32px it stands 14px tall and reads exactly as the board
-   sets it, where the emblem beside it is a dark shape on a dark plate
-   that turns to a smudge at any size that fits in a bar.
-
-   The board ships two of these and serves whichever the page asks for
-   — site_logo-1 has a red crosshair over a Steam valve and the "Steam
-   Underground Community" strapline, site_logo-2 a rifleman and
-   "NonSteam Gaming Servers" — and the wordmark sits in a different
-   place in each. One set of offsets framed the strapline on half the
-   board's pages, so each file gets its own.
-
-   These are pixel offsets into specific files. A file that is not one
-   of them, or one whose dimensions have changed, falls back to the
-   name set as type rather than showing a crop of the wrong thing. */
-const LOGO_ART = {
-    "site_logo-1": { natural: [380, 109], crop: [186, 6, 190, 42] },
-    "site_logo-2": { natural: [380, 109], crop: [180, 18, 196, 32] },
-};
-
-const LOGO_HEIGHT = 26;
-
-/** The crop for a logo URL, or null if it is not one this knows. */
-function logoCrop(src) {
-    for (const [name, art] of Object.entries(LOGO_ART)) {
-        if (src.includes(name)) return art;
-    }
-    return null;
-}
-
 /** Where the template put the masthead art, whatever it is called. */
 function findLogo() {
     return document.querySelector(
@@ -103,64 +65,24 @@ function findLogo() {
     );
 }
 
+/* The name in the bar, set as type.
+
+   An earlier version cropped the wordmark out of the board's masthead
+   art and showed that: 26px of a PNG on the dark plate it is painted
+   on, which read as a grey badge stuck to the left of every page. The
+   board's own art belongs on the index, at the size the board draws it
+   (see buildMasthead); the bar only needs the name, quietly, in the
+   wide tracking the wordmark uses so it is still recognisably the
+   board's. */
 function buildBrand() {
     const strapline = document.querySelector("#logodesc h1, #wrapheader h1");
-    const source = findLogo();
-
     const brand = el("a.rr-nav__brand", {
         href: "./index.php",
         "aria-label": "Board index",
         title: strapline ? strapline.textContent.replace(/\s+/g, " ").trim() : "CS RIN - Steam Underground",
-        // Until the art is measured the type wordmark is what shows, so
-        // the bar is never briefly empty.
-        "data-rr-logo": "type",
     });
-
-    // The fallback, and what a board with different art gets: the name
-    // in the wide tracking the wordmark uses.
     brand.append(el("span.rr-nav__word", {}, ["CS.RIN.RU"]));
-
-    const src = source && source.getAttribute("src");
-    const spec = src && logoCrop(src);
-    if (!spec) return brand;
-
-    const art = el("img.rr-nav__art", { src, alt: "CS.RIN.RU", decoding: "async" });
-    const window_ = el("span.rr-nav__logo", { "aria-hidden": "true" }, [art]);
-
-    const accept = () => {
-        const [width, height] = spec.natural;
-        if (art.naturalWidth !== width || art.naturalHeight !== height) {
-            window_.remove();
-            return;
-        }
-        for (const [name, value] of Object.entries(logoCropVars(spec))) {
-            document.documentElement.style.setProperty(name, value);
-        }
-        brand.setAttribute("data-rr-logo", "art");
-    };
-    if (art.complete && art.naturalWidth) accept();
-    else {
-        art.addEventListener("load", accept, { once: true });
-        art.addEventListener("error", () => window_.remove(), { once: true });
-    }
-
-    brand.prepend(window_);
     return brand;
-}
-
-/** One crop, as the custom properties the stylesheet reads. */
-function logoCropVars(spec) {
-    const [naturalW, naturalH] = spec.natural;
-    const [x, y, cropW, cropH] = spec.crop;
-    const scale = LOGO_HEIGHT / cropH;
-    return {
-        "--rr-logo-w": Math.round(cropW * scale) + "px",
-        "--rr-logo-h": LOGO_HEIGHT + "px",
-        "--rr-logo-img-w": Math.round(naturalW * scale) + "px",
-        "--rr-logo-img-h": Math.round(naturalH * scale) + "px",
-        "--rr-logo-x": "-" + Math.round(x * scale) + "px",
-        "--rr-logo-y": "-" + Math.round(y * scale) + "px",
-    };
 }
 
 /* ---- One search shape ---------------------------------------------- */
@@ -218,7 +140,155 @@ function adoptBoardSearch(form) {
 
     if (submit) submit.classList.add("rr-search__go");
     form.classList.add("rr-search__form");
-    return el("div.rr-search", {}, [form]);
+    const frame = el("div.rr-search", {}, [form]);
+    addSearchOptions(frame, form, field, submit);
+    return frame;
+}
+
+/* ---- Where a search looks ------------------------------------------ */
+
+/* The board's own boxes are fixed: "Search this forum" searches titles
+   in this forum, "Search this topic" searches the text of this topic,
+   and anything else is the full search form on another page. The
+   choice people actually make — this forum or the whole board, titles
+   or every post — is two hidden inputs away, so it is offered here, in
+   the same box, behind one small control. The form that is submitted
+   is still the board's own; only what its hidden fields say changes.
+
+   The choice is kept in this browser, so a reader who always wants to
+   search every post sets it once. */
+const SEARCH_IN = [
+    { value: "titleonly", label: "Titles" },
+    { value: "firstpost", label: "First post" },
+    { value: "all", label: "All posts" },
+];
+
+const SEARCH_PREFS_KEY = "searchPrefs";
+
+function searchPrefs() {
+    const kept = store.get(SEARCH_PREFS_KEY, null);
+    return Object.assign({ sf: "titleonly", where: "here" }, kept && typeof kept === "object" ? kept : {});
+}
+
+function setSearchPref(key, value) {
+    const next = searchPrefs();
+    next[key] = value;
+    store.set(SEARCH_PREFS_KEY, next);
+}
+
+/** The depth the palette's own search asks for. */
+function searchDepthChoice() {
+    const sf = searchPrefs().sf;
+    return SEARCH_IN.some((option) => option.value === sf) ? sf : "titleonly";
+}
+
+function addSearchOptions(frame, form, field, submit) {
+    const hidden = (name) => form.querySelector('input[type="hidden"][name="' + name + '"]');
+    const topicId = hidden("t") ? hidden("t").value : null;
+    const forumId = hidden("fid[]") ? hidden("fid[]").value : (PAGE.forumId ? String(PAGE.forumId) : null);
+    // Only the two boxes that search a place: a "Search these results"
+    // box on a results page refines a query, and its fields are not
+    // ours to move.
+    if (!topicId && !hidden("fid[]")) return;
+
+    const setHidden = (name, value) => {
+        let input = hidden(name);
+        if (value === null) { if (input) input.remove(); return; }
+        if (!input) { input = el("input", { type: "hidden", name }); form.append(input); }
+        input.value = value;
+    };
+
+    const places = [];
+    if (topicId) places.push({ value: "topic", label: t("This topic") });
+    if (forumId) places.push({ value: "here", label: t("This forum") });
+    places.push({ value: "board", label: t("Whole board") });
+
+    const prefs = searchPrefs();
+    // A topic's box starts on the topic, as the board draws it; a
+    // forum's on the forum. The remembered choice only reaches as far
+    // as this box can honour it.
+    let where = topicId ? "topic" : (prefs.where === "board" ? "board" : "here");
+    let depth = searchDepthChoice();
+
+    const inRow = el("div.rr-search__row");
+    const whereSeg = el("div.rr-seg", { role: "group", "aria-label": t("Where to search") });
+    const inSeg = el("div.rr-seg", { role: "group", "aria-label": t("What to search") });
+
+    const apply = () => {
+        if (where === "topic") {
+            setHidden("t", topicId);
+            setHidden("fid[]", null);
+            setHidden("sf", "msgonly");
+            setHidden("sr", null);
+        } else {
+            setHidden("t", null);
+            setHidden("fid[]", where === "here" ? forumId : null);
+            setHidden("sf", depth);
+            setHidden("sr", "topics");
+            setHidden("terms", "all");
+        }
+        inRow.hidden = where === "topic";
+        for (const button of whereSeg.children) button.setAttribute("aria-pressed", button.dataset.value === where ? "true" : "false");
+        for (const button of inSeg.children) button.setAttribute("aria-pressed", button.dataset.value === depth ? "true" : "false");
+        if (field) {
+            field.setAttribute("placeholder", where === "topic" ? t("Search this topic")
+                : where === "here" ? t("Search this forum") : t("Search the whole board"));
+            field.setAttribute("aria-label", field.getAttribute("placeholder"));
+        }
+        // Says, from across the bar, that this box does not search the
+        // default place any more.
+        opts.toggleAttribute("data-rr-active", where === "board" || (where !== "topic" && depth !== "titleonly"));
+    };
+
+    for (const place of places) {
+        const button = el("button", { type: "button" }, [place.label]);
+        button.dataset.value = place.value;
+        button.addEventListener("click", () => {
+            where = place.value;
+            if (!topicId) setSearchPref("where", where);
+            apply();
+        });
+        whereSeg.append(button);
+    }
+    for (const option of SEARCH_IN) {
+        const button = el("button", { type: "button" }, [t(option.label)]);
+        button.dataset.value = option.value;
+        button.addEventListener("click", () => {
+            depth = option.value;
+            setSearchPref("sf", depth);
+            apply();
+        });
+        inSeg.append(button);
+    }
+
+    const pop = el("div.rr-search__pop", { role: "group", "aria-label": t("Search options"), hidden: true }, [
+        el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Where")]), whereSeg]),
+        inRow,
+    ]);
+    inRow.append(el("span.rr-search__rowlabel", {}, [t("Look in")]), inSeg);
+
+    const opts = labelled(el("button.rr-search__opts", { type: "button", "aria-expanded": "false" }, [icon("sliders", 13)]),
+        t("Search options"));
+    const close = () => {
+        pop.hidden = true;
+        opts.setAttribute("aria-expanded", "false");
+        document.removeEventListener("mousedown", onOutside, true);
+        document.removeEventListener("keydown", onKey, true);
+    };
+    const onOutside = (event) => { if (!frame.contains(event.target)) close(); };
+    const onKey = (event) => { if (event.key === "Escape") { close(); opts.focus(); } };
+    opts.addEventListener("click", () => {
+        if (!pop.hidden) { close(); return; }
+        pop.hidden = false;
+        opts.setAttribute("aria-expanded", "true");
+        document.addEventListener("mousedown", onOutside, true);
+        document.addEventListener("keydown", onKey, true);
+    });
+
+    if (submit) submit.before(opts);
+    else form.append(opts);
+    frame.append(pop);
+    apply();
 }
 
 /* ---- Board bar ---------------------------------------------------- */
@@ -240,12 +310,11 @@ const NAV_LIFTED = /[?&]i=pm|mode=login(?:&|$)/;
  * its href, and anything another userscript has attached to it, both
  * survive.
  */
-/* The board runs on donations and is asking for them right now: the
-   overlay it shows every visitor says so. The link to that page was
-   one of six greys in the masthead, and this row inherited that. It
-   gets an outline and a heart — enough to find at a glance, not
-   enough to shout, and still the board's own link with the board's own
-   wording. */
+/* The board runs on donations. The link to that page used to get an
+   outline and a heart, which made it the one loud thing in a row of
+   quiet ones; it is an ordinary link in the row now, named so the
+   narrow layout can still keep it in view, and the palette still
+   offers it from anywhere. */
 const DONATE_RE = /donat/i;
 
 function isDonateLink(link) {
@@ -256,7 +325,6 @@ function isDonateLink(link) {
 function boardBarLink(link) {
     const label = link.textContent.replace(/\s+/g, " ").trim();
     const image = link.querySelector("img");
-    const donate = settings.get("donateHighlight") && isDonateLink(link);
 
     link.classList.add("rr-boardbar__link");
 
@@ -272,20 +340,8 @@ function boardBarLink(link) {
     // Everything else pairs a 12px GIF with a label that says the same
     // thing, so the label alone is enough.
     link.textContent = label;
-
-    if (donate) {
-        // The label goes in a span of its own so the narrow layout can
-        // drop it and keep the heart. On a phone this row folds behind
-        // a More control, and folding away the one link the board is
-        // currently asking people to use — right after giving it an
-        // outline — is emphasis nobody sees. As an icon it costs 26px
-        // and stays on screen; the label it loses is on the link's
-        // accessible name instead, so nothing is lost to a reader who
-        // is not looking at it.
-        link.textContent = "";
+    if (isDonateLink(link)) {
         link.classList.add("rr-boardbar__donate");
-        link.append(icon("heart", 12), el("span.rr-boardbar__donate-label", {}, [label]));
-        link.setAttribute("aria-label", label);
         link.setAttribute("title", label + " — the board is hosted on donations");
     }
     return link;
@@ -307,17 +363,18 @@ function boardBarLink(link) {
 
    Classified by destination, not by label, because the labels are
    translated and the hrefs are not. */
+/* Views first, then the board, then you — the account group ends the
+   row, beside the language switch, where the things about the reader
+   rather than the board sit together. */
 const BOARD_BAR_GROUPS = [
     { id: "views", label: "Threads", re: /search\.php/ },
+    { id: "board", label: "Board", re: null },      // whatever is neither of the others
     { id: "account", label: "Account", re: /ucp\.php|mode=(?:login|logout|register)|viewprofile|profile\.php/ },
-    { id: "board", label: "Board", re: /(?:)/ },      // the rest
 ];
 
 function boardBarGroup(href) {
-    for (const group of BOARD_BAR_GROUPS) {
-        if (group.re.test(href)) return group;
-    }
-    return BOARD_BAR_GROUPS[BOARD_BAR_GROUPS.length - 1];
+    return BOARD_BAR_GROUPS.find((group) => group.re && group.re.test(href))
+        || BOARD_BAR_GROUPS.find((group) => !group.re);
 }
 
 /* The board is bilingual and its own switch is two 16px flags with no
@@ -407,11 +464,7 @@ function buildBoardBar() {
         seen.add(key);
         if (isLanguageLink(link, href)) { languages.push(link); return; }
         const group = groupNode(boardBarGroup(href).id);
-        const node = boardBarLink(link);
-        group.append(node);
-        // Which group the donation link landed in, so the narrow layout
-        // can keep that one showing while it folds the rest away.
-        if (node.classList.contains("rr-boardbar__donate")) group.setAttribute("data-rr-donate", "");
+        group.append(boardBarLink(link));
     };
 
     // "View unanswered posts | View active topics" is the board's own
@@ -607,7 +660,6 @@ function buildMasthead() {
  * position and leaves focus behind, so it is given tabindex="-1".
  */
 function addSkipLink() {
-    if (!settings.get("skipLink")) return;
     const main = document.querySelector("#wrapcentre");
     if (!main || document.querySelector(".rr-skip")) return;
 
@@ -653,7 +705,9 @@ function initNavbar() {
 
     // The forum anchors "back to top" at <a name="top">, which now sits
     // under the sticky bar; offset it so jumps land in the right place.
-    document.documentElement.style.scrollPaddingTop = "60px";
+    // The same padding is what lands a post under the bar rather than
+    // behind it when a link to one is followed (see settleFragment).
+    document.documentElement.style.scrollPaddingTop = "calc(var(--rr-nav-h, 48px) + 14px)";
 }
 
 /**
@@ -831,7 +885,23 @@ function tidyCrumbStrip() {
         // Measured rather than assumed, so a control hidden by any
         // route counts the same.
         const controls = Array.from(strip.querySelectorAll("form, input, select, textarea"));
-        if (controls.some((node) => node.getClientRects().length)) continue;
-        strip.style.display = "none";
+        if (!controls.some((node) => node.getClientRects().length)) { strip.style.display = "none"; continue; }
+        /* It survives for its search box alone — on a profile, the
+           member list, the control panel, where there is no listing
+           toolbar to move that box into. Drawn as a card it is a
+           full-width grey band holding one field at its right-hand
+           end; named here, the stylesheet draws it as a plain row.
+
+           And the box itself gets the frame every other search box on
+           this board now has, rather than staying the template's field
+           beside a bordered button — which is the shape everything
+           else was moved away from. */
+        strip.setAttribute("data-rr-crumbstrip", "");
+        const form = strip.querySelector("#search-box form, form#forum-search, form#topic-search");
+        if (form && !form.closest(".rr-search")) {
+            const holder = form.parentElement;
+            const framed = adoptBoardSearch(form);
+            if (framed !== form && holder) holder.append(framed);
+        }
     }
 }

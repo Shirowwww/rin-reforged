@@ -827,9 +827,6 @@ const CHECKS = [
             const shown = Array.from(views.children).filter((a) => a.getBoundingClientRect().width > 0);
             if (shown.length !== 2) return shown.length + " entry point(s) showing, wanted 2";
 
-            const donate = bar.querySelector(".rr-boardbar__donate");
-            if (donate && !donate.getBoundingClientRect().width) return "the donation link folded away";
-
             const height = bar.getBoundingClientRect().height;
             return height <= 46 ? null : "the row is " + Math.round(height) + "px tall";
         },
@@ -1138,6 +1135,9 @@ const CHECKS = [
     {
         name: "unread: an unread row's title opens at the first unread post",
         url: UNREAD,
+        // Off by default since 0.11: a title opens page one unless asked.
+        fresh: true,
+        settings: { unreadFromList: true },
         run: () => {
             const rows = Array.from(document.querySelectorAll("tr[data-rr-unread]"));
             if (rows.length < 4) return "only " + rows.length + " rows were treated as unread";
@@ -2220,24 +2220,28 @@ const CHECKS = [
        long: every saved page in this harness is a guest view where the
        whole strip is empty. The member fixture prints it. */
     {
-        name: "separators: a link that is not there takes its bar with it",
+        name: "separators: the member's topic actions join the bar without their bars",
         url: MEMBER,
         run: () => {
-            const strip = Array.from(document.querySelectorAll("#wrapcentre td.gensmall"))
-                .find((cell) => /Unsubscribe topic/.test(cell.textContent));
-            if (!strip) return "the member topic actions are not on this page";
+            // The strip's links are adopted into a cluster in the topic
+            // bar; its punctuation stays behind in a cell that is then
+            // hidden. None of it may come along.
+            const cluster = Array.from(document.querySelectorAll(".rr-topicbar .rr-cluster"))
+                .find((node) => /Unsubscribe topic/.test(node.textContent));
+            if (!cluster) return "the member topic actions are not in the topic bar";
 
-            const text = strip.textContent.replace(/[\s ]+/g, " ").trim();
-            if (/\|\s*\|/.test(text)) return "doubled separator: " + text;
-            if (/^\s*\|/.test(text)) return "leading separator: " + text;
-            if (/\|\s*$/.test(text)) return "trailing separator: " + text;
+            if (/\|/.test(cluster.textContent)) return "a separator came along: " + cluster.textContent.trim();
 
-            // And the links themselves are untouched: this removes
-            // punctuation, never content.
-            const labels = Array.from(strip.querySelectorAll("a")).map((a) => a.textContent.trim());
+            // And the links themselves are untouched: this moves
+            // controls, never loses one.
+            const labels = Array.from(cluster.querySelectorAll("a")).map((a) => a.textContent.replace(/\s+/g, " ").trim());
             const wanted = ["Unsubscribe topic", "Bookmark topic", "E-mail friend"];
             const lost = wanted.filter((label) => !labels.includes(label));
-            return lost.length ? "took a link with it: " + lost.join(", ") : null;
+            if (lost.length) return "lost a link: " + lost.join(", ");
+
+            const stranded = Array.from(document.querySelectorAll("#wrapcentre td.gensmall, #wrapcentre td.nav"))
+                .find((cell) => /\|/.test(cell.textContent) && !cell.querySelector("a") && cell.getBoundingClientRect().width);
+            return stranded ? "the emptied strip is still drawn" : null;
         },
     },
     {
@@ -2260,15 +2264,19 @@ const CHECKS = [
 
     /* ---- The donation link ---------------------------------------- */
     {
-        name: "donate: the donation link is marked, and is still the board's own",
+        name: "donate: the donation link is in the row, quiet, and still the board's own",
         url: INDEX,
         run: () => {
             const link = document.querySelector(".rr-boardbar__donate");
-            if (!link) return "the donation link carries no emphasis";
-            if (!link.getBoundingClientRect().width) return "marked but invisible";
+            if (!link) return "the donation link is not in the board bar";
+            if (!link.getBoundingClientRect().width) return "invisible";
             const href = link.getAttribute("href") || "";
             if (!/donat/i.test(href)) return "points somewhere else: " + href.slice(0, 50);
-            if (!link.querySelector("svg")) return "no icon";
+            // No heart, no outline of its own: one link among the others.
+            if (link.querySelector("svg")) return "still carries an icon";
+            const own = getComputedStyle(link);
+            const other = getComputedStyle(link.parentElement.querySelector(".rr-boardbar__link:not(.rr-boardbar__donate)") || link);
+            if (own.backgroundColor !== other.backgroundColor) return "drawn on its own background";
             return null;
         },
     },
@@ -2340,14 +2348,14 @@ const CHECKS = [
         run: () => {
             document.querySelector(".rr-nav__actions button[aria-label*='settings']").click();
             const panel = document.querySelector(".rr-panel");
-            // The pair lives under Reading, and the panel opens on
+            // The pair lives under Search, and the panel opens on
             // Appearance: a control in a category nobody opened is
             // hidden for a reason that has nothing to do with this.
-            const tab = panel.querySelector('.rr-panel__tab[data-group="topic"]');
-            if (!tab) return "no Reading category";
+            const tab = panel.querySelector('.rr-panel__tab[data-group="find"]');
+            if (!tab) return "no Search category";
             tab.click();
-            const parent = panel.querySelector('[data-field="gameCard"] .rr-switch');
-            const child = panel.querySelector('[data-field="collapseFirst"]');
+            const parent = panel.querySelector('[data-field="finder"] .rr-switch');
+            const child = panel.querySelector('[data-field="topicIndex"]');
             if (!parent || !child) return "the pair is not in the panel";
             if (!child.getBoundingClientRect().height) return "hidden while its parent is on";
             parent.click();
@@ -2566,11 +2574,14 @@ const CHECKS = [
         },
     },
     {
-        name: "skip link: switching it off removes it",
+        name: "skip link: always there, and first in the tab order",
         fresh: true,
         url: FORUM,
-        settings: { skipLink: false },
-        run: () => document.querySelector(".rr-skip") ? "still there with the setting off" : null,
+        run: () => {
+            const skip = document.querySelector(".rr-skip");
+            if (!skip) return "no skip link";
+            return document.body.firstElementChild === skip ? null : "not the first thing in the page";
+        },
     },
 
     /* ---- The index page ------------------------------------------- */
@@ -3376,9 +3387,13 @@ const CHECKS = [
             if (!sent || sent.textContent.trim() !== "02 Sep 2026, 16:21") return "sent reads " + JSON.stringify(sent && sent.textContent.trim());
             if (getComputedStyle(sent).whiteSpace !== "nowrap") return "a sent date may still wrap";
 
+            // The control panel's section links: either painted as
+            // links, or drawn as the menu rows they are — with the
+            // chevron that says the row opens something.
             const nav = document.querySelector("a.nav");
             const body = getComputedStyle(document.body).color;
-            if (!nav || getComputedStyle(nav).color === body) return "the control panel's section links are painted as text";
+            const menuRow = nav && nav.closest('td[data-rr-navitem="closed"]') && nav.querySelector("svg");
+            if (!nav || (!menuRow && getComputedStyle(nav).color === body)) return "the control panel's section links are painted as text";
             return null;
         },
     },

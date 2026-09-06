@@ -31,14 +31,17 @@ checks this repository and offers new versions on its own.
 - **Sorts a listing where the board cannot.** Click Replies, Views, Author or
   Last post to reorder the rows already on the page; the headings stay in view
   as you scroll, and an **Unread** chip narrows a hundred rows to the ones with
-  something new in them.
+  something new in them. **Global Announcements, Announcements, Stickies and
+  Topics fold** on a click on their heading, and stay folded next time.
 - **Remembers where you stopped.** A topic you have read before opens with a
   control back to the page you were on and a divider before the first post
   newer than your last visit — in this browser, so it works logged out too.
 - **Reads the release for you.** The Releases panel names the file host behind
   every entry and copies the list as text; a post that states an archive
   password offers it with a copy button, and a post with several mirrors copies
-  them all at once.
+  them all at once. The panel folds away on a topic you are reading for the
+  conversation. Spoilers open at load — on this board they are where the links
+  are — and one control in the topic bar closes them all again.
 - **Four themes** — Native (the board's own black/grey/red, the default),
   Slate, Carbon and a real light theme — six accent colours, three densities
   and an adjustable text size.
@@ -58,7 +61,9 @@ checks this repository and offers new versions on its own.
   walk the posts of a topic or the rows of a listing), a real pager that
   links the last page, filter-as-you-type over a listing (every word you
   type has to match, in any order), coloured topic tags, a whole title cell
-  that opens its topic, bookmarks and history kept in your browser.
+  that opens its topic, bookmarks and history kept in your browser. The
+  board's search box says where it looks: this topic, this forum or the
+  whole board, titles or every post, chosen in the box itself.
 - **Optional Steam preview** on hover over a topic title: cover, review score,
   tags and the opening lines of the store description. This is the only thing
   in the script that talks to a server other than the forum, so it is **off
@@ -90,8 +95,8 @@ checks this repository and offers new versions on its own.
   are kept and lifted too: same hue, the least change in brightness that makes
   them readable, and a switch to leave them exactly as the board wrote them.
 
-Every feature has a switch, with a sentence saying what it does. Open the
-settings panel with the cog in the top bar.
+Every feature that is a real choice has a switch, with a sentence saying what
+it does. Open the settings panel with the cog in the top bar.
 
 ![The releases panel](docs/screenshots/releases.png)
 

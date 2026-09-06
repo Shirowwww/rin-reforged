@@ -77,20 +77,31 @@ function buildRange(field) {
     return wrap;
 }
 
+/* Six unlabelled squares of colour, one of them with a ring round it,
+   was the whole control: which was which took hovering each in turn,
+   and the ring on the chosen one was easy to miss beside five others
+   the same size. Each is a named chip now — the colour as a dot, its
+   name under it, a tick on the one in use — and the chip lights up
+   under the pointer, so the choice reads as a choice. */
 function buildSwatches(field) {
-    const group = el("div.rr-swatches", { role: "group", "aria-label": field.label });
+    const group = el("div.rr-swatches", { role: "radiogroup", "aria-label": field.label });
     const sync = () => {
         for (const button of group.children) {
-            button.setAttribute("aria-pressed", button.dataset.value === settings.get(field.id) ? "true" : "false");
+            const on = button.dataset.value === settings.get(field.id);
+            button.setAttribute("aria-pressed", on ? "true" : "false");
+            button.setAttribute("aria-checked", on ? "true" : "false");
         }
     };
     for (const option of field.options) {
+        const dot = el("span.rr-swatch__dot", {}, [icon("check", 13)]);
+        // A custom property has to go through setProperty; Object.assign
+        // on style, which el() uses, silently drops it.
+        dot.style.setProperty("--rr-swatch", option.color);
         const button = el("button.rr-swatch", {
             type: "button",
-            title: option.label,
+            role: "radio",
             "aria-label": option.label,
-            style: { background: option.color },
-        });
+        }, [dot, el("span.rr-swatch__name", {}, [option.label])]);
         button.dataset.value = option.value;
         button.addEventListener("click", () => { settings.set(field.id, option.value); sync(); });
         group.append(button);

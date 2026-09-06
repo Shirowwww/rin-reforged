@@ -12,6 +12,10 @@
 
 const REPLY_LINK = 'a[href*="mode=reply"], a[href*="mode=post"]';
 
+/* How many opened topics the palette's Recent list keeps. It was a
+   setting; nobody needs to tune it. */
+const HISTORY_LIMIT = 100;
+
 const EXTERNAL_LOOKUPS = [
     { id: "steamdb", label: "SteamDB", url: (appId) => "https://steamdb.info/app/" + appId + "/" },
     { id: "store", label: "Store page", url: (appId) => "https://store.steampowered.com/app/" + appId + "/" },
@@ -53,7 +57,7 @@ function buildGameCard(info, body) {
     }
     if (rows) bodyCol.append(list);
 
-    if (info.appId && settings.get("externalLinks")) {
+    if (info.appId) {
         const links = el("div.rr-game__links");
         for (const lookup of EXTERNAL_LOOKUPS) {
             links.append(el("a.rr-btn", {
@@ -166,6 +170,19 @@ function topicBarRow(name) {
     return el("div.rr-topicbar__row", { "data-rr-row": name });
 }
 
+/* Every child of a cluster is named, once it is filled.
+
+   The stylesheet draws the hairlines between them and rounds the two
+   ends, and the obvious way to write that is `.rr-cluster > * + *` —
+   a selector whose rightmost part is the universal one, which the
+   engine then tests against every element on the page. On a listing
+   that is four thousand elements and it measured 30ms of style work.
+   A class costs nothing to match. */
+function sealCluster(node) {
+    for (const child of node.children) child.classList.add("rr-cluster__item");
+    return node;
+}
+
 function buildTopicBar() {
     const header = document.querySelector("#pageheader");
     if (!header || header.querySelector(".rr-topicbar")) return;
@@ -204,26 +221,25 @@ function buildTopicBar() {
        which is the loudest thing this bar can say about a control that
        reveals text the page has already loaded. */
     if (settings.get("spoilerAll")) {
-        const buttons = spoilerButtons();
-        if (buttons.length >= 2) {
+        const inputs = spoilerInputs();
+        if (inputs.length >= 2) {
             /* It stays, and closes them again on the second press. It
                used to remove itself once pressed, which took the focus
                with it and left a reader with thirty open spoilers and
-               no way back. */
-            const count = buttons.length;
-            let open = false;
-            const control = el("button.rr-btn", { type: "button", "data-variant": "quiet", "aria-pressed": "false" });
+               no way back. The state is read off the page rather than
+               assumed: with spoilers opened at load, this starts as
+               the control that closes them. */
+            const count = inputs.length;
+            let open = spoilerInputs("hide").length === count;
+            const control = el("button.rr-btn.rr-fold", { type: "button", "data-variant": "quiet" });
             const relabel = () => {
                 control.replaceChildren(icon("chevronD", 13), t(open ? "Close all {n} spoilers" : "Open all {n} spoilers", { n: count }));
-                control.setAttribute("aria-pressed", open ? "true" : "false");
+                control.setAttribute("aria-expanded", open ? "true" : "false");
                 control.toggleAttribute("data-rr-open", open);
             };
             relabel();
             control.addEventListener("click", () => {
-                const want = open ? "hide" : "show";
-                for (const input of document.querySelectorAll('.spoiler input[type="button"]')) {
-                    if ((input.value || "").trim().toLowerCase() === want) input.click();
-                }
+                for (const input of spoilerInputs(open ? "hide" : "show")) input.click();
                 open = !open;
                 relabel();
             });
@@ -261,8 +277,15 @@ function buildTopicBar() {
             : el("span.rr-topicbar__count", {}, [t("Page {a} of {b}", { a: info.current, b: info.total })]));
     }
 
-    adoptTopicNav(away);
-    adoptMemberActions(away);
+    /* Two clusters, not six loose words: where to go next, and what a
+       member can do to this topic. Each is one light box with a
+       hairline between its items, so the row reads as two things
+       rather than a list of everything. */
+    const nav = el("div.rr-cluster.rr-topicbar__cluster");
+    adoptTopicNav(nav);
+    const member = el("div.rr-cluster.rr-topicbar__cluster");
+    adoptMemberActions(member);
+    for (const cluster of [nav, member]) if (cluster.children.length) away.append(sealCluster(cluster));
     away.append(el("span.rr-topicbar__spacer"));
 
     const form = document.querySelector("#topic-search, #search-box form");
@@ -451,8 +474,10 @@ function adoptTopicNav(bar) {
 const MEMBER_ACTION = 'a[href*="watch=topic"], a[href*="bookmark="], a[href*="mode=email"]';
 
 function adoptMemberActions(bar) {
-    const cells = Array.from(document.querySelectorAll("#wrapcentre td.nav"))
-        .filter((cell) => cell.querySelector(MEMBER_ACTION));
+    // td.nav on the live board; a td.gensmall in the strip's other
+    // shape. Either way it is the cell holding the three links.
+    const cells = Array.from(document.querySelectorAll("#wrapcentre td.nav, #wrapcentre td.gensmall"))
+        .filter((cell) => cell.querySelector(MEMBER_ACTION) && !cell.closest(".rr-topicbar"));
     if (!cells.length) return;
 
     for (const link of cells[0].querySelectorAll(MEMBER_ACTION)) {
@@ -490,27 +515,34 @@ function buildPagerGroup(info) {
        now and either would do on its own — they are in different rows
        of the bar, and these say what they move. A page.
 
-       The two ends are the arrows alone: they are the least used of
-       the four and their names are on them for anything that reads
-       names rather than pictures. */
-    const step = (href, label, glyph, words) => el("a.rr-btn.rr-pager__step", {
-        href,
-        "data-variant": "quiet",
-        title: label,
-        "aria-label": label,
-    }, glyph === "pageFirst" || glyph === "chevronL"
-        ? [icon(glyph, 13), words ? label : null]
-        : [words ? label : null, icon(glyph, 13)]);
+       The four steps and the page box are one boxed control, with a
+       hairline between its parts. The two ends are the arrows alone,
+       and their names are drawn the instant they are pointed at, so
+       "⇥" is never a guess: it says "Last page". */
+    /* `word` is what is drawn; `label` is the whole name, on the title
+       and for a screen reader. The ends draw the arrow alone and say
+       their name on hover. */
+    const step = (href, label, glyph, word) => {
+        const link = el("a.rr-pager__step", { href }, glyph === "pageFirst" || glyph === "chevronL"
+            ? [icon(glyph, 13), word || null]
+            : [word || null, icon(glyph, 13)]);
+        if (!word) return labelled(link, label);
+        link.setAttribute("title", label);
+        link.setAttribute("aria-label", label);
+        return link;
+    };
 
-    return el("div.rr-pager", { role: "group", "aria-label": t("Pages of this topic") }, [
-        info.hasPrevious ? step(info.first, t("First page"), "pageFirst", false) : null,
-        info.hasPrevious ? step(info.previous, t("Previous page"), "chevronL", true) : null,
-        el("span.rr-pager__label", {}, [t("Page")]),
-        jump,
-        el("span.rr-pager__label", {}, [t("of {n}", { n: info.total })]),
-        info.hasNext ? step(info.next, t("Next page"), "chevron", true) : null,
-        info.hasNext ? step(info.last, t("Last page"), "pageLast", false) : null,
-    ]);
+    return sealCluster(el("div.rr-pager.rr-cluster", { role: "group", "aria-label": t("Pages of this topic") }, [
+        info.hasPrevious ? step(info.first, t("First page"), "pageFirst") : null,
+        info.hasPrevious ? step(info.previous, t("Previous page"), "chevronL", t("Previous")) : null,
+        el("span.rr-pager__where", {}, [
+            el("span.rr-pager__label", {}, [t("Page")]),
+            jump,
+            el("span.rr-pager__label", {}, [t("of {n}", { n: info.total })]),
+        ]),
+        info.hasNext ? step(info.next, t("Next page"), "chevron", t("Next")) : null,
+        info.hasNext ? step(info.last, t("Last page"), "pageLast") : null,
+    ]));
 }
 
 /* ---- What a rank line says, and in which language ------------------ */
@@ -711,21 +743,33 @@ function foldSteamBlurb(body, fromTitle) {
     }
     if (folded.length < 3) return;
 
-    const holder = el("div", { hidden: true });
+    const holder = el("div");
     for (const node of folded) holder.append(node);
 
+    /* The original post is shown by default: the card above it is a
+       summary, and the post is what was actually written — the
+       download notes, the links, the caveats. The fold stays as a
+       control, and a reader who closes it is remembered. The Steam
+       description alone (no card to summarise it) still starts
+       folded. */
     const label = t(fromTitle ? "the original post" : "the full Steam description");
-    let open = false;
-    const toggle = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
+    let open = fromTitle ? store.get("originalPostOpen", true) !== false : false;
+    const toggle = el("button.rr-btn.rr-fold", { type: "button", "data-variant": "quiet" }, [
         icon("chevronD"),
-        t("Show ") + label,
+        "",
     ]);
-    toggle.addEventListener("click", () => {
-        open = !open;
+    const sync = () => {
         holder.hidden = !open;
         toggle.lastChild.textContent = t(open ? "Hide " : "Show ") + label;
-        toggle.firstChild.style.transform = open ? "rotate(180deg)" : "";
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        toggle.toggleAttribute("data-rr-open", open);
+    };
+    toggle.addEventListener("click", () => {
+        open = !open;
+        sync();
+        if (fromTitle) store.set("originalPostOpen", open);
     });
+    sync();
 
     body.append(toggle, holder);
 }
@@ -866,7 +910,7 @@ function addPostTools(post, index) {
     }
 
     /* The archive password this post names, if it names one. */
-    if (settings.get("finder") && settings.get("passwordFinder")) {
+    if (settings.get("finder")) {
         const password = passwordIn(own.textContent);
         if (password) {
             const chip = el("button.rr-pass", {
@@ -1039,10 +1083,26 @@ function collapseSignature(post) {
 /* ---- Spoilers ----------------------------------------------------- */
 
 /** The board wraps spoilers in div.spoiler with an inline-onclick Show
-    button, so the toggles are found by clicking their own buttons. */
-function spoilerButtons() {
-    return Array.from(document.querySelectorAll('.spoiler input[type="button"]'))
-        .filter((input) => (input.value || "").trim().toLowerCase() === "show");
+    button, so the toggles are found by clicking their own buttons.
+    With no state asked for, every spoiler button; with "show" or
+    "hide", the ones currently saying that. */
+function spoilerInputs(saying) {
+    const all = Array.from(document.querySelectorAll('.spoiler input[type="button"]'))
+        .filter((input) => /^(?:show|hide)$/i.test((input.value || "").trim()));
+    if (!saying) return all;
+    return all.filter((input) => (input.value || "").trim().toLowerCase() === saying);
+}
+
+/* Spoilers open at load.
+
+   On this board a spoiler is where the links are: a release post
+   hides its mirrors, its password and its notes behind five of them,
+   and reading the post means clicking every one. Opened at load the
+   post reads top to bottom, and the "Close all" control in the bar
+   puts them back. The board's own handler does the opening, so the
+   button still says Hide and still works. */
+function openSpoilersAtLoad() {
+    for (const input of spoilerInputs("show")) input.click();
 }
 
 /* The board draws every spoiler's Show button with `font-size: 10px`
@@ -1175,7 +1235,91 @@ function markExternalLinks() {
     }
 }
 
-/* ---- Pagination ---------------------------------------------------- */
+/* ---- Landing on a post ---------------------------------------------- */
+
+/* Every link to a post — the Releases panel, "View the latest post",
+   a permalink somebody pasted, the board's own first-unread jump —
+   ends in #p123456, and the board's anchor for that is an <a name>
+   in the author cell beside the post. The modern layout hides that
+   cell, and a browser cannot scroll to something that is not drawn:
+   the page loaded, nothing moved, and a second click on the same link
+   did nothing either. So every post's own table carries the id, which
+   is what a fragment looks for first, and it is always on screen.
+
+   That fixes where the anchor is. Where the page is by the time the
+   browser looks for it is the other half: the fragment is honoured
+   during parsing, before the top bar, the topic bar, the releases
+   panel and the game card have been put above the posts, so the post
+   the reader asked for ended up a screen below where the browser
+   left them. Once everything is in place the page is walked to the
+   fragment again, and the post is flashed so it is unmistakable. */
+function fragmentTarget(hash) {
+    let name;
+    try { name = decodeURIComponent((hash || "").replace(/^#/, "")); } catch { return null; }
+    if (!/^(?:p\d+|unread|top)$/.test(name)) return null;
+    const node = document.getElementById(name) || document.querySelector('a[name="' + name + '"]');
+    if (!node) return null;
+    return node.closest("table.tablebg") || node;
+}
+
+function landOn(target, smooth) {
+    target.scrollIntoView({ block: "start", behavior: smooth ? scrollBehaviour() : "auto" });
+    if (target.matches("table.tablebg")) flash(target);
+}
+
+/** Does this link point at a post on the page in front of us? */
+function inPageTarget(link) {
+    let url;
+    try { url = new URL(link.getAttribute("href") || "", location.href); } catch { return null; }
+    if (!url.hash || url.origin !== location.origin) return null;
+    const target = fragmentTarget(url.hash);
+    if (!target) return null;
+    const strip = (u) => u.pathname + u.search.replace(/[?&]sid=[a-f0-9]+/g, "");
+    if (strip(url) === strip(new URL(location.href))) return target;
+    // viewtopic.php?p=123#p123 names the post rather than the page,
+    // and the post is here.
+    if (/viewtopic\.php$/.test(url.pathname) && /^#p\d+$/.test(url.hash)
+        && url.searchParams.get("p") === url.hash.slice(2)) return target;
+    return null;
+}
+
+function settleFragment() {
+    if (!PAGE.isTopic) return;
+    for (const post of posts()) {
+        if (!document.getElementById("p" + post.id)) post.table.id = "p" + post.id;
+    }
+
+    const target = fragmentTarget(location.hash);
+    let settled = null;
+    if (target) {
+        landOn(target, false);
+        settled = window.scrollY;
+    }
+    // Images arriving above the post move it again. Settled once more
+    // when the page has finished, unless the reader has scrolled since.
+    if (target && document.readyState !== "complete") {
+        window.addEventListener("load", () => {
+            if (settled !== null && Math.abs(window.scrollY - settled) < 4) landOn(target, false);
+        }, { once: true });
+    }
+    window.addEventListener("hashchange", () => {
+        const next = fragmentTarget(location.hash);
+        if (next) landOn(next, true);
+    });
+    // A link to a post on this page glides to it rather than reloading
+    // the page to land on it.
+    document.addEventListener("click", (event) => {
+        if (event.button !== 0 || event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+        if (!link || link.closest(".rr-releases")) return;
+        const here = inPageTarget(link);
+        if (!here) return;
+        event.preventDefault();
+        const hash = new URL(link.getAttribute("href"), location.href).hash;
+        if (hash !== location.hash) history.replaceState(null, "", hash);
+        landOn(here, true);
+    });
+}
 
 /* ---- Entry point ---------------------------------------------------- */
 
@@ -1208,9 +1352,14 @@ function initTopic() {
                 // read to the end does not un-read it.
                 lastPost: Math.max(Number(seen && seen.lastPost) || 0, newest),
             });
-            store.set("history", list.slice(0, settings.get("historyLimit")));
+            store.set("history", list.slice(0, HISTORY_LIMIT));
         }
     }
+
+    // Named, so the stylesheet can tell a post's table from a listing's
+    // and a strip's: it is the one that must not clip what floats
+    // over its edge (the tooltips on its controls).
+    for (const post of all) post.table.setAttribute("data-rr-post", "");
 
     const modern = settings.get("postLayout") === "modern";
     if (modern) {
@@ -1233,21 +1382,22 @@ function initTopic() {
             // once. See steam.js.
             if (info.appId && PAGE.topicId) steamRememberApp(PAGE.topicId, info.appId);
             buildGameCard(info, all[0].body);
-            if (settings.get("collapseFirst")) {
-                // The card already carries the title and the detail
-                // rows, so the fold starts at the game heading rather
-                // than further down at About The Game.
-                const heading = all[0].body.querySelector('span[style*="150%"], span[style*="130%"]');
-                const anchor = heading ? (heading.closest("span[style*=color]") || heading) : null;
-                foldSteamBlurb(all[0].body, anchor);
-            }
+            // The card already carries the title and the detail rows,
+            // so the fold starts at the game heading rather than
+            // further down at About The Game.
+            const heading = all[0].body.querySelector('span[style*="150%"], span[style*="130%"]');
+            const anchor = heading ? (heading.closest("span[style*=color]") || heading) : null;
+            foldSteamBlurb(all[0].body, anchor);
         }
     }
 
     decorateHeading();
+    liftSpoilerButtons();
+    // Before the bar is built: its "Close all N spoilers" reads the
+    // state off the page.
+    if (settings.get("spoilersOpen")) openSpoilersAtLoad();
     buildTopicBar();
     spaceForumRules();
-    liftSpoilerButtons();
 
     all.forEach((post, index) => {
         if (settings.get("postTools")) addPostTools(post, index);

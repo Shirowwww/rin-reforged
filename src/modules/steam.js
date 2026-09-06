@@ -74,8 +74,12 @@ function steamAppForTopic(topicId) {
     return store.get(STEAM_APPS_KEY, {})[String(topicId)] || null;
 }
 
+/* A month. It was a setting; a looked-up game's tags and score do not
+   change at a rate anybody needs to tune for. */
+const STEAM_CACHE_DAYS = 30;
+
 function steamCacheMs() {
-    return clamp(Number(settings.get("steamCacheDays")) || 30, 1, 120) * 86400000;
+    return STEAM_CACHE_DAYS * 86400000;
 }
 
 function steamCached(appId) {

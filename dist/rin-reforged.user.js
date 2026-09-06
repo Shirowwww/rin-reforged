@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.10.0
+// @version         0.11.0
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -136,8 +136,11 @@ html[data-rr] {
        edge does not carry its own copy of the number. */
     --rr-nav-h: 48px;
 
-    --rr-radius:      7px;
-    --rr-radius-lg:   12px;
+    /* Two radii, one for a control and one for a card, both a shade
+       tighter than they were: 12px corners on every card down a page
+       of cards is most of what made the page read as a template. */
+    --rr-radius:      6px;
+    --rr-radius-lg:   9px;
     --rr-radius-pill: 999px;
 
     /* Only genuinely floating things cast a shadow. Surfaces separate
@@ -394,6 +397,28 @@ html[data-rr] body.ltr {
 
 html[data-rr] ::selection { background: var(--rr-selection); color: var(--rr-text-strong); }
 
+/* Held back until the script has rebuilt the page (main.js, markReady).
+   What the browser painted first was the board's own layout in these
+   colours — masthead gone, tables restyled, nothing else yet — and a
+   frame later everything jumped into place. Nothing is drawn until it
+   is in place; the attribute lands whatever happens, on a watchdog if
+   nothing else, so this can never leave a blank page.
+
+   The root carries the page colour as well as the body, so the moment
+   the stylesheet lands the window is the theme's own dark rather than
+   the browser's white — with the body hidden there is nothing else to
+   paint it.
+
+   \`opacity\`, not \`visibility\`, and the difference is 44ms of style
+   work on a listing. \`visibility\` is an inherited property: taking
+   the gate off changes it on <body>, and every one of the four
+   thousand elements under it has to be recalculated. \`opacity\` is
+   not inherited, so the same flip touches one element. Measured
+   both ways against test/perf.js — 106ms and 62ms on viewforum. */
+html[data-rr] { background: var(--rr-bg); }
+html[data-rr]:not([data-rr-ready]) body,
+html[data-rr]:not([data-rr-ready]) body.ltr { opacity: 0; }
+
 /* phpBB sets 62.5% on <body> and then sizes everything in em. Reset the
    descendants that relied on it so one font-size setting drives it all. */
 html[data-rr] .gen,
@@ -489,7 +514,7 @@ html[data-rr] table.tablebg,
 html[data-rr] table.forumline {
     margin-bottom: var(--rr-post-gap);
     background: var(--rr-line);
-    border: 1px solid var(--rr-line-strong);
+    border: 1px solid var(--rr-line);
     border-radius: var(--rr-radius-lg);
     border-spacing: 0 !important;
     border-collapse: separate;
@@ -501,6 +526,32 @@ html[data-rr] table.forumline {
    inside a scroll container that never scrolls can never stick. */
 html[data-rr] table.tablebg[data-rr-list] { overflow: clip; }
 
+/* A post's table clips nothing. Its controls draw their names above
+   themselves on hover, and the header strip they sit in is the top of
+   the table: with overflow hidden the tooltip was cut to a sliver
+   along the post's top edge, which is what was reported as "the
+   tooltips go behind the post". The table paints its own surface and
+   the cells go transparent, so the corners stay rounded without the
+   clip. */
+html[data-rr] table.tablebg[data-rr-post] {
+    overflow: visible;
+    background: var(--rr-surface);
+    /* The inside edge of a post, named once: the author band pulls
+       itself back out to it (ui.css, .rr-posthead). */
+    --rr-post-pad: 18px;
+    --rr-post-pad-top: 12px;
+}
+html[data-rr] table.tablebg[data-rr-post] > tbody > tr,
+html[data-rr] table.tablebg[data-rr-post] > tbody > tr > td.row1,
+html[data-rr] table.tablebg[data-rr-post] > tbody > tr > td.row2 { background: transparent; }
+/* And a little more room inside than a listing row gets: a post is
+   read, a row is scanned. Not a folded reply, which owns its own
+   padding (features.css) and is one line by design. */
+html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row1,
+html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row2 {
+    padding: var(--rr-post-pad-top) var(--rr-post-pad) 14px;
+}
+
 /* The original stylesheet paints \`th a\` #CCCCCC: on the light theme the
    member list's sortable headers were pale grey on paler grey while
    the two headers without a link read fine. */
@@ -510,8 +561,12 @@ html[data-rr] table.tablebg[data-rr-list] { overflow: clip; }
 html[data-rr] th a,
 html[data-rr] th a:visited { color: inherit !important; }
 html[data-rr] th a:hover { color: var(--rr-text-strong) !important; text-decoration: none; }
+/* The column headings: a darker strip, small muted caps. Darker than
+   the rows rather than lighter, so it can never be taken for one of
+   the section rows below it, which are the lighter, bolder kind of
+   band. Two kinds of band, two tones, and they used to be one. */
 html[data-rr] th {
-    background: var(--rr-surface-2);
+    background: var(--rr-bg-sunken);
     color: var(--rr-muted);
     font-size: var(--rr-fs-xs);
     font-weight: 600;
@@ -526,24 +581,24 @@ html[data-rr] th {
 }
 
 /* Category bars are the one piece of phpBB furniture worth keeping:
-   every board has them, and a tinted bar with an accent edge reads as
-   a section head at a glance. Toned right down from the original. */
+   every board has them, and a tinted bar with an accent mark reads as
+   a section head at a glance. Toned right down from the original.
+
+   The mark is a short rounded bar drawn inside the cell, not a stripe
+   down its left edge: the stripe ran into the table's rounded corner
+   and came out cut at an angle on the first row of every card. */
 html[data-rr] td.cat,
 html[data-rr] td.catHead,
 html[data-rr] td.catBottom,
 html[data-rr] th.thHead {
-    background: linear-gradient(
-        to right,
-        color-mix(in srgb, var(--rr-accent) 10%, var(--rr-surface-2)),
-        var(--rr-surface-2) 260px
-    );
+    position: relative;
+    background: color-mix(in srgb, var(--rr-accent) 5%, var(--rr-surface-2));
     color: var(--rr-text-strong);
     font-weight: 650;
     font-size: var(--rr-fs-sm);
-    padding: var(--rr-s2) var(--rr-s3);
+    padding: var(--rr-s2) var(--rr-s3) var(--rr-s2) 20px;
     border: 0;
     border-bottom: 1px solid var(--rr-line);
-    box-shadow: inset 2px 0 0 var(--rr-accent);
     /* The board's own stylesheet pins these at \`height: 25px\`. One line
        of a section heading fits and nothing shows it — but the same
        class carries the "Display posts from previous / Sort by / Go"
@@ -553,6 +608,19 @@ html[data-rr] th.thHead {
        one already had to say the same thing. */
     height: auto;
 }
+html[data-rr] td.cat:not([data-rr-cat])::before,
+html[data-rr] td.catHead::before,
+html[data-rr] th.thHead::before {
+    content: "";
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    width: 3px;
+    height: 14px;
+    margin-top: -7px;
+    border-radius: 2px;
+    background: var(--rr-accent);
+}
 html[data-rr] td.cat h4,
 html[data-rr] td.cat a { color: var(--rr-text-strong); margin: 0; font-size: var(--rr-fs-sm); }
 
@@ -560,9 +628,13 @@ html[data-rr] td.cat a { color: var(--rr-text-strong); margin: 0; font-size: var
    keep its columns. Tinting the whole row stops it reading as a bar
    that runs out halfway across. */
 html[data-rr] tr[data-rr-cat-row] > td {
-    background: var(--rr-surface-2);
+    background: color-mix(in srgb, var(--rr-accent) 5%, var(--rr-surface-2));
     border-bottom: 1px solid var(--rr-line);
 }
+/* The strips that are not section heads — "Mark forums read" alone at
+   the right, the sort controls — are plain. */
+html[data-rr] tr[data-rr-cat-row="plain"] > td,
+html[data-rr] tr[data-rr-cat-row="controls"] > td { background: var(--rr-surface-2); }
 
 /* The collapse control is an <input type="button"> the original theme
    dressed with a background image. Here it becomes a chevron that
@@ -596,7 +668,7 @@ html[data-rr] input.ccclose[type="button"]:hover { background-color: var(--rr-su
    into the cell and the listing wraps in a table. Neither is a heading. */
 html[data-rr] td.cat[data-rr-cat] {
     background: var(--rr-surface-2);
-    box-shadow: none;
+    padding-left: var(--rr-s3);
     font-weight: 400;
 }
 html[data-rr] td.cat[data-rr-cat="controls"] a { color: var(--rr-muted); font-weight: 500; }
@@ -652,9 +724,13 @@ html[data-rr] table[data-rr-list] > tbody > tr.row2 > td { background: var(--rr-
 html[data-rr] table[data-rr-list] > tbody > tr.row1:hover > td,
 html[data-rr] table[data-rr-list] > tbody > tr.row2:hover > td { background: var(--rr-surface-3); }
 
-/* Whole-row hover, which the table markup cannot express by itself. */
-html[data-rr] tr:hover > td.row1,
-html[data-rr] tr:hover > td.row2 { background: var(--rr-surface-3); }
+/* Whole-row hover, which the table markup cannot express by itself.
+   Only on a listing: the same two classes wrap the Who is online
+   block, the login form and a profile's cells, and lighting a whole
+   block up because the pointer crossed it promised a click that led
+   nowhere. */
+html[data-rr] table[data-rr-list] tr:hover > td.row1,
+html[data-rr] table[data-rr-list] tr:hover > td.row2 { background: var(--rr-surface-3); }
 /* And a whole-row click (lists.js): the title cell's empty three
    quarters open the topic too, so the hover is not a promise the row
    fails to keep. */
@@ -1318,6 +1394,19 @@ html[data-rr][data-rr-nav="on"] td.row5 {
 }
 html[data-rr][data-rr-nav="on"] td.row5:has(> #search-box) { display: flex; justify-content: flex-end; }
 
+/* The strip that is left holding nothing but the board's search box
+   (navbar.js, tidyCrumbStrip): on a profile or the member list there
+   is no listing toolbar to move that box into, and the strip drew a
+   full-width card around one field. No card, no fill, no border — a
+   row with a search box at the end of it. */
+html[data-rr] #wrapcentre table.tablebg[data-rr-crumbstrip] {
+    background: none;
+    border: 0;
+    border-radius: 0;
+    margin-bottom: var(--rr-s3);
+}
+html[data-rr] #wrapcentre table[data-rr-crumbstrip] td.row5 { background: none; padding: 0; }
+
 /* The template floats the links inside this paragraph, so without a
    containing block the heading below rides up onto the same line. */
 html[data-rr] p.searchbar {
@@ -1511,6 +1600,10 @@ html[data-rr] hr.rr-rule {
 .rr-btn[data-variant="quiet"] { background: transparent; border-color: transparent; color: var(--rr-muted); }
 .rr-btn[data-variant="quiet"]:hover { background: var(--rr-surface-2); color: var(--rr-text); }
 .rr-btn[aria-pressed="true"] { background: var(--rr-accent-soft); border-color: var(--rr-accent); color: var(--rr-accent-on-soft, var(--rr-accent)); }
+/* A quiet control that is open — "Close all spoilers", "Hide the
+   original post" — stays quiet: the turned chevron says the state. */
+.rr-btn[data-variant="quiet"][data-rr-open] { background: transparent; border-color: transparent; color: var(--rr-text); }
+.rr-btn[data-variant="quiet"][data-rr-open]:hover { background: var(--rr-surface-2); }
 .rr-btn:disabled, .rr-btn[aria-busy="true"] { opacity: .6; cursor: progress; }
 .rr-btn svg { width: 14px; height: 14px; flex: none; }
 
@@ -1637,51 +1730,30 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     margin: 0 auto;
     min-width: 0;
 }
+/* The name, as type, quietly. A hairline after it is what separates
+   "whose board" from "where on it", where a grey badge used to. */
 .rr-nav__brand {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font: 700 var(--rr-fs) / 1 var(--rr-font);
-    letter-spacing: -.02em;
-    color: var(--rr-text-strong);
     flex: none;
+    padding-right: var(--rr-s3);
+    border-right: 1px solid var(--rr-line);
+    line-height: 1;
 }
-.rr-nav__brand:hover { text-decoration: none; color: var(--rr-accent); }
-/* A window on to the board's own masthead art, sized and offset by the
-   custom properties navbar.js measures. The art is light on a dark
-   plate, which is how the board presents it, so it keeps that plate on
-   every theme rather than being recoloured. */
-.rr-nav__logo {
-    position: relative;
-    display: block;
-    width: var(--rr-logo-w);
-    height: var(--rr-logo-h);
-    overflow: hidden;
-    border-radius: 4px;
-    flex: none;
-}
-.rr-nav__art {
-    position: absolute;
-    top: var(--rr-logo-y);
-    left: var(--rr-logo-x);
-    width: var(--rr-logo-img-w);
-    height: var(--rr-logo-img-h);
-    max-width: none;
-    border: 0;
-}
-.rr-nav__brand:hover .rr-nav__logo { filter: brightness(1.15); }
+/* \`html[data-rr] a\` outranks a bare class, and painted the name in
+   the board's link red. */
+html[data-rr] a.rr-nav__brand { color: var(--rr-text); }
+html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-text-strong); }
 
 /* The board sets its name in wide-tracked caps; that tracking is most
-   of what makes the wordmark recognisable, so the fallback keeps it
-   rather than the tight default the rest of the interface uses. */
+   of what makes the wordmark recognisable, so it is kept rather than
+   the tight default the rest of the interface uses. */
 .rr-nav__word {
     font-weight: 700;
-    letter-spacing: .09em;
-    font-size: var(--rr-fs-sm);
+    letter-spacing: .13em;
+    font-size: var(--rr-fs-xs);
     text-transform: uppercase;
 }
-/* One or the other, never both. */
-.rr-nav__brand[data-rr-logo="art"] .rr-nav__word { display: none; }
 
 /* ---- Board links -------------------------------------------------- */
 
@@ -1692,12 +1764,8 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     align-items: center;
     gap: var(--rr-s2) var(--rr-s3);
     flex-wrap: wrap;
-    /* Clips the hairline of whichever group starts a line (see the
-       groups below). The 4px and 2px of padding, taken back by the
-       margins, keep focus rings inside the clip. */
-    margin: -2px -4px var(--rr-s4);
-    padding: 2px 4px var(--rr-s3);
-    overflow: hidden;
+    margin: 0 0 var(--rr-s4);
+    padding: 0 0 var(--rr-s3);
     border-bottom: 1px solid var(--rr-line);
     font-size: var(--rr-fs-sm);
 }
@@ -1705,47 +1773,44 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
 .rr-boardbar__end {
     display: flex;
     align-items: center;
-    gap: var(--rr-s2) var(--rr-s5);
+    gap: var(--rr-s2);
     flex-wrap: wrap;
     min-width: 0;
 }
-.rr-boardbar__end { margin-left: auto; gap: var(--rr-s2); }
-/* Pulled left by exactly one divider — its hairline and its padding —
-   so the first group on every line puts its text where the row starts
-   and its hairline in the 4px the bar clips. */
-.rr-boardbar__main { column-gap: 0; margin-left: calc(-1px - var(--rr-s5)); }
+.rr-boardbar__end { margin-left: auto; }
 
 /* Ways of looking at threads, then what the board is, then you.
 
-   The grouping is carried by spacing and one hairline rather than by
-   headings: the row is 22px tall and three labels in it would be a
-   second row of text explaining the first. Inside a group the links
-   sit at the ordinary gap; between groups they sit at twice it with a
-   rule down the middle, which is enough to read as three things. */
+   Each group is one light box — a hairline round it, a hairline
+   between its links — so the row reads as three things without a
+   heading over any of them. The links inside are quiet text that
+   lights up under the pointer; nothing in the row is louder than the
+   rest, the donation link included. */
 .rr-boardbar__group {
-    display: flex;
-    align-items: center;
-    gap: var(--rr-s3);
-    flex-wrap: wrap;
+    display: inline-flex;
+    align-items: stretch;
     min-width: 0;
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+    background: color-mix(in srgb, var(--rr-surface) 70%, transparent);
 }
-/* Every group carries the hairline on its left, not only the ones
-   after the first: logged in, the row is wider than the page and the
-   board group wraps, and a \`+\` rule drew its hairline at the start of
-   the second line, 25px before "Forum rules" and under nothing. The
-   bar's overflow clips the one that lands at a line start, so what
-   shows is a divider between groups and never a divider before one. */
-.rr-boardbar__group {
-    padding-left: var(--rr-s5);
-    margin-right: var(--rr-s5);
-    border-left: 1px solid var(--rr-line);
-}
+/* Keyed on the link's own class rather than on \`> :first-child\`, for
+   the reason spelled out at .rr-cluster below: a universal rightmost
+   part is tested against every element on the page. */
+.rr-boardbar__link + .rr-boardbar__link { border-left: 1px solid var(--rr-line); }
+.rr-boardbar__link:first-child { border-radius: calc(var(--rr-radius) - 1px) 0 0 calc(var(--rr-radius) - 1px); }
+.rr-boardbar__link:last-child { border-radius: 0 calc(var(--rr-radius) - 1px) calc(var(--rr-radius) - 1px) 0; }
+.rr-boardbar__link:only-child { border-radius: calc(var(--rr-radius) - 1px); }
 .rr-boardbar__link {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
     color: var(--rr-muted);
     font-weight: 500;
     white-space: nowrap;
+    transition: background var(--rr-speed) ease, color var(--rr-speed) ease;
 }
-.rr-boardbar__link:hover { color: var(--rr-accent); text-decoration: none; }
+.rr-boardbar__link:hover { color: var(--rr-text-strong); background: var(--rr-surface-2); text-decoration: none; }
 .rr-boardbar__flag {
     display: block;
     width: 16px;
@@ -1795,17 +1860,7 @@ html[data-rr] a.rr-langswitch__option[aria-current] .rr-boardbar__flag { opacity
 .rr-boardbar__more { display: none; }
 
 @media (max-width: 720px) {
-    .rr-boardbar { gap: var(--rr-s2); }
-    /* The tap target grows into the link, not into the space around
-       it: a bare 22px text line is a slim thing to hit on a phone, and
-       widening the row-gap instead would only read as loosely spaced
-       without making anything easier to tap. Taken back from the
-       group's own row-gap by exactly what the padding adds, so a
-       group that wraps across several lines keeps the same pitch it
-       had before — only the fold now lands inside a link instead of
-       between two of them. */
-    .rr-boardbar__link { padding: 3px 0; }
-    .rr-boardbar__group { row-gap: 6px; }
+    .rr-boardbar { gap: var(--rr-s2); padding-bottom: var(--rr-s2); }
     .rr-boardbar__more {
         display: inline-flex;
         align-items: center;
@@ -1831,10 +1886,6 @@ html[data-rr] a.rr-langswitch__option[aria-current] .rr-boardbar__flag { opacity
     .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :not([data-rr-group="views"]),
     .rr-boardbar:not([data-rr-open]) [data-rr-group="views"] > :nth-child(n+3),
     .rr-boardbar:not([data-rr-open]) .rr-boardbar__end { display: none; }
-    /* With the groups folded away there is nothing for the rule to
-       divide, and the row is 366px wide with a More control to fit in
-       it — so the grouping costs no width at all here. */
-    .rr-boardbar__group + .rr-boardbar__group { padding-left: 0; border-left: 0; }
     .rr-boardbar__main, .rr-boardbar__end { gap: var(--rr-s2) var(--rr-s3); }
 
     /* The language switch used to be forced onto a full-width line of
@@ -1948,27 +1999,88 @@ html[data-rr] input.rr-search__input {
     box-sizing: border-box;
 }
 html[data-rr] input.rr-search__input:focus-visible { outline: none; }
-/* Same trap, against the board's input.button1 / input[type=submit]:
-   its padding survived inside a 22px-tall button with none of its own,
-   leaving four pixels for a 13px line — the label read as clipped and
-   sitting low. Matched by element and given the input's own height,
-   the two now sit level. */
+/* The submit, inside the frame. It had a border and a fill of its own,
+   which made a boxed button inside a boxed field — a control inside a
+   control. It is the word alone now, quiet, lit under the pointer, the
+   way the Ctrl K chip sits in the palette trigger beside it.
+
+   Matched by element (input.rr-search__go, not the bare class): the
+   board's input.button1 rule is one element more specific than a
+   class and its padding rode along otherwise. */
 html[data-rr] input.rr-search__go {
     flex: none;
-    height: 26px;
-    padding: 0 9px;
-    background: var(--rr-surface-2);
-    border: 1px solid var(--rr-line);
+    height: 24px;
+    padding: 0 8px;
+    background: transparent;
+    border: 0;
     border-radius: 4px;
     color: var(--rr-muted);
     font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
     cursor: pointer;
     box-sizing: border-box;
+    transition: background var(--rr-speed) ease, color var(--rr-speed) ease;
 }
 html[data-rr] input.rr-search__go:hover {
     background: var(--rr-surface-3);
-    border-color: var(--rr-line-strong);
+    border: 0;
     color: var(--rr-text-strong);
+}
+
+/* ---- Where the search looks ---------------------------------------- */
+
+/* One small control at the end of the field opens the two choices the
+   board's own box never offered: this forum or the whole board, titles
+   or every post (navbar.js, addSearchOptions). Coloured in the accent
+   while the box is set to look somewhere other than its default, so a
+   reader can tell from across the bar that it will. */
+.rr-search { position: relative; }
+html[data-rr] button.rr-search__opts {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    color: var(--rr-faint);
+    cursor: pointer;
+    transition: background var(--rr-speed) ease, color var(--rr-speed) ease;
+}
+html[data-rr] button.rr-search__opts:hover,
+html[data-rr] button.rr-search__opts[aria-expanded="true"] { background: var(--rr-surface-3); color: var(--rr-text-strong); }
+html[data-rr] button.rr-search__opts[data-rr-active] { color: var(--rr-accent); }
+html[data-rr] button.rr-search__opts svg { width: 13px; height: 13px; }
+.rr-search__pop {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 950;
+    min-width: 280px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--rr-s2);
+    background: var(--rr-surface);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius);
+    box-shadow: var(--rr-shadow-pop);
+    cursor: default;
+    color: var(--rr-text);
+}
+.rr-search__pop[hidden] { display: none; }
+.rr-search__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--rr-s3);
+}
+.rr-search__row[hidden] { display: none; }
+.rr-search__rowlabel {
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
+    color: var(--rr-faint);
+    white-space: nowrap;
 }
 
 .rr-kbd {
@@ -2300,42 +2412,190 @@ tr[data-rr-hidden] { display: none; }
 
 /* ---- Pager ------------------------------------------------------- */
 
-.rr-pager {
-    display: flex;
+/* One boxed control: the steps and the page box with a hairline
+   between each, which is most of what keeps "Next" from being taken
+   for "Next topic" on the row below. The two ends are arrows alone;
+   their names are drawn on hover (tooltips, below). */
+.rr-pager { margin: 0; }
+.rr-pager__where {
+    display: inline-flex;
     align-items: center;
     gap: 6px;
-    margin-top: var(--rr-s3);
-    flex-wrap: wrap;
+    padding: 0 10px;
 }
-.rr-pager__label { color: var(--rr-faint); font-size: var(--rr-fs-sm); }
-/* The four page steps read as one control, which is most of what keeps
-   "Next page" from being taken for "Next topic". */
-.rr-pager__step { gap: 3px; padding: 5px 8px; }
-.rr-pager__step svg { width: 13px; height: 13px; }
+.rr-pager__label { color: var(--rr-faint); font-size: var(--rr-fs-sm); white-space: nowrap; }
+html[data-rr] a.rr-pager__step {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 9px;
+    color: var(--rr-muted);
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
+    white-space: nowrap;
+    transition: background var(--rr-speed) ease, color var(--rr-speed) ease;
+}
+html[data-rr] a.rr-pager__step:hover { background: var(--rr-surface-2); color: var(--rr-text-strong); text-decoration: none; }
+html[data-rr] a.rr-pager__step svg { width: 13px; height: 13px; flex: none; }
 .rr-pager__input {
-    width: 62px;
-    height: 30px;
-    padding: 0 8px;
+    width: 52px;
+    height: 24px;
+    padding: 0 6px;
     background: var(--rr-bg-sunken);
-    border: 1px solid var(--rr-line-strong);
-    border-radius: var(--rr-radius);
+    border: 1px solid var(--rr-line);
+    border-radius: 4px;
     color: var(--rr-text);
     font: var(--rr-fs-sm) / 1 var(--rr-font-mono);
     text-align: center;
 }
 .rr-pager [hidden] { display: none; }
 
+/* ---- A cluster of controls ------------------------------------------ */
+
+/* Several small controls that belong together, drawn as one light box
+   with a hairline between them: the pager, the topic bar's "Previous
+   topic / Next topic / Print view" and its "Subscribe / Bookmark /
+   E-mail friend". One box says "these are one thing" where a row of
+   loose buttons said "here are six things". No overflow clip: the
+   tooltips on the controls inside draw outside it.
+ *
+ * Every child carries .rr-cluster__item, put there by the JS that
+ * fills the cluster (topic.js, sealCluster). The obvious way to write
+ * these rules is \`.rr-cluster > * + *\`, and that is a selector whose
+ * rightmost part is the universal one: the engine has to test it
+ * against every element on the page, and a listing here is four
+ * thousand of them. Six such rules cost this page 30ms of style
+ * recalculation, measured. Keyed on a class, they cost nothing. */
+.rr-cluster {
+    display: inline-flex;
+    align-items: stretch;
+    min-height: 30px;
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+    background: color-mix(in srgb, var(--rr-surface) 70%, transparent);
+    box-sizing: border-box;
+}
+.rr-cluster__item { border-radius: 0; }
+.rr-cluster__item + .rr-cluster__item { border-left: 1px solid var(--rr-line); }
+.rr-cluster__item:first-child { border-radius: calc(var(--rr-radius) - 1px) 0 0 calc(var(--rr-radius) - 1px); }
+.rr-cluster__item:last-child { border-radius: 0 calc(var(--rr-radius) - 1px) calc(var(--rr-radius) - 1px) 0; }
+.rr-cluster__item:only-child { border-radius: calc(var(--rr-radius) - 1px); }
+/* A button in a cluster is the cluster's: no frame of its own. */
+html[data-rr] .rr-cluster__item.rr-btn,
+html[data-rr] a.rr-cluster__item.rr-btn {
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 0;
+    background: transparent;
+    color: var(--rr-muted);
+    padding: 5px 10px;
+}
+html[data-rr] .rr-cluster__item.rr-btn:hover,
+html[data-rr] a.rr-cluster__item.rr-btn:hover { background: var(--rr-surface-2); color: var(--rr-text-strong); }
+html[data-rr] .rr-cluster__item.rr-btn:first-child { border-left: 0; }
+.rr-topicbar__row[data-rr-row="away"] .rr-cluster { min-height: 28px; }
+
+/* ---- Folds ------------------------------------------------------------ */
+
+/* Every control that opens or closes something turns its chevron the
+   same way: the original post, the Steam description, Who is online,
+   the Releases panel, a listing's sections. */
+html[data-rr] .rr-fold > svg,
+html[data-rr] .rr-releases__toggle > svg:first-child,
+html[data-rr] td.cat.rr-section > svg { transition: transform var(--rr-speed) ease; }
+html[data-rr] .rr-fold[data-rr-open] > svg { transform: rotate(180deg); }
+
+/* A forum listing's own section rows — one spanning td.row3 with a
+   bold word in it (lists.js, sectionOf) — drawn as the section heads
+   they are: the tint and the mark a td.cat gets, at the same size. */
+html[data-rr] td.row3[data-rr-section] {
+    position: relative;
+    padding: var(--rr-s2) var(--rr-s3) var(--rr-s2) 20px;
+    color: var(--rr-text-strong);
+    font-size: var(--rr-fs-sm);
+    font-weight: 650;
+    line-height: var(--rr-lh);
+}
+html[data-rr] td.row3[data-rr-section] > b,
+html[data-rr] td.row3[data-rr-section] > span > b { color: inherit; font-weight: inherit; font-size: inherit; }
+html[data-rr] td.row3[data-rr-section]::before {
+    content: "";
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    width: 3px;
+    height: 14px;
+    margin-top: -7px;
+    border-radius: 2px;
+    background: var(--rr-accent);
+}
+
+/* A listing's section head, which folds its run on a click (lists.js,
+   initSectionFolds). The chevron points down at an open run and right
+   at a folded one; the count says what is behind it. */
+html[data-rr] td.rr-section { cursor: pointer; user-select: none; transition: background var(--rr-speed) ease; }
+html[data-rr] tr[data-rr-cat-row] > td.rr-section:hover { background: color-mix(in srgb, var(--rr-accent) 10%, var(--rr-surface-2)); }
+html[data-rr] td.rr-section:focus-visible { outline: 2px solid var(--rr-accent); outline-offset: -2px; }
+html[data-rr] td.rr-section > svg { width: 13px; height: 13px; margin-right: 6px; vertical-align: -2px; color: var(--rr-faint); transition: transform var(--rr-speed) ease; }
+html[data-rr] td.rr-section > h4 { display: inline; }
+html[data-rr] td.rr-section > .rr-section__count {
+    margin-left: 10px;
+    font: 500 var(--rr-fs-xs) / 1 var(--rr-font);
+    color: var(--rr-muted);
+}
+html[data-rr] tr[data-rr-folded] > td.rr-section > svg { transform: rotate(-90deg); }
+html[data-rr] tr[data-rr-section-folded] { display: none; }
+
+/* ---- The control panel's menu ----------------------------------------- */
+
+/* Each section of the control panel is a row that opens: the closed
+   ones say so with a chevron at their end, the open one with a chevron
+   turned down and its pages stepped in under it (lists.js,
+   decorateNavLists). */
+html[data-rr] td[data-rr-navitem="closed"] { padding: 0; }
+html[data-rr] td[data-rr-navitem="closed"] > a.nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--rr-s2);
+    padding: 10px var(--rr-s3);
+    color: var(--rr-text);
+    font-weight: 600;
+    transition: background var(--rr-speed) ease, color var(--rr-speed) ease;
+}
+html[data-rr] td[data-rr-navitem="closed"] > a.nav:hover {
+    background: var(--rr-surface-2);
+    color: var(--rr-text-strong);
+    text-decoration: none;
+}
+html[data-rr] td[data-rr-navitem="closed"] > a.nav > svg { width: 13px; height: 13px; flex: none; color: var(--rr-faint); }
+html[data-rr] td[data-rr-navitem="closed"] > a.nav:hover > svg { color: var(--rr-accent); }
+html[data-rr] td[data-rr-navitem="open"] > b.nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--rr-text-strong);
+    font-weight: 650;
+}
+html[data-rr] td[data-rr-navitem="open"] > b.nav > svg { width: 13px; height: 13px; flex: none; color: var(--rr-accent); }
+html[data-rr] td[data-rr-navitem="open"] ul.nav {
+    list-style: none;
+    margin: 6px 0 2px 6px !important;
+    padding: 0 0 0 12px !important;
+    border-left: 2px solid var(--rr-line);
+}
+html[data-rr] td[data-rr-navitem="open"] ul.nav li { padding: 3px 0; font-size: var(--rr-fs-sm); }
+
 /* ---- Game card --------------------------------------------------- */
 
+/* A section at the head of the first post, not a card inside a card:
+   the art and the details, a hairline, then the post. */
 .rr-game {
     display: grid;
-    grid-template-columns: 240px 1fr;
+    grid-template-columns: 220px 1fr;
     gap: var(--rr-s5);
-    margin: 0 0 var(--rr-post-gap);
-    padding: var(--rr-s5);
-    background: var(--rr-surface);
-    border: 1px solid var(--rr-line);
-    border-radius: var(--rr-radius-lg);
+    margin: 0 0 var(--rr-s5);
+    padding: 0 0 var(--rr-s5);
+    border-bottom: 1px solid var(--rr-line);
 }
 .rr-game__art { width: 100%; border-radius: var(--rr-radius); display: block; }
 .rr-game__body { min-width: 0; }
@@ -2367,26 +2627,43 @@ tr[data-rr-hidden] { display: none; }
 
 /* ---- Post chrome ------------------------------------------------- */
 
+/* The author band.
+
+   It was a line of text with a rule under it, floating at the same
+   inset as the message: the name, the rank, the join date, the post
+   count, the date and six controls, all the same size, all on the
+   same ground. Which of them was the author took reading.
+
+   Drawn as a band instead — pulled out to the post's own edges, on
+   the quieter surface, with the message starting under it — the
+   header is a header and the message is the message. The inset comes
+   from the post's own token, so the two can never drift apart. */
 .rr-posthead {
     display: flex;
     align-items: center;
     gap: var(--rr-s2) var(--rr-s3);
     flex-wrap: wrap;
-    margin: 0 0 var(--rr-s4);
-    padding-bottom: var(--rr-s3);
+    margin: calc(-1 * var(--rr-post-pad-top, 0px)) calc(-1 * var(--rr-post-pad, 0px)) var(--rr-s4);
+    padding: 9px var(--rr-post-pad, 0px);
+    background: var(--rr-surface-2);
     border-bottom: 1px solid var(--rr-line);
 }
+/* The face beside the name: a size at which it is a face, centred on
+   the line it belongs to, on a plate so an avatar that is mostly
+   transparent still reads as a circle. */
 .rr-posthead__avatar {
-    width: 30px;
-    height: 30px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     object-fit: cover;
     flex: none;
     margin: 0;
+    align-self: center;
     background: var(--rr-surface-3);
+    box-shadow: 0 0 0 1px var(--rr-line);
 }
 .rr-posthead__who { display: flex; align-items: baseline; gap: var(--rr-s2); min-width: 0; }
-.rr-posthead__name { font-weight: 650; color: var(--rr-text-strong); font-size: var(--rr-fs-sm); }
+.rr-posthead__name { font-weight: 650; color: var(--rr-text-strong); font-size: var(--rr-fs); }
 .rr-posthead__rank {
     font-size: var(--rr-fs-xs);
     color: var(--rr-faint);
@@ -2554,12 +2831,24 @@ html[data-rr] a.rr-postnum:hover {
     border-left: 1px solid var(--rr-line-strong);
     box-shadow: var(--rr-shadow-pop);
 }
+/* Every row of the panel is a grid item, and a grid item's automatic
+   minimum size is its content's — so a head whose title, search box
+   and close button will not fit, or a page holding a control wider
+   than the sheet, made the *panel* wider than the window it is
+   pinned to and put a scrollbar across the whole thing. They may
+   shrink; what is inside them wraps or scrolls on its own. */
+.rr-panel__head,
+.rr-panel__body,
+.rr-panel__foot,
+.rr-panel__rail,
+.rr-panel__pages { min-width: 0; }
 .rr-panel__head {
     display: flex;
     align-items: center;
     gap: var(--rr-s3);
     padding: var(--rr-s3) var(--rr-s4);
     border-bottom: 1px solid var(--rr-line);
+    min-width: 0;
 }
 .rr-panel__id { display: flex; align-items: baseline; gap: 6px; flex: none; }
 .rr-panel__title { font: 650 var(--rr-fs-lg) / 1.2 var(--rr-font); color: var(--rr-text-strong); margin: 0; }
@@ -2583,6 +2872,7 @@ html[data-rr] a.rr-postnum:hover {
     display: grid;
     grid-template-columns: 186px 1fr;
     min-height: 0;
+    min-width: 0;
     overflow: hidden;
 }
 .rr-panel__rail {
@@ -2719,15 +3009,54 @@ html[data-rr] a.rr-postnum:hover {
 .rr-range { width: 130px; accent-color: var(--rr-accent); }
 .rr-range-val { font: var(--rr-fs-xs) / 1 var(--rr-font-mono); color: var(--rr-muted); min-width: 34px; text-align: right; }
 
-.rr-swatches { display: flex; gap: 6px; }
-.rr-swatch {
-    width: 26px; height: 26px;
-    border-radius: var(--rr-radius);
-    border: 2px solid transparent;
-    cursor: pointer;
-    padding: 0;
+/* The accent, chosen from named chips rather than bare squares. Six
+   named chips are wider than the control column, so on a desktop —
+   where the field is a row — they take a line of their own under its
+   words. On a phone the field is already a column and needs none of
+   it: \`flex-basis: 100%\` there is a *height*, which is how the chips
+   came to overrun the sheet. */
+@media (min-width: 641px) {
+    .rr-field[data-field="accent"] { flex-wrap: wrap; }
+    .rr-field[data-field="accent"] > .rr-field__control { flex-basis: 100%; padding-top: 0; }
 }
-.rr-swatch[aria-pressed="true"] { border-color: var(--rr-text-strong); }
+.rr-swatches { display: flex; flex-wrap: wrap; gap: 4px; max-width: 100%; }
+.rr-swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    width: 62px;
+    padding: 7px 4px 6px;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--rr-radius);
+    color: var(--rr-muted);
+    font: 500 var(--rr-fs-xs) / 1.2 var(--rr-font);
+    cursor: pointer;
+    transition: background var(--rr-speed) ease, color var(--rr-speed) ease, border-color var(--rr-speed) ease;
+}
+.rr-swatch__dot {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--rr-swatch);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25);
+    color: #0e1013;
+    transition: transform var(--rr-speed) ease;
+}
+.rr-swatch__dot svg { width: 13px; height: 13px; opacity: 0; stroke-width: 3; }
+.rr-swatch__name { white-space: nowrap; }
+.rr-swatch:hover { background: var(--rr-surface-2); color: var(--rr-text); }
+.rr-swatch:hover .rr-swatch__dot { transform: scale(1.08); }
+.rr-swatch[aria-pressed="true"] {
+    background: var(--rr-surface-2);
+    border-color: var(--rr-line-strong);
+    color: var(--rr-text-strong);
+}
+.rr-swatch[aria-pressed="true"] .rr-swatch__dot svg { opacity: 1; }
+.rr-swatch[aria-pressed="true"] .rr-swatch__name { font-weight: 600; }
 
 /* ---- Lightbox ---------------------------------------------------- */
 
@@ -3088,7 +3417,7 @@ html[data-rr][data-rr-sticky="on"] table[data-rr-list] > tbody > tr[data-rr-head
     position: sticky;
     top: 0;
     z-index: 3;
-    background: var(--rr-surface-2);
+    background: var(--rr-bg-sunken);
 }
 html[data-rr][data-rr-sticky="on"][data-rr-nav="on"] table[data-rr-list] > tbody > tr[data-rr-head] > th {
     top: var(--rr-nav-h, 48px);
@@ -3227,6 +3556,7 @@ html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead {
     margin: 0 var(--rr-s2) 0 0;
     padding: 0;
     border: 0;
+    background: none;
     vertical-align: middle;
 }
 html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead__avatar,
@@ -3323,89 +3653,16 @@ html[data-rr] table.tablebg:not([data-rr-quiet]) .rr-quiet-chip:hover { opacity:
 
 /* ---- The donation link -------------------------------------------- */
 
-/* Present, not loud: an outline in the accent and a heart, in a row
-   where everything else is grey text. The board is asking for money to
-   stay hosted; this is one line of emphasis, not a banner. */
-html[data-rr] .rr-boardbar__donate {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 2px 9px;
-    border: 1px solid color-mix(in srgb, var(--rr-accent) 45%, transparent);
-    /* A control, so the button radius — not the pill it used to be,
-       which put three different corner radii on one bar next to Reply
-       and the search box. */
-    border-radius: var(--rr-radius);
-    background: color-mix(in srgb, var(--rr-accent) 12%, transparent);
-    color: color-mix(in srgb, var(--rr-accent) 88%, var(--rr-text-strong));
-    font-weight: 650;
-}
-html[data-rr] .rr-boardbar__donate:hover {
-    background: color-mix(in srgb, var(--rr-accent) 22%, transparent);
-    border-color: var(--rr-accent);
-    color: var(--rr-accent);
-}
-html[data-rr] .rr-boardbar__donate svg {
-    width: 12px;
-    height: 12px;
-    flex: none;
-    fill: currentColor;
-    stroke-width: 0;
-}
-
-@media (max-width: 720px) {
-    /* Everything past the two entry points folds behind More. This one
-       does not: it is the link the board is asking for, and it fits
-       once it is the heart alone. */
-    html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > [data-rr-donate] {
-        display: flex;
-    }
-    /* Its group is shown for its sake alone, so nothing else in that
-       group comes back with it. */
-    html[data-rr] .rr-boardbar:not([data-rr-open]) [data-rr-donate] > :not(.rr-boardbar__donate) {
-        display: none;
-    }
-    html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__donate-label {
-        /* Off the screen rather than display:none, so the label still
-           belongs to the link for anything reading it aloud. */
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip-path: inset(50%);
-        white-space: nowrap;
-    }
-    html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__donate { padding: 4px 8px; }
-}
+/* One of the board's links, in the board's row, at the row's own
+   weight. It used to carry an outline and a heart; the palette still
+   offers it from anywhere. */
+html[data-rr] .rr-boardbar__donate { font-weight: 600; }
 
 @media (max-width: 560px) {
-    /* On a phone the row is 366px wide and the two entry points, the
-       heart and the More control come to 389. Something has to fold,
-       and the choice is between the second entry point and the word
-       "More" — the second entry point, because it is one tap away
-       behind a control that is still labelled, where a More button
-       reduced to a bare chevron is a control that is not.
-
-       "View unanswered posts" is the one every guide to this board
-       tells people to bookmark, so it is the one that stays.
-
-       Both selectors below read the row as groups, which is what it is
-       now. Written against the flat row it used to be, the first one
-       excluded .rr-boardbar__donate — the class on the *link* — while
-       what sits in __main is the *group* around it, so it folded the
-       group the heart lives in and left the link laid out at zero
-       width inside. And nth-child(n+2) then meant "every group after
-       the first", which on a row whose first group holds both entry
-       points folds nothing at all: the two of them plus the heart plus
-       More come to 357px in a 366px row, and More wrapped to a second
-       line.
-
-       So: every group after the first goes, except the one with the
-       heart in it, and inside the first group only its opening link
-       stays. */
-    html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :nth-child(n+2):not([data-rr-donate]) {
-        display: none;
-    }
+    /* On a phone the row is 366px wide and the two entry points plus
+       the More control do not fit it. "View unanswered posts" is the
+       one every guide to this board tells people to bookmark, so it is
+       the one that stays; the rest are one tap away behind More. */
     html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :first-child > :nth-child(n+2) {
         display: none;
     }
@@ -3642,7 +3899,6 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
     margin: 0 0 var(--rr-post-gap);
     background: var(--rr-surface);
     border: 1px solid var(--rr-line);
-    border-left: 3px solid var(--rr-accent);
     border-radius: var(--rr-radius-lg);
     overflow: hidden;
 }
@@ -3651,13 +3907,34 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
     align-items: center;
     gap: var(--rr-s2);
     flex-wrap: wrap;
-    padding: var(--rr-card-pad);
+    padding: 10px var(--rr-card-pad);
     border-bottom: 1px solid var(--rr-line);
 }
 /* \`html[data-rr] h3\` outranks \`.rr-releases__head h3\` and kept its
    bottom margin, which centred the box 6px above the icon, the count
    and the controls beside it. */
 html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-height: 1.2; }
+/* The title is the control that folds the panel. */
+html[data-rr] button.rr-releases__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--rr-s2);
+    margin: -4px -6px;
+    padding: 4px 6px;
+    background: none;
+    border: 0;
+    border-radius: var(--rr-radius);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    transition: background var(--rr-speed) ease;
+}
+html[data-rr] button.rr-releases__toggle:hover { background: var(--rr-surface-2); }
+html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); flex: none; }
+.rr-releases[data-rr-folded] .rr-releases__toggle > svg:first-child { transform: rotate(-90deg); }
+.rr-releases[data-rr-folded] .rr-releases__controls { display: none; }
+.rr-releases[data-rr-folded] .rr-releases__head { border-bottom: 0; }
+.rr-releases__body[hidden] { display: none; }
 /* What the panel is showing: how much of the topic, and whether the
    topic itself is filtered down to it. Two controls answering the same
    question, so they sit together rather than at opposite ends of the
@@ -3670,7 +3947,7 @@ html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-h
     flex-wrap: wrap;
 }
 .rr-releases__only { padding: 4px 10px; font-size: var(--rr-fs-xs); }
-.rr-releases__head svg { color: var(--rr-accent); flex: none; }
+.rr-releases__toggle > svg:nth-child(2) { color: var(--rr-accent); flex: none; }
 .rr-releases__count { color: var(--rr-faint); font-size: var(--rr-fs-xs); }
 
 /* This page / all N pages. The same segmented control the settings
@@ -4160,8 +4437,16 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
     html[data-rr] td[data-rr-col] p { display: inline; margin: 0; }
 
     /* Category rows and the bands with one link in them: a header, not
-       a card. The control that folds a category goes to the far end. */
+       a card. The control that folds a category goes to the far end.
+       The accent mark is drawn inside the cell's own padding on a
+       desktop; here the cell has none, so the row carries it. */
     html[data-rr] tr[data-rr-cat-row] { padding: 8px 14px !important; align-items: center !important; }
+    html[data-rr] tr[data-rr-cat-row] > td.cat::before,
+    html[data-rr] tr[data-rr-cat-row] > td.row3[data-rr-section]::before { display: none; }
+    html[data-rr] tr[data-rr-cat-row] > td.cat,
+    html[data-rr] tr[data-rr-cat-row] > td.row3[data-rr-section] { padding-left: 0 !important; }
+    html[data-rr] tr[data-rr-cat-row=""],
+    html[data-rr] tr[data-rr-cat-row="section"] { box-shadow: inset 3px 0 0 var(--rr-accent); }
     html[data-rr] tr[data-rr-cat-row] > td.catdiv { margin-left: auto; }
     html[data-rr] tr[data-rr-cat-row] > td.cat[data-rr-cat="plain"] { margin-left: auto; font-size: var(--rr-fs-xs); }
     /* A message folder: the date and the checkbox had no order and led
@@ -4273,25 +4558,6 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
     html[data-rr] .rr-nav__crumbs a:not(:last-child),
     html[data-rr] .rr-nav__sep { display: none; }
     html[data-rr] .rr-toolbar { padding: var(--rr-s3); }
-
-    /* The masthead crop is fixed-width — set once from the image's own
-       pixels — so on the narrowest phones it held its full desktop size
-       while the crumb beside it, the one thing that actually changes
-       page to page, was squeezed to almost nothing. Every dimension of
-       the crop scales together here, window, image and offset alike,
-       which is the same arithmetic navbar.js does for a taller one: the
-       crosshair stays the crosshair, just smaller, and the room it gives
-       up goes to the page name. */
-    html[data-rr] .rr-nav__brand[data-rr-logo="art"] .rr-nav__logo {
-        width: calc(var(--rr-logo-w) * 0.7);
-        height: calc(var(--rr-logo-h) * 0.7);
-    }
-    html[data-rr] .rr-nav__brand[data-rr-logo="art"] .rr-nav__art {
-        width: calc(var(--rr-logo-img-w) * 0.7);
-        height: calc(var(--rr-logo-img-h) * 0.7);
-        top: calc(var(--rr-logo-y) * 0.7);
-        left: calc(var(--rr-logo-x) * 0.7);
-    }
 
     /* The topic bar carries nine controls and a search box, and on a
        phone that is five wrapped rows before the first post. The air
@@ -4817,14 +5083,15 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
         color: var(--rr-muted);
     }
 
-    /* Leaving this topic: chips on one rhythm rather than words with
-       air between them. */
-    html[data-rr] .rr-topicbar__row[data-rr-row="away"] .rr-btn {
+    /* Leaving this topic: the two clusters take the width they need
+       and wrap as two lines; a stray control outside one is a chip. */
+    html[data-rr] .rr-topicbar__row[data-rr-row="away"] > .rr-btn {
         padding: 5px 11px;
         background: var(--rr-surface-2);
         border: 1px solid var(--rr-line);
         border-radius: var(--rr-radius-pill);
     }
+    html[data-rr] .rr-topicbar__row[data-rr-row="away"] .rr-cluster { flex-wrap: wrap; }
     /* A control inside a rounded box takes the box's corner minus the
        gap between them, so the two curves are concentric instead of a
        square end butting a round one. */
@@ -4851,9 +5118,13 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
         gap: 0 var(--rr-s3);
         padding: var(--rr-s2) 0;
         margin: 0;
-        border-left: 0;
+        /* The desktop's box round each group is a row rule here. */
+        border: 0;
         border-top: 1px solid var(--rr-line);
+        border-radius: 0;
+        background: none;
     }
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__group > .rr-boardbar__link { border-left: 0; border-radius: 0; }
     /* The fold's control keeps the top line to itself; the groups
        start under it at full width, so no link has to wrap around it. */
     html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__group:first-child {
@@ -4967,6 +5238,13 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
        spacer that pushes the date right on a desktop put it right on
        some cards and left on others, depending on what wrapped. */
     html[data-rr] .rr-posthead__spacer { display: none; }
+    /* The band reaches the card's edges here too, and the card's
+       padding lives on the row rather than on the cell. The selector
+       matches the desktop's exactly, so the tie is broken on source
+       order — this file is last in the build. */
+    html[data-rr] table.tablebg[data-rr-post] { --rr-post-pad: 14px; --rr-post-pad-top: 14px; }
+    html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row1,
+    html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row2 { padding: 0; }
     html[data-rr] .rr-posthead__meta,
     html[data-rr] .rr-posthead__date { flex: 1 1 100%; text-align: left; margin: 0; }
 
@@ -5179,6 +5457,16 @@ function defaultFor(id) {
    rail needs a name that fits in 150px. Settings are stored flat by
    id, so moving a field between groups costs nothing and needs no
    migration.
+
+   What is *not* here any more, and why. A setting is a question put to
+   every reader who opens the panel, and several of these were
+   questions with one sensible answer: the skip link, joining the last
+   post's two lines, the lookups on the game card, the password chip,
+   how many topics the palette remembers, how long a Steam lookup is
+   kept. Those are simply how the script behaves now. Where a search
+   looks is asked in the search box itself; which listing sections are
+   folded is remembered from folding them. A value somebody stored for
+   a field that has gone is ignored, never an error.
    ------------------------------------------------------------------ */
 
 const SETTINGS_SCHEMA = [
@@ -5228,7 +5516,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "width", label: "Content width", type: "seg", default: "reading",
-                desc: "The frame follows the window either way. Reading also caps the line length of a post at about 78 characters, which is where long ones stop being tiring; Wide lets the frame grow further and Full lifts the frame's limit altogether, keeping a post's lines under about 120 characters.",
+                desc: "Reading caps a post's lines at about 78 characters; Wide lets the frame grow further; Full lifts the frame's limit altogether.",
                 options: [
                     { value: "reading", label: "Reading" },
                     { value: "wide", label: "Wide" },
@@ -5241,7 +5529,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "masthead", label: "Show the board's masthead on the index", type: "toggle", default: true,
-                desc: "The crosshair emblem and the CS.RIN.RU wordmark the board draws at the top of every page, kept on the index only. The top bar carries the wordmark everywhere else; this is the board's face, once, where you land.",
+                desc: "The crosshair emblem and the CS.RIN.RU wordmark, kept on the index only. Everywhere else the top bar carries the name.",
             },
         ],
     },
@@ -5258,16 +5546,11 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "boardLinks", label: "Board links row", type: "toggle", default: true,
-                desc: "Forum rules, FAQ, Chat, Donate and the language switch, which the masthead was the only route to.",
-            },
-            {
-                id: "donateHighlight", label: "Mark the donation link", type: "toggle", default: true,
-                desc: "The board runs on donations and is currently asking for them. This gives that one link an outline and a heart rather than leaving it fifth in a row of grey text.",
-                when: "boardLinks",
+                desc: "Unanswered and active topics, forum rules, FAQ, chat, donate, your account and the language switch, grouped on one line.",
             },
             {
                 id: "quickPager", label: "Jump to last page", type: "toggle", default: true,
-                desc: "Adds first / last page controls next to every pagination strip. phpBB never links the last page, which is where an update thread is read.",
+                desc: "First and last page controls beside every pager. phpBB never links the last page, which is where an update thread is read.",
             },
             {
                 id: "backToTop", label: "Back to top button", type: "toggle", default: true,
@@ -5275,7 +5558,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "progress", label: "Reading progress bar", type: "toggle", default: true,
-                desc: "A hairline at the top of the window showing position in the page.",
+                desc: "A hairline under the top bar showing how far down the page you are.",
             },
         ],
     },
@@ -5284,21 +5567,11 @@ const SETTINGS_SCHEMA = [
         title: "Search and finding",
         short: "Search",
         icon: "search",
-        note: "Main Forum holds 61,000 topics across 615 pages, so finding matters more than paging.",
+        note: "Main Forum holds 61,000 topics across 615 pages, so finding matters more than paging. Where a search looks — this forum or the whole board, titles or every post — is chosen in the search box itself.",
         fields: [
             {
                 id: "palette", label: "Command palette", type: "toggle", default: true,
                 desc: "Ctrl+K opens search, forum jumps, bookmarks and every script action in one box.",
-            },
-            {
-                id: "searchDepth", label: "Search looks at", type: "seg", default: "titles",
-                options: [
-                    { value: "titles", label: "Titles" },
-                    { value: "firstpost", label: "+ first post" },
-                    { value: "everything", label: "Every post" },
-                ],
-                desc: "Applies to Ctrl+K. Results are always one row per topic, never one per matching post.",
-                when: "palette",
             },
             {
                 id: "listFilter", label: "Filter box over a listing", type: "toggle", default: true,
@@ -5309,17 +5582,12 @@ const SETTINGS_SCHEMA = [
                 desc: "Turns [Info], [Release], [Problem] and the rest into coloured tags you can click to filter.",
             },
             {
-                id: "finder", label: "Find files and updates in a topic", type: "toggle", default: true,
-                desc: "Lists the posts on the page that carry links, a version number or a reupload, newest first. Answers \"where is the current version\" without reading 19 pages.",
+                id: "finder", label: "Releases panel", type: "toggle", default: true,
+                desc: "Lists the posts on the page that carry a release, an update or a reupload, with the version and the file host. A post that names an archive password offers it with a copy button.",
             },
             {
-                id: "passwordFinder", label: "Find the archive password", type: "toggle", default: true,
-                desc: "Almost every release post ends with \"Password: cs.rin.ru\" somewhere, often inside a spoiler. Where a post names one, it is offered beside that post's other controls, with a copy button.",
-                when: "finder",
-            },
-            {
-                id: "topicIndex", label: "Index the whole topic", type: "toggle", default: true,
-                desc: "Adds a control that reads every page of a topic once and lists everything posted in it — each release, update, repack, crack, reupload and tool — with its version, what kind of thing it is, who posted it, when, and which page. Never runs on its own: it is a click, the answer is kept per topic, and Escape stops it.",
+                id: "topicIndex", label: "Read the whole topic", type: "toggle", default: true,
+                desc: "The panel can read every page of a topic once, on a click, and list everything ever posted in it. Never runs on its own; Escape stops it.",
                 when: "finder",
             },
         ],
@@ -5329,18 +5597,15 @@ const SETTINGS_SCHEMA = [
         title: "Topic lists",
         short: "Topic lists",
         icon: "filter",
+        note: "Announcements, stickies and the topics fold on a click on their heading, and stay folded until you open them again.",
         fields: [
             {
-                id: "tightRows", label: "Last post on one line", type: "toggle", default: true,
-                desc: "Joins the date and the poster, which the template stacks. Drops the weekday; the full date stays on hover.",
-            },
-            {
-                id: "unreadFromList", label: "Topic titles open at the first unread post", type: "toggle", default: true,
-                desc: "The board links the first unread post from a small arrow beside the row. This puts it on the title itself, for rows that actually have unread posts. Needs an account; nothing changes when logged out.",
+                id: "unreadFromList", label: "Topic titles open at the first unread post", type: "toggle", default: false,
+                desc: "Off, a title opens the first page of its topic. On, a topic with unread posts opens at the first of them. Needs an account.",
             },
             {
                 id: "hideVisited", label: "Mark topics already opened", type: "toggle", default: true,
-                desc: "Fills in the read/unread mark beside a topic this browser has been to. Uses this browser only, so it works while logged out too.",
+                desc: "Fills in the read/unread mark beside a topic this browser has been to, so it works while logged out too.",
             },
             {
                 id: "bookmarks", label: "Bookmark topics", type: "toggle", default: true,
@@ -5352,23 +5617,15 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "foldWhoIsOnline", label: "Fold Who is online", type: "toggle", default: true,
-                desc: "The index lists all 500-odd names in full, which is most of the page, and every forum and topic ends with the list of who is browsing it. This keeps the counts and hides the names behind a control.",
-            },
-            {
-                id: "hideAnnouncements", label: "Collapse global announcements", type: "toggle", default: false,
-                desc: "Folds the pinned announcements at the head of a listing into one line.",
+                desc: "Keeps the counts and hides the 500-odd names behind a control, on the index and under every forum and topic.",
             },
             {
                 id: "stickyHeads", label: "Keep the column headings in view", type: "toggle", default: true,
-                desc: "A hundred rows scroll past the headings that name them. They stay at the top of the window while their own listing is on screen.",
+                desc: "The headings stay at the top of the window while their listing is on screen.",
             },
             {
                 id: "sortColumns", label: "Sort a listing by clicking a column", type: "toggle", default: true,
-                desc: "Replies, Views, Author, Last post and the rest. The rows already on the page are reordered here; nothing is fetched and nothing is sent. Announcements keep their own section. Click again to reverse, a third time for the board's own order.",
-            },
-            {
-                id: "rememberFilter", label: "Remember the prefix filter per forum", type: "toggle", default: false,
-                desc: "Coming back to a forum restores the [Release] or [Info] chip that was pressed there last time.",
+                desc: "Replies, Views, Author, Last post and the rest reorder the rows already on the page. Click again to reverse, a third time for the board's own order.",
             },
         ],
     },
@@ -5381,17 +5638,7 @@ const SETTINGS_SCHEMA = [
         fields: [
             {
                 id: "gameCard", label: "Game info card", type: "toggle", default: true,
-                desc: "Reads the first post and rebuilds it as a compact card: store page, AppID, genres, languages, release date.",
-            },
-            {
-                id: "collapseFirst", label: "Fold the Steam description", type: "toggle", default: true,
-                desc: "Keeps About the Game, system requirements and screenshots one click away.",
-                when: "gameCard",
-            },
-            {
-                id: "externalLinks", label: "External lookups", type: "toggle", default: true,
-                desc: "SteamDB, SteamCharts, PCGamingWiki and ProtonDB buttons built from the AppID.",
-                when: "gameCard",
+                desc: "Reads the first post and draws it as a card: store page, AppID, genres, languages, release date, with lookups to SteamDB, SteamCharts, ProtonDB and PCGamingWiki. The original post stays under it, with a control to fold it.",
             },
             {
                 id: "postLayout", label: "Post layout", type: "seg", default: "modern",
@@ -5406,8 +5653,16 @@ const SETTINGS_SCHEMA = [
                 desc: "Copy link, copy as a quote, reply with quote, and a post number you can link to.",
             },
             {
+                id: "spoilersOpen", label: "Open spoilers", type: "toggle", default: true,
+                desc: "Every spoiler on the page starts open, so a release post reads top to bottom. The topic bar closes them all again in one click.",
+            },
+            {
+                id: "spoilerAll", label: "Open or close all spoilers button", type: "toggle", default: true,
+                desc: "One control in the topic bar for a post that hides its links behind ten separate spoilers.",
+            },
+            {
                 id: "foldQuotes", label: "Fold long quotes", type: "toggle", default: true,
-                desc: "A quote longer than a few lines is clipped to its opening lines with a control to open it. The text is never taken out of the page: find-in-page, the finder and a screen reader all still read a folded quote in full.",
+                desc: "A quote longer than a few lines is clipped to its opening lines with a control to open it. The text is never taken out of the page.",
             },
             {
                 id: "foldQuotesLines", label: "Fold a quote over", type: "range", default: 6,
@@ -5416,20 +5671,16 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "quietPosts", label: "Fold short low-value replies", type: "toggle", default: false,
-                desc: "\"thanks!\", \"+1\" and a lone emoji collapse to one dim line you can click open. Decided from what a post says — never from who wrote it. A post carrying a link, a version, code, an image or a problem report is never folded.",
+                desc: "\"thanks!\", \"+1\" and a lone emoji collapse to one dim line you can click open. Decided from what a post says — never from who wrote it.",
             },
             {
                 id: "quietLimit", label: "Fold replies shorter than", type: "range", default: 120,
-                // 400 was a paragraph. At that setting the filter was
-                // folding replies that say something, which is the one
-                // thing it is built not to do — the tests for it all
-                // run at the default and none of them noticed.
                 min: 40, max: 240, step: 10, unit: " chars",
                 when: "quietPosts",
             },
             {
                 id: "resumeReading", label: "Remember where you stopped reading", type: "toggle", default: true,
-                desc: "A topic you have read before opens with a control back to the page you were on, and the first post newer than your last visit is marked. Kept in this browser, so it works logged out; needs \"Remember topics you open\".",
+                desc: "A topic you have read before offers a control back to the page you were on, and the first post newer than your last visit is marked. Needs \"Remember topics you open\".",
                 when: "history",
             },
             {
@@ -5439,10 +5690,6 @@ const SETTINGS_SCHEMA = [
             {
                 id: "collapseSigs", label: "Fold long signatures", type: "toggle", default: true,
                 desc: "Signatures over a few lines collapse behind a toggle.",
-            },
-            {
-                id: "spoilerAll", label: "Expand all spoilers button", type: "toggle", default: true,
-                desc: "One control in the topic bar for a post that hides its links behind ten separate spoilers.",
             },
             {
                 id: "lightbox", label: "Open images in a lightbox", type: "toggle", default: true,
@@ -5466,7 +5713,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "saveDraft", label: "Keep an unsent reply", type: "toggle", default: true,
-                desc: "What you have typed into the quick reply is kept in this browser against that topic, so closing the tab or following a link and coming back does not lose it. Cleared when the reply is sent, and never sent anywhere.",
+                desc: "What you have typed into the quick reply is kept in this browser against that topic. Cleared when the reply is sent, and never sent anywhere.",
                 when: "quickReply",
             },
             {
@@ -5475,7 +5722,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "postingMemory", label: "Remember the posting options", type: "toggle", default: true,
-                desc: "Notify me, Attach a signature, Disable BBCode and the rest: whatever was ticked the last time a post was written is ticked again on the next one. Editing an existing post is left alone.",
+                desc: "Notify me, Attach a signature, Disable BBCode and the rest: whatever was ticked the last time is ticked again on the next post.",
             },
             {
                 id: "hideUsers", label: "Hide posts by someone", type: "toggle", default: true,
@@ -5492,16 +5739,11 @@ const SETTINGS_SCHEMA = [
         fields: [
             {
                 id: "steamPreview", label: "Preview a game on hover", type: "toggle", default: false,
-                desc: "Hovering a topic title in a listing shows the cover, the review score, the tags, the release date and the opening lines of the store description. Focusing the title with the keyboard does the same; Escape closes it.",
+                desc: "Hovering a topic title in a listing shows the cover, the review score, the tags, the release date and the opening lines of the store description. Escape closes it.",
             },
             {
                 id: "steamLookup", label: "Ask Steam for games it has not seen", type: "toggle", default: true,
-                desc: "Without this the preview only shows games already in this browser's cache — every game topic you have opened, since the info card records its AppID. With it, an unknown title is looked up on Steam's public store API and cached. Nothing but the game name is ever sent, and never over the Tor mirror. Needs your userscript manager to allow GM_xmlhttpRequest: the forum only lets the page talk to itself, so without that grant the request never leaves and the card says so.",
-                when: "steamPreview",
-            },
-            {
-                id: "steamCacheDays", label: "Keep a looked-up game for", type: "range", default: 30,
-                min: 1, max: 120, step: 1, unit: " days",
+                desc: "Without this the preview only shows games this browser has already opened a topic for. With it, an unknown title is looked up on Steam's public store API and kept for a month. Nothing but the game name is ever sent, and never over the Tor mirror.",
                 when: "steamPreview",
             },
         ],
@@ -5518,15 +5760,11 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "readableInk", label: "Make the board's own colours readable", type: "toggle", default: true,
-                desc: "The board colours a username by the group it is in, and several of those come out at about 2.5:1 against the page — well under what small text needs. This keeps the colour and the hue and lifts only its brightness, by the least it takes to be readable. Off leaves them exactly as the board wrote them.",
-            },
-            {
-                id: "skipLink", label: "Skip to content link", type: "toggle", default: true,
-                desc: "The first thing Tab reaches, so the top bar is not eight tabs in front of the first topic on every page.",
+                desc: "The board colours a username by its group, and several of those come out at about 2.5:1 against the page. This keeps the hue and lifts only the brightness, by the least it takes to be readable.",
             },
             {
                 id: "reduceMotion", label: "Turn off animation", type: "toggle", default: false,
-                desc: "Transitions and smooth scrolling are already dropped when the system asks for reduced motion. This forces it regardless of the system setting.",
+                desc: "Transitions and smooth scrolling are already dropped when the system asks for reduced motion. This forces it regardless.",
             },
         ],
     },
@@ -5538,20 +5776,15 @@ const SETTINGS_SCHEMA = [
         fields: [
             {
                 id: "history", label: "Remember topics you open", type: "toggle", default: true,
-                desc: "Stored in this browser and never sent anywhere. Powers Recent in the palette.",
-            },
-            {
-                id: "historyLimit", label: "Topics to remember", type: "range", default: 60,
-                min: 10, max: 300, step: 10, unit: "",
-                when: "history",
+                desc: "Stored in this browser and never sent anywhere. Powers Recent in the palette and the reading position.",
             },
             {
                 id: "confirmExternal", label: "Confirm before leaving to another site", type: "toggle", default: false,
-                desc: "Asks first, showing the full address, when a link in a post leads off the forum. Off by default because it adds a click.",
+                desc: "Asks first, showing the full address, when a link in a post leads off the forum.",
             },
             {
                 id: "coexist", label: "Stand down for CS.RIN.RU Enhanced", type: "toggle", default: true,
-                desc: "If the Enhanced userscript is running, leave the Steam header on a game topic to it instead of drawing a second one. The hover preview stays: Enhanced's previews a post, this one previews the game.",
+                desc: "If the Enhanced userscript is running, leave the Steam header on a game topic to it instead of drawing a second one.",
             },
         ],
     },
@@ -6609,6 +6842,8 @@ const RU_WORDS = {
     "Next page": "Следующая страница",
     "Last page": "Последняя страница",
     "Go to page": "Перейти к странице",
+    "Previous": "Назад",
+    "Next": "Вперёд",
     "Pages of this topic": "Страницы темы",
     "Could not work out that page": "Не удалось определить страницу",
     "Previous topic": "Предыдущая тема",
@@ -6645,7 +6880,26 @@ const RU_WORDS = {
     "Filter topics on this page": "Фильтр тем на этой странице",
     "Show only {x}": "Показать только {x}",
     "Bookmark this topic": "В закладки",
-    "{n} pinned announcements": ({ n }) => n + " " + ruPlural(n, "закреплённое объявление", "закреплённых объявления", "закреплённых объявлений"),
+    "{n} topics": ({ n }) => n + " " + ruPlural(n, "тема", "темы", "тем"),
+    "Fold this section": "Свернуть раздел",
+    "Show this section": "Показать раздел",
+    "Subforums": "Подфорумы",
+
+    // The search box
+    "This topic": "Эта тема",
+    "This forum": "Этот форум",
+    "Whole board": "Весь форум",
+    "Where": "Где",
+    "Look in": "Искать в",
+    "Titles": "Названия",
+    "First post": "Первое сообщение",
+    "All posts": "Все сообщения",
+    "Where to search": "Где искать",
+    "What to search": "Что искать",
+    "Search options": "Параметры поиска",
+    "Search this topic": "Поиск в теме",
+    "Search this forum": "Поиск в форуме",
+    "Search the whole board": "Поиск по всему форуму",
 
     // Who is online
     "{n} online": "{n} онлайн",
@@ -6658,6 +6912,8 @@ const RU_WORDS = {
 
     // The Releases panel
     "Releases": "Релизы",
+    "Fold the Releases panel": "Свернуть панель релизов",
+    "Open the Releases panel": "Открыть панель релизов",
     "{n} release": "{n} релиз",
     "{n} releases": ({ n }) => n + " " + ruPlural(n, "релиз", "релиза", "релизов"),
     " on this page": " на этой странице",
@@ -7211,20 +7467,31 @@ function buildRange(field) {
     return wrap;
 }
 
+/* Six unlabelled squares of colour, one of them with a ring round it,
+   was the whole control: which was which took hovering each in turn,
+   and the ring on the chosen one was easy to miss beside five others
+   the same size. Each is a named chip now — the colour as a dot, its
+   name under it, a tick on the one in use — and the chip lights up
+   under the pointer, so the choice reads as a choice. */
 function buildSwatches(field) {
-    const group = el("div.rr-swatches", { role: "group", "aria-label": field.label });
+    const group = el("div.rr-swatches", { role: "radiogroup", "aria-label": field.label });
     const sync = () => {
         for (const button of group.children) {
-            button.setAttribute("aria-pressed", button.dataset.value === settings.get(field.id) ? "true" : "false");
+            const on = button.dataset.value === settings.get(field.id);
+            button.setAttribute("aria-pressed", on ? "true" : "false");
+            button.setAttribute("aria-checked", on ? "true" : "false");
         }
     };
     for (const option of field.options) {
+        const dot = el("span.rr-swatch__dot", {}, [icon("check", 13)]);
+        // A custom property has to go through setProperty; Object.assign
+        // on style, which el() uses, silently drops it.
+        dot.style.setProperty("--rr-swatch", option.color);
         const button = el("button.rr-swatch", {
             type: "button",
-            title: option.label,
+            role: "radio",
             "aria-label": option.label,
-            style: { background: option.color },
-        });
+        }, [dot, el("span.rr-swatch__name", {}, [option.label])]);
         button.dataset.value = option.value;
         button.addEventListener("click", () => { settings.set(field.id, option.value); sync(); });
         group.append(button);
@@ -7578,44 +7845,6 @@ function buildCrumbs() {
     return wrap;
 }
 
-/* The board's own masthead art, and the window on to it.
-
-   The masthead is 380x109 and mostly picture: an emblem on the left,
-   CS.RIN.RU set in a squared face beside it, a strapline underneath.
-   Shrunk whole to navbar height the wordmark lands at 7px, which is why
-   an earlier version redrew it — and a redraw of a logo is a different
-   logo.
-
-   Cropping it keeps the board's actual art. The window is the wordmark
-   alone: at 32px it stands 14px tall and reads exactly as the board
-   sets it, where the emblem beside it is a dark shape on a dark plate
-   that turns to a smudge at any size that fits in a bar.
-
-   The board ships two of these and serves whichever the page asks for
-   — site_logo-1 has a red crosshair over a Steam valve and the "Steam
-   Underground Community" strapline, site_logo-2 a rifleman and
-   "NonSteam Gaming Servers" — and the wordmark sits in a different
-   place in each. One set of offsets framed the strapline on half the
-   board's pages, so each file gets its own.
-
-   These are pixel offsets into specific files. A file that is not one
-   of them, or one whose dimensions have changed, falls back to the
-   name set as type rather than showing a crop of the wrong thing. */
-const LOGO_ART = {
-    "site_logo-1": { natural: [380, 109], crop: [186, 6, 190, 42] },
-    "site_logo-2": { natural: [380, 109], crop: [180, 18, 196, 32] },
-};
-
-const LOGO_HEIGHT = 26;
-
-/** The crop for a logo URL, or null if it is not one this knows. */
-function logoCrop(src) {
-    for (const [name, art] of Object.entries(LOGO_ART)) {
-        if (src.includes(name)) return art;
-    }
-    return null;
-}
-
 /** Where the template put the masthead art, whatever it is called. */
 function findLogo() {
     return document.querySelector(
@@ -7623,64 +7852,24 @@ function findLogo() {
     );
 }
 
+/* The name in the bar, set as type.
+
+   An earlier version cropped the wordmark out of the board's masthead
+   art and showed that: 26px of a PNG on the dark plate it is painted
+   on, which read as a grey badge stuck to the left of every page. The
+   board's own art belongs on the index, at the size the board draws it
+   (see buildMasthead); the bar only needs the name, quietly, in the
+   wide tracking the wordmark uses so it is still recognisably the
+   board's. */
 function buildBrand() {
     const strapline = document.querySelector("#logodesc h1, #wrapheader h1");
-    const source = findLogo();
-
     const brand = el("a.rr-nav__brand", {
         href: "./index.php",
         "aria-label": "Board index",
         title: strapline ? strapline.textContent.replace(/\s+/g, " ").trim() : "CS RIN - Steam Underground",
-        // Until the art is measured the type wordmark is what shows, so
-        // the bar is never briefly empty.
-        "data-rr-logo": "type",
     });
-
-    // The fallback, and what a board with different art gets: the name
-    // in the wide tracking the wordmark uses.
     brand.append(el("span.rr-nav__word", {}, ["CS.RIN.RU"]));
-
-    const src = source && source.getAttribute("src");
-    const spec = src && logoCrop(src);
-    if (!spec) return brand;
-
-    const art = el("img.rr-nav__art", { src, alt: "CS.RIN.RU", decoding: "async" });
-    const window_ = el("span.rr-nav__logo", { "aria-hidden": "true" }, [art]);
-
-    const accept = () => {
-        const [width, height] = spec.natural;
-        if (art.naturalWidth !== width || art.naturalHeight !== height) {
-            window_.remove();
-            return;
-        }
-        for (const [name, value] of Object.entries(logoCropVars(spec))) {
-            document.documentElement.style.setProperty(name, value);
-        }
-        brand.setAttribute("data-rr-logo", "art");
-    };
-    if (art.complete && art.naturalWidth) accept();
-    else {
-        art.addEventListener("load", accept, { once: true });
-        art.addEventListener("error", () => window_.remove(), { once: true });
-    }
-
-    brand.prepend(window_);
     return brand;
-}
-
-/** One crop, as the custom properties the stylesheet reads. */
-function logoCropVars(spec) {
-    const [naturalW, naturalH] = spec.natural;
-    const [x, y, cropW, cropH] = spec.crop;
-    const scale = LOGO_HEIGHT / cropH;
-    return {
-        "--rr-logo-w": Math.round(cropW * scale) + "px",
-        "--rr-logo-h": LOGO_HEIGHT + "px",
-        "--rr-logo-img-w": Math.round(naturalW * scale) + "px",
-        "--rr-logo-img-h": Math.round(naturalH * scale) + "px",
-        "--rr-logo-x": "-" + Math.round(x * scale) + "px",
-        "--rr-logo-y": "-" + Math.round(y * scale) + "px",
-    };
 }
 
 /* ---- One search shape ---------------------------------------------- */
@@ -7738,7 +7927,155 @@ function adoptBoardSearch(form) {
 
     if (submit) submit.classList.add("rr-search__go");
     form.classList.add("rr-search__form");
-    return el("div.rr-search", {}, [form]);
+    const frame = el("div.rr-search", {}, [form]);
+    addSearchOptions(frame, form, field, submit);
+    return frame;
+}
+
+/* ---- Where a search looks ------------------------------------------ */
+
+/* The board's own boxes are fixed: "Search this forum" searches titles
+   in this forum, "Search this topic" searches the text of this topic,
+   and anything else is the full search form on another page. The
+   choice people actually make — this forum or the whole board, titles
+   or every post — is two hidden inputs away, so it is offered here, in
+   the same box, behind one small control. The form that is submitted
+   is still the board's own; only what its hidden fields say changes.
+
+   The choice is kept in this browser, so a reader who always wants to
+   search every post sets it once. */
+const SEARCH_IN = [
+    { value: "titleonly", label: "Titles" },
+    { value: "firstpost", label: "First post" },
+    { value: "all", label: "All posts" },
+];
+
+const SEARCH_PREFS_KEY = "searchPrefs";
+
+function searchPrefs() {
+    const kept = store.get(SEARCH_PREFS_KEY, null);
+    return Object.assign({ sf: "titleonly", where: "here" }, kept && typeof kept === "object" ? kept : {});
+}
+
+function setSearchPref(key, value) {
+    const next = searchPrefs();
+    next[key] = value;
+    store.set(SEARCH_PREFS_KEY, next);
+}
+
+/** The depth the palette's own search asks for. */
+function searchDepthChoice() {
+    const sf = searchPrefs().sf;
+    return SEARCH_IN.some((option) => option.value === sf) ? sf : "titleonly";
+}
+
+function addSearchOptions(frame, form, field, submit) {
+    const hidden = (name) => form.querySelector('input[type="hidden"][name="' + name + '"]');
+    const topicId = hidden("t") ? hidden("t").value : null;
+    const forumId = hidden("fid[]") ? hidden("fid[]").value : (PAGE.forumId ? String(PAGE.forumId) : null);
+    // Only the two boxes that search a place: a "Search these results"
+    // box on a results page refines a query, and its fields are not
+    // ours to move.
+    if (!topicId && !hidden("fid[]")) return;
+
+    const setHidden = (name, value) => {
+        let input = hidden(name);
+        if (value === null) { if (input) input.remove(); return; }
+        if (!input) { input = el("input", { type: "hidden", name }); form.append(input); }
+        input.value = value;
+    };
+
+    const places = [];
+    if (topicId) places.push({ value: "topic", label: t("This topic") });
+    if (forumId) places.push({ value: "here", label: t("This forum") });
+    places.push({ value: "board", label: t("Whole board") });
+
+    const prefs = searchPrefs();
+    // A topic's box starts on the topic, as the board draws it; a
+    // forum's on the forum. The remembered choice only reaches as far
+    // as this box can honour it.
+    let where = topicId ? "topic" : (prefs.where === "board" ? "board" : "here");
+    let depth = searchDepthChoice();
+
+    const inRow = el("div.rr-search__row");
+    const whereSeg = el("div.rr-seg", { role: "group", "aria-label": t("Where to search") });
+    const inSeg = el("div.rr-seg", { role: "group", "aria-label": t("What to search") });
+
+    const apply = () => {
+        if (where === "topic") {
+            setHidden("t", topicId);
+            setHidden("fid[]", null);
+            setHidden("sf", "msgonly");
+            setHidden("sr", null);
+        } else {
+            setHidden("t", null);
+            setHidden("fid[]", where === "here" ? forumId : null);
+            setHidden("sf", depth);
+            setHidden("sr", "topics");
+            setHidden("terms", "all");
+        }
+        inRow.hidden = where === "topic";
+        for (const button of whereSeg.children) button.setAttribute("aria-pressed", button.dataset.value === where ? "true" : "false");
+        for (const button of inSeg.children) button.setAttribute("aria-pressed", button.dataset.value === depth ? "true" : "false");
+        if (field) {
+            field.setAttribute("placeholder", where === "topic" ? t("Search this topic")
+                : where === "here" ? t("Search this forum") : t("Search the whole board"));
+            field.setAttribute("aria-label", field.getAttribute("placeholder"));
+        }
+        // Says, from across the bar, that this box does not search the
+        // default place any more.
+        opts.toggleAttribute("data-rr-active", where === "board" || (where !== "topic" && depth !== "titleonly"));
+    };
+
+    for (const place of places) {
+        const button = el("button", { type: "button" }, [place.label]);
+        button.dataset.value = place.value;
+        button.addEventListener("click", () => {
+            where = place.value;
+            if (!topicId) setSearchPref("where", where);
+            apply();
+        });
+        whereSeg.append(button);
+    }
+    for (const option of SEARCH_IN) {
+        const button = el("button", { type: "button" }, [t(option.label)]);
+        button.dataset.value = option.value;
+        button.addEventListener("click", () => {
+            depth = option.value;
+            setSearchPref("sf", depth);
+            apply();
+        });
+        inSeg.append(button);
+    }
+
+    const pop = el("div.rr-search__pop", { role: "group", "aria-label": t("Search options"), hidden: true }, [
+        el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Where")]), whereSeg]),
+        inRow,
+    ]);
+    inRow.append(el("span.rr-search__rowlabel", {}, [t("Look in")]), inSeg);
+
+    const opts = labelled(el("button.rr-search__opts", { type: "button", "aria-expanded": "false" }, [icon("sliders", 13)]),
+        t("Search options"));
+    const close = () => {
+        pop.hidden = true;
+        opts.setAttribute("aria-expanded", "false");
+        document.removeEventListener("mousedown", onOutside, true);
+        document.removeEventListener("keydown", onKey, true);
+    };
+    const onOutside = (event) => { if (!frame.contains(event.target)) close(); };
+    const onKey = (event) => { if (event.key === "Escape") { close(); opts.focus(); } };
+    opts.addEventListener("click", () => {
+        if (!pop.hidden) { close(); return; }
+        pop.hidden = false;
+        opts.setAttribute("aria-expanded", "true");
+        document.addEventListener("mousedown", onOutside, true);
+        document.addEventListener("keydown", onKey, true);
+    });
+
+    if (submit) submit.before(opts);
+    else form.append(opts);
+    frame.append(pop);
+    apply();
 }
 
 /* ---- Board bar ---------------------------------------------------- */
@@ -7760,12 +8097,11 @@ const NAV_LIFTED = /[?&]i=pm|mode=login(?:&|$)/;
  * its href, and anything another userscript has attached to it, both
  * survive.
  */
-/* The board runs on donations and is asking for them right now: the
-   overlay it shows every visitor says so. The link to that page was
-   one of six greys in the masthead, and this row inherited that. It
-   gets an outline and a heart — enough to find at a glance, not
-   enough to shout, and still the board's own link with the board's own
-   wording. */
+/* The board runs on donations. The link to that page used to get an
+   outline and a heart, which made it the one loud thing in a row of
+   quiet ones; it is an ordinary link in the row now, named so the
+   narrow layout can still keep it in view, and the palette still
+   offers it from anywhere. */
 const DONATE_RE = /donat/i;
 
 function isDonateLink(link) {
@@ -7776,7 +8112,6 @@ function isDonateLink(link) {
 function boardBarLink(link) {
     const label = link.textContent.replace(/\s+/g, " ").trim();
     const image = link.querySelector("img");
-    const donate = settings.get("donateHighlight") && isDonateLink(link);
 
     link.classList.add("rr-boardbar__link");
 
@@ -7792,20 +8127,8 @@ function boardBarLink(link) {
     // Everything else pairs a 12px GIF with a label that says the same
     // thing, so the label alone is enough.
     link.textContent = label;
-
-    if (donate) {
-        // The label goes in a span of its own so the narrow layout can
-        // drop it and keep the heart. On a phone this row folds behind
-        // a More control, and folding away the one link the board is
-        // currently asking people to use — right after giving it an
-        // outline — is emphasis nobody sees. As an icon it costs 26px
-        // and stays on screen; the label it loses is on the link's
-        // accessible name instead, so nothing is lost to a reader who
-        // is not looking at it.
-        link.textContent = "";
+    if (isDonateLink(link)) {
         link.classList.add("rr-boardbar__donate");
-        link.append(icon("heart", 12), el("span.rr-boardbar__donate-label", {}, [label]));
-        link.setAttribute("aria-label", label);
         link.setAttribute("title", label + " — the board is hosted on donations");
     }
     return link;
@@ -7827,17 +8150,18 @@ function boardBarLink(link) {
 
    Classified by destination, not by label, because the labels are
    translated and the hrefs are not. */
+/* Views first, then the board, then you — the account group ends the
+   row, beside the language switch, where the things about the reader
+   rather than the board sit together. */
 const BOARD_BAR_GROUPS = [
     { id: "views", label: "Threads", re: /search\.php/ },
+    { id: "board", label: "Board", re: null },      // whatever is neither of the others
     { id: "account", label: "Account", re: /ucp\.php|mode=(?:login|logout|register)|viewprofile|profile\.php/ },
-    { id: "board", label: "Board", re: /(?:)/ },      // the rest
 ];
 
 function boardBarGroup(href) {
-    for (const group of BOARD_BAR_GROUPS) {
-        if (group.re.test(href)) return group;
-    }
-    return BOARD_BAR_GROUPS[BOARD_BAR_GROUPS.length - 1];
+    return BOARD_BAR_GROUPS.find((group) => group.re && group.re.test(href))
+        || BOARD_BAR_GROUPS.find((group) => !group.re);
 }
 
 /* The board is bilingual and its own switch is two 16px flags with no
@@ -7927,11 +8251,7 @@ function buildBoardBar() {
         seen.add(key);
         if (isLanguageLink(link, href)) { languages.push(link); return; }
         const group = groupNode(boardBarGroup(href).id);
-        const node = boardBarLink(link);
-        group.append(node);
-        // Which group the donation link landed in, so the narrow layout
-        // can keep that one showing while it folds the rest away.
-        if (node.classList.contains("rr-boardbar__donate")) group.setAttribute("data-rr-donate", "");
+        group.append(boardBarLink(link));
     };
 
     // "View unanswered posts | View active topics" is the board's own
@@ -8127,7 +8447,6 @@ function buildMasthead() {
  * position and leaves focus behind, so it is given tabindex="-1".
  */
 function addSkipLink() {
-    if (!settings.get("skipLink")) return;
     const main = document.querySelector("#wrapcentre");
     if (!main || document.querySelector(".rr-skip")) return;
 
@@ -8173,7 +8492,9 @@ function initNavbar() {
 
     // The forum anchors "back to top" at <a name="top">, which now sits
     // under the sticky bar; offset it so jumps land in the right place.
-    document.documentElement.style.scrollPaddingTop = "60px";
+    // The same padding is what lands a post under the bar rather than
+    // behind it when a link to one is followed (see settleFragment).
+    document.documentElement.style.scrollPaddingTop = "calc(var(--rr-nav-h, 48px) + 14px)";
 }
 
 /**
@@ -8351,8 +8672,24 @@ function tidyCrumbStrip() {
         // Measured rather than assumed, so a control hidden by any
         // route counts the same.
         const controls = Array.from(strip.querySelectorAll("form, input, select, textarea"));
-        if (controls.some((node) => node.getClientRects().length)) continue;
-        strip.style.display = "none";
+        if (!controls.some((node) => node.getClientRects().length)) { strip.style.display = "none"; continue; }
+        /* It survives for its search box alone — on a profile, the
+           member list, the control panel, where there is no listing
+           toolbar to move that box into. Drawn as a card it is a
+           full-width grey band holding one field at its right-hand
+           end; named here, the stylesheet draws it as a plain row.
+
+           And the box itself gets the frame every other search box on
+           this board now has, rather than staying the template's field
+           beside a bordered button — which is the shape everything
+           else was moved away from. */
+        strip.setAttribute("data-rr-crumbstrip", "");
+        const form = strip.querySelector("#search-box form, form#forum-search, form#topic-search");
+        if (form && !form.closest(".rr-search")) {
+            const holder = form.parentElement;
+            const framed = adoptBoardSearch(form);
+            if (framed !== form && holder) holder.append(framed);
+        }
     }
 }
 
@@ -8729,14 +9066,6 @@ function dedupeSearchBoxes() {
  * it the bar is only a home for the board's own refine box — see
  * FILTER_MIN_ROWS.
  */
-/* Where a forum's last-used chip is kept, so coming back to it finds
-   the page filtered the way it was left. */
-function filterMemoryKey() {
-    if (PAGE.forumId) return "filter:f" + PAGE.forumId;
-    if (PAGE.isSearch) return "filter:search";
-    return null;
-}
-
 function buildToolbar(entries, prefixes, rich) {
     const state = { text: "", tag: null, unread: false };
 
@@ -9076,29 +9405,152 @@ function tightenLastPost(cell) {
     first.setAttribute("title", full);
 }
 
-/* ---- Announcements ------------------------------------------------ */
+/* ---- Sections of a listing ---------------------------------------- */
 
-function collapseAnnouncements(entries) {
-    const pinned = entries.filter((entry) => entry.row.getAttribute("data-rr-prefix") === "important");
-    if (pinned.length < 3) return;
+/* "Global Announcements", "Announcements", "Topics": the template's own
+   section rows, which head a run of topic rows and do nothing else.
+   Each folds its run on a click now, and the fold is remembered by the
+   section's name — fold the announcements once and every listing opens
+   with them folded. The rows are still in the page (find-in-page, the
+   filter, the sort and the keyboard cursor all still see them), only
+   not drawn. The last section of a table is left as it is: a listing
+   whose every topic can be folded away is a listing that reads as
+   empty by accident. */
+const FOLDED_SECTIONS_KEY = "foldedSections";
 
-    let open = false;
-    const toggle = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
-        icon("chevronD"),
-        t("{n} pinned announcements", { n: pinned.length }),
-    ]);
-    const setState = () => {
-        for (const entry of pinned) entry.row.style.display = open ? "" : "none";
-        toggle.firstChild.style.transform = open ? "rotate(180deg)" : "";
-    };
-    toggle.addEventListener("click", () => { open = !open; setState(); });
-    setState();
+function foldedSections() {
+    const kept = store.get(FOLDED_SECTIONS_KEY, null);
+    return kept && typeof kept === "object" ? kept : {};
+}
 
-    const firstRow = pinned[0].row;
-    const holder = el("tr", {}, [
-        el("td", { colspan: String(firstRow.children.length), style: { padding: "6px 12px" } }, [toggle]),
-    ]);
-    firstRow.before(holder);
+/* A listing's section row, in either of the two shapes the template
+   uses: a td.cat with an h4 (search results, the index), or one
+   spanning td.row3 holding a bold word and nothing else (a forum
+   listing's "Global Announcements", "Announcements", "Stickies",
+   "Topics"). The second is named here so the stylesheet can draw it
+   as the section head it is rather than as a row. */
+function sectionOf(row) {
+    let cell = row.querySelector(":scope > td.cat");
+    if (cell) {
+        // Not the index's categories: the board folds those itself.
+        if (row.getAttribute("data-rr-cat-row") !== "" || row.querySelector("td.catdiv, .ccopen, .ccclose")) return null;
+        const heading = cell.querySelector("h4");
+        return heading ? { cell, heading } : null;
+    }
+    if (row.children.length !== 1) return null;
+    cell = row.firstElementChild;
+    if (cell.tagName !== "TD" || !cell.classList.contains("row3") || !cell.hasAttribute("colspan")) return null;
+    const heading = cell.querySelector(":scope > b, :scope > span > b, :scope > strong");
+    if (!heading || cell.querySelector("a, input, select, img") || cell.textContent.trim().length > 60) return null;
+    row.setAttribute("data-rr-cat-row", "section");
+    cell.setAttribute("data-rr-section", "");
+    return { cell, heading };
+}
+
+function initSectionFolds(table) {
+    const rows = Array.from(table.querySelectorAll(":scope > tbody > tr"));
+    // Every section row is named first, then the runs are read: a run
+    // ends at the next section row, which has to be known as one by
+    // then.
+    const heads = rows.map(sectionOf);
+    const sections = [];
+    rows.forEach((row, index) => {
+        const found = heads[index];
+        if (!found) return;
+        const { cell, heading } = found;
+        const run = [];
+        for (let j = index + 1; j < rows.length; j += 1) {
+            const next = rows[j];
+            if (heads[j] || next.hasAttribute("data-rr-cat-row") || next.querySelector(":scope > th")) break;
+            run.push(next);
+        }
+        const topics = run.filter((r) => r.querySelector("a.topictitle")).length;
+        if (topics) sections.push({ row, cell, heading, run, topics });
+    });
+    if (sections.length < 2) return;
+
+    const remembered = foldedSections();
+    for (const section of sections.slice(0, -1)) {
+        const name = section.heading.textContent.replace(/\s+/g, " ").trim();
+        const key = name.toLowerCase();
+        let folded = Boolean(remembered[key]);
+
+        const countLabel = el("span.rr-section__count", {}, [t("{n} topics", { n: section.topics })]);
+        section.cell.classList.add("rr-section");
+        section.cell.prepend(icon("chevronD", 13));
+        section.cell.append(countLabel);
+        section.cell.setAttribute("role", "button");
+        section.cell.setAttribute("tabindex", "0");
+
+        const sync = () => {
+            section.row.toggleAttribute("data-rr-folded", folded);
+            for (const r of section.run) r.toggleAttribute("data-rr-section-folded", folded);
+            section.cell.setAttribute("aria-expanded", folded ? "false" : "true");
+            section.cell.setAttribute("title", t(folded ? "Show this section" : "Fold this section"));
+        };
+        const flip = () => {
+            folded = !folded;
+            const next = foldedSections();
+            if (folded) next[key] = true;
+            else delete next[key];
+            store.set(FOLDED_SECTIONS_KEY, next);
+            sync();
+        };
+        section.cell.addEventListener("click", (event) => {
+            if (event.target instanceof Element && event.target.closest("a, input, select, button")) return;
+            flip();
+        });
+        section.cell.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            flip();
+        });
+        sync();
+    }
+}
+
+/* ---- The control panel's menu ------------------------------------- */
+
+/* The left column of the control panel is a list of sections. The one
+   you are in is bold with its pages under it; the others are links
+   that open theirs. Nothing said so: each was a word on a row, and
+   which words would unfold something was found by clicking. The
+   closed ones carry a chevron pointing at what they open, the open one
+   a chevron pointing down at its pages, and its pages step in under
+   it. */
+function decorateNavLists() {
+    for (const table of document.querySelectorAll("#wrapcentre table.tablebg[data-rr-navlist]")) {
+        for (const cell of table.querySelectorAll(":scope > tbody > tr > td")) {
+            const current = cell.querySelector(":scope > b.nav");
+            const link = cell.querySelector(":scope > a.nav");
+            if (current) {
+                cell.setAttribute("data-rr-navitem", "open");
+                current.prepend(icon("chevronD", 13));
+                for (const marker of cell.querySelectorAll("ul.nav li > b")) {
+                    if (/^[\s »]*$/.test(marker.textContent)) marker.remove();
+                }
+            } else if (link) {
+                cell.setAttribute("data-rr-navitem", "closed");
+                link.append(icon("chevron", 13));
+            }
+        }
+    }
+}
+
+/* The table of sub-forums above a listing has the same "Forum" heading
+   as the index and no name of its own; heading it "Subforums" is what
+   keeps it from reading as a second, shorter, index above the topics. */
+function labelSubforums() {
+    if (!PAGE.isForum) return;
+    for (const table of document.querySelectorAll("#wrapcentre table[data-rr-list]")) {
+        if (!table.querySelector("a.forumlink") || table.querySelector("a.topictitle")) continue;
+        const head = table.querySelector(':scope > tbody > tr[data-rr-head] > th[data-rr-col="title"]');
+        if (!head) continue;
+        // The words may already be inside the sort button (initColumnSort).
+        const holder = head.querySelector("button") || head;
+        const words = Array.from(holder.childNodes).find((node) => node.nodeType === 3 && node.textContent.trim());
+        if (words) words.textContent = " " + t("Subforums") + " ";
+    }
 }
 
 /* ---- Entry point --------------------------------------------------- */
@@ -9719,8 +10171,12 @@ function initLists() {
         if (table.hasAttribute("data-rr-list")) {
             if (settings.get("sortColumns")) initColumnSort(table);
             initMarkColumn(table);
+            if (table.querySelector("a.topictitle")) initSectionFolds(table);
         }
     }
+    decorateNavLists();
+    // After the sort buttons exist, so the words are found inside one.
+    labelSubforums();
     if (settings.get("rowClick")) initRowClick();
     if (profileView()) {
         // Named on the root so the phone can stack the profile's two
@@ -9768,7 +10224,7 @@ function initLists() {
     /* Before the page-kind gate: the member list, the message folders
        and the control panel are none of those kinds and were getting
        none of this. */
-    if (settings.get("tightRows")) tightenDateCells();
+    tightenDateCells();
     localiseRankCells();
     dropLonePageCounters();
     alignMessageMarkers();
@@ -9780,9 +10236,7 @@ function initLists() {
     // early return never ran there, and the Last post column read on
     // one line in a forum listing and on two on the page in front of
     // it. It is the same column.
-    if (settings.get("tightRows")) {
-        for (const cell of document.querySelectorAll('td[data-rr-col="last"]')) tightenLastPost(cell);
-    }
+    for (const cell of document.querySelectorAll('td[data-rr-col="last"]')) tightenLastPost(cell);
 
     const entries = topicRows();
     if (!entries.length) return;
@@ -9822,19 +10276,6 @@ function initLists() {
         const toolbar = buildToolbar(entries, prefixes, filtering);
         setTag = toolbar.setTag;
 
-        /* The chip this forum was left on. Restored only where the page
-           still offers it, and visibly pressed, so a filtered listing
-           never reads as a short one. */
-        const memoryKey = settings.get("rememberFilter") && filtering ? filterMemoryKey() : null;
-        if (memoryKey) {
-            const remembered = store.get(memoryKey, null);
-            if (remembered && prefixes.some(([name]) => name.toLowerCase() === remembered)) toolbar.setTag(remembered);
-            setTag = (value) => {
-                toolbar.setTag(value);
-                store.set(memoryKey, toolbar.tag());
-            };
-        }
-
         // The action bar and the filter bar carry one job between them
         // and sat as two separate cards with a gap, one above the other:
         // 123px of chrome before the first topic on the page. The filter
@@ -9854,8 +10295,6 @@ function initLists() {
             if (table) table.before(toolbar.bar);
         }
     }
-
-    if (settings.get("hideAnnouncements")) collapseAnnouncements(entries);
 }
 
 /* The sort strip's controls are flat siblings — a label, the select
@@ -10114,6 +10553,10 @@ function initBoardIndex() {
 
 const REPLY_LINK = 'a[href*="mode=reply"], a[href*="mode=post"]';
 
+/* How many opened topics the palette's Recent list keeps. It was a
+   setting; nobody needs to tune it. */
+const HISTORY_LIMIT = 100;
+
 const EXTERNAL_LOOKUPS = [
     { id: "steamdb", label: "SteamDB", url: (appId) => "https://steamdb.info/app/" + appId + "/" },
     { id: "store", label: "Store page", url: (appId) => "https://store.steampowered.com/app/" + appId + "/" },
@@ -10155,7 +10598,7 @@ function buildGameCard(info, body) {
     }
     if (rows) bodyCol.append(list);
 
-    if (info.appId && settings.get("externalLinks")) {
+    if (info.appId) {
         const links = el("div.rr-game__links");
         for (const lookup of EXTERNAL_LOOKUPS) {
             links.append(el("a.rr-btn", {
@@ -10268,6 +10711,19 @@ function topicBarRow(name) {
     return el("div.rr-topicbar__row", { "data-rr-row": name });
 }
 
+/* Every child of a cluster is named, once it is filled.
+
+   The stylesheet draws the hairlines between them and rounds the two
+   ends, and the obvious way to write that is `.rr-cluster > * + *` —
+   a selector whose rightmost part is the universal one, which the
+   engine then tests against every element on the page. On a listing
+   that is four thousand elements and it measured 30ms of style work.
+   A class costs nothing to match. */
+function sealCluster(node) {
+    for (const child of node.children) child.classList.add("rr-cluster__item");
+    return node;
+}
+
 function buildTopicBar() {
     const header = document.querySelector("#pageheader");
     if (!header || header.querySelector(".rr-topicbar")) return;
@@ -10306,26 +10762,25 @@ function buildTopicBar() {
        which is the loudest thing this bar can say about a control that
        reveals text the page has already loaded. */
     if (settings.get("spoilerAll")) {
-        const buttons = spoilerButtons();
-        if (buttons.length >= 2) {
+        const inputs = spoilerInputs();
+        if (inputs.length >= 2) {
             /* It stays, and closes them again on the second press. It
                used to remove itself once pressed, which took the focus
                with it and left a reader with thirty open spoilers and
-               no way back. */
-            const count = buttons.length;
-            let open = false;
-            const control = el("button.rr-btn", { type: "button", "data-variant": "quiet", "aria-pressed": "false" });
+               no way back. The state is read off the page rather than
+               assumed: with spoilers opened at load, this starts as
+               the control that closes them. */
+            const count = inputs.length;
+            let open = spoilerInputs("hide").length === count;
+            const control = el("button.rr-btn.rr-fold", { type: "button", "data-variant": "quiet" });
             const relabel = () => {
                 control.replaceChildren(icon("chevronD", 13), t(open ? "Close all {n} spoilers" : "Open all {n} spoilers", { n: count }));
-                control.setAttribute("aria-pressed", open ? "true" : "false");
+                control.setAttribute("aria-expanded", open ? "true" : "false");
                 control.toggleAttribute("data-rr-open", open);
             };
             relabel();
             control.addEventListener("click", () => {
-                const want = open ? "hide" : "show";
-                for (const input of document.querySelectorAll('.spoiler input[type="button"]')) {
-                    if ((input.value || "").trim().toLowerCase() === want) input.click();
-                }
+                for (const input of spoilerInputs(open ? "hide" : "show")) input.click();
                 open = !open;
                 relabel();
             });
@@ -10363,8 +10818,15 @@ function buildTopicBar() {
             : el("span.rr-topicbar__count", {}, [t("Page {a} of {b}", { a: info.current, b: info.total })]));
     }
 
-    adoptTopicNav(away);
-    adoptMemberActions(away);
+    /* Two clusters, not six loose words: where to go next, and what a
+       member can do to this topic. Each is one light box with a
+       hairline between its items, so the row reads as two things
+       rather than a list of everything. */
+    const nav = el("div.rr-cluster.rr-topicbar__cluster");
+    adoptTopicNav(nav);
+    const member = el("div.rr-cluster.rr-topicbar__cluster");
+    adoptMemberActions(member);
+    for (const cluster of [nav, member]) if (cluster.children.length) away.append(sealCluster(cluster));
     away.append(el("span.rr-topicbar__spacer"));
 
     const form = document.querySelector("#topic-search, #search-box form");
@@ -10553,8 +11015,10 @@ function adoptTopicNav(bar) {
 const MEMBER_ACTION = 'a[href*="watch=topic"], a[href*="bookmark="], a[href*="mode=email"]';
 
 function adoptMemberActions(bar) {
-    const cells = Array.from(document.querySelectorAll("#wrapcentre td.nav"))
-        .filter((cell) => cell.querySelector(MEMBER_ACTION));
+    // td.nav on the live board; a td.gensmall in the strip's other
+    // shape. Either way it is the cell holding the three links.
+    const cells = Array.from(document.querySelectorAll("#wrapcentre td.nav, #wrapcentre td.gensmall"))
+        .filter((cell) => cell.querySelector(MEMBER_ACTION) && !cell.closest(".rr-topicbar"));
     if (!cells.length) return;
 
     for (const link of cells[0].querySelectorAll(MEMBER_ACTION)) {
@@ -10592,27 +11056,34 @@ function buildPagerGroup(info) {
        now and either would do on its own — they are in different rows
        of the bar, and these say what they move. A page.
 
-       The two ends are the arrows alone: they are the least used of
-       the four and their names are on them for anything that reads
-       names rather than pictures. */
-    const step = (href, label, glyph, words) => el("a.rr-btn.rr-pager__step", {
-        href,
-        "data-variant": "quiet",
-        title: label,
-        "aria-label": label,
-    }, glyph === "pageFirst" || glyph === "chevronL"
-        ? [icon(glyph, 13), words ? label : null]
-        : [words ? label : null, icon(glyph, 13)]);
+       The four steps and the page box are one boxed control, with a
+       hairline between its parts. The two ends are the arrows alone,
+       and their names are drawn the instant they are pointed at, so
+       "⇥" is never a guess: it says "Last page". */
+    /* `word` is what is drawn; `label` is the whole name, on the title
+       and for a screen reader. The ends draw the arrow alone and say
+       their name on hover. */
+    const step = (href, label, glyph, word) => {
+        const link = el("a.rr-pager__step", { href }, glyph === "pageFirst" || glyph === "chevronL"
+            ? [icon(glyph, 13), word || null]
+            : [word || null, icon(glyph, 13)]);
+        if (!word) return labelled(link, label);
+        link.setAttribute("title", label);
+        link.setAttribute("aria-label", label);
+        return link;
+    };
 
-    return el("div.rr-pager", { role: "group", "aria-label": t("Pages of this topic") }, [
-        info.hasPrevious ? step(info.first, t("First page"), "pageFirst", false) : null,
-        info.hasPrevious ? step(info.previous, t("Previous page"), "chevronL", true) : null,
-        el("span.rr-pager__label", {}, [t("Page")]),
-        jump,
-        el("span.rr-pager__label", {}, [t("of {n}", { n: info.total })]),
-        info.hasNext ? step(info.next, t("Next page"), "chevron", true) : null,
-        info.hasNext ? step(info.last, t("Last page"), "pageLast", false) : null,
-    ]);
+    return sealCluster(el("div.rr-pager.rr-cluster", { role: "group", "aria-label": t("Pages of this topic") }, [
+        info.hasPrevious ? step(info.first, t("First page"), "pageFirst") : null,
+        info.hasPrevious ? step(info.previous, t("Previous page"), "chevronL", t("Previous")) : null,
+        el("span.rr-pager__where", {}, [
+            el("span.rr-pager__label", {}, [t("Page")]),
+            jump,
+            el("span.rr-pager__label", {}, [t("of {n}", { n: info.total })]),
+        ]),
+        info.hasNext ? step(info.next, t("Next page"), "chevron", t("Next")) : null,
+        info.hasNext ? step(info.last, t("Last page"), "pageLast") : null,
+    ]));
 }
 
 /* ---- What a rank line says, and in which language ------------------ */
@@ -10813,21 +11284,33 @@ function foldSteamBlurb(body, fromTitle) {
     }
     if (folded.length < 3) return;
 
-    const holder = el("div", { hidden: true });
+    const holder = el("div");
     for (const node of folded) holder.append(node);
 
+    /* The original post is shown by default: the card above it is a
+       summary, and the post is what was actually written — the
+       download notes, the links, the caveats. The fold stays as a
+       control, and a reader who closes it is remembered. The Steam
+       description alone (no card to summarise it) still starts
+       folded. */
     const label = t(fromTitle ? "the original post" : "the full Steam description");
-    let open = false;
-    const toggle = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
+    let open = fromTitle ? store.get("originalPostOpen", true) !== false : false;
+    const toggle = el("button.rr-btn.rr-fold", { type: "button", "data-variant": "quiet" }, [
         icon("chevronD"),
-        t("Show ") + label,
+        "",
     ]);
-    toggle.addEventListener("click", () => {
-        open = !open;
+    const sync = () => {
         holder.hidden = !open;
         toggle.lastChild.textContent = t(open ? "Hide " : "Show ") + label;
-        toggle.firstChild.style.transform = open ? "rotate(180deg)" : "";
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        toggle.toggleAttribute("data-rr-open", open);
+    };
+    toggle.addEventListener("click", () => {
+        open = !open;
+        sync();
+        if (fromTitle) store.set("originalPostOpen", open);
     });
+    sync();
 
     body.append(toggle, holder);
 }
@@ -10968,7 +11451,7 @@ function addPostTools(post, index) {
     }
 
     /* The archive password this post names, if it names one. */
-    if (settings.get("finder") && settings.get("passwordFinder")) {
+    if (settings.get("finder")) {
         const password = passwordIn(own.textContent);
         if (password) {
             const chip = el("button.rr-pass", {
@@ -11141,10 +11624,26 @@ function collapseSignature(post) {
 /* ---- Spoilers ----------------------------------------------------- */
 
 /** The board wraps spoilers in div.spoiler with an inline-onclick Show
-    button, so the toggles are found by clicking their own buttons. */
-function spoilerButtons() {
-    return Array.from(document.querySelectorAll('.spoiler input[type="button"]'))
-        .filter((input) => (input.value || "").trim().toLowerCase() === "show");
+    button, so the toggles are found by clicking their own buttons.
+    With no state asked for, every spoiler button; with "show" or
+    "hide", the ones currently saying that. */
+function spoilerInputs(saying) {
+    const all = Array.from(document.querySelectorAll('.spoiler input[type="button"]'))
+        .filter((input) => /^(?:show|hide)$/i.test((input.value || "").trim()));
+    if (!saying) return all;
+    return all.filter((input) => (input.value || "").trim().toLowerCase() === saying);
+}
+
+/* Spoilers open at load.
+
+   On this board a spoiler is where the links are: a release post
+   hides its mirrors, its password and its notes behind five of them,
+   and reading the post means clicking every one. Opened at load the
+   post reads top to bottom, and the "Close all" control in the bar
+   puts them back. The board's own handler does the opening, so the
+   button still says Hide and still works. */
+function openSpoilersAtLoad() {
+    for (const input of spoilerInputs("show")) input.click();
 }
 
 /* The board draws every spoiler's Show button with `font-size: 10px`
@@ -11277,7 +11776,91 @@ function markExternalLinks() {
     }
 }
 
-/* ---- Pagination ---------------------------------------------------- */
+/* ---- Landing on a post ---------------------------------------------- */
+
+/* Every link to a post — the Releases panel, "View the latest post",
+   a permalink somebody pasted, the board's own first-unread jump —
+   ends in #p123456, and the board's anchor for that is an <a name>
+   in the author cell beside the post. The modern layout hides that
+   cell, and a browser cannot scroll to something that is not drawn:
+   the page loaded, nothing moved, and a second click on the same link
+   did nothing either. So every post's own table carries the id, which
+   is what a fragment looks for first, and it is always on screen.
+
+   That fixes where the anchor is. Where the page is by the time the
+   browser looks for it is the other half: the fragment is honoured
+   during parsing, before the top bar, the topic bar, the releases
+   panel and the game card have been put above the posts, so the post
+   the reader asked for ended up a screen below where the browser
+   left them. Once everything is in place the page is walked to the
+   fragment again, and the post is flashed so it is unmistakable. */
+function fragmentTarget(hash) {
+    let name;
+    try { name = decodeURIComponent((hash || "").replace(/^#/, "")); } catch { return null; }
+    if (!/^(?:p\d+|unread|top)$/.test(name)) return null;
+    const node = document.getElementById(name) || document.querySelector('a[name="' + name + '"]');
+    if (!node) return null;
+    return node.closest("table.tablebg") || node;
+}
+
+function landOn(target, smooth) {
+    target.scrollIntoView({ block: "start", behavior: smooth ? scrollBehaviour() : "auto" });
+    if (target.matches("table.tablebg")) flash(target);
+}
+
+/** Does this link point at a post on the page in front of us? */
+function inPageTarget(link) {
+    let url;
+    try { url = new URL(link.getAttribute("href") || "", location.href); } catch { return null; }
+    if (!url.hash || url.origin !== location.origin) return null;
+    const target = fragmentTarget(url.hash);
+    if (!target) return null;
+    const strip = (u) => u.pathname + u.search.replace(/[?&]sid=[a-f0-9]+/g, "");
+    if (strip(url) === strip(new URL(location.href))) return target;
+    // viewtopic.php?p=123#p123 names the post rather than the page,
+    // and the post is here.
+    if (/viewtopic\.php$/.test(url.pathname) && /^#p\d+$/.test(url.hash)
+        && url.searchParams.get("p") === url.hash.slice(2)) return target;
+    return null;
+}
+
+function settleFragment() {
+    if (!PAGE.isTopic) return;
+    for (const post of posts()) {
+        if (!document.getElementById("p" + post.id)) post.table.id = "p" + post.id;
+    }
+
+    const target = fragmentTarget(location.hash);
+    let settled = null;
+    if (target) {
+        landOn(target, false);
+        settled = window.scrollY;
+    }
+    // Images arriving above the post move it again. Settled once more
+    // when the page has finished, unless the reader has scrolled since.
+    if (target && document.readyState !== "complete") {
+        window.addEventListener("load", () => {
+            if (settled !== null && Math.abs(window.scrollY - settled) < 4) landOn(target, false);
+        }, { once: true });
+    }
+    window.addEventListener("hashchange", () => {
+        const next = fragmentTarget(location.hash);
+        if (next) landOn(next, true);
+    });
+    // A link to a post on this page glides to it rather than reloading
+    // the page to land on it.
+    document.addEventListener("click", (event) => {
+        if (event.button !== 0 || event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+        if (!link || link.closest(".rr-releases")) return;
+        const here = inPageTarget(link);
+        if (!here) return;
+        event.preventDefault();
+        const hash = new URL(link.getAttribute("href"), location.href).hash;
+        if (hash !== location.hash) history.replaceState(null, "", hash);
+        landOn(here, true);
+    });
+}
 
 /* ---- Entry point ---------------------------------------------------- */
 
@@ -11310,9 +11893,14 @@ function initTopic() {
                 // read to the end does not un-read it.
                 lastPost: Math.max(Number(seen && seen.lastPost) || 0, newest),
             });
-            store.set("history", list.slice(0, settings.get("historyLimit")));
+            store.set("history", list.slice(0, HISTORY_LIMIT));
         }
     }
+
+    // Named, so the stylesheet can tell a post's table from a listing's
+    // and a strip's: it is the one that must not clip what floats
+    // over its edge (the tooltips on its controls).
+    for (const post of all) post.table.setAttribute("data-rr-post", "");
 
     const modern = settings.get("postLayout") === "modern";
     if (modern) {
@@ -11335,21 +11923,22 @@ function initTopic() {
             // once. See steam.js.
             if (info.appId && PAGE.topicId) steamRememberApp(PAGE.topicId, info.appId);
             buildGameCard(info, all[0].body);
-            if (settings.get("collapseFirst")) {
-                // The card already carries the title and the detail
-                // rows, so the fold starts at the game heading rather
-                // than further down at About The Game.
-                const heading = all[0].body.querySelector('span[style*="150%"], span[style*="130%"]');
-                const anchor = heading ? (heading.closest("span[style*=color]") || heading) : null;
-                foldSteamBlurb(all[0].body, anchor);
-            }
+            // The card already carries the title and the detail rows,
+            // so the fold starts at the game heading rather than
+            // further down at About The Game.
+            const heading = all[0].body.querySelector('span[style*="150%"], span[style*="130%"]');
+            const anchor = heading ? (heading.closest("span[style*=color]") || heading) : null;
+            foldSteamBlurb(all[0].body, anchor);
         }
     }
 
     decorateHeading();
+    liftSpoilerButtons();
+    // Before the bar is built: its "Close all N spoilers" reads the
+    // state off the page.
+    if (settings.get("spoilersOpen")) openSpoilersAtLoad();
     buildTopicBar();
     spaceForumRules();
-    liftSpoilerButtons();
 
     all.forEach((post, index) => {
         if (settings.get("postTools")) addPostTools(post, index);
@@ -12838,15 +13427,39 @@ function initReleases() {
     });
 
     const body = el("div.rr-releases__body");
+
+    /* The panel folds. On a topic read for the conversation rather
+       than the files it is a card between the bar and the first post
+       that says nothing the reader came for; folded it is one line
+       that says how many releases there are, and opens on a click.
+       Remembered in this browser, for every topic. */
+    let open = store.get("releasesOpen", true) !== false;
+    const fold = el("button.rr-releases__toggle", { type: "button" }, [
+        icon("chevronD", 14),
+        icon("layers", 14),
+        el("h3", {}, [t("Releases")]),
+        count,
+    ]);
+    const syncFold = () => {
+        panel.toggleAttribute("data-rr-folded", !open);
+        fold.setAttribute("aria-expanded", open ? "true" : "false");
+        fold.setAttribute("title", t(open ? "Fold the Releases panel" : "Open the Releases panel"));
+        body.hidden = !open;
+    };
+    fold.addEventListener("click", () => {
+        open = !open;
+        store.set("releasesOpen", open);
+        syncFold();
+    });
+
     panel.append(
         el("div.rr-releases__head", {}, [
-            icon("layers", 14),
-            el("h3", {}, [t("Releases")]),
-            count,
+            fold,
             el("div.rr-releases__controls", {}, [scope, linkFilter, copyList]),
         ]),
         body,
     );
+    syncFold();
 
     const setCount = (shown, filtered, rows, scoped) => {
         count.textContent = filtered
@@ -13378,8 +13991,12 @@ function steamAppForTopic(topicId) {
     return store.get(STEAM_APPS_KEY, {})[String(topicId)] || null;
 }
 
+/* A month. It was a setting; a looked-up game's tags and score do not
+   change at a rate anybody needs to tune for. */
+const STEAM_CACHE_DAYS = 30;
+
 function steamCacheMs() {
-    return clamp(Number(settings.get("steamCacheDays")) || 30, 1, 120) * 86400000;
+    return STEAM_CACHE_DAYS * 86400000;
 }
 
 function steamCached(appId) {
@@ -14334,10 +14951,12 @@ let paletteHost = null;
    sr=topics is the answer to that and costs nothing: a topic that
    matches is still a topic that matches. sf decides how deep to look,
    and that is a real choice, so it is a setting. */
+/* Keyed by the board's own sf value, which is what the search box's
+   options (navbar.js, addSearchOptions) remember. */
 const SEARCH_DEPTH = {
-    titles:    { sf: "titleonly", hint: "titles" },
+    titleonly: { sf: "titleonly", hint: "titles" },
     firstpost: { sf: "firstpost", hint: "titles + first post" },
-    everything:{ sf: "all",       hint: "every post" },
+    all:       { sf: "all",       hint: "every post" },
 };
 
 /**
@@ -14358,7 +14977,7 @@ function currentBoardName() {
 }
 
 function boardSearchUrl(query) {
-    const depth = SEARCH_DEPTH[settings.get("searchDepth")] || SEARCH_DEPTH.titles;
+    const depth = SEARCH_DEPTH[searchDepthChoice()] || SEARCH_DEPTH.titleonly;
     const url = new URL("./search.php", location.href);
     url.searchParams.set("keywords", query);
     url.searchParams.set("terms", "all");
@@ -14520,7 +15139,7 @@ function openPalette() {
                 : t("Search this board for {q}", { q: query }))
             : t("Search the forum for {q}", { q: query }),
         icon: "search",
-        hint: SEARCH_DEPTH[settings.get("searchDepth")]?.hint || "Enter",
+        hint: SEARCH_DEPTH[searchDepthChoice()]?.hint || "Enter",
         href: boardSearchUrl(query),
     });
 
@@ -14992,7 +15611,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.10.0";
+const RR_VERSION = "0.11.0";
 
 function injectStyles() {
     const host = document.head || document.documentElement;
@@ -15018,6 +15637,24 @@ function guard(name, fn) {
     } catch (err) {
         console.error("[RIN Reforged] " + name + " failed:", err);
     }
+}
+
+/* The page is held back until the late phase has run.
+
+   Everything that rebuilds the board — the top bar, the topic bar, the
+   post headers, the releases panel — runs at DOM ready, and the
+   browser paints before that: for a frame or two the reader saw the
+   board's own layout in this script's colours, then everything jumped
+   into place. The stylesheet keeps <body> invisible until this
+   attribute lands, and it lands whatever happens: at the end of the
+   late phase, on a failure inside it, and on a watchdog in case the
+   late phase never runs at all. A blank page is the one outcome this
+   must never produce. */
+const READY_WATCHDOG = 4000;
+
+function markReady() {
+    const root = document.documentElement;
+    if (root && !root.hasAttribute("data-rr-ready")) root.setAttribute("data-rr-ready", "");
 }
 
 function bootEarly() {
@@ -15050,6 +15687,9 @@ function bootLate() {
     guard("chrome", initChrome);
     guard("menu", initSettingsUI);
 
+    guard("anchor", settleFragment);
+    markReady();
+
     // Enhanced runs at document-idle, so a second look after the page
     // settles catches it when it loads after this script.
     setTimeout(() => guard("coexistence", detectEnhanced), 2000);
@@ -15061,6 +15701,11 @@ function bootLate() {
 // from being scheduled.
 guard("boot:early", () => whenRoot(bootEarly));
 guard("boot:styles", () => whenBody(() => guard("styles", injectStyles)));
-guard("boot:late", () => whenReady(bootLate));
+guard("boot:late", () => whenReady(() => { try { bootLate(); } finally { markReady(); } }));
+
+/* Outside every guard, and scheduled whatever happened above: a page
+   held back and never released is a page nobody can read, which is a
+   far worse failure than the flash this avoids. */
+setTimeout(markReady, READY_WATCHDOG);
 
 })();

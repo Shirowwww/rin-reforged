@@ -28,10 +28,12 @@ let paletteHost = null;
    sr=topics is the answer to that and costs nothing: a topic that
    matches is still a topic that matches. sf decides how deep to look,
    and that is a real choice, so it is a setting. */
+/* Keyed by the board's own sf value, which is what the search box's
+   options (navbar.js, addSearchOptions) remember. */
 const SEARCH_DEPTH = {
-    titles:    { sf: "titleonly", hint: "titles" },
+    titleonly: { sf: "titleonly", hint: "titles" },
     firstpost: { sf: "firstpost", hint: "titles + first post" },
-    everything:{ sf: "all",       hint: "every post" },
+    all:       { sf: "all",       hint: "every post" },
 };
 
 /**
@@ -52,7 +54,7 @@ function currentBoardName() {
 }
 
 function boardSearchUrl(query) {
-    const depth = SEARCH_DEPTH[settings.get("searchDepth")] || SEARCH_DEPTH.titles;
+    const depth = SEARCH_DEPTH[searchDepthChoice()] || SEARCH_DEPTH.titleonly;
     const url = new URL("./search.php", location.href);
     url.searchParams.set("keywords", query);
     url.searchParams.set("terms", "all");
@@ -214,7 +216,7 @@ function openPalette() {
                 : t("Search this board for {q}", { q: query }))
             : t("Search the forum for {q}", { q: query }),
         icon: "search",
-        hint: SEARCH_DEPTH[settings.get("searchDepth")]?.hint || "Enter",
+        hint: SEARCH_DEPTH[searchDepthChoice()]?.hint || "Enter",
         href: boardSearchUrl(query),
     });
 

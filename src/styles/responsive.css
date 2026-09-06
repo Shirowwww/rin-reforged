@@ -193,8 +193,16 @@
     html[data-rr] td[data-rr-col] p { display: inline; margin: 0; }
 
     /* Category rows and the bands with one link in them: a header, not
-       a card. The control that folds a category goes to the far end. */
+       a card. The control that folds a category goes to the far end.
+       The accent mark is drawn inside the cell's own padding on a
+       desktop; here the cell has none, so the row carries it. */
     html[data-rr] tr[data-rr-cat-row] { padding: 8px 14px !important; align-items: center !important; }
+    html[data-rr] tr[data-rr-cat-row] > td.cat::before,
+    html[data-rr] tr[data-rr-cat-row] > td.row3[data-rr-section]::before { display: none; }
+    html[data-rr] tr[data-rr-cat-row] > td.cat,
+    html[data-rr] tr[data-rr-cat-row] > td.row3[data-rr-section] { padding-left: 0 !important; }
+    html[data-rr] tr[data-rr-cat-row=""],
+    html[data-rr] tr[data-rr-cat-row="section"] { box-shadow: inset 3px 0 0 var(--rr-accent); }
     html[data-rr] tr[data-rr-cat-row] > td.catdiv { margin-left: auto; }
     html[data-rr] tr[data-rr-cat-row] > td.cat[data-rr-cat="plain"] { margin-left: auto; font-size: var(--rr-fs-xs); }
     /* A message folder: the date and the checkbox had no order and led
@@ -306,25 +314,6 @@
     html[data-rr] .rr-nav__crumbs a:not(:last-child),
     html[data-rr] .rr-nav__sep { display: none; }
     html[data-rr] .rr-toolbar { padding: var(--rr-s3); }
-
-    /* The masthead crop is fixed-width — set once from the image's own
-       pixels — so on the narrowest phones it held its full desktop size
-       while the crumb beside it, the one thing that actually changes
-       page to page, was squeezed to almost nothing. Every dimension of
-       the crop scales together here, window, image and offset alike,
-       which is the same arithmetic navbar.js does for a taller one: the
-       crosshair stays the crosshair, just smaller, and the room it gives
-       up goes to the page name. */
-    html[data-rr] .rr-nav__brand[data-rr-logo="art"] .rr-nav__logo {
-        width: calc(var(--rr-logo-w) * 0.7);
-        height: calc(var(--rr-logo-h) * 0.7);
-    }
-    html[data-rr] .rr-nav__brand[data-rr-logo="art"] .rr-nav__art {
-        width: calc(var(--rr-logo-img-w) * 0.7);
-        height: calc(var(--rr-logo-img-h) * 0.7);
-        top: calc(var(--rr-logo-y) * 0.7);
-        left: calc(var(--rr-logo-x) * 0.7);
-    }
 
     /* The topic bar carries nine controls and a search box, and on a
        phone that is five wrapped rows before the first post. The air
@@ -850,14 +839,15 @@
         color: var(--rr-muted);
     }
 
-    /* Leaving this topic: chips on one rhythm rather than words with
-       air between them. */
-    html[data-rr] .rr-topicbar__row[data-rr-row="away"] .rr-btn {
+    /* Leaving this topic: the two clusters take the width they need
+       and wrap as two lines; a stray control outside one is a chip. */
+    html[data-rr] .rr-topicbar__row[data-rr-row="away"] > .rr-btn {
         padding: 5px 11px;
         background: var(--rr-surface-2);
         border: 1px solid var(--rr-line);
         border-radius: var(--rr-radius-pill);
     }
+    html[data-rr] .rr-topicbar__row[data-rr-row="away"] .rr-cluster { flex-wrap: wrap; }
     /* A control inside a rounded box takes the box's corner minus the
        gap between them, so the two curves are concentric instead of a
        square end butting a round one. */
@@ -884,9 +874,13 @@
         gap: 0 var(--rr-s3);
         padding: var(--rr-s2) 0;
         margin: 0;
-        border-left: 0;
+        /* The desktop's box round each group is a row rule here. */
+        border: 0;
         border-top: 1px solid var(--rr-line);
+        border-radius: 0;
+        background: none;
     }
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__group > .rr-boardbar__link { border-left: 0; border-radius: 0; }
     /* The fold's control keeps the top line to itself; the groups
        start under it at full width, so no link has to wrap around it. */
     html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__group:first-child {
@@ -1000,6 +994,13 @@
        spacer that pushes the date right on a desktop put it right on
        some cards and left on others, depending on what wrapped. */
     html[data-rr] .rr-posthead__spacer { display: none; }
+    /* The band reaches the card's edges here too, and the card's
+       padding lives on the row rather than on the cell. The selector
+       matches the desktop's exactly, so the tie is broken on source
+       order — this file is last in the build. */
+    html[data-rr] table.tablebg[data-rr-post] { --rr-post-pad: 14px; --rr-post-pad-top: 14px; }
+    html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row1,
+    html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row2 { padding: 0; }
     html[data-rr] .rr-posthead__meta,
     html[data-rr] .rr-posthead__date { flex: 1 1 100%; text-align: left; margin: 0; }
 
