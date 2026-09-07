@@ -693,7 +693,14 @@ html[data-rr] #pageheader h2 a.titles { color: var(--rr-text-strong); }
 html[data-rr] table.tablebg[data-rr-rules] > tbody > tr > td.row3 {
     position: relative;
     padding: var(--rr-s4) var(--rr-s5) var(--rr-s4) 26px;
-    background: color-mix(in srgb, var(--rr-accent) 5%, var(--rr-surface-2));
+    /* A plain token, not the accent wash the category heads use. The
+       board writes this notice in its own colours, and the pass that
+       lifts those to something readable has to measure what is behind
+       them: a color-mix() ground resolves late enough that it was read
+       as the previous theme's, and on the light theme that said
+       #FFCC00 on white was fine. The accent is on the edge instead,
+       where nothing has to measure it. */
+    background: var(--rr-surface-2);
     border-bottom: 0;
     vertical-align: top;
 }
@@ -707,17 +714,39 @@ html[data-rr] table.tablebg[data-rr-rules] > tbody > tr > td.row3::before {
     border-radius: 2px;
     background: var(--rr-accent);
 }
+/* subsilver2 wraps the rules in one more table on the pages where they
+   are filled in, and the original sheet pads every cell it finds. Left
+   alone that is a second inset inside the card's own, and the notice
+   sits off-centre in its box. */
+html[data-rr] table.tablebg[data-rr-rules] table { border-spacing: 0; width: 100%; }
+html[data-rr] table.tablebg[data-rr-rules] table > tbody > tr > td { padding: 0; background: none; border: 0; }
+
 html[data-rr] table.tablebg[data-rr-rules] h4,
 html[data-rr] table.tablebg[data-rr-rules] p.rules {
-    margin: 0 0 var(--rr-s2);
-    font-size: var(--rr-fs-sm);
+    margin: 0 0 var(--rr-s3);
+    font-size: var(--rr-fs-xs);
     font-weight: 650;
-    color: var(--rr-text-strong);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--rr-faint);
 }
 html[data-rr] table.tablebg[data-rr-rules] .postbody {
     font-size: var(--rr-fs-sm);
     line-height: var(--rr-lh);
     color: var(--rr-muted);
+}
+/* The colour the board typed into the tag, on the one theme where it
+   cannot be read.
+ *
+ * !important because it is an inline style, and nothing else reaches
+ * one. The pass that lifts the board's own colours (theme.js,
+ * readableBoardInk) is the general answer to this and it does lift the
+ * same #FFCC00 in an ordinary post — but not here: measured, this cell
+ * still computes its background as the board's own #232323 at the
+ * moment that pass runs, so it is told the yellow sits on near-black
+ * and leaves it. The dark themes keep the board's colour untouched. */
+html[data-rr][data-rr-theme="paper"] table.tablebg[data-rr-rules] .postbody [style*="color"] {
+    color: var(--rr-notice-ink) !important;
 }
 /* The board writes its rules with <br><br> between paragraphs and a
    list under them, and a <ul> arrives with the browser's own 40px

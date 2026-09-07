@@ -217,16 +217,64 @@ function parseColour(text) {
         };
     }
 
-    const parts = (raw.match(/[\d.]+/g) || []).map(Number);
+    /* Signed, and with exponents: oklab's a and b are routinely
+       negative and Chrome writes very small ones as 5.126e-6. The
+       plain [\d.]+ this used to be dropped the minus and cut the
+       exponent off, which turns a green into a magenta. */
+    const parts = (raw.match(/[+-]?\d*\.?\d+(?:e[+-]?\d+)?/gi) || []).map(Number);
     if (parts.length < 3) return null;
-    // color-mix() resolves to color(srgb r g b / a), 0-1 per channel.
-    const scale = /^color\(/.test(raw) ? 255 : 1;
+    const alpha = parts.length > 3 ? parts[3] : 1;
+
+    /* What color-mix() actually computes to.
+
+       The comment here used to say color(srgb r g b / a) and the code
+       scaled by 255 on that basis. Chrome resolves these to *oklab*,
+       and oklab's three numbers are a lightness of 0-1 and two axes
+       either side of zero — read as sRGB bytes they come out
+       near-black whatever the real colour is. Every element sitting on
+       one of this stylesheet's 29 color-mix backgrounds was therefore
+       measured against black: on the light theme that says pale text
+       on a pale ground is fine, and the pass that exists to lift the
+       board's own colours never fired on any of them. */
+    if (/^oklab\(/i.test(raw)) return { ...oklabToRgb(parts[0], parts[1], parts[2]), a: alpha };
+    if (/^oklch\(/i.test(raw)) {
+        const hue = (parts[2] || 0) * Math.PI / 180;
+        return { ...oklabToRgb(parts[0], parts[1] * Math.cos(hue), parts[1] * Math.sin(hue)), a: alpha };
+    }
+
+    // color(srgb r g b / a) is 0-1 per channel; rgb() is already bytes.
+    const scale = /^color\(/i.test(raw) ? 255 : 1;
     return {
         r: parts[0] * scale,
         g: parts[1] * scale,
         b: parts[2] * scale,
-        a: parts.length > 3 ? parts[3] : 1,
+        a: alpha,
     };
+}
+
+/**
+ * oklab to sRGB bytes.
+ *
+ * The standard two steps: oklab to linear-light sRGB through the LMS
+ * cone responses, then the sRGB transfer function. Clamped, because a
+ * colour that is in oklab's gamut need not be in sRGB's and a channel
+ * outside 0-255 makes nonsense of a contrast ratio.
+ */
+function oklabToRgb(L, a, b) {
+    const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+    const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+    const s = (L - 0.0894841775 * a - 1.2914855480 * b) ** 3;
+
+    const linear = [
+        4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+        -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+        -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s,
+    ];
+    const encode = (v) => {
+        const shaped = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+        return Math.min(255, Math.max(0, shaped * 255));
+    };
+    return { r: encode(linear[0]), g: encode(linear[1]), b: encode(linear[2]) };
 }
 
 function relativeLuminance({ r, g, b }) {

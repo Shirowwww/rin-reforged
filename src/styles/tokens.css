@@ -240,6 +240,12 @@ html[data-rr][data-rr-theme="paper"] {
     --rr-faint:         #626972;
     --rr-accent:        #a5701a;
     --rr-accent-soft:   #f5e6c8;
+    /* The board writes its forum-rules notice in #FFCC00, typed into
+       the tag. On the dark themes that is 10:1 and exactly the
+       emphasis it was meant to carry, so they leave it alone; on this
+       one it is 1.4:1. Same hue, dark enough to read on --rr-surface-2
+       (forum.css, the forum-rules notice). */
+    --rr-notice-ink:    #6b5000;
     --rr-accent-text:   #ffffff;
     --rr-link:          #1f5f96;
     --rr-link-visited:  #6b4d9e;

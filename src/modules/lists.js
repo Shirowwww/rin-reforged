@@ -1473,14 +1473,47 @@ function markForumRules() {
     for (const cell of document.querySelectorAll("#wrapcentre td.row3")) {
         const box = cell.closest("table.tablebg");
         if (!box || box.hasAttribute("data-rr-rules")) continue;
-        // One cell in the whole table, holding a heading or the link
-        // that stands in for one. A listing's own section rows are
-        // td.row3 too — "Global Announcements", "Topics" — and those
-        // sit in a table of a hundred cells.
-        if (box.querySelectorAll("td, th").length !== 1) continue;
+
+        /* What the table is, not what shape it is.
+
+           The test here counted the cells and wanted exactly one,
+           which made the box's own nesting the thing that decided it:
+           subsilver2 wraps the rules in one more table on the pages
+           where they are actually filled in, so on the live board this
+           never fired once and the notice kept the styling of a
+           listing row. A listing is told apart by what it holds — a
+           header row and topic links — and a rules box holds neither
+           however many tables it is wrapped in. */
+        if (box.querySelector("th, a.topictitle, a.forumlink")) continue;
         if (!cell.querySelector("h4, p.rules, .postbody")) continue;
+
         box.setAttribute("data-rr-rules", "");
         if (box.style.marginBottom) box.style.marginBottom = "";
+        tameRulesEmphasis(cell);
+    }
+}
+
+
+
+/* The board writes its notice with BBCode `[size=150]`, which lands as
+   `font-size: 150%` typed into the tag: 22px on a 15px page, three
+   lines of it, above a topic title set smaller than the notice above
+   it. Inline beats every rule in the stylesheet, so the size is taken
+   down here rather than fought there.
+
+   Clamped rather than stripped. The emphasis was meant — this is the
+   one block on the page that is the board talking to you — so it keeps
+   a step above the body text and loses the shout. The colour is left
+   exactly as written: the ink pass lifts it to something readable on
+   whichever theme is on (theme.js, readableBoardInk). */
+const RULES_MAX_EMPHASIS = 120;
+
+function tameRulesEmphasis(cell) {
+    for (const node of cell.querySelectorAll('[style*="font-size"]')) {
+        const written = /^\s*(\d+(?:\.\d+)?)\s*(%|em|rem)\s*$/.exec(node.style.fontSize);
+        if (!written) continue;
+        const percent = written[2] === "%" ? Number(written[1]) : Number(written[1]) * 100;
+        if (percent > RULES_MAX_EMPHASIS) node.style.fontSize = RULES_MAX_EMPHASIS + "%";
     }
 }
 

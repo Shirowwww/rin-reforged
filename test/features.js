@@ -2742,6 +2742,70 @@ const CHECKS = [
     },
 
     /* ---- The index page ------------------------------------------- */
+    /* ---- The forum-rules notice ------------------------------------ */
+    {
+        name: "rules: the notice is a card, however many tables it is wrapped in",
+        url: LONG,
+        run: () => {
+            const cell = document.querySelector("#wrapcentre td.row3");
+            if (!cell) return "the fixture has no rules box";
+            const box = cell.closest("table.tablebg");
+            /* The test here counted the cells and wanted exactly one,
+               so subsilver2 wrapping the rules in one more table — which
+               it does on the pages where they are filled in — meant the
+               notice never got a card at all and kept the styling of a
+               listing row. */
+            if (box.querySelectorAll("td").length < 2) return "the fixture lost its nested table";
+            if (!box.hasAttribute("data-rr-rules")) return "the box was not recognised";
+
+            const cs = getComputedStyle(cell);
+            if (parseFloat(cs.paddingLeft) < 20) return "a listing row's inset, not a card's: " + cs.padding;
+            if (cs.borderBottomWidth !== "0px") return "a hairline under a card with one row in it";
+            // The mark that says "this is a block with a heading", the
+            // same one a category head carries.
+            if (getComputedStyle(cell, "::before").width !== "3px") return "no accent edge";
+            // And the inner table adds no second inset inside the card.
+            const inner = cell.querySelector("table > tbody > tr > td");
+            if (inner && getComputedStyle(inner).padding !== "0px") {
+                return "the nested cell pads again: " + getComputedStyle(inner).padding;
+            }
+            return null;
+        },
+    },
+    {
+        name: "rules: the notice is emphasised, not shouted",
+        url: LONG,
+        run: () => {
+            const box = document.querySelector("table[data-rr-rules]");
+            if (!box) return "no rules card";
+            const big = box.querySelector('.postbody [style*="font-size"]');
+            if (!big) return "the fixture lost the board's own sizing";
+            /* The board writes [size=150], which lands as 150% typed
+               into the tag: 22px on a 15px page, above a topic title
+               set smaller than it. Clamped, not stripped — the
+               emphasis was meant. */
+            const size = parseFloat(getComputedStyle(big).fontSize);
+            const body = parseFloat(getComputedStyle(box.querySelector(".postbody")).fontSize);
+            if (size > body * 1.25) return "still shouting at " + size + "px over " + body + "px";
+            if (size <= body) return "the emphasis was lost altogether";
+            const label = parseFloat(getComputedStyle(box.querySelector("h4")).fontSize);
+            if (label >= size) return "the label is louder than the notice it labels";
+            return null;
+        },
+    },
+    {
+        name: "rules: a listing's own section rows are not mistaken for one",
+        url: FORUM,
+        run: () => {
+            // "Global Announcements", "Announcements", "Topics" are
+            // td.row3 too, and they sit in a table of topic links under
+            // a header row. Neither is a notice.
+            const rows = document.querySelectorAll("#wrapcentre td.row3");
+            if (!rows.length) return "the listing has no section rows to confuse";
+            const wrong = document.querySelectorAll("table[data-rr-rules]").length;
+            return wrong ? wrong + " listing tables taken for a rules box" : null;
+        },
+    },
     /* ---- Topics in the palette, and looking inside one ------------- */
     {
         name: "palette: a listing is kept, so the palette can offer its topics",
