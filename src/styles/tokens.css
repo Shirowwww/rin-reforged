@@ -167,13 +167,25 @@ html[data-rr][data-rr-theme="native"] {
        read for hours — and the identity is not in the last three
        percent of the black anyway. It is in the neutral (no blue cast,
        unlike Slate), the grey text, and the red. */
-    --rr-bg:            #101010;
-    --rr-bg-sunken:     #0a0a0a;
+    /* The ladder, spread.
+     *
+     * bg and surface were seven points apart, which on a page that is
+     * a column of cards means the cards do not lift off it: the only
+     * thing saying where one ends was a hairline barely lighter than
+     * either. The ground goes down rather than the cards going up —
+     * the cards are where the reading happens and their value is
+     * measured (see --rr-faint) — which also lands this theme nearer
+     * the board's own #070707 than it was, at no cost to the
+     * anti-halation reasoning at the top of this file: #0b0b0b is
+     * still off pure black, and nothing on this theme paints text
+     * straight onto it. The hairlines come up to match. */
+    --rr-bg:            #0b0b0b;
+    --rr-bg-sunken:     #060606;
     --rr-surface:       #171717;
     --rr-surface-2:     #1e1e1e;
-    --rr-surface-3:     #292929;
-    --rr-line:          #2e2e2e;
-    --rr-line-strong:   #474747;
+    --rr-surface-3:     #2c2c2c;
+    --rr-line:          #333333;
+    --rr-line-strong:   #4d4d4d;
 
     --rr-text:          #cccccc;
     --rr-text-strong:   #ffffff;

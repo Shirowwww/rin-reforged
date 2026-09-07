@@ -167,8 +167,8 @@ const SETTINGS_SCHEMA = [
         note: "Announcements, stickies and the topics fold on a click on their heading, and stay folded until you open them again.",
         fields: [
             {
-                id: "unreadFromList", label: "Topic titles open at the first unread post", type: "toggle", default: false,
-                desc: "Off, a title opens the first page of its topic. On, a topic with unread posts opens at the first of them. Needs an account.",
+                id: "unreadFromList", label: "Topic titles open at the first unread post", type: "toggle", default: true,
+                desc: "On, a topic with unread posts opens at the first of them; off, a title opens the first page. Needs an account — logged out there is nothing to be unread.",
             },
             {
                 id: "hideVisited", label: "Mark topics already opened", type: "toggle", default: true,
@@ -237,8 +237,8 @@ const SETTINGS_SCHEMA = [
                 when: "foldQuotes",
             },
             {
-                id: "quietPosts", label: "Fold short low-value replies", type: "toggle", default: false,
-                desc: "\"thanks!\", \"+1\" and a lone emoji collapse to one dim line you can click open. Decided from what a post says — never from who wrote it.",
+                id: "quietPosts", label: "Fold short low-value replies", type: "toggle", default: true,
+                desc: "\"thanks!\", \"+1\" and a lone emoji collapse to one dim line you can click open. Nothing is removed and nothing is decided from who wrote it — only from what the post says.",
             },
             {
                 id: "quietLimit", label: "Fold replies shorter than", type: "range", default: 120,

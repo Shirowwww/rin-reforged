@@ -13,7 +13,16 @@
 
      memberlist.html      # Username, Joined, Posts, Rank, Message …
      ucp-pm.html          Subject (spanning the marker), Author, Sent, Mark
+     ucp-pm-read.html     One message: the label/value header, the body
      profile-member.html  User statistics: Joined / Total posts, a rank
+     viewtopic-rules.html A topic as a member: the forum-rules notice
+                          above the title, and the strip the board puts
+                          "First unread post" in
+
+   The last two are the shapes reported at 0.12 — the message header's
+   inset, the notice the board writes as a bare div.forumrules rather
+   than the td.row3 subsilver2 ships, and a nav strip left standing
+   with one link in it.
 
    The skeleton is the saved listing — same masthead, same footer — as
    a member (Logout where Login was), with the page content swapped.
@@ -223,6 +232,112 @@ function profile() {
 </table>`;
 }
 
+/* ---- One private message -------------------------------------------
+
+   The header is four label/value rows, and the shape that made them
+   worth a fixture is where the class sits: `<tr class="row1">` with the
+   cells left plain, so every inset keyed to `td.row1` misses them and
+   the labels sit on the card's own border. Copied off the live board;
+   the names, the subject and the body are made up. */
+
+function messageRead() {
+    const row = (label, value) => '<tr class="row1">\n'
+        + '\t<td class="genmed" nowrap="nowrap" width="150"><b>' + label + ':</b></td>\n'
+        + '\t<td class="gen">' + value + '</td>\n'
+        + '</tr>';
+
+    return [
+        '<table class="tablebg" width="100%" cellspacing="1" cellpadding="0">',
+        '<tr>',
+        '\t<td class="row1">',
+        '\t\t<table border="0" cellspacing="0" cellpadding="0" width="100%">',
+        '\t\t<tr>',
+        '\t\t\t<td align="left"><span class="gensmall"><a href="./ucp.php?i=pm&amp;f=0&amp;p=612329&amp;view=previous">Previous PM</a> | <a href="./ucp.php?i=pm&amp;f=0&amp;p=612329&amp;view=next">Next PM</a>&nbsp;</span></td>',
+        '\t\t\t<td align="right"></td>',
+        '\t\t</tr>',
+        '\t\t</table>',
+        '\t</td>',
+        '</tr>',
+        '</table>',
+        '<div style="padding: 2px;"></div>',
+        '',
+        '<table class="tablebg" width="100%" cellspacing="1" cellpadding="4">',
+        row("Message subject", "Re: Topic removed"),
+        row("From", '<a href="./memberlist.php?mode=viewprofile&amp;u=1311679" style="color: #BF9F00;" class="username-coloured">Valentine</a>'),
+        row("Sent", "Wednesday, 02 Sep 2026, 16:21"),
+        row("To", '<a href="./memberlist.php?mode=viewprofile&amp;u=1144815">Shirow</a>&nbsp;'),
+        '</table>',
+        '',
+        '<div style="padding: 2px;"></div>',
+        '',
+        '<table class="tablebg" width="100%" cellspacing="1" cellpadding="0">',
+        '<tr>',
+        '\t<th nowrap="nowrap">Message</th>',
+        '</tr>',
+        '<tr>',
+        '\t<td class="spacer" height="1"><img src="images/spacer.gif" alt="" width="1" height="1" /></td>',
+        '</tr>',
+        '<tr class="row1">',
+        '\t<td valign="top">',
+        '\t\t<table width="100%" cellspacing="5">',
+        '\t\t<tr>',
+        '\t\t\t<td>',
+        '\t\t\t\t<div class="postbody">Hello,<br />Because your account does not have many posts, anything you post requires moderator approval at first, even edits<br /><br />Your thread should show up now</div>',
+        '\t\t\t</td>',
+        '\t\t</tr>',
+        '\t\t</table>',
+        '\t</td>',
+        '</tr>',
+        '</table>',
+    ].join("\n");
+}
+
+/* ---- A topic, as a member ------------------------------------------
+
+   The saved single-page topic with two things put back that only a
+   member is shown: the forum-rules notice the board writes straight
+   into #wrapcentre, and the strip carrying Subscribe / Bookmark /
+   E-mail friend with "First unread post" at its far end.
+
+   Both are the live board's markup with the words left alone. The
+   notice is why this page exists: subsilver2 ships the rules in a
+   `td.row3` and this board writes a bare `div.forumrules`, so the page
+   being styled and the page that exists were never the same page. */
+
+const RULES_NOTICE = [
+    '<div class="forumrules">',
+    '\t\t',
+    '\t\t\t<h3>Forum rules</h3><br />',
+    '\t\t\t<span style="color: #FFBF00"><span style="font-size: 150%; line-height: normal">Notice: Posting is temporarily restricted here to prevent spam and keep discussions organized.<br /><br />For this reason, before posting or sending private messages, make sure that<br /><ul><li>you have searched and read existing posts (rule &sect; 3.4),</li><li>your post adds value to the topic (rule &sect; 4.1),</li><li>your private message is necessary (rule &sect; 3.9).</li></ul></span></span>',
+    '\t\t',
+    '\t</div>',
+].join("\n");
+
+const MEMBER_STRIP = [
+    '<table width="100%" cellspacing="0">',
+    '<tr>',
+    '\t<td class="nav" nowrap="nowrap"><a href="./viewtopic.php?f=14&amp;t=75717&amp;watch=topic">Subscribe topic</a> | <a href="./viewtopic.php?f=14&amp;t=75717&amp;bookmark=1">Bookmark topic</a> | <a href="./memberlist.php?mode=email&amp;t=75717">E-mail friend</a></td>',
+    '\t<td class="nav" align="right" nowrap="nowrap"><a href="./viewtopic.php?f=14&amp;t=75717&amp;view=unread#unread">First unread post</a></td>',
+    '</tr>',
+    '</table>',
+].join("\n");
+
+function memberTopic() {
+    const source = fs.readFileSync(path.join(FIXTURES, "viewtopic-single.html"), "utf8");
+    const OPEN = '<div id="pagecontent">';
+    const header = source.indexOf('<div id="pageheader">');
+    const content = source.indexOf(OPEN);
+    if (header < 0 || content < 0) throw new Error("viewtopic-single.html has changed shape");
+
+    return source.slice(0, header)
+        + "<br />\n" + RULES_NOTICE + "\n<br />\n"
+        + source.slice(header, content)
+        + OPEN + "\n" + MEMBER_STRIP + "\n"
+        + source.slice(content + OPEN.length)
+            .replace(/mode=login/g, () => "mode=logout")
+            .replace(/> Login</g, () => "> Logout<");
+}
+
 function main() {
     if (!fs.existsSync(SOURCE)) {
         console.error("missing " + path.relative(process.cwd(), SOURCE) + " — the saved listing this page borrows its chrome from");
@@ -231,12 +346,17 @@ function main() {
     const pages = [
         ["memberlist.html", memberList()],
         ["ucp-pm.html", messageFolder()],
+        ["ucp-pm-read.html", messageRead()],
         ["profile-member.html", profile()],
     ];
     for (const [name, content] of pages) {
         fs.writeFileSync(path.join(FIXTURES, name), shell(content), "utf8");
         console.log("wrote test/fixtures/" + name);
     }
+    // Not built out of the listing's chrome: a real topic page with the
+    // two member-only pieces put back into it.
+    fs.writeFileSync(path.join(FIXTURES, "viewtopic-rules.html"), memberTopic(), "utf8");
+    console.log("wrote test/fixtures/viewtopic-rules.html");
 }
 
 main();

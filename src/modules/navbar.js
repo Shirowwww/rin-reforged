@@ -539,8 +539,22 @@ function frameStraySearch() {
    six links with it. They come back here, as one slim row at the top of
    the content, in the order the masthead used. */
 
-/** Destinations the navbar already offers as an icon of its own. */
-const NAV_LIFTED = /[?&]i=pm|mode=login(?:&|$)/;
+/* Destinations the navbar already offers as an icon of its own.
+
+   Recorded as it builds them rather than guessed at with a pattern.
+   The pattern that was here matched the inbox and the login link, and
+   missed the one that mattered: signed in, the account icon points at
+   `ucp.php`, and `ucp.php` is also the masthead's "User Control Panel"
+   — so the row carried a 150px chip for a link already sitting three
+   inches above it, and it carried it in the one place where width was
+   short. What the bar actually took is not something to infer. */
+const NAV_TOOK = new Set();
+
+/** The same href written twice — with a session id, without — is one
+    destination. */
+function linkKey(href) {
+    return String(href || "").replace(/[?&]sid=[a-f0-9]+/, "").replace(/[?&]$/, "");
+}
 
 /**
  * One entry in the board bar.
@@ -589,21 +603,55 @@ function boardBarLink(link) {
 /* Twelve links in the order the masthead printed them is a list, not a
    menu. They are three kinds of thing:
 
-     views    — ways of looking at threads (unanswered, active, search)
-     board    — what the board is (rules, FAQ, chat, donate, the rest)
+     views    — ways of looking at threads (unanswered, active, unread)
+     board    — what the board is (rules, FAQ, chat, members, search)
      account  — you (register, log in, log out, profile)
 
-   In that order, so the account group ends the row beside the language
-   switch, where the things about the reader sit together. Grouping is
-   also what stops `Logout [ name ]` wrapping alone onto a second line.
+   The first two lead the row and the third ends it, hard against the
+   language switch — which is where the board itself put them. Its
+   masthead is two rows of two cells: the board on the left, you on the
+   right, `Logout [ name ]` the last thing before the flags. That split
+   is the one thing about those rows worth keeping, and the version
+   that ran everything together on the left lost it. Grouping is also
+   what stops `Logout [ name ]` wrapping alone onto a second line.
 
    Classified by destination, not by label: the labels are translated
-   and the hrefs are not. */
+   and the hrefs are not. A view is a saved search — `search.php`
+   carrying a `search_id`; plain `search.php` is the board's search
+   form, which is a tool like the FAQ rather than a way of reading. */
 const BOARD_BAR_GROUPS = [
-    { id: "views", label: "Threads", re: /search\.php/ },
+    { id: "views", label: "Threads", re: /search\.php\?[^#]*search_id=/ },
     { id: "board", label: "Board", re: null },      // whatever is neither of the others
-    { id: "account", label: "Account", re: /ucp\.php|mode=(?:login|logout|register)|viewprofile|profile\.php/ },
+    { id: "account", label: "Account", end: true,
+        re: /ucp\.php|mode=(?:login|logout|register)|viewprofile|profile\.php/ },
 ];
+
+/* The board opens every one of its view links with the same word:
+   "View unanswered posts", "View active topics", "View unread posts",
+   "View new posts", "View your posts". Five chips in a row, each
+   starting with a word that says nothing about where it goes — and
+   signed in, on a 1100px window, the row ran off the side of the page.
+
+   The shared opening goes rather than being translated away: these
+   words are the board's, and its Russian half writes its own. Whatever
+   the links happen to start with, if they all start with it and each
+   has something left afterwards, it is dropped; the board's full
+   wording stays as the link's name for anyone hovering or listening. */
+function trimSharedPrefix(links) {
+    if (links.length < 2) return;
+    const words = links.map((link) => link.textContent.trim().split(/\s+/));
+    let shared = 0;
+    while (words.every((parts) => parts.length > shared + 1 && parts[shared] === words[0][shared])) shared++;
+    if (!shared) return;
+
+    for (const link of links) {
+        const full = link.textContent.trim();
+        const rest = full.split(/\s+/).slice(shared).join(" ");
+        link.textContent = rest.charAt(0).toUpperCase() + rest.slice(1);
+        link.setAttribute("title", full);
+        link.setAttribute("aria-label", full);
+    }
+}
 
 function boardBarGroup(href) {
     return BOARD_BAR_GROUPS.find((group) => group.re && group.re.test(href))
@@ -692,8 +740,8 @@ function buildBoardBar() {
     const take = (link) => {
         const href = link.getAttribute("href") || "";
         if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
-        const key = href.replace(/[?&]sid=[a-f0-9]+/, "").replace(/[?&]$/, "");
-        if (seen.has(key)) return;
+        const key = linkKey(href);
+        if (seen.has(key) || NAV_TOOK.has(key)) return;
         seen.add(key);
         if (isLanguageLink(link, href)) { languages.push(link); return; }
         const group = groupNode(boardBarGroup(href).id);
@@ -710,20 +758,23 @@ function buildBoardBar() {
 
     for (const link of Array.from(document.querySelectorAll("#wrapheader a[href]"))) {
         if (link.querySelector('img[src*="site_logo"], img[src*="logo"]')) continue;
-        if (NAV_LIFTED.test(link.getAttribute("href") || "")) continue;
         take(link);
     }
 
+    const views = groups.get("views");
+    if (views) trimSharedPrefix(Array.from(views.querySelectorAll(".rr-boardbar__link")));
+
     // In the order declared, not the order the masthead happened to
     // print them: a group that is empty on this page simply is not
-    // drawn.
+    // drawn, and the one marked `end` goes to the right of the row
+    // rather than the left, in front of the language switch.
     const main = el("div.rr-boardbar__main");
+    const end = el("div.rr-boardbar__end");
     for (const group of BOARD_BAR_GROUPS) {
         const node = groups.get(group.id);
-        if (node && node.children.length) main.append(node);
+        if (node && node.children.length) (group.end ? end : main).append(node);
     }
 
-    const end = el("div.rr-boardbar__end");
     const language = buildLanguageSwitch(languages);
     if (language) end.append(language);
     else for (const link of languages) end.append(boardBarLink(link));
@@ -794,12 +845,14 @@ function buildNavbar() {
     } else {
         const searchHref = findHeaderLink("search.php");
         if (searchHref) {
+            NAV_TOOK.add(linkKey(searchHref));
             actions.append(labelled(el("a.rr-icon-btn", { href: searchHref }, [icon("search")]), t("Search")));
         }
     }
 
     const pmHref = findHeaderLink("i=pm", "ucp.php?i=pm");
     if (pmHref) {
+        NAV_TOOK.add(linkKey(pmHref));
         const unread = unreadMessages();
         const label = unread > 0
             ? t("Private messages — {n} unread", { n: unread })
@@ -811,6 +864,7 @@ function buildNavbar() {
 
     const ucpHref = findHeaderLink("mode=login", "ucp.php");
     if (ucpHref) {
+        NAV_TOOK.add(linkKey(ucpHref));
         const label = t(isLoggedIn() ? "Your account" : "Log in");
         actions.append(labelled(el("a.rr-icon-btn", { href: ucpHref }, [icon("user")]), label));
     }

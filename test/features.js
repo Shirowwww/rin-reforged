@@ -76,6 +76,11 @@ const SEARCH_ONE = "/forum/searchone/search.php?search_id=egosearch";
 /* The pages only a member sees — synthesised, see make-member-fixtures.js. */
 const MEMBERS = "/forum/members/memberlist.php";
 const PM = "/forum/ucp/ucp.php?i=pm&folder=inbox";
+/* One message open, and a topic as a member: the label/value header,
+   the forum-rules notice the board writes as a bare div, and the strip
+   it leaves "First unread post" in. See make-member-fixtures.js. */
+const PM_READ = "/forum/pmread/ucp.php?i=pm&mode=view&f=0&p=1";
+const RULES = "/forum/rules/viewtopic.php?f=14&t=75717";
 const PROFILE_M = "/forum/profilem/memberlist.php?mode=viewprofile&u=1";
 /* The reply form: the BBCode toolbar, the helpbox and the topic review,
    as the live board prints them. See make-posting-fixture.js. */
@@ -1202,7 +1207,9 @@ const CHECKS = [
     {
         name: "chatter: nothing folds when the setting is off",
         url: CHATTER,
-        settings: {},
+        // On by default since 0.12, so this one has to say so: `{}` is
+        // "whatever the schema says" and stopped meaning "off".
+        settings: { quietPosts: false },
         run: () => document.querySelector("[data-rr-quiet]")
             ? "folded replies with the setting off"
             : null,
@@ -1212,7 +1219,8 @@ const CHECKS = [
     {
         name: "unread: an unread row's title opens at the first unread post",
         url: UNREAD,
-        // Off by default since 0.11: a title opens page one unless asked.
+        // On by default since 0.12; still named here, so the check
+        // reads the same whichever way the default goes next.
         fresh: true,
         settings: { unreadFromList: true },
         run: () => {
@@ -2820,21 +2828,27 @@ const CHECKS = [
         },
     },
     {
-        name: "rules: the notice is emphasised, not shouted",
+        name: "rules: the notice speaks in the theme's voice, not the board's",
         url: LONG,
         run: () => {
             const box = document.querySelector("table[data-rr-rules]");
             if (!box) return "no rules card";
-            const big = box.querySelector('.postbody [style*="font-size"]');
-            if (!big) return "the fixture lost the board's own sizing";
-            /* The board writes [size=150], which lands as 150% typed
-               into the tag: 22px on a 15px page, above a topic title
-               set smaller than it. Clamped, not stripped — the
-               emphasis was meant. */
-            const size = parseFloat(getComputedStyle(big).fontSize);
-            const body = parseFloat(getComputedStyle(box.querySelector(".postbody")).fontSize);
-            if (size > body * 1.25) return "still shouting at " + size + "px over " + body + "px";
-            if (size <= body) return "the emphasis was lost altogether";
+            /* The board writes [size=150] and #FFBF00 into the tag:
+               22px of yellow on a 15px page, above a topic title set
+               smaller than it, in a colour this redesign uses nowhere
+               on any of its four themes.
+             *
+             * Both are cleared rather than clamped (lists.js,
+             * tameRulesEmphasis). What makes the notice a notice is the
+             * card, the rail and the theme's own warning colour — none
+             * of which depend on what the board typed. */
+            if (box.querySelector('[style*="font-size"]')) return "the board's own sizing survived";
+            if (box.querySelector('[style*="color"]')) return "the board's own colour survived";
+
+            const body = box.querySelector(".postbody");
+            const size = parseFloat(getComputedStyle(body).fontSize);
+            const page = parseFloat(getComputedStyle(document.body).fontSize);
+            if (size > page) return "the notice still reads larger than the page at " + size + "px";
             const label = parseFloat(getComputedStyle(box.querySelector("h4")).fontSize);
             if (label >= size) return "the label is louder than the notice it labels";
             return null;
@@ -2851,6 +2865,146 @@ const CHECKS = [
             if (!rows.length) return "the listing has no section rows to confuse";
             const wrong = document.querySelectorAll("table[data-rr-rules]").length;
             return wrong ? wrong + " listing tables taken for a rules box" : null;
+        },
+    },
+    /* ---- The shapes a member sees, and the ones reported at 0.12 --- */
+    {
+        name: "rules: the notice the board really writes gets the card too",
+        url: RULES,
+        run: () => {
+            /* subsilver2 ships the rules in a `td.row3` and every rule
+               for them was keyed to that. This board writes a bare
+               `div.forumrules` straight into #wrapcentre, so on the
+               live board the notice was never once styled: 25px of
+               #FFBF00 on pure black inside a dark red hairline, hard
+               against the topic title, in the middle of a redrawn
+               page. */
+            const box = document.querySelector("#wrapcentre div.forumrules");
+            if (!box) return "the fixture lost the notice";
+            if (!box.hasAttribute("data-rr-rules")) return "the div shape is still not recognised";
+            if (box.querySelector('[style*="font-size"]')) return "the board's own sizing survived";
+            if (box.querySelector('[style*="color"]')) return "the board's own colour survived";
+            // The board's own ground is pure black; the card's is not.
+            const bg = getComputedStyle(box).backgroundColor;
+            if (/^rgba?\(0, 0, 0/.test(bg)) return "still on the board's own black";
+            const size = parseFloat(getComputedStyle(box).fontSize);
+            const page = parseFloat(getComputedStyle(document.body).fontSize);
+            if (size > page) return "the notice still reads larger than the page at " + size + "px";
+            // And it is not touching the title under it.
+            const title = document.querySelector("#pageheader");
+            if (!title) return "no title to be clear of";
+            const gap = title.getBoundingClientRect().top - box.getBoundingClientRect().bottom;
+            if (gap < 12) return "only " + Math.round(gap) + "px between the notice and the title";
+            return null;
+        },
+    },
+    {
+        name: "topic bar: the board's own First unread post is taken, not left in a strip",
+        url: RULES,
+        run: () => {
+            /* The bar looked for `td.nav > a`, and by the time it runs
+               every link in one of those strips is wrapped in a
+               `span.rr-linkrow`. So it never matched on the live board:
+               people.js built a second link for the bar and the
+               board's strip stayed where it was — a full-width card
+               between the releases panel and the first post, holding
+               one right-aligned link. */
+            const inBar = document.querySelectorAll('.rr-topicbar a[href*="view=unread"]').length;
+            if (inBar !== 1) return inBar + " unread links in the bar";
+            const stray = Array.from(document.querySelectorAll('#wrapcentre a[href*="view=unread"]'))
+                .filter((a) => !a.closest(".rr-topicbar") && a.getClientRects().length);
+            if (stray.length) return stray.length + " left standing outside the bar";
+            return null;
+        },
+    },
+    {
+        name: "message: the header rows are inset like every other card",
+        url: PM_READ,
+        run: () => {
+            /* The board writes row1 on the `<tr>` and leaves the cells
+               plain, so every inset in the stylesheet — all of it keyed
+               to `td.row1` — missed them, and the labels sat on the
+               card's own border while the message panel under them
+               started fourteen pixels in. */
+            const table = document.querySelector("#wrapcentre table.tablebg[data-rr-fields]");
+            if (!table) return "the message header was not read as a table of fields";
+            const label = table.querySelector('td[data-rr-field="label"]');
+            const value = table.querySelector('td[data-rr-field="value"]');
+            if (!label || !value) return "the label and value cells are not named";
+            const pad = parseFloat(getComputedStyle(label).paddingLeft);
+            if (pad < 10) return "the label cell is inset by only " + pad + "px";
+            // Measured from the card's edge, which is what a reader
+            // sees: the cell's own inset plus whatever cellspacing the
+            // template left around it.
+            const inset = label.getBoundingClientRect().left + pad - table.getBoundingClientRect().left;
+            if (inset < 12) return "the label sits " + Math.round(inset) + "px from the card's edge";
+            return null;
+        },
+    },
+    {
+        name: "search: the trigger's own label does not cover the choices it opens",
+        url: FORUM,
+        run: () => {
+            /* The label hangs 6px under the control, which is exactly
+               where the popover's first row lands. Open the choices
+               with the pointer still on the trigger and "Main Forum /
+               Whole board" was behind a tip repeating the question —
+               the button read as doing nothing at all. */
+            const opts = document.querySelector(".rr-search__opts");
+            if (!opts) return "no search options control";
+            opts.click();
+            const pop = document.querySelector(".rr-search__pop");
+            if (!pop || pop.hidden) return "the choices did not open";
+            const first = pop.querySelector(".rr-seg button");
+            if (!first) return "the popover has no choices in it";
+            const box = first.getBoundingClientRect();
+            const over = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+            if (!over || !pop.contains(over)) {
+                return "something else paints over the first choice: " + (over ? over.tagName + "." + over.className : "nothing");
+            }
+            return null;
+        },
+    },
+    {
+        name: "steam: the board's own tooltip goes, and its date moves on to the card",
+        url: UNREAD,
+        settings: { steamPreview: true },
+        run: () => {
+            /* Every topic title on this board carries `title="Posted:
+               …"`, so resting on one with the preview on drew the
+               browser's tooltip and the card at once, side by side,
+               saying different things about the same topic. */
+            const titles = Array.from(document.querySelectorAll("a.topictitle"));
+            if (!titles.length) return "no topic titles on the page";
+            const left = titles.filter((a) => /^\s*(Posted|Добавлено)\s*:/i.test(a.getAttribute("title") || ""));
+            if (left.length) return left.length + " titles still carry the board's tooltip";
+            return null;
+        },
+    },
+    {
+        name: "releases: the filter strip is not read as the first row of the list",
+        // The page with every kind on it, so the strip is actually drawn.
+        url: KINDS,
+        run: () => {
+            /* The chips are deliberately the same words in the same
+               colours as the tags in the rows below, which left the
+               strip reading as a row of the list with its version
+               column missing: same ground, flush against the first
+               row, no edge between them. */
+            const panel = document.querySelector(".rr-releases");
+            if (!panel) return "no releases panel";
+            const strip = panel.querySelector(".rr-releases__filters");
+            if (!strip) return "this page's releases are all of one kind";
+            const row = panel.querySelector(".rr-releases__row");
+            if (!row) return "no rows under the strip";
+            const paint = (node) => getComputedStyle(node).backgroundColor;
+            if (paint(strip) === paint(panel)) return "the strip is on the panel's own ground";
+            const edge = getComputedStyle(strip).borderBottomWidth;
+            if (parseFloat(edge) < 1) return "no hairline under the strip";
+            // And the chips are outlined while the tags in the rows are filled.
+            const chip = strip.querySelector(".rr-releases__chip:not([aria-pressed='true'])");
+            if (chip && paint(chip) !== "rgba(0, 0, 0, 0)") return "the chips are still filled like the tags below them";
+            return null;
         },
     },
     /* ---- Topics in the palette, and looking inside one ------------- */

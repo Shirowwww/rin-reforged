@@ -111,7 +111,11 @@ const PAGES = [
        ranks the first signed-in pass found there. */
     { fixture: "memberlist.html", out: "forum/members/memberlist.php" },
     { fixture: "ucp-pm.html", out: "forum/ucp/ucp.php" },
+    { fixture: "ucp-pm-read.html", out: "forum/pmread/ucp.php" },
     { fixture: "profile-member.html", out: "forum/profilem/memberlist.php" },
+    /* A topic as a member: the forum-rules notice the board writes as a
+       bare div, and the strip it leaves "First unread post" in. */
+    { fixture: "viewtopic-rules.html", out: "forum/rules/viewtopic.php" },
     /* Search results, which are a listing the board draws with a
        template of its own: its own header row, its own refine box
        written into the page three times over, and a "Sort by" strip a

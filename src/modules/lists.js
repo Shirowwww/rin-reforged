@@ -1470,6 +1470,35 @@ function initMarkColumn(table) {
 
    Tagged here; the stylesheet dresses it as the notice it is.  */
 function markForumRules() {
+    /* The shape the live board actually writes.
+     *
+     * Everything below reads the notice out of a `td.row3`, which is
+     * what subsilver2 ships and what the fixtures carry — and on
+     * cs.rin.ru it never matched once. The board writes a plain
+     * `div.forumrules` straight into #wrapcentre instead, so a member
+     * on a restricted forum got the notice exactly as the board draws
+     * it: 25px yellow on pure black inside a dark red hairline, hard
+     * against the topic title under it, in the middle of a page that
+     * had been redrawn around it.
+     */
+    for (const box of document.querySelectorAll("#wrapcentre div.forumrules")) {
+        if (box.hasAttribute("data-rr-rules")) continue;
+        box.setAttribute("data-rr-rules", "");
+        tameRulesEmphasis(box);
+        /* The template writes `<br>` on either side of it and one more
+           under its heading. They were the only spacing the notice had;
+           it has margins of its own now, and three blank lines inside a
+           card is not air, it is a gap. */
+        for (const side of ["previousElementSibling", "nextElementSibling"]) {
+            const near = box[side];
+            if (near && near.tagName === "BR") near.style.display = "none";
+        }
+        const heading = box.querySelector("h3, h4");
+        if (heading && heading.nextElementSibling && heading.nextElementSibling.tagName === "BR") {
+            heading.nextElementSibling.style.display = "none";
+        }
+    }
+
     for (const cell of document.querySelectorAll("#wrapcentre td.row3")) {
         const box = cell.closest("table.tablebg");
         if (!box || box.hasAttribute("data-rr-rules")) continue;
@@ -1501,25 +1530,85 @@ function markForumRules() {
    it. Inline beats every rule in the stylesheet, so the size is taken
    down here rather than fought there.
 
-   Clamped rather than stripped. The emphasis was meant — this is the
-   one block on the page that is the board talking to you — so it keeps
-   a step above the body text and loses the shout. The colour is left
-   exactly as written: the ink pass lifts it to something readable on
-   whichever theme is on (theme.js, readableBoardInk). */
-const RULES_MAX_EMPHASIS = 120;
+   Dropped rather than clamped. A step above the body text was the
+   original reading, and 120% of a 15px page is still 18px of shouting
+   over three lines above a topic title set at 24 — the emphasis has to
+   come from the card, the rail and the colour, not from the type size.
+   The notice sizes itself from the stylesheet once the inline value is
+   gone.
+
+   The colour goes the same way, and for the reason it was reported:
+   the board writes #FFBF00 into the tag, which is not a colour this
+   redesign has anywhere else on any of its four themes. Cleared here
+   so the stylesheet can paint the notice in the theme's own warning
+   colour — one notice colour per theme rather than the board's, which
+   is also what makes the light theme's special case unnecessary. */
+const RULES_MAX_EMPHASIS = 100;
 
 function tameRulesEmphasis(cell) {
     for (const node of cell.querySelectorAll('[style*="font-size"]')) {
         const written = /^\s*(\d+(?:\.\d+)?)\s*(%|em|rem)\s*$/.exec(node.style.fontSize);
         if (!written) continue;
         const percent = written[2] === "%" ? Number(written[1]) : Number(written[1]) * 100;
-        if (percent > RULES_MAX_EMPHASIS) node.style.fontSize = RULES_MAX_EMPHASIS + "%";
+        if (percent <= RULES_MAX_EMPHASIS) continue;
+        node.style.removeProperty("font-size");
+        // Typed in beside it, and it fights the leading the card sets.
+        node.style.removeProperty("line-height");
+    }
+    for (const node of cell.querySelectorAll('[style*="color"]')) node.style.removeProperty("color");
+}
+
+/** row1..row5, the classes subsilver2 bands a table with. */
+const ROW_CLASS_RE = /\brow[1-5]\b/;
+/** A label cell: "Message subject:", "From:" — the colon is the tell. */
+const LABEL_RE = /:\s*$/;
+
+/* A table that is a list of fields rather than a list of rows.
+
+   The private message a member opens is one: four rows of "Message
+   subject: / From: / Sent: / To:", written as `<tr class="row1">` with
+   the cells left plain. Every inset in this stylesheet hangs off
+   `td.row1` — the class is on the row here, not on the cell — so the
+   only padding those cells ever had was the template's own
+   `cellpadding="4"`, and the labels sat four pixels off the card's
+   edge while the message panel under them sat at fourteen.
+
+   Told apart by shape, because nothing on the page names it: two cells
+   a row, a label ending in a colon in the first, no header row, no
+   topic links. That is the message header, and the same shape wherever
+   else the board writes one. */
+function markFieldTables() {
+    for (const table of document.querySelectorAll("#wrapcentre table.tablebg")) {
+        if (table.hasAttribute("data-rr-fields")) continue;
+        if (table.querySelector("th, a.topictitle, a.forumlink, .postbody, textarea")) continue;
+
+        const rows = Array.from(table.querySelectorAll(":scope > tbody > tr"));
+        if (rows.length < 2) continue;
+
+        const fields = rows.every((row) => {
+            if (!ROW_CLASS_RE.test(row.className)) return false;
+            const cells = Array.from(row.children).filter((cell) => cell.tagName === "TD");
+            if (cells.length !== 2) return false;
+            // The cell must not carry a row class of its own, or the
+            // padding it already has is the one this would double.
+            if (cells.some((cell) => ROW_CLASS_RE.test(cell.className))) return false;
+            return LABEL_RE.test(cells[0].textContent);
+        });
+        if (!fields) continue;
+
+        table.setAttribute("data-rr-fields", "");
+        for (const row of rows) {
+            const cells = Array.from(row.children).filter((cell) => cell.tagName === "TD");
+            cells[0].setAttribute("data-rr-field", "label");
+            cells[1].setAttribute("data-rr-field", "value");
+        }
     }
 }
 
 function initLists() {
     markShapes();
     markForumRules();
+    markFieldTables();
     groupSortControls();
     for (const table of document.querySelectorAll("table.tablebg")) {
         restoreGridCells(table);

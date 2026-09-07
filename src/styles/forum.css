@@ -683,7 +683,77 @@ html[data-rr] #pageheader h2 {
 html[data-rr] #pageheader h2 > .rr-tag { align-self: center; }
 html[data-rr] #pageheader h2 a.titles { color: var(--rr-text-strong); }
 
+/* ---- A table of fields ------------------------------------------- */
+
+/* Marked by lists.js (markFieldTables): the header of a private
+   message, and anything else the board writes as label/value rows.
+
+   The template puts row1 on the `<tr>` and leaves the cells plain, so
+   every inset in this sheet — all of it keyed to `td.row1` — missed
+   them, and the labels sat on the card's own border while the message
+   panel below started fourteen pixels in. Same inset as every other
+   card, the label quiet and the value not, and no hairline under the
+   last row of a card that ends there. */
+html[data-rr] table.tablebg[data-rr-fields] > tbody > tr > td {
+    padding: var(--rr-row-pad) var(--rr-card-pad);
+    background: var(--rr-surface);
+    border: 0;
+    border-bottom: 1px solid var(--rr-line);
+    vertical-align: top;
+}
+html[data-rr] table.tablebg[data-rr-fields] > tbody > tr:last-child > td { border-bottom: 0; }
+html[data-rr] table.tablebg[data-rr-fields] > tbody > tr > td[data-rr-field="label"] {
+    width: 1%;
+    padding-right: var(--rr-s5);
+    color: var(--rr-faint);
+    white-space: nowrap;
+}
+/* The template bolds the label and leaves the value plain, which is
+   the wrong way round: the label is the same four words on every
+   message and the value is what was opened to be read. */
+html[data-rr] table.tablebg[data-rr-fields] td[data-rr-field="label"] b { font-weight: 600; }
+html[data-rr] table.tablebg[data-rr-fields] > tbody > tr > td[data-rr-field="value"] { color: var(--rr-text); }
+
 /* ---- The forum-rules notice -------------------------------------- */
+
+/* The shape the live board writes: a bare `div.forumrules` dropped
+   straight into #wrapcentre, with the board's own black ground, its
+   dark-red hairline and 4px of padding, immediately above the topic
+   title. Same card as the table shape below, addressed separately
+   because the two share no element between them. */
+html[data-rr] div.forumrules[data-rr-rules] {
+    position: relative;
+    margin: var(--rr-s3) 0 var(--rr-s5);
+    padding: var(--rr-s4) var(--rr-s5) var(--rr-s4) 26px;
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-lg);
+    color: var(--rr-muted);
+    font-size: var(--rr-fs-sm);
+    line-height: var(--rr-lh);
+}
+html[data-rr] div.forumrules[data-rr-rules]::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: calc(var(--rr-s4) + 3px);
+    width: 3px;
+    height: 14px;
+    border-radius: 2px;
+    background: var(--rr-warn);
+}
+/* The notice's own voice, in the theme's colours rather than the
+   board's #FFBF00. lists.js clears the inline colour so this reaches
+   it; the weight is what carries the emphasis the size used to. */
+html[data-rr] div.forumrules[data-rr-rules] > span,
+html[data-rr] div.forumrules[data-rr-rules] > span span { color: var(--rr-warn); }
+html[data-rr] div.forumrules[data-rr-rules] ul,
+html[data-rr] div.forumrules[data-rr-rules] ol {
+    margin: var(--rr-s2) 0 0;
+    padding-left: var(--rr-s5);
+    color: var(--rr-muted);
+}
+html[data-rr] div.forumrules[data-rr-rules] li { margin: 2px 0; }
 
 /* Marked by lists.js (markForumRules). It is prose, not a listing row:
    the room a panel gets, a heading told apart from the rules under it,
@@ -721,6 +791,8 @@ html[data-rr] table.tablebg[data-rr-rules] > tbody > tr > td.row3::before {
 html[data-rr] table.tablebg[data-rr-rules] table { border-spacing: 0; width: 100%; }
 html[data-rr] table.tablebg[data-rr-rules] table > tbody > tr > td { padding: 0; background: none; border: 0; }
 
+html[data-rr] div.forumrules[data-rr-rules] h3,
+html[data-rr] table.tablebg[data-rr-rules] h3,
 html[data-rr] table.tablebg[data-rr-rules] h4,
 html[data-rr] table.tablebg[data-rr-rules] p.rules {
     margin: 0 0 var(--rr-s3);

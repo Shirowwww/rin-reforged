@@ -202,13 +202,25 @@ html[data-rr][data-rr-theme="native"] {
        read for hours — and the identity is not in the last three
        percent of the black anyway. It is in the neutral (no blue cast,
        unlike Slate), the grey text, and the red. */
-    --rr-bg:            #101010;
-    --rr-bg-sunken:     #0a0a0a;
+    /* The ladder, spread.
+     *
+     * bg and surface were seven points apart, which on a page that is
+     * a column of cards means the cards do not lift off it: the only
+     * thing saying where one ends was a hairline barely lighter than
+     * either. The ground goes down rather than the cards going up —
+     * the cards are where the reading happens and their value is
+     * measured (see --rr-faint) — which also lands this theme nearer
+     * the board's own #070707 than it was, at no cost to the
+     * anti-halation reasoning at the top of this file: #0b0b0b is
+     * still off pure black, and nothing on this theme paints text
+     * straight onto it. The hairlines come up to match. */
+    --rr-bg:            #0b0b0b;
+    --rr-bg-sunken:     #060606;
     --rr-surface:       #171717;
     --rr-surface-2:     #1e1e1e;
-    --rr-surface-3:     #292929;
-    --rr-line:          #2e2e2e;
-    --rr-line-strong:   #474747;
+    --rr-surface-3:     #2c2c2c;
+    --rr-line:          #333333;
+    --rr-line-strong:   #4d4d4d;
 
     --rr-text:          #cccccc;
     --rr-text-strong:   #ffffff;
@@ -1047,7 +1059,77 @@ html[data-rr] #pageheader h2 {
 html[data-rr] #pageheader h2 > .rr-tag { align-self: center; }
 html[data-rr] #pageheader h2 a.titles { color: var(--rr-text-strong); }
 
+/* ---- A table of fields ------------------------------------------- */
+
+/* Marked by lists.js (markFieldTables): the header of a private
+   message, and anything else the board writes as label/value rows.
+
+   The template puts row1 on the \`<tr>\` and leaves the cells plain, so
+   every inset in this sheet — all of it keyed to \`td.row1\` — missed
+   them, and the labels sat on the card's own border while the message
+   panel below started fourteen pixels in. Same inset as every other
+   card, the label quiet and the value not, and no hairline under the
+   last row of a card that ends there. */
+html[data-rr] table.tablebg[data-rr-fields] > tbody > tr > td {
+    padding: var(--rr-row-pad) var(--rr-card-pad);
+    background: var(--rr-surface);
+    border: 0;
+    border-bottom: 1px solid var(--rr-line);
+    vertical-align: top;
+}
+html[data-rr] table.tablebg[data-rr-fields] > tbody > tr:last-child > td { border-bottom: 0; }
+html[data-rr] table.tablebg[data-rr-fields] > tbody > tr > td[data-rr-field="label"] {
+    width: 1%;
+    padding-right: var(--rr-s5);
+    color: var(--rr-faint);
+    white-space: nowrap;
+}
+/* The template bolds the label and leaves the value plain, which is
+   the wrong way round: the label is the same four words on every
+   message and the value is what was opened to be read. */
+html[data-rr] table.tablebg[data-rr-fields] td[data-rr-field="label"] b { font-weight: 600; }
+html[data-rr] table.tablebg[data-rr-fields] > tbody > tr > td[data-rr-field="value"] { color: var(--rr-text); }
+
 /* ---- The forum-rules notice -------------------------------------- */
+
+/* The shape the live board writes: a bare \`div.forumrules\` dropped
+   straight into #wrapcentre, with the board's own black ground, its
+   dark-red hairline and 4px of padding, immediately above the topic
+   title. Same card as the table shape below, addressed separately
+   because the two share no element between them. */
+html[data-rr] div.forumrules[data-rr-rules] {
+    position: relative;
+    margin: var(--rr-s3) 0 var(--rr-s5);
+    padding: var(--rr-s4) var(--rr-s5) var(--rr-s4) 26px;
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius-lg);
+    color: var(--rr-muted);
+    font-size: var(--rr-fs-sm);
+    line-height: var(--rr-lh);
+}
+html[data-rr] div.forumrules[data-rr-rules]::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: calc(var(--rr-s4) + 3px);
+    width: 3px;
+    height: 14px;
+    border-radius: 2px;
+    background: var(--rr-warn);
+}
+/* The notice's own voice, in the theme's colours rather than the
+   board's #FFBF00. lists.js clears the inline colour so this reaches
+   it; the weight is what carries the emphasis the size used to. */
+html[data-rr] div.forumrules[data-rr-rules] > span,
+html[data-rr] div.forumrules[data-rr-rules] > span span { color: var(--rr-warn); }
+html[data-rr] div.forumrules[data-rr-rules] ul,
+html[data-rr] div.forumrules[data-rr-rules] ol {
+    margin: var(--rr-s2) 0 0;
+    padding-left: var(--rr-s5);
+    color: var(--rr-muted);
+}
+html[data-rr] div.forumrules[data-rr-rules] li { margin: 2px 0; }
 
 /* Marked by lists.js (markForumRules). It is prose, not a listing row:
    the room a panel gets, a heading told apart from the rules under it,
@@ -1085,6 +1167,8 @@ html[data-rr] table.tablebg[data-rr-rules] > tbody > tr > td.row3::before {
 html[data-rr] table.tablebg[data-rr-rules] table { border-spacing: 0; width: 100%; }
 html[data-rr] table.tablebg[data-rr-rules] table > tbody > tr > td { padding: 0; background: none; border: 0; }
 
+html[data-rr] div.forumrules[data-rr-rules] h3,
+html[data-rr] table.tablebg[data-rr-rules] h3,
 html[data-rr] table.tablebg[data-rr-rules] h4,
 html[data-rr] table.tablebg[data-rr-rules] p.rules {
     margin: 0 0 var(--rr-s3);
@@ -2034,7 +2118,18 @@ html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-tex
     flex-wrap: wrap;
     min-width: 0;
 }
-.rr-boardbar__end { margin-left: auto; }
+/* The left half takes whatever the right half leaves and wraps inside
+   itself; the right half keeps its own width and stays whole.
+
+   The basis stays \`auto\` rather than 0. A left half that asks for
+   nothing is always on the first line — which is what makes the row
+   fold to one line where there is room for one — but on the index the
+   bar shares its row with a 380px masthead, and asking for nothing
+   there left it 190px wide with each group stacked one link to a line.
+   Asking for what it wants, it takes the whole line when the two will
+   not share one, and the right half drops below it intact. */
+.rr-boardbar__main { flex: 1 1 auto; }
+.rr-boardbar__end { flex: 0 0 auto; margin-left: auto; }
 
 /* Ways of looking at threads, then what the board is, then you.
 
@@ -2046,6 +2141,12 @@ html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-tex
 .rr-boardbar__group {
     display: inline-flex;
     align-items: stretch;
+    /* A group whose links will not fit the window used to run off the
+       side of the page — signed in, the five view links did exactly
+       that at 1100px, with "View your posts" half off screen. The links
+       themselves cannot break, so the ribbon does: it carries on on a
+       second line, still one box. */
+    flex-wrap: wrap;
     min-width: 0;
     border: 1px solid var(--rr-line);
     border-radius: var(--rr-radius);
@@ -2133,13 +2234,12 @@ html[data-rr] a.rr-langswitch__option[aria-current] .rr-boardbar__flag { opacity
     }
     .rr-boardbar__more[aria-expanded="true"] svg { transform: rotate(180deg); }
 
-    /* Two entry points stay: "View unanswered posts" and "View active
-       topics" are what every guide to this board says to bookmark, and
-       they lead the views group. The third thing in that group is the
-       board's plain Search, which the top bar already carries as its
-       own control — so the group folds past two like everything else.
-       What the board is, who you are and the language switch all wait
-       behind the More control. */
+    /* Two entry points stay: "Unanswered posts" and "Active topics"
+       are what every guide to this board says to bookmark, and they
+       lead the views group. Signed in, three more views follow them
+       there — unread, new, your own — and those fold like everything
+       else. What the board is, who you are and the language switch all
+       wait behind the More control. */
     .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :not([data-rr-group="views"]),
     .rr-boardbar:not([data-rr-open]) [data-rr-group="views"] > :nth-child(n+3),
     .rr-boardbar:not([data-rr-open]) .rr-boardbar__end { display: none; }
@@ -2312,6 +2412,12 @@ html[data-rr] button.rr-search__opts {
 }
 html[data-rr] button.rr-search__opts:hover,
 html[data-rr] button.rr-search__opts[aria-expanded="true"] { background: var(--rr-surface-3); color: var(--rr-text-strong); }
+/* The trigger's own hover label is drawn 6px under it, which is where
+   the popover's first row is: click it and the answer — Main Forum /
+   Whole board — is covered by a tip repeating the question. The button
+   read as doing nothing at all. Once the choices are open they say
+   what the tip said, so the tip stands down. */
+html[data-rr] button.rr-search__opts[aria-expanded="true"]::after { display: none; }
 html[data-rr] button.rr-search__opts[data-rr-active] { color: var(--rr-accent); }
 html[data-rr] button.rr-search__opts svg { width: 13px; height: 13px; flex: none; }
 .rr-search__where {
@@ -3270,18 +3376,37 @@ html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
    filed under, so the rail and the page agree. */
 .rr-group[data-rr-searching] .rr-group__note { display: none; }
 
+/* A row is words on the left and a control on the right, until the
+   control is wider than the room left over — and then it takes a line
+   of its own rather than squeezing the words into a column.
+ *
+ * That squeeze was the panel's worst habit: five theme buttons and a
+ * three-line sentence in the same row left the sentence wrapping at
+ * about thirty characters beside three hundred pixels of nothing. A
+ * min-width on the words and \`flex-wrap\` on the row is the general
+ * form of what the accent chips already had as a special case. */
 .rr-field {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-start;
-    gap: var(--rr-s4);
+    /* space-between rather than a margin on the control: on the line it
+       shares with the words it is pushed to the right edge, and on a
+       line of its own it starts at the left, under them. A margin
+       would strand it at the right of an otherwise empty row. */
+    justify-content: space-between;
+    gap: var(--rr-s3) var(--rr-s5);
     padding: var(--rr-s4) 0;
     border-top: 1px solid var(--rr-line);
 }
 .rr-field:first-of-type { border-top: 0; }
-.rr-field__text { flex: 1; min-width: 0; }
+/* The basis is the wrap threshold, not the width: the words grow into
+   whatever the line has left. 16rem is where a sentence stops reading
+   as a column of two-word lines, so a control wider than the rest of
+   the row takes its own line rather than squeezing them into one. */
+.rr-field__text { flex: 1 1 16rem; min-width: 0; }
 .rr-field__label { display: block; font: 600 var(--rr-fs-sm) / var(--rr-lh-meta) var(--rr-font); color: var(--rr-text); }
-.rr-field__desc { display: block; margin-top: 3px; font-size: var(--rr-fs-xs); line-height: 1.55; color: var(--rr-muted); max-width: 52ch; }
-.rr-field__control { flex: none; display: flex; align-items: center; gap: var(--rr-s2); padding-top: 2px; }
+.rr-field__desc { display: block; margin-top: 4px; font-size: var(--rr-fs-xs); line-height: 1.6; color: var(--rr-muted); max-width: 56ch; }
+.rr-field__control { flex: 0 0 auto; display: flex; align-items: center; gap: var(--rr-s2); padding-top: 2px; }
 .rr-field[hidden],
 .rr-field[data-rr-dep-off],
 .rr-field[data-rr-nomatch] { display: none; }
@@ -3333,13 +3458,12 @@ html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
 .rr-range-val { font: var(--rr-fs-xs) / 1 var(--rr-font-mono); color: var(--rr-muted); min-width: 34px; text-align: right; }
 
 /* The accent, chosen from named chips rather than bare squares. Six
-   named chips are wider than the control column, so on a desktop —
-   where the field is a row — they take a line of their own under its
-   words. On a phone the field is already a column and needs none of
-   it: \`flex-basis: 100%\` there is a *height*, which is how the chips
-   came to overrun the sheet. */
+   named chips never share a line with anything, so they start at the
+   left of their own one rather than being pushed to the right of it by
+   the row's \`margin-left: auto\`. On a phone the field is already a
+   column and needs none of it: \`flex-basis: 100%\` there is a *height*,
+   which is how the chips came to overrun the sheet. */
 @media (min-width: 641px) {
-    .rr-field[data-field="accent"] { flex-wrap: wrap; }
     .rr-field[data-field="accent"] > .rr-field__control { flex-basis: 100%; padding-top: 0; }
 }
 .rr-swatches { display: flex; flex-wrap: wrap; gap: 4px; max-width: 100%; }
@@ -4008,9 +4132,22 @@ html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead__date { display: none; }
    sizes itself to its content: on a desktop the folded post grew to
    2044px and pushed the whole page sideways. As blocks the row is the
    width it is given and the message is clipped inside it. */
+/* The whole chain down to the message, not only the outermost rows:
+   one table-cell left anywhere along it is enough. subsilver2 wraps a
+   post in one more \`<table cellspacing="5">\` on the live board — the
+   fixtures do not — and that table and the \`td\` holding it went on
+   shrink-wrapping the nowrap line inside them: 2756px of it, 1401px of
+   page pushed sideways, which is the same failure this rule was
+   written for, two levels further in.
+ *
+ * Only cells on that chain. \`td\` on its own outranks the modern
+ * layout's \`td.profile { display: none }\` and puts the author column
+ * — rank, joined date, post count — back above every folded reply. */
 html[data-rr] table.tablebg[data-rr-quiet],
-html[data-rr] table.tablebg[data-rr-quiet] > tbody,
-html[data-rr] table.tablebg[data-rr-quiet] > tbody > tr { display: block; }
+html[data-rr] table.tablebg[data-rr-quiet] table,
+html[data-rr] table.tablebg[data-rr-quiet] tbody,
+html[data-rr] table.tablebg[data-rr-quiet] tr,
+html[data-rr] table.tablebg[data-rr-quiet] td:has(.postbody) { display: block; }
 html[data-rr] table.tablebg[data-rr-quiet] td:has(> .postbody) {
     display: flex;
     align-items: baseline;
@@ -4082,11 +4219,14 @@ html[data-rr] table.tablebg:not([data-rr-quiet]) .rr-quiet-chip:hover { opacity:
    offers it from anywhere. */
 html[data-rr] .rr-boardbar__donate { font-weight: 600; }
 
-@media (max-width: 560px) {
-    /* On a phone the row is 366px wide and the two entry points plus
-       the More control do not fit it. "View unanswered posts" is the
-       one every guide to this board tells people to bookmark, so it is
-       the one that stays; the rest are one tap away behind More. */
+@media (max-width: 380px) {
+    /* Both entry points and the More control come to 340px, so on a
+       390px phone — the common one — they now fit the row, which they
+       did not while every link opened with the word "View": only one
+       used to survive here. Under 380px they stop fitting.
+       "Unanswered posts" is the one every guide to this board tells
+       people to bookmark, so it is the one that stays; the rest are
+       one tap away behind More. */
     html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :first-child > :nth-child(n+2) {
         display: none;
     }
@@ -4166,6 +4306,19 @@ html[data-rr] .rr-boardbar__donate { font-weight: 600; }
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+/* When the topic opened, which the store cannot say and the board's
+   own tooltip used to — drawn over this card until steam.js took the
+   attribute away. It belongs with the bookkeeping at the foot, above
+   the two lookups, hairlined off the blurb so it does not read as the
+   last line of it. */
+.rr-steam__posted {
+    padding-top: var(--rr-s2);
+    border-top: 1px solid var(--rr-line);
+    font: var(--rr-fs-xs) / var(--rr-lh-meta) var(--rr-font);
+    color: var(--rr-faint);
+}
+/* On the placeholder there is nothing above it to be separated from. */
+.rr-steam--quiet .rr-steam__posted { padding-top: 0; border-top: 0; }
 .rr-steam__links { display: flex; gap: 6px; }
 .rr-steam__links .rr-btn { padding: 4px 8px; font-size: var(--rr-fs-xs); }
 
@@ -4457,17 +4610,30 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
     font-weight: 700;
 }
 
+/* The chips filter the list; the tags in the rows below name what a
+   release is. They are deliberately the same words in the same
+   colours, which left them reading as a first row of the list with its
+   version column missing — the strip sat flush on the first row, same
+   ground, same chips, no edge between them.
+
+   So the strip takes the head's ground rather than the list's, and a
+   full hairline under it. Three bands: what the panel is, how it is
+   filtered, what it found. */
 .rr-releases__filters {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
-    padding: var(--rr-s2) var(--rr-card-pad);
-    border-bottom: 1px solid var(--rr-line);
+    align-items: center;
+    gap: 5px;
+    padding: var(--rr-s2) var(--rr-card-pad) 9px;
+    background: var(--rr-surface-2);
+    border-bottom: 1px solid var(--rr-line-strong);
 }
 .rr-releases__chip {
     padding: 2px 9px;
     border-radius: var(--rr-radius-pill);
-    background: var(--rr-surface-2);
+    /* Transparent on the strip's own ground. A filled chip on a tinted
+       strip is a third surface for a control that is off. */
+    background: transparent;
     border: 1px solid var(--rr-line);
     color: var(--rr-muted);
     font: 600 var(--rr-fs-xs) / 1.6 var(--rr-font);
@@ -4490,7 +4656,7 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
     color: color-mix(in srgb, var(--rr-family) 78%, var(--rr-muted));
     border-color: color-mix(in srgb, var(--rr-family) 26%, transparent);
 }
-.rr-releases__chip:hover { color: var(--rr-text-strong); border-color: var(--rr-line-strong); }
+.rr-releases__chip:hover { background: var(--rr-surface); color: var(--rr-text-strong); border-color: var(--rr-line-strong); }
 .rr-releases__chip[aria-pressed="true"] {
     background: var(--rr-accent-soft);
     border-color: var(--rr-accent);
@@ -5597,7 +5763,11 @@ html[data-rr] .rr-preview__wait { color: var(--rr-faint); font-size: var(--rr-fs
    no groups at all. */
 @media (max-width: 720px) {
     html[data-rr] .rr-boardbar[data-rr-open] { padding-bottom: var(--rr-s2); }
-    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__main {
+    /* Both halves, not just the left one: the account group sits at the
+       right of the desktop row now, and behind the fold it is a row of
+       the menu like the two above it. */
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__main,
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__end {
         flex-direction: column;
         align-items: stretch;
         width: 100%;
@@ -5619,8 +5789,10 @@ html[data-rr] .rr-preview__wait { color: var(--rr-faint); font-size: var(--rr-fs
     }
     html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__group > .rr-boardbar__link { border-left: 0; border-radius: 0; }
     /* The fold's control keeps the top line to itself; the groups
-       start under it at full width, so no link has to wrap around it. */
-    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__group:first-child {
+       start under it at full width, so no link has to wrap around it.
+       Only the first group of the left half — the account group is
+       first inside the right one, and it is nowhere near the top. */
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__main > .rr-boardbar__group:first-child {
         border-top: 0;
         padding-top: 38px;
         padding-right: 0;
@@ -5631,7 +5803,14 @@ html[data-rr] .rr-preview__wait { color: var(--rr-faint); font-size: var(--rr-fs
         line-height: 1.3;
     }
     html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__donate { justify-self: start; margin: 4px 0; }
-    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__end { margin: var(--rr-s2) 0 0; }
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__end { margin: 0; }
+    /* Everything in the open menu is a full-width row; the language
+       switch is a control, and a control stretched across the screen
+       stops reading as one. */
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-langswitch {
+        align-self: flex-start;
+        margin-top: var(--rr-s3);
+    }
 }
 
 /* The settings panel on a phone: a sheet, not a two-column window.
@@ -5661,6 +5840,15 @@ html[data-rr] .rr-preview__wait { color: var(--rr-faint); font-size: var(--rr-fs
     html[data-rr] .rr-field {
         flex-direction: column;
         align-items: stretch;
+        /* Both of these undo a desktop rule that means something else
+           once the field is a column rather than a row.
+         *
+         * \`space-between\` spreads the words and the control to the top
+         * and bottom of whatever height the row is given, and \`wrap\`
+         * lays a field too tall for its line out in a *second column*
+         * beside the first — 695px of it inside 358. */
+        flex-wrap: nowrap;
+        justify-content: flex-start;
         gap: var(--rr-s2);
         padding: var(--rr-s3) 0;
     }
@@ -5670,6 +5858,14 @@ html[data-rr] .rr-preview__wait { color: var(--rr-faint); font-size: var(--rr-fs
         align-items: center;
         gap: var(--rr-s3);
     }
+    /* The desktop row wraps a wide control off the line by giving the
+       words a 16rem flex-basis. Down here the field is a column and
+       that basis is a *height*: 256px of nothing between a label and
+       the control it labels. Same trap as the accent chips' 100%.
+       It still has to shrink, though — a switch keeps its field a row
+       down here, and words that cannot shrink take their max-content
+       width and push the row 300px past the sheet. */
+    html[data-rr] .rr-field__text { flex: 0 1 auto; }
     html[data-rr] .rr-field__desc { max-width: none; }
     html[data-rr] .rr-field__control { flex-wrap: wrap; padding-top: 0; }
     html[data-rr] .rr-seg { flex-wrap: wrap; }
@@ -6206,8 +6402,8 @@ const SETTINGS_SCHEMA = [
         note: "Announcements, stickies and the topics fold on a click on their heading, and stay folded until you open them again.",
         fields: [
             {
-                id: "unreadFromList", label: "Topic titles open at the first unread post", type: "toggle", default: false,
-                desc: "Off, a title opens the first page of its topic. On, a topic with unread posts opens at the first of them. Needs an account.",
+                id: "unreadFromList", label: "Topic titles open at the first unread post", type: "toggle", default: true,
+                desc: "On, a topic with unread posts opens at the first of them; off, a title opens the first page. Needs an account — logged out there is nothing to be unread.",
             },
             {
                 id: "hideVisited", label: "Mark topics already opened", type: "toggle", default: true,
@@ -6276,8 +6472,8 @@ const SETTINGS_SCHEMA = [
                 when: "foldQuotes",
             },
             {
-                id: "quietPosts", label: "Fold short low-value replies", type: "toggle", default: false,
-                desc: "\"thanks!\", \"+1\" and a lone emoji collapse to one dim line you can click open. Decided from what a post says — never from who wrote it.",
+                id: "quietPosts", label: "Fold short low-value replies", type: "toggle", default: true,
+                desc: "\"thanks!\", \"+1\" and a lone emoji collapse to one dim line you can click open. Nothing is removed and nothing is decided from who wrote it — only from what the post says.",
             },
             {
                 id: "quietLimit", label: "Fold replies shorter than", type: "range", default: 120,
@@ -7670,6 +7866,12 @@ const RU_WORDS = {
     "RIN Reforged settings": "Настройки RIN Reforged",
     "Skip to content": "К содержимому",
 
+    // The Steam preview card. The board's own "Posted:" tooltip is
+    // taken off the title so this card can be the only thing that
+    // answers on hover, so the date it carried has to speak Russian
+    // here too.
+    "Topic opened {when}": "Тема создана {when}",
+
     // The command palette
     "Boards": "Разделы",
     "Recent": "Недавние",
@@ -8991,8 +9193,22 @@ function frameStraySearch() {
    six links with it. They come back here, as one slim row at the top of
    the content, in the order the masthead used. */
 
-/** Destinations the navbar already offers as an icon of its own. */
-const NAV_LIFTED = /[?&]i=pm|mode=login(?:&|$)/;
+/* Destinations the navbar already offers as an icon of its own.
+
+   Recorded as it builds them rather than guessed at with a pattern.
+   The pattern that was here matched the inbox and the login link, and
+   missed the one that mattered: signed in, the account icon points at
+   `ucp.php`, and `ucp.php` is also the masthead's "User Control Panel"
+   — so the row carried a 150px chip for a link already sitting three
+   inches above it, and it carried it in the one place where width was
+   short. What the bar actually took is not something to infer. */
+const NAV_TOOK = new Set();
+
+/** The same href written twice — with a session id, without — is one
+    destination. */
+function linkKey(href) {
+    return String(href || "").replace(/[?&]sid=[a-f0-9]+/, "").replace(/[?&]$/, "");
+}
 
 /**
  * One entry in the board bar.
@@ -9041,21 +9257,55 @@ function boardBarLink(link) {
 /* Twelve links in the order the masthead printed them is a list, not a
    menu. They are three kinds of thing:
 
-     views    — ways of looking at threads (unanswered, active, search)
-     board    — what the board is (rules, FAQ, chat, donate, the rest)
+     views    — ways of looking at threads (unanswered, active, unread)
+     board    — what the board is (rules, FAQ, chat, members, search)
      account  — you (register, log in, log out, profile)
 
-   In that order, so the account group ends the row beside the language
-   switch, where the things about the reader sit together. Grouping is
-   also what stops `Logout [ name ]` wrapping alone onto a second line.
+   The first two lead the row and the third ends it, hard against the
+   language switch — which is where the board itself put them. Its
+   masthead is two rows of two cells: the board on the left, you on the
+   right, `Logout [ name ]` the last thing before the flags. That split
+   is the one thing about those rows worth keeping, and the version
+   that ran everything together on the left lost it. Grouping is also
+   what stops `Logout [ name ]` wrapping alone onto a second line.
 
    Classified by destination, not by label: the labels are translated
-   and the hrefs are not. */
+   and the hrefs are not. A view is a saved search — `search.php`
+   carrying a `search_id`; plain `search.php` is the board's search
+   form, which is a tool like the FAQ rather than a way of reading. */
 const BOARD_BAR_GROUPS = [
-    { id: "views", label: "Threads", re: /search\.php/ },
+    { id: "views", label: "Threads", re: /search\.php\?[^#]*search_id=/ },
     { id: "board", label: "Board", re: null },      // whatever is neither of the others
-    { id: "account", label: "Account", re: /ucp\.php|mode=(?:login|logout|register)|viewprofile|profile\.php/ },
+    { id: "account", label: "Account", end: true,
+        re: /ucp\.php|mode=(?:login|logout|register)|viewprofile|profile\.php/ },
 ];
+
+/* The board opens every one of its view links with the same word:
+   "View unanswered posts", "View active topics", "View unread posts",
+   "View new posts", "View your posts". Five chips in a row, each
+   starting with a word that says nothing about where it goes — and
+   signed in, on a 1100px window, the row ran off the side of the page.
+
+   The shared opening goes rather than being translated away: these
+   words are the board's, and its Russian half writes its own. Whatever
+   the links happen to start with, if they all start with it and each
+   has something left afterwards, it is dropped; the board's full
+   wording stays as the link's name for anyone hovering or listening. */
+function trimSharedPrefix(links) {
+    if (links.length < 2) return;
+    const words = links.map((link) => link.textContent.trim().split(/\s+/));
+    let shared = 0;
+    while (words.every((parts) => parts.length > shared + 1 && parts[shared] === words[0][shared])) shared++;
+    if (!shared) return;
+
+    for (const link of links) {
+        const full = link.textContent.trim();
+        const rest = full.split(/\s+/).slice(shared).join(" ");
+        link.textContent = rest.charAt(0).toUpperCase() + rest.slice(1);
+        link.setAttribute("title", full);
+        link.setAttribute("aria-label", full);
+    }
+}
 
 function boardBarGroup(href) {
     return BOARD_BAR_GROUPS.find((group) => group.re && group.re.test(href))
@@ -9144,8 +9394,8 @@ function buildBoardBar() {
     const take = (link) => {
         const href = link.getAttribute("href") || "";
         if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
-        const key = href.replace(/[?&]sid=[a-f0-9]+/, "").replace(/[?&]$/, "");
-        if (seen.has(key)) return;
+        const key = linkKey(href);
+        if (seen.has(key) || NAV_TOOK.has(key)) return;
         seen.add(key);
         if (isLanguageLink(link, href)) { languages.push(link); return; }
         const group = groupNode(boardBarGroup(href).id);
@@ -9162,20 +9412,23 @@ function buildBoardBar() {
 
     for (const link of Array.from(document.querySelectorAll("#wrapheader a[href]"))) {
         if (link.querySelector('img[src*="site_logo"], img[src*="logo"]')) continue;
-        if (NAV_LIFTED.test(link.getAttribute("href") || "")) continue;
         take(link);
     }
 
+    const views = groups.get("views");
+    if (views) trimSharedPrefix(Array.from(views.querySelectorAll(".rr-boardbar__link")));
+
     // In the order declared, not the order the masthead happened to
     // print them: a group that is empty on this page simply is not
-    // drawn.
+    // drawn, and the one marked `end` goes to the right of the row
+    // rather than the left, in front of the language switch.
     const main = el("div.rr-boardbar__main");
+    const end = el("div.rr-boardbar__end");
     for (const group of BOARD_BAR_GROUPS) {
         const node = groups.get(group.id);
-        if (node && node.children.length) main.append(node);
+        if (node && node.children.length) (group.end ? end : main).append(node);
     }
 
-    const end = el("div.rr-boardbar__end");
     const language = buildLanguageSwitch(languages);
     if (language) end.append(language);
     else for (const link of languages) end.append(boardBarLink(link));
@@ -9246,12 +9499,14 @@ function buildNavbar() {
     } else {
         const searchHref = findHeaderLink("search.php");
         if (searchHref) {
+            NAV_TOOK.add(linkKey(searchHref));
             actions.append(labelled(el("a.rr-icon-btn", { href: searchHref }, [icon("search")]), t("Search")));
         }
     }
 
     const pmHref = findHeaderLink("i=pm", "ucp.php?i=pm");
     if (pmHref) {
+        NAV_TOOK.add(linkKey(pmHref));
         const unread = unreadMessages();
         const label = unread > 0
             ? t("Private messages — {n} unread", { n: unread })
@@ -9263,6 +9518,7 @@ function buildNavbar() {
 
     const ucpHref = findHeaderLink("mode=login", "ucp.php");
     if (ucpHref) {
+        NAV_TOOK.add(linkKey(ucpHref));
         const label = t(isLoggedIn() ? "Your account" : "Log in");
         actions.append(labelled(el("a.rr-icon-btn", { href: ucpHref }, [icon("user")]), label));
     }
@@ -11042,6 +11298,35 @@ function initMarkColumn(table) {
 
    Tagged here; the stylesheet dresses it as the notice it is.  */
 function markForumRules() {
+    /* The shape the live board actually writes.
+     *
+     * Everything below reads the notice out of a `td.row3`, which is
+     * what subsilver2 ships and what the fixtures carry — and on
+     * cs.rin.ru it never matched once. The board writes a plain
+     * `div.forumrules` straight into #wrapcentre instead, so a member
+     * on a restricted forum got the notice exactly as the board draws
+     * it: 25px yellow on pure black inside a dark red hairline, hard
+     * against the topic title under it, in the middle of a page that
+     * had been redrawn around it.
+     */
+    for (const box of document.querySelectorAll("#wrapcentre div.forumrules")) {
+        if (box.hasAttribute("data-rr-rules")) continue;
+        box.setAttribute("data-rr-rules", "");
+        tameRulesEmphasis(box);
+        /* The template writes `<br>` on either side of it and one more
+           under its heading. They were the only spacing the notice had;
+           it has margins of its own now, and three blank lines inside a
+           card is not air, it is a gap. */
+        for (const side of ["previousElementSibling", "nextElementSibling"]) {
+            const near = box[side];
+            if (near && near.tagName === "BR") near.style.display = "none";
+        }
+        const heading = box.querySelector("h3, h4");
+        if (heading && heading.nextElementSibling && heading.nextElementSibling.tagName === "BR") {
+            heading.nextElementSibling.style.display = "none";
+        }
+    }
+
     for (const cell of document.querySelectorAll("#wrapcentre td.row3")) {
         const box = cell.closest("table.tablebg");
         if (!box || box.hasAttribute("data-rr-rules")) continue;
@@ -11073,25 +11358,85 @@ function markForumRules() {
    it. Inline beats every rule in the stylesheet, so the size is taken
    down here rather than fought there.
 
-   Clamped rather than stripped. The emphasis was meant — this is the
-   one block on the page that is the board talking to you — so it keeps
-   a step above the body text and loses the shout. The colour is left
-   exactly as written: the ink pass lifts it to something readable on
-   whichever theme is on (theme.js, readableBoardInk). */
-const RULES_MAX_EMPHASIS = 120;
+   Dropped rather than clamped. A step above the body text was the
+   original reading, and 120% of a 15px page is still 18px of shouting
+   over three lines above a topic title set at 24 — the emphasis has to
+   come from the card, the rail and the colour, not from the type size.
+   The notice sizes itself from the stylesheet once the inline value is
+   gone.
+
+   The colour goes the same way, and for the reason it was reported:
+   the board writes #FFBF00 into the tag, which is not a colour this
+   redesign has anywhere else on any of its four themes. Cleared here
+   so the stylesheet can paint the notice in the theme's own warning
+   colour — one notice colour per theme rather than the board's, which
+   is also what makes the light theme's special case unnecessary. */
+const RULES_MAX_EMPHASIS = 100;
 
 function tameRulesEmphasis(cell) {
     for (const node of cell.querySelectorAll('[style*="font-size"]')) {
         const written = /^\s*(\d+(?:\.\d+)?)\s*(%|em|rem)\s*$/.exec(node.style.fontSize);
         if (!written) continue;
         const percent = written[2] === "%" ? Number(written[1]) : Number(written[1]) * 100;
-        if (percent > RULES_MAX_EMPHASIS) node.style.fontSize = RULES_MAX_EMPHASIS + "%";
+        if (percent <= RULES_MAX_EMPHASIS) continue;
+        node.style.removeProperty("font-size");
+        // Typed in beside it, and it fights the leading the card sets.
+        node.style.removeProperty("line-height");
+    }
+    for (const node of cell.querySelectorAll('[style*="color"]')) node.style.removeProperty("color");
+}
+
+/** row1..row5, the classes subsilver2 bands a table with. */
+const ROW_CLASS_RE = /\brow[1-5]\b/;
+/** A label cell: "Message subject:", "From:" — the colon is the tell. */
+const LABEL_RE = /:\s*$/;
+
+/* A table that is a list of fields rather than a list of rows.
+
+   The private message a member opens is one: four rows of "Message
+   subject: / From: / Sent: / To:", written as `<tr class="row1">` with
+   the cells left plain. Every inset in this stylesheet hangs off
+   `td.row1` — the class is on the row here, not on the cell — so the
+   only padding those cells ever had was the template's own
+   `cellpadding="4"`, and the labels sat four pixels off the card's
+   edge while the message panel under them sat at fourteen.
+
+   Told apart by shape, because nothing on the page names it: two cells
+   a row, a label ending in a colon in the first, no header row, no
+   topic links. That is the message header, and the same shape wherever
+   else the board writes one. */
+function markFieldTables() {
+    for (const table of document.querySelectorAll("#wrapcentre table.tablebg")) {
+        if (table.hasAttribute("data-rr-fields")) continue;
+        if (table.querySelector("th, a.topictitle, a.forumlink, .postbody, textarea")) continue;
+
+        const rows = Array.from(table.querySelectorAll(":scope > tbody > tr"));
+        if (rows.length < 2) continue;
+
+        const fields = rows.every((row) => {
+            if (!ROW_CLASS_RE.test(row.className)) return false;
+            const cells = Array.from(row.children).filter((cell) => cell.tagName === "TD");
+            if (cells.length !== 2) return false;
+            // The cell must not carry a row class of its own, or the
+            // padding it already has is the one this would double.
+            if (cells.some((cell) => ROW_CLASS_RE.test(cell.className))) return false;
+            return LABEL_RE.test(cells[0].textContent);
+        });
+        if (!fields) continue;
+
+        table.setAttribute("data-rr-fields", "");
+        for (const row of rows) {
+            const cells = Array.from(row.children).filter((cell) => cell.tagName === "TD");
+            cells[0].setAttribute("data-rr-field", "label");
+            cells[1].setAttribute("data-rr-field", "value");
+        }
     }
 }
 
 function initLists() {
     markShapes();
     markForumRules();
+    markFieldTables();
     groupSortControls();
     for (const table of document.querySelectorAll("table.tablebg")) {
         restoreGridCells(table);
@@ -11692,8 +12037,17 @@ function buildTopicBar() {
        strip that also holds the reply button. It is the same journey
        people.js builds a link for when the board prints none, so it is
        taken as it is — the board's href carries the #unread anchor —
-       and people.js leaves the bar alone when it finds one here. */
-    const unread = document.querySelector('#wrapcentre td.nav > a[href*="view=unread"]');
+       and people.js leaves the bar alone when it finds one here.
+
+       Descendant, not child: icons.js wraps every link in one of these
+       strips in a `span.rr-linkrow` before this runs, so `td.nav > a`
+       matched on the fixtures and never once on the live board. What a
+       member actually got was the strip left standing with a single
+       link in it — a full-width empty card saying "First unread post"
+       between the releases panel and the first post — and a second
+       copy of the same journey in the bar, built by people.js because
+       it could not find this one either. */
+    const unread = document.querySelector('#wrapcentre td.nav a[href*="view=unread"]');
     if (unread) {
         const cell = unread.closest("td");
         unread.classList.add("rr-btn");
@@ -11835,8 +12189,21 @@ function hiddenWithin(node, root) {
    the first post. textContent sees through display:none — the hidden
    cells' "|" separators and the reply link they still hold counted as
    life — so only what is not hidden counts. */
+function boardStrips() {
+    const out = new Set(document.querySelectorAll("#wrapcentre table.tablebg"));
+    /* The strip holding "First unread post" is a bare `<table
+       width="100%">` with no class at all, so a scan for table.tablebg
+       walked straight past it and left the card standing. It is a
+       board strip by what it holds, not by what it is called. */
+    for (const cell of document.querySelectorAll("#wrapcentre td.nav")) {
+        const table = cell.closest("table");
+        if (table && !table.querySelector(".postbody")) out.add(table);
+    }
+    return out;
+}
+
 function hideEmptyBoardStrips(bar) {
-    for (const strip of document.querySelectorAll("#wrapcentre table.tablebg")) {
+    for (const strip of boardStrips()) {
         if (bar && strip.contains(bar)) continue;
         if (strip.querySelector(".postbody, .rr-releases, form")) continue;
         const cells = Array.from(strip.querySelectorAll("td"));
@@ -15671,7 +16038,27 @@ const STEAM_EXCUSES = {
 
 /* ---- The card ----------------------------------------------------- */
 
-function steamCard(game, term) {
+/* The board's own tooltip on a topic title.
+ *
+ * Every `a.topictitle` on this board carries `title="Posted: Wednesday,
+ * 15 May 2013, 16:42"`, so resting on one with the preview switched on
+ * drew two things at once: the browser's tooltip and this card, side by
+ * side, saying different things about the same topic. The date is worth
+ * keeping — it is the one fact the store cannot supply — so it moves on
+ * to the card and the attribute goes.
+ *
+ * The weekday goes with it. "Wednesday" is four times the width of the
+ * date it qualifies and nobody reads a 2013 thread by the day of the
+ * week it opened on. */
+const POSTED_RE = /^\s*(?:Posted|Добавлено)\s*:\s*/i;
+
+function postedOn(link) {
+    const said = link.getAttribute("title") || "";
+    if (!POSTED_RE.test(said)) return null;
+    return said.replace(POSTED_RE, "").replace(/^[^,]+,\s*/, "").trim() || null;
+}
+
+function steamCard(game, term, posted) {
     /* Not role=tooltip: a tooltip is text, and this holds the Store and
        SteamDB links. A group named after the game says what it is. */
     const card = el("div.rr-steam", { role: "group", "aria-label": game.name || "Steam" });
@@ -15708,6 +16095,8 @@ function steamCard(game, term) {
 
     if (game.blurb) card.append(el("p.rr-steam__blurb", {}, [game.blurb]));
 
+    if (posted) card.append(el("div.rr-steam__posted", {}, [t("Topic opened {when}", { when: posted })]));
+
     card.append(el("div.rr-steam__links", {}, [
         el("a.rr-btn", {
             href: "https://store.steampowered.com/app/" + game.appId + "/",
@@ -15722,8 +16111,9 @@ function steamCard(game, term) {
     return card;
 }
 
-function steamPlaceholder(text) {
+function steamPlaceholder(text, posted) {
     return el("div.rr-steam.rr-steam--quiet", { role: "tooltip" }, [
+        posted ? el("div.rr-steam__posted", {}, [t("Topic opened {when}", { when: posted })]) : null,
         el("div.rr-steam__facts", {}, [text]),
     ]);
 }
@@ -15772,7 +16162,7 @@ function steamShow(link, entry) {
     steamAnchor = link;
 
     const shell = el("div.rr-steam-pop");
-    shell.append(steamPlaceholder("Looking this one up…"));
+    shell.append(steamPlaceholder("Looking this one up…", entry.posted));
     document.body.append(shell);
     steamPopover = shell;
     steamPlace(shell, link);
@@ -15785,8 +16175,8 @@ function steamShow(link, entry) {
     steamLookForTopic(entry.id, entry.title).then((result) => {
         if (steamPopover !== shell || !document.contains(shell)) return;
         shell.textContent = "";
-        if (result.game) shell.append(steamCard(result.game, steamSearchTerm(entry.title)));
-        else shell.append(steamPlaceholder(STEAM_EXCUSES[result.why] || STEAM_EXCUSES.miss));
+        if (result.game) shell.append(steamCard(result.game, steamSearchTerm(entry.title), entry.posted));
+        else shell.append(steamPlaceholder(STEAM_EXCUSES[result.why] || STEAM_EXCUSES.miss, entry.posted));
         steamPlace(shell, link);
     });
 }
@@ -15802,7 +16192,14 @@ function initSteamPreview() {
     if (!PAGE.isForum && !PAGE.isIndex && !PAGE.isSearch) return;
 
     const byLink = new Map();
-    for (const entry of topicRows()) byLink.set(entry.link, entry);
+    for (const entry of topicRows()) {
+        /* Only where a card will actually be drawn, and only once the
+           preview is on: with it off the board's tooltip is the only
+           thing saying when a topic opened, and it stays. */
+        entry.posted = postedOn(entry.link);
+        if (entry.posted) entry.link.removeAttribute("title");
+        byLink.set(entry.link, entry);
+    }
     if (!byLink.size) return;
 
     const armed = (event) => {

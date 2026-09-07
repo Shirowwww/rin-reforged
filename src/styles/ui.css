@@ -221,7 +221,18 @@ html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-tex
     flex-wrap: wrap;
     min-width: 0;
 }
-.rr-boardbar__end { margin-left: auto; }
+/* The left half takes whatever the right half leaves and wraps inside
+   itself; the right half keeps its own width and stays whole.
+
+   The basis stays `auto` rather than 0. A left half that asks for
+   nothing is always on the first line — which is what makes the row
+   fold to one line where there is room for one — but on the index the
+   bar shares its row with a 380px masthead, and asking for nothing
+   there left it 190px wide with each group stacked one link to a line.
+   Asking for what it wants, it takes the whole line when the two will
+   not share one, and the right half drops below it intact. */
+.rr-boardbar__main { flex: 1 1 auto; }
+.rr-boardbar__end { flex: 0 0 auto; margin-left: auto; }
 
 /* Ways of looking at threads, then what the board is, then you.
 
@@ -233,6 +244,12 @@ html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-tex
 .rr-boardbar__group {
     display: inline-flex;
     align-items: stretch;
+    /* A group whose links will not fit the window used to run off the
+       side of the page — signed in, the five view links did exactly
+       that at 1100px, with "View your posts" half off screen. The links
+       themselves cannot break, so the ribbon does: it carries on on a
+       second line, still one box. */
+    flex-wrap: wrap;
     min-width: 0;
     border: 1px solid var(--rr-line);
     border-radius: var(--rr-radius);
@@ -320,13 +337,12 @@ html[data-rr] a.rr-langswitch__option[aria-current] .rr-boardbar__flag { opacity
     }
     .rr-boardbar__more[aria-expanded="true"] svg { transform: rotate(180deg); }
 
-    /* Two entry points stay: "View unanswered posts" and "View active
-       topics" are what every guide to this board says to bookmark, and
-       they lead the views group. The third thing in that group is the
-       board's plain Search, which the top bar already carries as its
-       own control — so the group folds past two like everything else.
-       What the board is, who you are and the language switch all wait
-       behind the More control. */
+    /* Two entry points stay: "Unanswered posts" and "Active topics"
+       are what every guide to this board says to bookmark, and they
+       lead the views group. Signed in, three more views follow them
+       there — unread, new, your own — and those fold like everything
+       else. What the board is, who you are and the language switch all
+       wait behind the More control. */
     .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :not([data-rr-group="views"]),
     .rr-boardbar:not([data-rr-open]) [data-rr-group="views"] > :nth-child(n+3),
     .rr-boardbar:not([data-rr-open]) .rr-boardbar__end { display: none; }
@@ -499,6 +515,12 @@ html[data-rr] button.rr-search__opts {
 }
 html[data-rr] button.rr-search__opts:hover,
 html[data-rr] button.rr-search__opts[aria-expanded="true"] { background: var(--rr-surface-3); color: var(--rr-text-strong); }
+/* The trigger's own hover label is drawn 6px under it, which is where
+   the popover's first row is: click it and the answer — Main Forum /
+   Whole board — is covered by a tip repeating the question. The button
+   read as doing nothing at all. Once the choices are open they say
+   what the tip said, so the tip stands down. */
+html[data-rr] button.rr-search__opts[aria-expanded="true"]::after { display: none; }
 html[data-rr] button.rr-search__opts[data-rr-active] { color: var(--rr-accent); }
 html[data-rr] button.rr-search__opts svg { width: 13px; height: 13px; flex: none; }
 .rr-search__where {
@@ -1457,18 +1479,37 @@ html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
    filed under, so the rail and the page agree. */
 .rr-group[data-rr-searching] .rr-group__note { display: none; }
 
+/* A row is words on the left and a control on the right, until the
+   control is wider than the room left over — and then it takes a line
+   of its own rather than squeezing the words into a column.
+ *
+ * That squeeze was the panel's worst habit: five theme buttons and a
+ * three-line sentence in the same row left the sentence wrapping at
+ * about thirty characters beside three hundred pixels of nothing. A
+ * min-width on the words and `flex-wrap` on the row is the general
+ * form of what the accent chips already had as a special case. */
 .rr-field {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-start;
-    gap: var(--rr-s4);
+    /* space-between rather than a margin on the control: on the line it
+       shares with the words it is pushed to the right edge, and on a
+       line of its own it starts at the left, under them. A margin
+       would strand it at the right of an otherwise empty row. */
+    justify-content: space-between;
+    gap: var(--rr-s3) var(--rr-s5);
     padding: var(--rr-s4) 0;
     border-top: 1px solid var(--rr-line);
 }
 .rr-field:first-of-type { border-top: 0; }
-.rr-field__text { flex: 1; min-width: 0; }
+/* The basis is the wrap threshold, not the width: the words grow into
+   whatever the line has left. 16rem is where a sentence stops reading
+   as a column of two-word lines, so a control wider than the rest of
+   the row takes its own line rather than squeezing them into one. */
+.rr-field__text { flex: 1 1 16rem; min-width: 0; }
 .rr-field__label { display: block; font: 600 var(--rr-fs-sm) / var(--rr-lh-meta) var(--rr-font); color: var(--rr-text); }
-.rr-field__desc { display: block; margin-top: 3px; font-size: var(--rr-fs-xs); line-height: 1.55; color: var(--rr-muted); max-width: 52ch; }
-.rr-field__control { flex: none; display: flex; align-items: center; gap: var(--rr-s2); padding-top: 2px; }
+.rr-field__desc { display: block; margin-top: 4px; font-size: var(--rr-fs-xs); line-height: 1.6; color: var(--rr-muted); max-width: 56ch; }
+.rr-field__control { flex: 0 0 auto; display: flex; align-items: center; gap: var(--rr-s2); padding-top: 2px; }
 .rr-field[hidden],
 .rr-field[data-rr-dep-off],
 .rr-field[data-rr-nomatch] { display: none; }
@@ -1520,13 +1561,12 @@ html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
 .rr-range-val { font: var(--rr-fs-xs) / 1 var(--rr-font-mono); color: var(--rr-muted); min-width: 34px; text-align: right; }
 
 /* The accent, chosen from named chips rather than bare squares. Six
-   named chips are wider than the control column, so on a desktop —
-   where the field is a row — they take a line of their own under its
-   words. On a phone the field is already a column and needs none of
-   it: `flex-basis: 100%` there is a *height*, which is how the chips
-   came to overrun the sheet. */
+   named chips never share a line with anything, so they start at the
+   left of their own one rather than being pushed to the right of it by
+   the row's `margin-left: auto`. On a phone the field is already a
+   column and needs none of it: `flex-basis: 100%` there is a *height*,
+   which is how the chips came to overrun the sheet. */
 @media (min-width: 641px) {
-    .rr-field[data-field="accent"] { flex-wrap: wrap; }
     .rr-field[data-field="accent"] > .rr-field__control { flex-basis: 100%; padding-top: 0; }
 }
 .rr-swatches { display: flex; flex-wrap: wrap; gap: 4px; max-width: 100%; }

@@ -254,7 +254,27 @@ const STEAM_EXCUSES = {
 
 /* ---- The card ----------------------------------------------------- */
 
-function steamCard(game, term) {
+/* The board's own tooltip on a topic title.
+ *
+ * Every `a.topictitle` on this board carries `title="Posted: Wednesday,
+ * 15 May 2013, 16:42"`, so resting on one with the preview switched on
+ * drew two things at once: the browser's tooltip and this card, side by
+ * side, saying different things about the same topic. The date is worth
+ * keeping — it is the one fact the store cannot supply — so it moves on
+ * to the card and the attribute goes.
+ *
+ * The weekday goes with it. "Wednesday" is four times the width of the
+ * date it qualifies and nobody reads a 2013 thread by the day of the
+ * week it opened on. */
+const POSTED_RE = /^\s*(?:Posted|Добавлено)\s*:\s*/i;
+
+function postedOn(link) {
+    const said = link.getAttribute("title") || "";
+    if (!POSTED_RE.test(said)) return null;
+    return said.replace(POSTED_RE, "").replace(/^[^,]+,\s*/, "").trim() || null;
+}
+
+function steamCard(game, term, posted) {
     /* Not role=tooltip: a tooltip is text, and this holds the Store and
        SteamDB links. A group named after the game says what it is. */
     const card = el("div.rr-steam", { role: "group", "aria-label": game.name || "Steam" });
@@ -291,6 +311,8 @@ function steamCard(game, term) {
 
     if (game.blurb) card.append(el("p.rr-steam__blurb", {}, [game.blurb]));
 
+    if (posted) card.append(el("div.rr-steam__posted", {}, [t("Topic opened {when}", { when: posted })]));
+
     card.append(el("div.rr-steam__links", {}, [
         el("a.rr-btn", {
             href: "https://store.steampowered.com/app/" + game.appId + "/",
@@ -305,8 +327,9 @@ function steamCard(game, term) {
     return card;
 }
 
-function steamPlaceholder(text) {
+function steamPlaceholder(text, posted) {
     return el("div.rr-steam.rr-steam--quiet", { role: "tooltip" }, [
+        posted ? el("div.rr-steam__posted", {}, [t("Topic opened {when}", { when: posted })]) : null,
         el("div.rr-steam__facts", {}, [text]),
     ]);
 }
@@ -355,7 +378,7 @@ function steamShow(link, entry) {
     steamAnchor = link;
 
     const shell = el("div.rr-steam-pop");
-    shell.append(steamPlaceholder("Looking this one up…"));
+    shell.append(steamPlaceholder("Looking this one up…", entry.posted));
     document.body.append(shell);
     steamPopover = shell;
     steamPlace(shell, link);
@@ -368,8 +391,8 @@ function steamShow(link, entry) {
     steamLookForTopic(entry.id, entry.title).then((result) => {
         if (steamPopover !== shell || !document.contains(shell)) return;
         shell.textContent = "";
-        if (result.game) shell.append(steamCard(result.game, steamSearchTerm(entry.title)));
-        else shell.append(steamPlaceholder(STEAM_EXCUSES[result.why] || STEAM_EXCUSES.miss));
+        if (result.game) shell.append(steamCard(result.game, steamSearchTerm(entry.title), entry.posted));
+        else shell.append(steamPlaceholder(STEAM_EXCUSES[result.why] || STEAM_EXCUSES.miss, entry.posted));
         steamPlace(shell, link);
     });
 }
@@ -385,7 +408,14 @@ function initSteamPreview() {
     if (!PAGE.isForum && !PAGE.isIndex && !PAGE.isSearch) return;
 
     const byLink = new Map();
-    for (const entry of topicRows()) byLink.set(entry.link, entry);
+    for (const entry of topicRows()) {
+        /* Only where a card will actually be drawn, and only once the
+           preview is on: with it off the board's tooltip is the only
+           thing saying when a topic opened, and it stays. */
+        entry.posted = postedOn(entry.link);
+        if (entry.posted) entry.link.removeAttribute("title");
+        byLink.set(entry.link, entry);
+    }
     if (!byLink.size) return;
 
     const armed = (event) => {

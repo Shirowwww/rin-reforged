@@ -840,7 +840,11 @@
    no groups at all. */
 @media (max-width: 720px) {
     html[data-rr] .rr-boardbar[data-rr-open] { padding-bottom: var(--rr-s2); }
-    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__main {
+    /* Both halves, not just the left one: the account group sits at the
+       right of the desktop row now, and behind the fold it is a row of
+       the menu like the two above it. */
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__main,
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__end {
         flex-direction: column;
         align-items: stretch;
         width: 100%;
@@ -862,8 +866,10 @@
     }
     html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__group > .rr-boardbar__link { border-left: 0; border-radius: 0; }
     /* The fold's control keeps the top line to itself; the groups
-       start under it at full width, so no link has to wrap around it. */
-    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__group:first-child {
+       start under it at full width, so no link has to wrap around it.
+       Only the first group of the left half — the account group is
+       first inside the right one, and it is nowhere near the top. */
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__main > .rr-boardbar__group:first-child {
         border-top: 0;
         padding-top: 38px;
         padding-right: 0;
@@ -874,7 +880,14 @@
         line-height: 1.3;
     }
     html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__donate { justify-self: start; margin: 4px 0; }
-    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__end { margin: var(--rr-s2) 0 0; }
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__end { margin: 0; }
+    /* Everything in the open menu is a full-width row; the language
+       switch is a control, and a control stretched across the screen
+       stops reading as one. */
+    html[data-rr] .rr-boardbar[data-rr-open] .rr-langswitch {
+        align-self: flex-start;
+        margin-top: var(--rr-s3);
+    }
 }
 
 /* The settings panel on a phone: a sheet, not a two-column window.
@@ -904,6 +917,15 @@
     html[data-rr] .rr-field {
         flex-direction: column;
         align-items: stretch;
+        /* Both of these undo a desktop rule that means something else
+           once the field is a column rather than a row.
+         *
+         * `space-between` spreads the words and the control to the top
+         * and bottom of whatever height the row is given, and `wrap`
+         * lays a field too tall for its line out in a *second column*
+         * beside the first — 695px of it inside 358. */
+        flex-wrap: nowrap;
+        justify-content: flex-start;
         gap: var(--rr-s2);
         padding: var(--rr-s3) 0;
     }
@@ -913,6 +935,14 @@
         align-items: center;
         gap: var(--rr-s3);
     }
+    /* The desktop row wraps a wide control off the line by giving the
+       words a 16rem flex-basis. Down here the field is a column and
+       that basis is a *height*: 256px of nothing between a label and
+       the control it labels. Same trap as the accent chips' 100%.
+       It still has to shrink, though — a switch keeps its field a row
+       down here, and words that cannot shrink take their max-content
+       width and push the row 300px past the sheet. */
+    html[data-rr] .rr-field__text { flex: 0 1 auto; }
     html[data-rr] .rr-field__desc { max-width: none; }
     html[data-rr] .rr-field__control { flex-wrap: wrap; padding-top: 0; }
     html[data-rr] .rr-seg { flex-wrap: wrap; }

@@ -233,8 +233,17 @@ function buildTopicBar() {
        strip that also holds the reply button. It is the same journey
        people.js builds a link for when the board prints none, so it is
        taken as it is — the board's href carries the #unread anchor —
-       and people.js leaves the bar alone when it finds one here. */
-    const unread = document.querySelector('#wrapcentre td.nav > a[href*="view=unread"]');
+       and people.js leaves the bar alone when it finds one here.
+
+       Descendant, not child: icons.js wraps every link in one of these
+       strips in a `span.rr-linkrow` before this runs, so `td.nav > a`
+       matched on the fixtures and never once on the live board. What a
+       member actually got was the strip left standing with a single
+       link in it — a full-width empty card saying "First unread post"
+       between the releases panel and the first post — and a second
+       copy of the same journey in the bar, built by people.js because
+       it could not find this one either. */
+    const unread = document.querySelector('#wrapcentre td.nav a[href*="view=unread"]');
     if (unread) {
         const cell = unread.closest("td");
         unread.classList.add("rr-btn");
@@ -376,8 +385,21 @@ function hiddenWithin(node, root) {
    the first post. textContent sees through display:none — the hidden
    cells' "|" separators and the reply link they still hold counted as
    life — so only what is not hidden counts. */
+function boardStrips() {
+    const out = new Set(document.querySelectorAll("#wrapcentre table.tablebg"));
+    /* The strip holding "First unread post" is a bare `<table
+       width="100%">` with no class at all, so a scan for table.tablebg
+       walked straight past it and left the card standing. It is a
+       board strip by what it holds, not by what it is called. */
+    for (const cell of document.querySelectorAll("#wrapcentre td.nav")) {
+        const table = cell.closest("table");
+        if (table && !table.querySelector(".postbody")) out.add(table);
+    }
+    return out;
+}
+
 function hideEmptyBoardStrips(bar) {
-    for (const strip of document.querySelectorAll("#wrapcentre table.tablebg")) {
+    for (const strip of boardStrips()) {
         if (bar && strip.contains(bar)) continue;
         if (strip.querySelector(".postbody, .rr-releases, form")) continue;
         const cells = Array.from(strip.querySelectorAll("td"));

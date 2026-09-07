@@ -250,6 +250,12 @@ const RU_WORDS = {
     "RIN Reforged settings": "Настройки RIN Reforged",
     "Skip to content": "К содержимому",
 
+    // The Steam preview card. The board's own "Posted:" tooltip is
+    // taken off the title so this card can be the only thing that
+    // answers on hover, so the date it carried has to speak Russian
+    // here too.
+    "Topic opened {when}": "Тема создана {when}",
+
     // The command palette
     "Boards": "Разделы",
     "Recent": "Недавние",

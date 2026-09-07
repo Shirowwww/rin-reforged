@@ -89,9 +89,22 @@ html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead__date { display: none; }
    sizes itself to its content: on a desktop the folded post grew to
    2044px and pushed the whole page sideways. As blocks the row is the
    width it is given and the message is clipped inside it. */
+/* The whole chain down to the message, not only the outermost rows:
+   one table-cell left anywhere along it is enough. subsilver2 wraps a
+   post in one more `<table cellspacing="5">` on the live board — the
+   fixtures do not — and that table and the `td` holding it went on
+   shrink-wrapping the nowrap line inside them: 2756px of it, 1401px of
+   page pushed sideways, which is the same failure this rule was
+   written for, two levels further in.
+ *
+ * Only cells on that chain. `td` on its own outranks the modern
+ * layout's `td.profile { display: none }` and puts the author column
+ * — rank, joined date, post count — back above every folded reply. */
 html[data-rr] table.tablebg[data-rr-quiet],
-html[data-rr] table.tablebg[data-rr-quiet] > tbody,
-html[data-rr] table.tablebg[data-rr-quiet] > tbody > tr { display: block; }
+html[data-rr] table.tablebg[data-rr-quiet] table,
+html[data-rr] table.tablebg[data-rr-quiet] tbody,
+html[data-rr] table.tablebg[data-rr-quiet] tr,
+html[data-rr] table.tablebg[data-rr-quiet] td:has(.postbody) { display: block; }
 html[data-rr] table.tablebg[data-rr-quiet] td:has(> .postbody) {
     display: flex;
     align-items: baseline;
@@ -163,11 +176,14 @@ html[data-rr] table.tablebg:not([data-rr-quiet]) .rr-quiet-chip:hover { opacity:
    offers it from anywhere. */
 html[data-rr] .rr-boardbar__donate { font-weight: 600; }
 
-@media (max-width: 560px) {
-    /* On a phone the row is 366px wide and the two entry points plus
-       the More control do not fit it. "View unanswered posts" is the
-       one every guide to this board tells people to bookmark, so it is
-       the one that stays; the rest are one tap away behind More. */
+@media (max-width: 380px) {
+    /* Both entry points and the More control come to 340px, so on a
+       390px phone — the common one — they now fit the row, which they
+       did not while every link opened with the word "View": only one
+       used to survive here. Under 380px they stop fitting.
+       "Unanswered posts" is the one every guide to this board tells
+       people to bookmark, so it is the one that stays; the rest are
+       one tap away behind More. */
     html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :first-child > :nth-child(n+2) {
         display: none;
     }
@@ -247,6 +263,19 @@ html[data-rr] .rr-boardbar__donate { font-weight: 600; }
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+/* When the topic opened, which the store cannot say and the board's
+   own tooltip used to — drawn over this card until steam.js took the
+   attribute away. It belongs with the bookkeeping at the foot, above
+   the two lookups, hairlined off the blurb so it does not read as the
+   last line of it. */
+.rr-steam__posted {
+    padding-top: var(--rr-s2);
+    border-top: 1px solid var(--rr-line);
+    font: var(--rr-fs-xs) / var(--rr-lh-meta) var(--rr-font);
+    color: var(--rr-faint);
+}
+/* On the placeholder there is nothing above it to be separated from. */
+.rr-steam--quiet .rr-steam__posted { padding-top: 0; border-top: 0; }
 .rr-steam__links { display: flex; gap: 6px; }
 .rr-steam__links .rr-btn { padding: 4px 8px; font-size: var(--rr-fs-xs); }
 
@@ -538,17 +567,30 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
     font-weight: 700;
 }
 
+/* The chips filter the list; the tags in the rows below name what a
+   release is. They are deliberately the same words in the same
+   colours, which left them reading as a first row of the list with its
+   version column missing — the strip sat flush on the first row, same
+   ground, same chips, no edge between them.
+
+   So the strip takes the head's ground rather than the list's, and a
+   full hairline under it. Three bands: what the panel is, how it is
+   filtered, what it found. */
 .rr-releases__filters {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
-    padding: var(--rr-s2) var(--rr-card-pad);
-    border-bottom: 1px solid var(--rr-line);
+    align-items: center;
+    gap: 5px;
+    padding: var(--rr-s2) var(--rr-card-pad) 9px;
+    background: var(--rr-surface-2);
+    border-bottom: 1px solid var(--rr-line-strong);
 }
 .rr-releases__chip {
     padding: 2px 9px;
     border-radius: var(--rr-radius-pill);
-    background: var(--rr-surface-2);
+    /* Transparent on the strip's own ground. A filled chip on a tinted
+       strip is a third surface for a control that is off. */
+    background: transparent;
     border: 1px solid var(--rr-line);
     color: var(--rr-muted);
     font: 600 var(--rr-fs-xs) / 1.6 var(--rr-font);
@@ -571,7 +613,7 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
     color: color-mix(in srgb, var(--rr-family) 78%, var(--rr-muted));
     border-color: color-mix(in srgb, var(--rr-family) 26%, transparent);
 }
-.rr-releases__chip:hover { color: var(--rr-text-strong); border-color: var(--rr-line-strong); }
+.rr-releases__chip:hover { background: var(--rr-surface); color: var(--rr-text-strong); border-color: var(--rr-line-strong); }
 .rr-releases__chip[aria-pressed="true"] {
     background: var(--rr-accent-soft);
     border-color: var(--rr-accent);
