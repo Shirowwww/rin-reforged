@@ -408,19 +408,6 @@ function labelWithOptionalTail(link, label) {
     else link.append(document.createTextNode(label));
 }
 
-/* The board's forum-rules box, which subsilver2 writes with
-   `style="margin-bottom: 2px"` typed into the tag. An inline style
-   beats every rule in this stylesheet without a fight, so the box sat
-   2px above the topic title: two blocks with nothing to do with each
-   other, touching. Block spacing is a token here; this hands the box
-   back to it. */
-function spaceForumRules() {
-    for (const cell of document.querySelectorAll("#wrapcentre td.row3")) {
-        const box = cell.closest("table.tablebg");
-        if (box && box.style.marginBottom) box.style.marginBottom = "";
-    }
-}
-
 /**
  * Print view, Previous topic and Next topic.
  *
@@ -1389,7 +1376,6 @@ function initTopic() {
     // state off the page.
     if (settings.get("spoilersOpen")) openSpoilersAtLoad();
     buildTopicBar();
-    spaceForumRules();
 
     all.forEach((post, index) => {
         if (settings.get("postTools")) addPostTools(post, index);

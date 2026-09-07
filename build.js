@@ -61,6 +61,7 @@ const JS_FILES = [
     "src/modules/steam.js",
     "src/modules/compose.js",
     "src/modules/people.js",
+    "src/modules/preview.js",
     "src/modules/palette.js",
     "src/modules/shortcuts.js",
     "src/modules/chrome.js",

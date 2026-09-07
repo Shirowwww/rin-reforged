@@ -318,6 +318,13 @@
     html[data-rr] .rr-toolbar__board .rr-search,
     html[data-rr] .rr-topicbar__search .rr-search { flex: 1; min-width: 0; width: 100%; }
 
+    /* The room the search will look in is printed inside the field on
+       a desktop. On a phone the field is barely wide enough for the
+       query, so the glyph goes back to standing on its own and the
+       name is in the popover the glyph opens. */
+    html[data-rr] .rr-search__where { display: none; }
+    html[data-rr] button.rr-search__opts { padding: 0; min-width: 26px; }
+
     html[data-rr] .rr-nav__crumbs a:not(:last-child),
     html[data-rr] .rr-nav__sep { display: none; }
     html[data-rr] .rr-toolbar { padding: var(--rr-s3); }
@@ -973,7 +980,9 @@
        order — this file is last in the build. */
     html[data-rr] table.tablebg[data-rr-post] { --rr-post-pad: 14px; --rr-post-pad-top: 14px; }
     html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row1,
-    html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row2 { padding: 0; }
+    html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row2,
+    html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr.row1 > td,
+    html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr.row2 > td { padding: 0; }
     html[data-rr] .rr-posthead__meta,
     html[data-rr] .rr-posthead__date { flex: 1 1 100%; text-align: left; margin: 0; }
 

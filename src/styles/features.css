@@ -682,8 +682,14 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
     .rr-releases__when { order: 5; }
     .rr-releases__page { order: 6; margin-left: auto; }
     .rr-releases__controls { margin-left: 0; flex-basis: 100%; }
-    .rr-releases__scope { flex: 1; }
-    .rr-releases__tab { flex: 1; }
+    /* Both segmented controls take a row of their own and all of it.
+       Side by side, "Newest first" wraps onto two lines inside a
+       segment and the row goes ragged; a control per row reads as a
+       stack of choices, which is what it is. */
+    .rr-releases__scope,
+    .rr-releases__order { flex: 1 1 100%; }
+    .rr-releases__tab,
+    .rr-releases__order button { flex: 1; }
     .rr-releases__read { flex-basis: 100%; }
 }
 
@@ -745,3 +751,86 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
     white-space: nowrap;
 }
 .rr-releases__host--more { color: var(--rr-faint); }
+
+/* ---- Looking inside a topic from the palette ---------------------- */
+
+/* The pane lives in the overlay rather than in the panel — the panel
+   clips its own corners, and a sibling in the overlay's centred row
+   would push the list sideways the moment one opened. Anchored to the
+   centre line and the palette's own 640px instead, so the list stays
+   exactly where it was (preview.js, attachTopicPreview).
+
+   The top matches .rr-palette's margin-top and the height its ceiling,
+   so the two read as one object with a gap in it rather than as two
+   boxes that happen to be near each other. */
+html[data-rr] .rr-overlay > .rr-preview {
+    position: absolute;
+    top: 12vh;
+    left: 50%;
+    margin-left: calc(320px + var(--rr-s3));
+    /* What is left of the half-window once the palette's own 320px and
+       the gap are out of it, and never more than the 340px the pane
+       wants. Written out rather than fixed at 340: the pane hangs off
+       the centre line, so a fixed width ran 150px off the right edge
+       of a 1040px window — wide enough to pass the check that opened
+       it, too narrow to hold it. 344 rather than 332 because vw counts
+       the scrollbar and the overlay's own 50% does not. */
+    width: min(340px, calc(50vw - 344px));
+    max-height: min(60vh, 520px);
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: var(--rr-s4);
+    background: var(--rr-surface);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius-lg);
+    box-shadow: var(--rr-shadow-pop);
+    color: var(--rr-text);
+    font-size: var(--rr-fs-sm);
+    line-height: var(--rr-lh);
+}
+/* 1200px is where the formula above bottoms out at 256px — a column
+   that still holds a title and four lines of a post, which is the
+   whole of what the pane is for — and below it there is not enough
+   left of the half-window to be worth drawing. preview.js checks the
+   same number before it fetches anything; this is what catches a
+   window narrowed after the palette was opened. */
+@media (max-width: 1199px) {
+    html[data-rr] .rr-overlay > .rr-preview { display: none; }
+}
+
+html[data-rr] .rr-preview__art {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 150px;
+    object-fit: cover;
+    margin-bottom: var(--rr-s3);
+    border-radius: var(--rr-radius);
+    background: var(--rr-surface-2);
+}
+html[data-rr] .rr-preview__title {
+    color: var(--rr-text-strong);
+    font-size: var(--rr-fs);
+    font-weight: 650;
+    line-height: 1.35;
+}
+html[data-rr] .rr-preview__meta,
+html[data-rr] .rr-preview__by {
+    margin-top: 3px;
+    color: var(--rr-faint);
+    font-size: var(--rr-fs-xs);
+}
+html[data-rr] .rr-preview__blurb {
+    margin: var(--rr-s3) 0 0;
+    color: var(--rr-muted);
+}
+html[data-rr] .rr-preview__foot {
+    margin-top: var(--rr-s3);
+    padding-top: var(--rr-s2);
+    border-top: 1px solid var(--rr-line);
+    color: var(--rr-faint);
+    font-size: var(--rr-fs-xs);
+}
+/* The one line the pane shows while the page is on its way, and the
+   one it shows if the page never arrives. */
+html[data-rr] .rr-preview__wait { color: var(--rr-faint); font-size: var(--rr-fs-xs); }

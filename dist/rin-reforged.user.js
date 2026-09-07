@@ -524,11 +524,29 @@ html[data-rr] table.tablebg[data-rr-post] > tbody > tr > td.row1,
 html[data-rr] table.tablebg[data-rr-post] > tbody > tr > td.row2 { background: transparent; }
 /* And a little more room inside than a listing row gets: a post is
    read, a row is scanned. Not a folded reply, which owns its own
-   padding (features.css) and is one line by design. */
+   padding (features.css) and is one line by design.
+
+   \`tr.row1 > td\` as well as \`td.row1\`: this board writes the class on
+   the row and leaves the cells bare, so the cell branch alone never
+   matched a single post here. The inset was the 4px the original
+   sheet pads a cell with, while the author band pulled itself out by
+   the 18px it was promised — which is how the band came to draw wider
+   than the card it heads. */
 html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row1,
-html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row2 {
+html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row2,
+html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr.row1 > td,
+html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr.row2 > td {
     padding: var(--rr-post-pad-top) var(--rr-post-pad) 14px;
 }
+/* subsilver2 wraps the message in one more table at cellspacing="5",
+   and the original sheet pads every cell. That is 7px of chrome
+   between the cell the band lives in and the cell that carries the
+   post's own inset, and the band cleared the card by exactly that
+   much. Flattened here so --rr-post-pad is the only inset there is.
+   Direct children only: a quote or a code block is a table too, and
+   deeper in. */
+html[data-rr] table.tablebg[data-rr-post] > tbody > tr > td > table { border-spacing: 0; }
+html[data-rr] table.tablebg[data-rr-post] > tbody > tr > td > table > tbody > tr > td { padding: 0; }
 
 /* The original stylesheet paints \`th a\` #CCCCCC: on the light theme the
    member list's sortable headers were pale grey on paler grey while
@@ -604,36 +622,53 @@ html[data-rr] td.cat a { color: var(--rr-text-strong); margin: 0; font-size: var
 
 /* A category row is one cell plus a few empty ones the table needs to
    keep its columns. Tinting the whole row stops it reading as a bar
-   that runs out halfway across. */
+   that runs out halfway across.
+
+   And a stronger hairline than a listing row gets: the index stacks
+   two category headings straight on top of each other — a collapsed
+   category has nothing between them — and at --rr-line, a hair off the
+   tint itself, the pair read as one slab with two titles in it. */
 html[data-rr] tr[data-rr-cat-row] > td {
     background: color-mix(in srgb, var(--rr-accent) 5%, var(--rr-surface-2));
-    border-bottom: 1px solid var(--rr-line);
+    border-bottom: 1px solid var(--rr-line-strong);
 }
 /* The strips that are not section heads — "Mark forums read" alone at
    the right, the sort controls — are plain. */
 html[data-rr] tr[data-rr-cat-row="plain"] > td,
 html[data-rr] tr[data-rr-cat-row="controls"] > td { background: var(--rr-surface-2); }
 
-/* The collapse control is an <input type="button"> the original theme
-   dressed with a background image. Here it becomes a chevron that
-   points the way the click will move things. */
+/* The collapse control (boardindex.js, tidyCategoryToggles). The
+   board's own <input> is hidden and clicked from here: a chevron next
+   to the words it folds, pointing the way the click will move things,
+   on a cell that folds on a click of its own. The cell it used to sit
+   in is empty now and keeps the columns lined up. */
 html[data-rr] td.catdiv { text-align: right; }
-html[data-rr] input.ccopen[type="button"],
-html[data-rr] input.ccclose[type="button"] {
-    width: 26px;
-    height: 22px;
-    padding: 0;
-    font-size: 0;
-    background: transparent no-repeat center / 13px 13px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b95a3' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    border: 1px solid transparent;
-    border-radius: var(--rr-radius);
-    cursor: pointer;
-    transition: background-color var(--rr-speed) ease, transform var(--rr-speed) ease;
+html[data-rr] td.cat.rr-catfold-cell { cursor: pointer; user-select: none; }
+html[data-rr] tr[data-rr-cat-row] > td.cat.rr-catfold-cell:hover {
+    background: color-mix(in srgb, var(--rr-accent) 10%, var(--rr-surface-2));
 }
-html[data-rr] input.ccopen[type="button"] { transform: rotate(-90deg); }
-html[data-rr] input.ccopen[type="button"]:hover,
-html[data-rr] input.ccclose[type="button"]:hover { background-color: var(--rr-surface-3); border-color: var(--rr-line); }
+/* The heading is a block, and the chevron would sit on a line of its
+   own above it. */
+html[data-rr] td.cat.rr-catfold-cell > h4 { display: inline; vertical-align: middle; }
+html[data-rr] button.rr-catfold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-right: 4px;
+    padding: 0;
+    vertical-align: middle;
+    background: none;
+    border: 0;
+    border-radius: var(--rr-radius);
+    color: var(--rr-faint);
+    cursor: pointer;
+    transition: background var(--rr-speed) ease, color var(--rr-speed) ease, transform var(--rr-speed) ease;
+}
+html[data-rr] button.rr-catfold > svg { width: 13px; height: 13px; }
+html[data-rr] button.rr-catfold:hover { background: var(--rr-surface-3); color: var(--rr-text-strong); }
+html[data-rr] tr[data-rr-folded] > td.cat > button.rr-catfold { transform: rotate(-90deg); }
 
 /* Some .cat cells are not section heads at all: they hold the print /
    previous / next strip, or the "Display posts from previous / Sort by
@@ -729,7 +764,13 @@ html[data-rr] table[data-rr-list][data-rr-rowclick] td[data-rr-col="title"] butt
 /* The words beside a lone checkbox toggle it (lists.js). */
 html[data-rr] td[data-rr-check-label] { cursor: pointer; }
 
-html[data-rr] tr:last-child > td { border-bottom: 0; }
+/* The last row of a card sits on the rounded bottom edge and wants no
+   hairline over it. \`tr:last-child\` alone said that of the last row of
+   every <tbody>, and the index opens one per category (\`flist26\`,
+   \`flist27\`) so it can show and hide them: each category heading, being
+   the last row of the tbody before it, lost its underline, and two
+   headings in a row read as one slab with two titles in it. */
+html[data-rr] table > tbody:last-child > tr:last-child > td { border-bottom: 0; }
 
 /* The marker gutter: read/unread, and whether the topic is bookmarked.
 
@@ -1000,6 +1041,49 @@ html[data-rr] #pageheader h2 {
 html[data-rr] #pageheader h2 > .rr-tag { align-self: center; }
 html[data-rr] #pageheader h2 a.titles { color: var(--rr-text-strong); }
 
+/* ---- The forum-rules notice -------------------------------------- */
+
+/* Marked by lists.js (markForumRules). It is prose, not a listing row:
+   the room a panel gets, a heading told apart from the rules under it,
+   the tinted ground and the accent mark that say "this is a heading,
+   what follows belongs to it" everywhere else on the board, and no
+   hairline drawn along the bottom of a card with one row in it. */
+html[data-rr] table.tablebg[data-rr-rules] > tbody > tr > td.row3 {
+    position: relative;
+    padding: var(--rr-s4) var(--rr-s5) var(--rr-s4) 26px;
+    background: color-mix(in srgb, var(--rr-accent) 5%, var(--rr-surface-2));
+    border-bottom: 0;
+    vertical-align: top;
+}
+html[data-rr] table.tablebg[data-rr-rules] > tbody > tr > td.row3::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: calc(var(--rr-s4) + 3px);
+    width: 3px;
+    height: 14px;
+    border-radius: 2px;
+    background: var(--rr-accent);
+}
+html[data-rr] table.tablebg[data-rr-rules] h4,
+html[data-rr] table.tablebg[data-rr-rules] p.rules {
+    margin: 0 0 var(--rr-s2);
+    font-size: var(--rr-fs-sm);
+    font-weight: 650;
+    color: var(--rr-text-strong);
+}
+html[data-rr] table.tablebg[data-rr-rules] .postbody {
+    font-size: var(--rr-fs-sm);
+    line-height: var(--rr-lh);
+    color: var(--rr-muted);
+}
+/* The board writes its rules with <br><br> between paragraphs and a
+   list under them, and a <ul> arrives with the browser's own 40px
+   indent on top of the cell's. */
+html[data-rr] table.tablebg[data-rr-rules] ul,
+html[data-rr] table.tablebg[data-rr-rules] ol { margin: var(--rr-s2) 0; padding-left: var(--rr-s5); }
+html[data-rr] table.tablebg[data-rr-rules] li { margin: 2px 0; }
+
 /* ---- Posts ------------------------------------------------------ */
 
 html[data-rr] .postbody {
@@ -1220,14 +1304,21 @@ html[data-rr] hr { border: 0; border-top: 1px solid var(--rr-line); margin: var(
 
 /* ---- Forms ------------------------------------------------------ */
 
-html[data-rr] input[type="text"],
-html[data-rr] input[type="password"],
-html[data-rr] input[type="search"],
-html[data-rr] input[type="email"],
-html[data-rr] select,
-html[data-rr] textarea,
-html[data-rr] .inputbox,
-html[data-rr] .post {
+/* The board's own fields, brought up to date — and only the board's.
+   \`input[type="text"]\` is one element more specific than a class, so
+   this block reached the script's own fields too and won every tie
+   against them: the command palette's search box came out as a
+   rounded, bordered, sunken field whose corners stood outside the
+   panel's own, and lit its border accent on focus. The exclusion is
+   the one the sizing rule below already uses. */
+html[data-rr] input[type="text"]:not([class*="rr-"]),
+html[data-rr] input[type="password"]:not([class*="rr-"]),
+html[data-rr] input[type="search"]:not([class*="rr-"]),
+html[data-rr] input[type="email"]:not([class*="rr-"]),
+html[data-rr] select:not([class*="rr-"]),
+html[data-rr] textarea:not([class*="rr-"]),
+html[data-rr] .inputbox:not([class*="rr-"]),
+html[data-rr] .post:not([class*="rr-"]) {
     background: var(--rr-bg-sunken);
     color: var(--rr-text);
     border: 1px solid var(--rr-line-strong);
@@ -1267,17 +1358,23 @@ html[data-rr] #wrapcentre input[type="email"]:not([class*="rr-"]) {
     width: auto;
     min-width: min(100%, 22em);
 }
-html[data-rr] input:hover,
-html[data-rr] select:hover,
-html[data-rr] textarea:hover { border-color: var(--rr-faint); }
+html[data-rr] input:not([class*="rr-"]):hover,
+html[data-rr] select:not([class*="rr-"]):hover,
+html[data-rr] textarea:not([class*="rr-"]):hover { border-color: var(--rr-faint); }
 /* A field shows focus by colouring its own border, so the ring is not
    drawn twice. Only a field: a submit button matches \`input\` too, has
    no border to colour, and was left with no focus indicator at all —
    which a Tab through a live topic page found on the board's own
-   Search button. Buttons keep the ring the rule above gives them. */
-html[data-rr] input:not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):focus,
-html[data-rr] select:focus,
-html[data-rr] textarea:focus { border-color: var(--rr-accent); outline: none; }
+   Search button. Buttons keep the ring the rule above gives them.
+
+   And only the board's fields, like the block above: four :not()s make
+   this selector specific enough to beat anything the script's own
+   stylesheet says about its own controls, which is how the command
+   palette came to draw an accent-red rule under its search box for as
+   long as it was open — which is always. */
+html[data-rr] input:not([class*="rr-"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):focus,
+html[data-rr] select:not([class*="rr-"]):focus,
+html[data-rr] textarea:not([class*="rr-"]):focus { border-color: var(--rr-accent); outline: none; }
 html[data-rr] ::placeholder { color: var(--rr-faint); }
 
 html[data-rr] input.button1,
@@ -2159,13 +2256,18 @@ html[data-rr] input.rr-search__go:hover {
    while the box is set to look somewhere other than its default, so a
    reader can tell from across the bar that it will. */
 .rr-search { position: relative; }
+/* The trigger carries the name of the room it will search, so it is
+   as wide as that name and no wider — a glyph on its own said there
+   were options and nothing about what they were set to. */
 html[data-rr] button.rr-search__opts {
-    display: inline-grid;
-    place-items: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     flex: none;
-    width: 24px;
+    min-width: 24px;
+    max-width: 148px;
     height: 24px;
-    padding: 0;
+    padding: 0 6px 0 4px;
     background: transparent;
     border: 0;
     border-radius: 4px;
@@ -2176,13 +2278,28 @@ html[data-rr] button.rr-search__opts {
 html[data-rr] button.rr-search__opts:hover,
 html[data-rr] button.rr-search__opts[aria-expanded="true"] { background: var(--rr-surface-3); color: var(--rr-text-strong); }
 html[data-rr] button.rr-search__opts[data-rr-active] { color: var(--rr-accent); }
-html[data-rr] button.rr-search__opts svg { width: 13px; height: 13px; }
+html[data-rr] button.rr-search__opts svg { width: 13px; height: 13px; flex: none; }
+.rr-search__where {
+    overflow: hidden;
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.rr-search__where:empty { display: none; }
+/* Where the field's own prompt already names the room — "Search Main
+   Forum" — the control does not say it a second time. It appears the
+   moment there is a query in the way of the prompt, which is when
+   knowing where the search is aimed starts to matter. */
+html[data-rr] .rr-search[data-rr-echo] input.rr-search__input:placeholder-shown ~ .rr-search__opts .rr-search__where {
+    display: none;
+}
 .rr-search__pop {
     position: absolute;
     top: calc(100% + 6px);
     right: 0;
     z-index: 950;
-    min-width: 280px;
+    min-width: 300px;
+    max-width: min(360px, 90vw);
     padding: 10px 12px;
     display: flex;
     flex-direction: column;
@@ -2195,12 +2312,17 @@ html[data-rr] button.rr-search__opts svg { width: 13px; height: 13px; }
     color: var(--rr-text);
 }
 .rr-search__pop[hidden] { display: none; }
+/* Rooms are named now — "Temporarily Restricted Topics" is a segment
+   in this row — so the row and the control inside it both wrap rather
+   than pushing the popover off the side of the screen. */
 .rr-search__row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: var(--rr-s3);
+    gap: var(--rr-s2) var(--rr-s3);
 }
+.rr-search__row .rr-seg { flex-wrap: wrap; }
 .rr-search__row[hidden] { display: none; }
 .rr-search__rowlabel {
     font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
@@ -2442,6 +2564,10 @@ tr[data-rr-hidden] { display: none; }
     font: var(--rr-fs) / var(--rr-lh) var(--rr-font);
     box-sizing: border-box;
 }
+/* The board's field rules no longer reach the script's own controls
+   (forum.css, "only the board's fields"), so the ones that do want an
+   accent border on focus say so themselves. */
+html[data-rr] textarea.rr-reply__text:focus { border-color: var(--rr-accent); outline: none; }
 .rr-reply__actions { display: flex; gap: var(--rr-s2); align-items: center; }
 
 .rr-quote-bubble {
@@ -2585,6 +2711,7 @@ html[data-rr] a.rr-pager__step svg { width: 13px; height: 13px; flex: none; }
     font: var(--rr-fs-sm) / 1 var(--rr-font-mono);
     text-align: center;
 }
+html[data-rr] input.rr-pager__input:focus { border-color: var(--rr-accent); outline: none; }
 .rr-pager [hidden] { display: none; }
 
 /* ---- A cluster of controls ------------------------------------------ */
@@ -2923,16 +3050,35 @@ html[data-rr] a.rr-postnum:hover {
     box-shadow: var(--rr-shadow-pop);
     overflow: hidden;
 }
-.rr-palette__input {
+/* input.rr-palette__input, not the bare class, for the reason
+   input.rr-search__input carries the same shape above: the board's
+   field rules reach this input through \`input[type="text"]:focus\` too,
+   and a class alone loses that tie — which lit the divider under the
+   box accent-red for as long as the palette was open, which is always.
+   The box itself is the panel; the field draws nothing of its own. */
+html[data-rr] input.rr-palette__input {
+    /* The panel is a flex column against a max-height, so the field
+       was a shrinkable item beside a list of forty boards: it gave up
+       13 of its 48px to them, and the palette opened on a field
+       shorter than its own rows. The list scrolls; the field does not
+       move. */
+    flex: none;
     height: 48px;
     padding: 0 var(--rr-s4);
     background: none;
     border: 0;
     border-bottom: 1px solid var(--rr-line);
+    border-radius: 0;
     color: var(--rr-text-strong);
     font: var(--rr-fs-lg) / 1 var(--rr-font);
     outline: none;
+    box-sizing: border-box;
 }
+/* The board's field rules colour a focused border accent, and four
+   :not()s make that rule specific enough to win here. The palette's
+   field is focused from the moment it opens, so the divider under it
+   read as a red rule across the panel rather than as a divider. */
+html[data-rr] input.rr-palette__input:focus { border-bottom-color: var(--rr-line); }
 .rr-palette__list { overflow-y: auto; padding: var(--rr-s1); margin: 0; list-style: none; }
 .rr-palette__group {
     padding: var(--rr-s2) var(--rr-s3) var(--rr-s1);
@@ -2991,7 +3137,9 @@ html[data-rr] a.rr-postnum:hover {
 .rr-panel__id { display: flex; align-items: baseline; gap: 6px; flex: none; }
 .rr-panel__title { font: 650 var(--rr-fs-lg) / 1.2 var(--rr-font); color: var(--rr-text-strong); margin: 0; }
 .rr-panel__ver { font: var(--rr-fs-xs) / 1 var(--rr-font-mono); color: var(--rr-faint); }
-.rr-panel__search {
+/* Same shape as the palette's field, and for the same reason: this one
+   is type="search", which the board's field rules also reach. */
+html[data-rr] input.rr-panel__search {
     flex: 1;
     min-width: 0;
     height: 32px;
@@ -3002,7 +3150,9 @@ html[data-rr] a.rr-postnum:hover {
     color: var(--rr-text);
     font: var(--rr-fs-sm) / 1 var(--rr-font);
     outline: none;
+    box-sizing: border-box;
 }
+html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
 
 /* The rail and the page beside it. The rail scrolls on its own, so a
    long category cannot push the categories off the bottom. */
@@ -4416,8 +4566,14 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
     .rr-releases__when { order: 5; }
     .rr-releases__page { order: 6; margin-left: auto; }
     .rr-releases__controls { margin-left: 0; flex-basis: 100%; }
-    .rr-releases__scope { flex: 1; }
-    .rr-releases__tab { flex: 1; }
+    /* Both segmented controls take a row of their own and all of it.
+       Side by side, "Newest first" wraps onto two lines inside a
+       segment and the row goes ragged; a control per row reads as a
+       stack of choices, which is what it is. */
+    .rr-releases__scope,
+    .rr-releases__order { flex: 1 1 100%; }
+    .rr-releases__tab,
+    .rr-releases__order button { flex: 1; }
     .rr-releases__read { flex-basis: 100%; }
 }
 
@@ -4479,6 +4635,89 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
     white-space: nowrap;
 }
 .rr-releases__host--more { color: var(--rr-faint); }
+
+/* ---- Looking inside a topic from the palette ---------------------- */
+
+/* The pane lives in the overlay rather than in the panel — the panel
+   clips its own corners, and a sibling in the overlay's centred row
+   would push the list sideways the moment one opened. Anchored to the
+   centre line and the palette's own 640px instead, so the list stays
+   exactly where it was (preview.js, attachTopicPreview).
+
+   The top matches .rr-palette's margin-top and the height its ceiling,
+   so the two read as one object with a gap in it rather than as two
+   boxes that happen to be near each other. */
+html[data-rr] .rr-overlay > .rr-preview {
+    position: absolute;
+    top: 12vh;
+    left: 50%;
+    margin-left: calc(320px + var(--rr-s3));
+    /* What is left of the half-window once the palette's own 320px and
+       the gap are out of it, and never more than the 340px the pane
+       wants. Written out rather than fixed at 340: the pane hangs off
+       the centre line, so a fixed width ran 150px off the right edge
+       of a 1040px window — wide enough to pass the check that opened
+       it, too narrow to hold it. 344 rather than 332 because vw counts
+       the scrollbar and the overlay's own 50% does not. */
+    width: min(340px, calc(50vw - 344px));
+    max-height: min(60vh, 520px);
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: var(--rr-s4);
+    background: var(--rr-surface);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius-lg);
+    box-shadow: var(--rr-shadow-pop);
+    color: var(--rr-text);
+    font-size: var(--rr-fs-sm);
+    line-height: var(--rr-lh);
+}
+/* 1200px is where the formula above bottoms out at 256px — a column
+   that still holds a title and four lines of a post, which is the
+   whole of what the pane is for — and below it there is not enough
+   left of the half-window to be worth drawing. preview.js checks the
+   same number before it fetches anything; this is what catches a
+   window narrowed after the palette was opened. */
+@media (max-width: 1199px) {
+    html[data-rr] .rr-overlay > .rr-preview { display: none; }
+}
+
+html[data-rr] .rr-preview__art {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 150px;
+    object-fit: cover;
+    margin-bottom: var(--rr-s3);
+    border-radius: var(--rr-radius);
+    background: var(--rr-surface-2);
+}
+html[data-rr] .rr-preview__title {
+    color: var(--rr-text-strong);
+    font-size: var(--rr-fs);
+    font-weight: 650;
+    line-height: 1.35;
+}
+html[data-rr] .rr-preview__meta,
+html[data-rr] .rr-preview__by {
+    margin-top: 3px;
+    color: var(--rr-faint);
+    font-size: var(--rr-fs-xs);
+}
+html[data-rr] .rr-preview__blurb {
+    margin: var(--rr-s3) 0 0;
+    color: var(--rr-muted);
+}
+html[data-rr] .rr-preview__foot {
+    margin-top: var(--rr-s3);
+    padding-top: var(--rr-s2);
+    border-top: 1px solid var(--rr-line);
+    color: var(--rr-faint);
+    font-size: var(--rr-fs-xs);
+}
+/* The one line the pane shows while the page is on its way, and the
+   one it shows if the page never arrives. */
+html[data-rr] .rr-preview__wait { color: var(--rr-faint); font-size: var(--rr-fs-xs); }
 
 /* == responsive.css == */
 /* ------------------------------------------------------------------
@@ -4800,6 +5039,13 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
     }
     html[data-rr] .rr-toolbar__board .rr-search,
     html[data-rr] .rr-topicbar__search .rr-search { flex: 1; min-width: 0; width: 100%; }
+
+    /* The room the search will look in is printed inside the field on
+       a desktop. On a phone the field is barely wide enough for the
+       query, so the glyph goes back to standing on its own and the
+       name is in the popover the glyph opens. */
+    html[data-rr] .rr-search__where { display: none; }
+    html[data-rr] button.rr-search__opts { padding: 0; min-width: 26px; }
 
     html[data-rr] .rr-nav__crumbs a:not(:last-child),
     html[data-rr] .rr-nav__sep { display: none; }
@@ -5456,7 +5702,9 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
        order — this file is last in the build. */
     html[data-rr] table.tablebg[data-rr-post] { --rr-post-pad: 14px; --rr-post-pad-top: 14px; }
     html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row1,
-    html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row2 { padding: 0; }
+    html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row2,
+    html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr.row1 > td,
+    html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr.row2 > td { padding: 0; }
     html[data-rr] .rr-posthead__meta,
     html[data-rr] .rr-posthead__date { flex: 1 1 100%; text-align: left; margin: 0; }
 
@@ -5566,6 +5814,7 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
 
 const KEY = "rr:settings";
 const DATA_KEY = "rr:data";
+const KEY_PREFIX = "rr:";
 
 const hasGM = typeof GM_getValue === "function" && typeof GM_setValue === "function";
 
@@ -5670,6 +5919,60 @@ const store = {
     replace(next) {
         dataCache = next && typeof next === "object" ? next : {};
         writeRaw(DATA_KEY, JSON.stringify(dataCache));
+    },
+};
+
+/* ---- Buckets: big things, kept on their own key ------------------- */
+
+/* store.set() rewrites the whole of rr:data every time, which is the
+   right trade for a dozen small values and the wrong one the moment
+   something in there runs to six figures. The palette's index of the
+   topics this browser has seen is 136 bytes a topic and holds
+   hundreds; store.set("history", …) runs on every topic opened, and it
+   would have re-serialised all of them each time.
+
+   A bucket is not exported with the settings either, and that is the
+   other half of the reason: a cache is not a preference, and nobody
+   wants 80 KB of remembered titles in their backup. Clearing the
+   script's data drops them (settingsui.js, clearData). */
+const bucketCache = new Map();
+
+/* Any JSON value, where parseJSON() above insists on an object.
+
+   That insistence is right for the settings and for rr:data, which are
+   both maps and where anything else means the value was corrupted. A
+   bucket holds whatever it was given — the palette's index is an
+   array and the last-search stamp is a number, and stamping it through
+   parseJSON() read every one of them back as "no value at all". */
+function parseAny(raw) {
+    if (raw === null || raw === undefined) return undefined;
+    if (typeof raw === "object") return raw;
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return undefined;
+    }
+}
+
+const bucket = {
+    get(name, fallback) {
+        if (!bucketCache.has(name)) bucketCache.set(name, parseAny(readRaw(KEY_PREFIX + name)));
+        const held = bucketCache.get(name);
+        return held === null || held === undefined ? fallback : held;
+    },
+    /** False when the write did not land — a full quota, mostly. */
+    set(name, value) {
+        bucketCache.set(name, value);
+        return writeRaw(KEY_PREFIX + name, JSON.stringify(value));
+    },
+    drop(name) {
+        bucketCache.delete(name);
+        try {
+            if (hasGM && typeof GM_deleteValue === "function") GM_deleteValue(KEY_PREFIX + name);
+            else localStorage.removeItem(KEY_PREFIX + name);
+        } catch (err) {
+            console.warn("[RIN Reforged] cannot drop " + name + ":", err);
+        }
     },
 };
 
@@ -5825,11 +6128,21 @@ const SETTINGS_SCHEMA = [
         title: "Search and finding",
         short: "Search",
         icon: "search",
-        note: "Main Forum holds 61,000 topics across 615 pages, so finding matters more than paging. Where a search looks — this forum or the whole board, titles or every post — is chosen in the search box itself.",
+        note: "Main Forum holds 61,000 topics across 615 pages, so finding matters more than paging. Where a search looks is chosen in the search box itself, which names the room it will search: the forum above the one a topic sits in, since a cracked game lives in a subforum and the thing you are looking for does not.",
         fields: [
             {
                 id: "palette", label: "Command palette", type: "toggle", default: true,
                 desc: "Ctrl+K opens search, forum jumps, bookmarks and every script action in one box.",
+            },
+            {
+                id: "paletteTopics", label: "Topics in the palette", type: "toggle", default: true,
+                desc: "Keeps the titles from every listing you open, so the palette can offer real topics as you type. The board allows one search about every half minute, which is why this looks in what you have already seen rather than asking it again.",
+                when: "palette",
+            },
+            {
+                id: "palettePreview", label: "Look inside a topic", type: "toggle", default: true,
+                desc: "Resting on a topic in the palette reads its first page and shows the board, the length, who opened it and what they said. One request per topic, only when you stop on it, and only on a wide enough window.",
+                when: "paletteTopics",
             },
             {
                 id: "listFilter", label: "Filter box over a listing", type: "toggle", default: true,
@@ -5845,7 +6158,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "topicIndex", label: "Read the whole topic", type: "toggle", default: true,
-                desc: "The panel can read every page of a topic once, on a click, and list everything ever posted in it. Never runs on its own; Escape stops it.",
+                desc: "The panel can read a topic page by page and list everything posted in it — from the last page back by default, or from the first forward, sixty pages a click. Never runs on its own; Escape stops it and keeps what it read.",
                 when: "finder",
             },
         ],
@@ -6490,6 +6803,10 @@ const ICON_PATHS = {
     heart:     '<path d="M12 20.3 4.6 13a4.7 4.7 0 0 1 0-6.7 4.7 4.7 0 0 1 6.7 0l.7.7.7-.7a4.7 4.7 0 0 1 6.7 0 4.7 4.7 0 0 1 0 6.7z"/>',
     sliders:   '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h10M18 18h2"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="16" cy="18" r="2"/>',
     fold:      '<path d="m7 9 5 5 5-5"/><path d="M4 5h16"/><path d="M4 19h16"/>',
+    /* A topic in the palette: a sheet with lines on it. Boards are
+       layers and bookmarks are stars; this is the third thing in that
+       list and had been borrowing one of the other two. */
+    topic:     '<path d="M5 4h9l5 5v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M14 4v5h5"/><path d="M8 13h7M8 17h5"/>',
     // The board's own emblem, redrawn: the masthead is a crosshair over
     // a Steam valve, and the crosshair is the half that survives being
     // shrunk to 20px.
@@ -7118,6 +7435,9 @@ const RU_WORDS = {
     "Search this topic": "Поиск в теме",
     "Search this forum": "Поиск в форуме",
     "Search the whole board": "Поиск по всему форуму",
+    "Search {forum}": "Поиск в «{forum}»",
+    "Search options — looking in {where}": "Параметры поиска — ищет в «{where}»",
+    "That forum": "Тот форум",
 
     // Who is online
     "{n} online": "{n} онлайн",
@@ -7140,6 +7460,11 @@ const RU_WORDS = {
     "All {n} pages": ({ n }) => "Все " + n + " " + ruPlural(n, "страница", "страницы", "страниц"),
     "Filter by kind": "Фильтр по типу",
     "Reading {a} of {b}…": "Читаю {a} из {b}…",
+    "Which end to read from": "С какого конца читать",
+    "Newest first": "Сначала новые",
+    "Oldest first": "Сначала старые",
+    "Start at the last page and work back": "Начать с последней страницы и идти назад",
+    "Start at page one and work forward": "Начать с первой страницы и идти вперёд",
     "Could not read the whole topic": "Не удалось прочитать всю тему",
     "Stopped reading the topic": "Чтение темы остановлено",
     "Reading a whole topic is switched off in the settings": "Чтение всей темы отключено в настройках",
@@ -7154,11 +7479,16 @@ const RU_WORDS = {
     "Read it again": "Прочитать заново",
     "1 page read": "Прочитана 1 страница",
     "{n} pages read": ({ n }) => "Прочитано " + n + " " + ruPlural(n, "страница", "страницы", "страниц"),
-    "the oldest {n} pages were not read": ({ n }) => "Первые " + n + " " + ruPlural(n, "страница", "страницы", "страниц") + " не прочитаны",
-    "oldest {n} skipped": "первые {n} пропущены",
+    "{n} pages have not been read yet": ({ n }) => n + " " + ruPlural(n, "страница", "страницы", "страниц") + " ещё не прочитано",
+    "{n} left": "осталось {n}",
+    "still reading": "чтение продолжается",
+    "reading…": "читаю…",
+    "Read {n} more": "Прочитать ещё {n}",
+    "Keep going back through the topic, {n} pages at a time": "Читать тему дальше назад, по {n} страниц за раз",
     "stopped early": "остановлено раньше",
     "the board was busy, so this was read slowly": "форум был занят, поэтому чтение шло медленно",
-    "The board was answering slowly, so this was read one page at a time": "Форум отвечал медленно, поэтому страницы читались по одной",
+    "The board was answering slowly, so this was read a couple of pages at a time": "Форум отвечал медленно, поэтому страницы читались по две",
+    "The board asked for a slower pace, so the topic was only read this far": "Форум попросил сбавить темп, поэтому тема прочитана только досюда",
     "read gently": "читалось бережно",
     "read {ago}": "прочитано {ago}",
     "{n} new since": ({ n }) => n + " " + ruPlural(n, "новое", "новых", "новых") + " с тех пор",
@@ -7263,7 +7593,6 @@ const RU_WORDS = {
     "Actions": "Действия",
     "Search the forum, or jump to a board": "Поиск по форуму или переход в раздел",
     "Search the forum for {q}": "Искать на форуме: {q}",
-    "Search this board for {q}": "Искать в этом разделе: {q}",
     "Search {forum} for {q}": "Искать в «{forum}»: {q}",
     "Releases in this topic": "Релизы в этой теме",
     "How much to look at": "Сколько смотреть",
@@ -7271,6 +7600,24 @@ const RU_WORDS = {
     "Nothing matches that": "Ничего не найдено",
     "topic": "тема",
     "board": "раздел",
+
+    // Topics in the palette, and the pane beside it
+    "Topics": "Темы",
+    "wait {n}s": "подождите {n} с",
+    "Reading that topic…": "Читаю тему…",
+    "this topic": "эта тема",
+    "Opened by {who}": "Создал {who}",
+    "Enter to open": "Enter — открыть",
+    "{n} pages": (vars) => {
+        // Страница / страницы / страниц: the count decides, and the
+        // teens are the exception that catches every naive rule.
+        const n = Number(vars.n) || 0;
+        const teens = n % 100 >= 11 && n % 100 <= 14;
+        const last = n % 10;
+        if (!teens && last === 1) return n + " страница";
+        if (!teens && last >= 2 && last <= 4) return n + " страницы";
+        return n + " страниц";
+    },
 };
 
 /**
@@ -7790,11 +8137,17 @@ function exportSettings() {
     copyText(JSON.stringify(payload, null, 2), "Settings and data copied as JSON");
 }
 
-/* Bookmarks, history, hidden members, the Releases cache: the data the
-   script keeps for itself, gone in one step. The settings stay. */
+/* Bookmarks, history, hidden members, the Releases cache, the titles
+   the palette remembers: the data the script keeps for itself, gone in
+   one step. The settings stay.
+
+   The last of those sits on a key of its own rather than in rr:data
+   (store.js, buckets), so replacing rr:data does not reach it — it is
+   dropped by name, by the module that owns the name. */
 function clearData() {
-    if (!window.confirm("Forget bookmarks, reading history, hidden members and the Releases cache? Your settings stay.")) return;
+    if (!window.confirm("Forget bookmarks, reading history, hidden members, remembered topic titles and the Releases cache? Your settings stay.")) return;
     store.replace({});
+    forgetTopicIndex();
     toast("Data cleared");
     setTimeout(() => location.reload(), 1000);
 }
@@ -7977,7 +8330,7 @@ function openSettings() {
             }, ["Paste settings"]),
             el("button.rr-btn", {
                 type: "button", "data-variant": "quiet", onclick: clearData,
-                title: "Forget bookmarks, reading history, hidden members and the Releases cache",
+                title: "Forget bookmarks, reading history, hidden members, remembered topic titles and the Releases cache",
             }, ["Clear data"]),
             el("span.rr-spacer"),
             el("button.rr-btn", {
@@ -8183,11 +8536,58 @@ const SEARCH_IN = [
     { value: "all", label: "All posts" },
 ];
 
+/* ---- Which forum you are actually in -------------------------------
+
+   The breadcrumb is the only thing on the page that knows. Half the
+   links on this board are written `viewtopic.php?t=105454` with no
+   forum id at all, so PAGE.forumId is null on any topic reached from
+   a listing — and every search made from one went to the whole board
+   while saying it was searching this one.
+
+   The trail comes back outermost first: English Forums, Main Forum,
+   Temporarily Restricted Topics. */
+function forumTrail() {
+    const out = [];
+    const source = document.querySelector("p.breadcrumbs") || document.querySelector(".rr-nav__crumbs");
+    for (const link of source ? source.querySelectorAll("a") : []) {
+        const match = (link.getAttribute("href") || "").match(/viewforum\.php\?f=(\d+)/);
+        if (!match) continue;
+        if (out.some((entry) => entry.id === match[1])) continue;
+        out.push({ id: match[1], name: link.textContent.trim() });
+    }
+    return out;
+}
+
+/* The forum above the one you are in, when there is one worth having.
+
+   This board moves topics: a cracked game lives in Main Forum »
+   Temporarily Restricted Topics, and searching Temporarily Restricted
+   Topics finds the handful of topics that happen to be in that state
+   today rather than the 61,000 the reader meant. The room above is
+   the one people mean by "this forum".
+
+   The first crumb after Board index is a category — English Forums —
+   which holds no topics of its own, so a trail only two deep has
+   nothing above it to offer. */
+function parentForum(trail) {
+    return trail.length >= 3 ? trail[trail.length - 2] : null;
+}
+
+/** A forum name that fits on a chip, with the whole of it on hover. */
+function shortForumName(name) {
+    const said = String(name || "").trim();
+    return said.length > 24 ? said.slice(0, 23).trimEnd() + "\u2026" : said;
+}
+
 const SEARCH_PREFS_KEY = "searchPrefs";
 
+/* `where` starts as null rather than "here" on purpose: it has to be
+   possible to tell "nobody has chosen" from "somebody chose this
+   forum", because the two get different defaults. Only a click writes
+   it. */
 function searchPrefs() {
     const kept = store.get(SEARCH_PREFS_KEY, null);
-    return Object.assign({ sf: "titleonly", where: "here" }, kept && typeof kept === "object" ? kept : {});
+    return Object.assign({ sf: "titleonly", where: null }, kept && typeof kept === "object" ? kept : {});
 }
 
 function setSearchPref(key, value) {
@@ -8202,82 +8602,64 @@ function searchDepthChoice() {
     return SEARCH_IN.some((option) => option.value === sf) ? sf : "titleonly";
 }
 
-function addSearchOptions(frame, form, field, submit) {
-    const hidden = (name) => form.querySelector('input[type="hidden"][name="' + name + '"]');
-    const topicId = hidden("t") ? hidden("t").value : null;
-    const forumId = hidden("fid[]") ? hidden("fid[]").value : (PAGE.forumId ? String(PAGE.forumId) : null);
-    // Only the two boxes that search a place: a "Search these results"
-    // box on a results page refines a query, and its fields are not
-    // ours to move.
-    if (!topicId && !hidden("fid[]")) return;
+/* ---- The popover both search boxes share ---------------------------
 
-    const setHidden = (name, value) => {
-        let input = hidden(name);
-        if (value === null) { if (input) input.remove(); return; }
-        if (!input) { input = el("input", { type: "hidden", name }); form.append(input); }
-        input.value = value;
-    };
+   Where to look and how deep, drawn once. What a choice *means* is the
+   caller's: on a forum or a topic it rewrites the form's hidden fields
+   and the reader presses Search, and on a results page there is
+   nothing left to submit — the query has already run — so choosing
+   runs it again.
 
-    const places = [];
-    if (topicId) places.push({ value: "topic", label: t("This topic") });
-    if (forumId) places.push({ value: "here", label: t("This forum") });
-    places.push({ value: "board", label: t("Whole board") });
+   `onChange(place, depth, first)` is called on every choice and once
+   at the start with `first` true, which is how the results page tells
+   "this is where the search went" from "take it somewhere else". */
+function buildSearchPopover(frame, field, submit, config) {
+    const places = config.places;
+    let where = config.where;
+    let depth = config.depth;
 
-    const prefs = searchPrefs();
-    // A topic's box starts on the topic, as the board draws it; a
-    // forum's on the forum. The remembered choice only reaches as far
-    // as this box can honour it.
-    let where = topicId ? "topic" : (prefs.where === "board" ? "board" : "here");
-    let depth = searchDepthChoice();
-
-    const inRow = el("div.rr-search__row");
     const whereSeg = el("div.rr-seg", { role: "group", "aria-label": t("Where to search") });
     const inSeg = el("div.rr-seg", { role: "group", "aria-label": t("What to search") });
+    const inRow = el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Look in")]), inSeg]);
 
-    const apply = () => {
-        if (where === "topic") {
-            setHidden("t", topicId);
-            setHidden("fid[]", null);
-            setHidden("sf", "msgonly");
-            setHidden("sr", null);
-        } else {
-            setHidden("t", null);
-            setHidden("fid[]", where === "here" ? forumId : null);
-            setHidden("sf", depth);
-            setHidden("sr", "topics");
-            setHidden("terms", "all");
+    /* The trigger carries the answer. A box that searches somewhere
+       other than the room named above it is the sort of thing you find
+       out about from the results; the room is printed on the control
+       that changes it, visible without opening anything. */
+    const whereNow = el("span.rr-search__where", { "aria-hidden": "true" });
+    const opts = labelled(
+        el("button.rr-search__opts", { type: "button", "aria-expanded": "false" }, [icon("sliders", 13), whereNow]),
+        t("Search options"));
+
+    const chosen = () => places.find((entry) => entry.value === where) || places[places.length - 1];
+
+    const sync = (first) => {
+        const place = chosen();
+        inRow.hidden = place.value === "topic";
+        for (const button of whereSeg.children) {
+            button.setAttribute("aria-pressed", button.dataset.value === where ? "true" : "false");
         }
-        inRow.hidden = where === "topic";
-        for (const button of whereSeg.children) button.setAttribute("aria-pressed", button.dataset.value === where ? "true" : "false");
-        for (const button of inSeg.children) button.setAttribute("aria-pressed", button.dataset.value === depth ? "true" : "false");
-        if (field) {
-            field.setAttribute("placeholder", where === "topic" ? t("Search this topic")
-                : where === "here" ? t("Search this forum") : t("Search the whole board"));
-            field.setAttribute("aria-label", field.getAttribute("placeholder"));
+        for (const button of inSeg.children) {
+            button.setAttribute("aria-pressed", button.dataset.value === depth ? "true" : "false");
         }
-        // Says, from across the bar, that this box does not search the
-        // default place any more.
-        opts.toggleAttribute("data-rr-active", where === "board" || (where !== "topic" && depth !== "titleonly"));
+        whereNow.textContent = place.label;
+        labelled(opts, t("Search options — looking in {where}", { where: place.full || place.label }));
+        /* The room is printed on the control now, so the accent is kept
+           for the half that is not: how deep it looks. */
+        opts.toggleAttribute("data-rr-active", place.value !== "topic" && depth !== "titleonly");
+        config.onChange(place, depth, Boolean(first));
     };
 
     for (const place of places) {
-        const button = el("button", { type: "button" }, [place.label]);
+        const button = el("button", { type: "button", title: place.full || null }, [place.label]);
         button.dataset.value = place.value;
-        button.addEventListener("click", () => {
-            where = place.value;
-            if (!topicId) setSearchPref("where", where);
-            apply();
-        });
+        button.addEventListener("click", () => { where = place.value; sync(); });
         whereSeg.append(button);
     }
     for (const option of SEARCH_IN) {
         const button = el("button", { type: "button" }, [t(option.label)]);
         button.dataset.value = option.value;
-        button.addEventListener("click", () => {
-            depth = option.value;
-            setSearchPref("sf", depth);
-            apply();
-        });
+        button.addEventListener("click", () => { depth = option.value; sync(); });
         inSeg.append(button);
     }
 
@@ -8285,10 +8667,7 @@ function addSearchOptions(frame, form, field, submit) {
         el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Where")]), whereSeg]),
         inRow,
     ]);
-    inRow.append(el("span.rr-search__rowlabel", {}, [t("Look in")]), inSeg);
 
-    const opts = labelled(el("button.rr-search__opts", { type: "button", "aria-expanded": "false" }, [icon("sliders", 13)]),
-        t("Search options"));
     const close = () => {
         pop.hidden = true;
         opts.setAttribute("aria-expanded", "false");
@@ -8297,19 +8676,196 @@ function addSearchOptions(frame, form, field, submit) {
     };
     const onOutside = (event) => { if (!frame.contains(event.target)) close(); };
     const onKey = (event) => { if (event.key === "Escape") { close(); opts.focus(); } };
-    opts.addEventListener("click", () => {
-        if (!pop.hidden) { close(); return; }
+    const open = () => {
+        if (!pop.hidden) return;
         pop.hidden = false;
         opts.setAttribute("aria-expanded", "true");
         document.addEventListener("mousedown", onOutside, true);
         document.addEventListener("keydown", onKey, true);
-    });
+    };
+    opts.addEventListener("click", () => { if (pop.hidden) open(); else close(); });
+
+    /* Reachable from the field, mid-query, without leaving the
+       keyboard: the down arrow opens the choices the way it opens a
+       combobox everywhere else, and the current one takes focus.
+       Typing a query and finding out afterwards that it went to the
+       wrong room is the whole complaint this control answers. */
+    if (field) {
+        field.addEventListener("keydown", (event) => {
+            if (event.key !== "ArrowDown" || event.altKey || event.ctrlKey || event.metaKey) return;
+            event.preventDefault();
+            open();
+            const first = whereSeg.querySelector('button[aria-pressed="true"]') || whereSeg.firstElementChild;
+            if (first) first.focus();
+        });
+    }
 
     if (submit) submit.before(opts);
-    else form.append(opts);
+    else (frame.querySelector("form") || frame).append(opts);
     frame.append(pop);
-    apply();
+    sync(true);
+    return { close: close };
 }
+
+/* ---- The box on a forum or a topic ---------------------------------- */
+
+function addSearchOptions(frame, form, field, submit) {
+    const hidden = (name) => form.querySelector('input[type="hidden"][name="' + name + '"]');
+    const topicId = hidden("t") ? hidden("t").value : null;
+    const trail = forumTrail();
+    const here = trail.length ? trail[trail.length - 1] : null;
+    const up = parentForum(trail);
+    const forumId = (hidden("fid[]") && hidden("fid[]").value)
+        || (here && here.id)
+        || (PAGE.forumId ? String(PAGE.forumId) : null);
+
+    // A results page refines rather than searches a place; its box gets
+    // the control below instead.
+    if (PAGE.isSearch) return addResultOptions(frame, field, submit);
+    if (!topicId && !forumId) return;
+
+    const setHidden = (name, value) => {
+        let input = hidden(name);
+        if (value === null) { if (input) input.remove(); return; }
+        if (!input) { input = el("input", { type: "hidden", name }); form.append(input); }
+        input.value = value;
+    };
+
+    /* The rooms are named rather than described. "This forum" is a
+       word longer than "Main Forum" and says less: on a board that
+       moves topics between rooms, which room you are in is exactly the
+       thing worth printing. */
+    const places = [];
+    if (topicId) places.push({ value: "topic", label: t("This topic") });
+    if (here) places.push({ value: "here", label: shortForumName(here.name), full: here.name, forum: here.id });
+    else if (forumId) places.push({ value: "here", label: t("This forum"), forum: forumId });
+    if (up && here && up.id !== here.id) {
+        places.push({ value: "up", label: shortForumName(up.name), full: up.name, forum: up.id });
+    }
+    places.push({ value: "board", label: t("Whole board") });
+
+    const prefs = searchPrefs();
+    const offered = new Set(places.map((place) => place.value));
+
+    /* Where it starts when nobody has said.
+     *
+     * From a topic, the forum above the one it sits in — see
+     * parentForum(). The board's own box starts on the topic, which
+     * answers "where in this thread did somebody say that" rather than
+     * "what else is there like this", and the second is what people
+     * open the box for. Both are one click apart and the choice
+     * sticks.
+     *
+     * From a listing, the listing: you are already in the room you
+     * meant. */
+    const fallback = topicId && offered.has("up") ? "up" : (offered.has("here") ? "here" : "board");
+
+    buildSearchPopover(frame, field, submit, {
+        places: places,
+        where: offered.has(prefs.where) ? prefs.where : fallback,
+        depth: searchDepthChoice(),
+        onChange: (place, depth, first) => {
+            if (place.value === "topic") {
+                setHidden("t", topicId);
+                setHidden("fid[]", null);
+                setHidden("sf", "msgonly");
+                setHidden("sr", null);
+            } else {
+                setHidden("t", null);
+                setHidden("fid[]", place.forum || null);
+                setHidden("sf", depth);
+                setHidden("sr", "topics");
+                setHidden("terms", "all");
+            }
+            if (!first) {
+                setSearchPref("where", place.value);
+                setSearchPref("sf", depth);
+                if (field) field.focus();
+            }
+            if (field) {
+                field.setAttribute("placeholder", place.value === "topic" ? t("Search this topic")
+                    : place.value === "board" ? t("Search the whole board")
+                    : t("Search {forum}", { forum: place.full || place.label }));
+                field.setAttribute("aria-label", field.getAttribute("placeholder"));
+                /* The prompt in the field says the room too, so the
+                   control stops repeating it until a query covers the
+                   prompt up. The results page has no such prompt and
+                   is not marked. */
+                frame.setAttribute("data-rr-echo", "");
+            }
+        },
+    });
+}
+
+/* ---- Re-aiming a search you are already looking at ------------------
+
+   The results page has one box and it refines: it adds words to the
+   query that already ran. What it cannot do is move it. A search of
+   titles in one forum that found nothing has to be retyped into the
+   full search form to become a search of every post on the board,
+   which is the second thing anybody wants after the first search
+   misses — and until you have retyped it, nothing on the page says
+   where the first one looked.
+
+   phpBB keeps the whole query in the URL, so it can simply be run
+   again with one field changed. */
+function searchQuery() {
+    const here = new URLSearchParams(location.search);
+    if (here.get("keywords")) return here;
+    // A search submitted as a POST lands on a page whose own form
+    // action carries the query instead.
+    const form = document.querySelector('#search-box form[action*="keywords="], form[action*="keywords="]');
+    const action = form ? form.getAttribute("action") || "" : "";
+    const at = action.indexOf("?");
+    const fallback = new URLSearchParams(at > -1 ? action.slice(at + 1) : "");
+    return fallback.get("keywords") ? fallback : here;
+}
+
+/** A forum's name from the list the palette cached off the index. */
+function knownForumName(id) {
+    const hit = store.get("forums", []).find((entry) => String(entry.id) === String(id));
+    return hit ? hit.title : null;
+}
+
+function addResultOptions(frame, field, submit) {
+    const query = searchQuery();
+    const keywords = query.get("keywords");
+    // "View active topics" and the unanswered list are searches with no
+    // words in them; there is nothing to re-aim.
+    if (!keywords) return;
+
+    const forumId = query.get("fid[]");
+    const places = [];
+    if (forumId) {
+        const name = knownForumName(forumId);
+        places.push(name
+            ? { value: "here", label: shortForumName(name), full: name, forum: forumId }
+            : { value: "here", label: t("That forum"), forum: forumId });
+    }
+    places.push({ value: "board", label: t("Whole board") });
+
+    const depths = new Set(SEARCH_IN.map((option) => option.value));
+    const sf = query.get("sf");
+
+    buildSearchPopover(frame, field, submit, {
+        places: places,
+        where: forumId ? "here" : "board",
+        depth: depths.has(sf) ? sf : "titleonly",
+        onChange: (place, depth, first) => {
+            // The first call is the page reporting where it looked.
+            if (first) return;
+            setSearchPref("sf", depth);
+            const url = new URL("./search.php", location.href);
+            url.searchParams.set("keywords", keywords);
+            url.searchParams.set("terms", query.get("terms") || "all");
+            url.searchParams.set("sr", query.get("sr") || "topics");
+            url.searchParams.set("sf", depth);
+            if (place.value === "here" && place.forum) url.searchParams.set("fid[]", place.forum);
+            location.href = url.toString();
+        },
+    });
+}
+
 
 /** Frame one of the board's own search boxes where it stands, rather
     than at the end of whatever cell it was in. */
@@ -10385,8 +10941,41 @@ function initMarkColumn(table) {
     }
 }
 
+/* The forum-rules box.
+
+   subsilver2 writes it as a table of one `td.row3` above everything
+   else on a forum, a topic and the posting form, and this board fills
+   it for members only — which is why it is easy to miss. Two things
+   are wrong with it left alone.
+
+   The template types `style="margin-bottom: 2px"` into the tag, and an
+   inline style beats every rule in this stylesheet without a fight, so
+   the box sat 2px above the topic title: two blocks with nothing to do
+   with each other, touching. And the cell keeps the styling of a
+   listing row — a row's inset, a hairline drawn along the bottom of a
+   card that has no second row, the same ground as everything else —
+   so the one block on the page that is a notice read as a slab of
+   text with no edges and no heading.
+
+   Tagged here; the stylesheet dresses it as the notice it is.  */
+function markForumRules() {
+    for (const cell of document.querySelectorAll("#wrapcentre td.row3")) {
+        const box = cell.closest("table.tablebg");
+        if (!box || box.hasAttribute("data-rr-rules")) continue;
+        // One cell in the whole table, holding a heading or the link
+        // that stands in for one. A listing's own section rows are
+        // td.row3 too — "Global Announcements", "Topics" — and those
+        // sit in a table of a hundred cells.
+        if (box.querySelectorAll("td, th").length !== 1) continue;
+        if (!cell.querySelector("h4, p.rules, .postbody")) continue;
+        box.setAttribute("data-rr-rules", "");
+        if (box.style.marginBottom) box.style.marginBottom = "";
+    }
+}
+
 function initLists() {
     markShapes();
+    markForumRules();
     groupSortControls();
     for (const table of document.querySelectorAll("table.tablebg")) {
         restoreGridCells(table);
@@ -10680,80 +11269,64 @@ function dropDuplicateSearch() {
 
 /**
  * The board's own "collapse this category" control: an `<input
- * type="button">` carrying `value=" "` and drawn by a 12x12 background
- * image the board injects in a <style> block.
+ * type="button">` carrying `value=" "`, drawn by a 12x12 background
+ * image from a <style> block, alone at the right end of a cell that
+ * spans three columns — a thousand pixels from the heading it belongs
+ * to, with no accessible name, on a row that gives no other sign it
+ * opens at all.
  *
- * So it has no accessible name — a space is not one — and the heading
- * beside it becomes that name. And it cannot be redrawn from the
- * stylesheet: an <input> is a replaced element, `::before` generates
- * nothing on it, so the chevron has to be the value.
- *
- * The board's own handler is untouched: `flipf()` reads the class
- * rather than the value, so writing one cannot confuse it.
+ * Redrawing it where it stood was a losing fight: an <input> is a
+ * replaced element, so `::before` generates nothing on it, and between
+ * the board's own <style> and the generic input[type=button] rules a
+ * class selector kept losing the size and the font — which is how the
+ * control came to be a bare text triangle. So it is hidden and kept
+ * for its handler, which is the part that matters: `flipf()` reads its
+ * class, flips it, and shows or hides the category. A chevron beside
+ * the heading clicks it, and the heading cell folds on a click of its
+ * own, the way a listing's section heading already does.
  */
 function tidyCategoryToggles() {
-    for (const toggle of document.querySelectorAll("#wrapcentre .ccclose, #wrapcentre .ccopen")) {
-        if (toggle.hasAttribute("data-rr-cc")) continue;
-        toggle.setAttribute("data-rr-cc", "");
+    for (const native of document.querySelectorAll("#wrapcentre .ccclose, #wrapcentre .ccopen")) {
+        if (native.hasAttribute("data-rr-cc")) continue;
+        native.setAttribute("data-rr-cc", "");
 
         // The heading is in a sibling cell — the control gets a cell to
-        // itself — so the row is what has to be read.
-        const heading = toggle.closest("tr")?.textContent.replace(/\s+/g, " ").trim().slice(0, 60);
+        // itself — so the row is what has to be walked to reach it.
+        const row = native.closest("tr");
+        const cell = row && row.querySelector("td.cat");
+        if (!cell) continue;
+        const heading = cell.textContent.replace(/\s+/g, " ").trim().slice(0, 60);
 
+        native.style.display = "none";
+
+        const fold = el("button.rr-catfold", { type: "button" }, [icon("chevronD", 13)]);
         const sync = () => {
-            const collapsed = toggle.classList.contains("ccopen");
+            const collapsed = native.classList.contains("ccopen");
             const name = t(collapsed ? "Show " : "Hide ") + (heading || t("this category"));
-            toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-            toggle.setAttribute("title", name);
-            toggle.setAttribute("aria-label", name);
-            // Decorative: aria-label above is what is read out. The same
-            // glyph either way; the stylesheet turns the closed one to
-            // point right, so the pair reads closed ▸ / open ▾ rather
-            // than ▸ / ▴, which pointed two ways at once.
-            const glyph = "\u25BE";
-            if (toggle.tagName === "INPUT") toggle.value = glyph;
-            else toggle.textContent = glyph;
+            row.toggleAttribute("data-rr-folded", collapsed);
+            fold.setAttribute("aria-expanded", collapsed ? "false" : "true");
+            fold.setAttribute("title", name);
+            fold.setAttribute("aria-label", name);
         };
-
-        // An <input type="button"> is already a button and already a
-        // tab stop. A <div> with an onclick, which other phpBB styles
-        // use for the same control, is neither — so both are covered
-        // rather than assuming which one this board ships.
-        if (toggle.tagName !== "INPUT" && toggle.tagName !== "BUTTON") {
-            toggle.setAttribute("role", "button");
-            toggle.setAttribute("tabindex", "0");
-            toggle.addEventListener("keydown", (event) => {
-                if (event.key !== "Enter" && event.key !== " ") return;
-                event.preventDefault();
-                toggle.click();
-            });
-        }
-
-        /* The box, set inline rather than from the stylesheet.
-
-           The board sizes this control from a <style> block it writes
-           into the body, and the generic input[type=button] styling in
-           forum.css also matches it; between them a class rule loses
-           the padding, the border and — measurably — the font size,
-           which resolved to 0px and made the glyph invisible whatever
-           it was. An inline style is what the icon pass already uses
-           to take an imageset GIF out of the way, and it is the one
-           thing neither of those can outrank. Colour and hover stay in
-           the stylesheet, where they can follow the theme. */
-        Object.assign(toggle.style, {
-            width: "24px",
-            height: "24px",
-            minWidth: "0",
-            padding: "0",
-            fontSize: "12px",
-            lineHeight: "1",
-            backgroundImage: "none",
-        });
-
-        sync();
         // The board's handler swaps the class rather than telling
         // anyone, so the state is read back off it afterwards.
-        toggle.addEventListener("click", () => setTimeout(sync, 0));
+        const flip = () => {
+            native.click();
+            setTimeout(sync, 0);
+        };
+
+        fold.addEventListener("click", flip);
+        // The heading itself is a link to the category's own page, so a
+        // click on the words still goes there; the rest of the cell
+        // folds.
+        cell.addEventListener("click", (event) => {
+            if (event.target instanceof Element && event.target.closest("a, input, select, button")) return;
+            flip();
+        });
+
+        cell.classList.add("rr-catfold-cell");
+        cell.prepend(fold);
+        sync();
     }
 }
 
@@ -11176,19 +11749,6 @@ function labelWithOptionalTail(link, label) {
     // gap off it: a word space, not a 6px slot.
     if (m) link.append(document.createTextNode(m[1]), el("span.rr-opt", {}, [m[2]]));
     else link.append(document.createTextNode(label));
-}
-
-/* The board's forum-rules box, which subsilver2 writes with
-   `style="margin-bottom: 2px"` typed into the tag. An inline style
-   beats every rule in this stylesheet without a fight, so the box sat
-   2px above the topic title: two blocks with nothing to do with each
-   other, touching. Block spacing is a token here; this hands the box
-   back to it. */
-function spaceForumRules() {
-    for (const cell of document.querySelectorAll("#wrapcentre td.row3")) {
-        const box = cell.closest("table.tablebg");
-        if (box && box.style.marginBottom) box.style.marginBottom = "";
-    }
 }
 
 /**
@@ -12159,7 +12719,6 @@ function initTopic() {
     // state off the page.
     if (settings.get("spoilersOpen")) openSpoilersAtLoad();
     buildTopicBar();
-    spaceForumRules();
 
     all.forEach((post, index) => {
         if (settings.get("postTools")) addPostTools(post, index);
@@ -12192,10 +12751,19 @@ function initTopic() {
    loaded and guesses at nothing beyond what a post says.
    ------------------------------------------------------------------ */
 
+/* "emulator" is not in this list, and used to be.
+
+   It is the one word here that is not about this board: a post
+   mentioning an emulator is as likely to be about RPCS3, Yuzu or a
+   PS2 thread as about a Steam stub, and every one of them collected
+   two points towards being read as a release. "goldberg" and "steam
+   emu" say the same thing without saying it about half the emulators
+   ever written. */
 const RELEASE_WORDS = [
     "clean steam files", "steam files", "reupload", "re-upload",
     "update", "updated", "patch", "hotfix", "repack", "crack",
-    "build", "denuvo", "dlc unlocker", "goldberg", "emulator",
+    "build", "denuvo", "dlc unlocker", "goldberg", "steam emu",
+    "online fix",
     // A hypervisor crack is a release of its own kind on this board,
     // with its own how-to threads and its own requirements.
     "hypervisor", "title update",
@@ -12275,7 +12843,16 @@ function looksLikeDate(version) {
  */
 const VERSION_RE_ALL = new RegExp(VERSION_RE.source, "gi");
 
-function versionsIn(text) {
+/* An archive extension is not part of the version.
+
+   "Peacock-v5.3.0.7z" is version 5.3.0 in a 7-Zip file, and the
+   pattern read it as 5.3.0.7z — a fourth part and a letter, both off
+   the file name. Blanked before matching rather than trimmed after,
+   so the number that comes out is the number that was written. */
+const ARCHIVE_SUFFIX_RE = /\.(?:7z|zip|rar|tar|gz|bz2|iso|exe|bin|torrent|part\d*)\b/gi;
+
+function versionsIn(said) {
+    const text = String(said || "").replace(ARCHIVE_SUFFIX_RE, " ");
     const all = VERSION_RE_ALL;
     all.lastIndex = 0;
     const found = { version: null, build: null, named: false };
@@ -12480,6 +13057,78 @@ function linkHosts(links) {
     return out;
 }
 
+/* A code block, in the classes this board actually writes.
+
+   phpBB3 marks one `.codetitle` + `.code`; subsilver2 on cs.rin.ru
+   marks `.codebox > .codeheader + .codeholder`, and this module asked
+   only for the first pair. So no code block on the live board was
+   ever recognised: the score never gained its point for one, and
+   releases.js went on matching release words against the contents of
+   every pasted config file, magnet link and error log in the topic. */
+const CODE_BLOCKS = ".code, .codetitle, .codebox, .codeheader, .codeholder";
+
+/* What a post is *offering*, as against what it is talking about.
+
+   A file host in a link, a login-walled link, a magnet, a torrent, an
+   attachment. This is the distinction the panel had no word for, and
+   the reason a 429 page topic listed a page of questions as releases:
+   the entry rules asked for links, or a version, or a recognised word,
+   and a question about a version has a version in it.
+
+   Store pages, video links and image hosts are not offers — hostName()
+   already refuses those — so a post linking a trailer and asking when
+   the crack lands carries nothing. */
+const CARRIED_RE = /magnet:\?xt=|\.torrent\b/i;
+const ATTACHED = ".attachtitle, .attachcontent, .attachrow";
+
+/**
+ * Login-walled links, not counting the ones that are people.
+ *
+ * The board writes a mention as "@" followed by a link to the member,
+ * and a guest sees that link replaced by
+ * "[[Please login to see this link.]]" exactly like a link to a file
+ * host. So every reply that opened by naming who it was answering
+ * counted as a post carrying a download — which on a busy topic is
+ * most replies, and is how "@someone, AFAIK, not currently" came to be
+ * listed as a release with one link on it.
+ *
+ * Signed in the same mention is an ordinary anchor at memberlist.php,
+ * which isOffsite() already refuses. This is the guest's half of the
+ * same rule.
+ */
+function hiddenLinks(own) {
+    let count = 0;
+    for (const node of own.querySelectorAll(".link_removed")) {
+        const before = node.previousSibling;
+        if (before && before.nodeType === 3 && /@\s*$/.test(before.textContent)) continue;
+        count += 1;
+    }
+    return count;
+}
+
+/* A post that asks is not a post that offers.
+
+   Off the live board, all of these were rows in the Releases panel:
+   "Is there any way to upgrade from v3.140 to v3.170.1?", "How can i
+   access DLC with peacock v6.3?", "Anyone know what version that one
+   torrent from April is?". Each carries a version and two release
+   words because it is asking *about* a release.
+
+   Only the opening sentence is read, and it has to both start like a
+   question and end in one, so a release post that closes with "any
+   problems, let me know?" is untouched. */
+/* Where the first sentence ends. A full stop between two digits is
+   part of a version number rather than the end of anything: without
+   that, "What person did you use cracked Peacock v8.8.1 from?" has
+   its first sentence end at "v8" and reads as a statement. */
+const ASKING_RE = /^(?:[^.!?]|\.(?=\S)){0,240}\?/;
+const ASKING_OPENERS = /^[\s\W]*(?:@\S*[\s,]*)*(?:is|are|was|were|does|do|did|can|could|would|will|should|has|have|any(?:one|body|way)|some(?:one|body)|how|what|where|when|why|which|who|whose|hi|hello|hey|help|please)\b/i;
+
+function looksLikeAQuestion(text) {
+    const said = String(text || "").replace(/\s+/g, " ").trim();
+    return ASKING_RE.test(said) && ASKING_OPENERS.test(said);
+}
+
 function describePost(post) {
     const own = ownContent(post.body);
     const text = own.textContent;
@@ -12490,7 +13139,9 @@ function describePost(post) {
 
     // Guests see "[[Please login to see this link.]]" instead of an
     // anchor, so those count as links too.
-    const hidden = own.querySelectorAll(".link_removed").length;
+    const hidden = hiddenLinks(own);
+    const attached = own.querySelectorAll(ATTACHED).length > 0;
+    const hosts = linkHosts(links);
 
     const words = RELEASE_WORDS.filter((word) => lower.includes(word));
     /* A dotted version and a Steam build id are both matched by
@@ -12510,12 +13161,17 @@ function describePost(post) {
         // reply that quotes a release is not a release, and this one
         // term was still reading the quote: a "thanks" quoting a post
         // with a code block scored for the code block.
-        (own.querySelector(".code, .codetitle, .spoiler") ? 1 : 0);
+        (own.querySelector(CODE_BLOCKS + ", .spoiler") ? 1 : 0);
 
     return {
         post,
         links: links.length + hidden,
-        hosts: linkHosts(links),
+        hosts,
+        // Somewhere to actually get the thing. Distinct hosts rather
+        // than anchors, so eight mirrors of one upload are one offer.
+        offers: hosts.length + hidden + (attached ? 1 : 0) + (CARRIED_RE.test(text) ? 1 : 0),
+        attached,
+        asking: looksLikeAQuestion(text),
         password: passwordIn(text),
         words,
         version: named.version,
@@ -12640,10 +13296,25 @@ const RELEASE_KINDS = [
        short word to match on, so it has to stand alone; nothing else on
        this board is spelled HV. */
     { id: "hypervisor", label: "Hypervisor", re: /\bhyper[\s-]?visor\b|\bhv\b|гипервизор/i },
-    { id: "online", label: "Online fix", re: /\bonline[\s-]?fix\b|\bgoldberg\b|\bsteam\s?emu\b|\bmultiplayer\s+fix\b|\bco-?op\s+fix\b|\bemulator\b|онлайн\s*фикс|голдберг/i },
+    /* An online fix restores multiplayer. It is not every Steam
+       emulator ever posted, which is what this pattern used to say:
+       `goldberg`, `steam emu` and a bare `emulator` were all in here,
+       so "Goldberg emulator used for patching" — a pre-installed
+       single-player release with the Steam stub swapped out — came
+       back tagged Online fix, and so did every post in a topic that
+       mentioned an emulator at all. Which emulator a post means, and
+       what it wanted out of it, is decided below. */
+    { id: "online", label: "Online fix", re: /\bonline[\s-]?fix(?:\.me)?\b|\bmultiplayer\s+fix\b|\bco-?op\s+fix\b|\blan\s+fix\b|онлайн[\s-]*фикс/i },
     { id: "dlc", label: "DLC", re: /\bdlcs?\b|\bunlocker\b|\bcream\s?api\b|\bsmart\s?steam\b|длс|разблокировщик/i },
     { id: "update", label: "Update", re: /\bupdate[ds]?\b|\bpatch(?:ed|es)?\b|\bhotfix\b|\bupgrade\b|обновлени|обнова|патч/i },
-    { id: "reupload", label: "Reupload", re: /\bre-?upload(?:ed|s)?\b|\bmirror(?:s|ed)?\b|\breup\b|перезалив|зеркало/i },
+    /* "Mirror" twice over: the word people write above a second
+       download link, and the word for having uploaded something
+       again. Only the second is a Reupload, and the first is how the
+       board labels links — "DataNodes Mirror:", "Mirror 1", "Mirror
+       #2" — so a mirror followed by a colon, a hash or a number is
+       read as the label it is. Link labels being read as prose, one
+       layer down. */
+    { id: "reupload", label: "Reupload", re: /\bre-?upload(?:ed|s|ing)?\b|\bmirrors?\b(?!\s*[:#=]|\s*\d)|\breup\b|перезалив|зеркало/i },
     { id: "trainer", label: "Trainer", re: /\btrainer\b|\bcheat\s+(?:tables?|engines?)\b|\bsave\s?game\b|трейнер|сохранени/i },
     { id: "language", label: "Language", re: /\blanguage\s+(?:pack|files?)\b|\blocali[sz]ation\b|\btranslation\b|русификатор|локализаци/i },
     { id: "tool", label: "Tool", re: /\btool(?:s|kit)?\b|\bmod\s+manager\b|\binstaller\b|активатор|установщик/i },
@@ -12687,7 +13358,38 @@ function releaseFamily(kind) {
 
 const RELEASE_CACHE_KEY = "topicIndex";
 const RELEASE_CACHE_TOPICS = 8;
-const RELEASE_MAX_PAGES = 80;
+
+/* How many pages one click reads.
+
+   This used to be a cap: 80 pages, and a topic longer than that had
+   its oldest pages dropped and never offered again. On the 429 page
+   HITMAN topic that read 81 pages, said so in small text, and left
+   the other 348 unreachable.
+
+   It is a pass instead. The newest 60 unread pages are read on the
+   first click, the panel says how many are left, and another click
+   reads the next 60 — so the far end of a very long topic is a few
+   clicks away rather than impossible, and no single click commits
+   anyone to a quarter of an hour. */
+const RELEASE_PASS_PAGES = 60;
+
+/* Which end of the topic a walk starts from, kept in this browser for
+   every topic like the fold state is. "newest" reads the last page
+   first and works backwards, which answers "what is it on now";
+   "oldest" reads from page one forwards, which answers "what was
+   posted here, in order". Both the walk and the list follow it. */
+const RELEASE_ORDER_KEY = "releaseOrder";
+
+function releaseOrder() {
+    return store.get(RELEASE_ORDER_KEY, "newest") === "oldest" ? "oldest" : "newest";
+}
+
+/** Rows in the reading direction: last page first, or page one first. */
+function inReadingOrder(rows, order) {
+    const back = order === "oldest" ? -1 : 1;
+    return rows.slice().sort((a, b) =>
+        back * ((b.page - a.page) || (Number(b.id) - Number(a.id))));
+}
 
 /* ---- How the walk asks the board for pages -------------------------
 
@@ -12708,9 +13410,22 @@ const RELEASE_MAX_PAGES = 80;
    at all, which is what the page cache below is for. */
 const RELEASE_IN_FLIGHT = 3;
 const RELEASE_START_GAP = 160;        /* between request starts, ms   */
-/* Where it goes when the board starts queueing. */
-const RELEASE_EASY_IN_FLIGHT = 1;
-const RELEASE_EASY_GAP = 700;
+/* Where it goes when the board starts queueing.
+
+   Not to one request at a time with three quarters of a second
+   between them, which is where this used to go. The board queues
+   rather than refusing: measured, it hands out one slot roughly every
+   two seconds however many requests are waiting. A gap on top of that
+   is time spent waiting for a server that is already making you wait,
+   and it made a long topic crawl. Two in flight with a short gap
+   holds the same place in the same queue and gets a page every two
+   seconds instead of every two and three quarters. */
+const RELEASE_EASY_IN_FLIGHT = 2;
+const RELEASE_EASY_GAP = 300;
+/* How many prompt answers in a row mean the queue has drained. A walk
+   that eased on page four of four hundred crawled the rest of the way
+   because nothing ever put it back. */
+const RELEASE_RECOVER_AFTER = 4;
 /* How much slower than its own best an answer has to be before that
    counts as the board asking for room, and the floor below which it is
    never read as one — a page that took 900 ms after one that took 200
@@ -12734,6 +13449,11 @@ function makePace() {
         gap: RELEASE_START_GAP,
         best: Infinity,
         eased: false,
+        // Whether it ever eased, which is what the panel reports: a
+        // walk that eased and recovered still went slowly for a while
+        // and the reader watched it happen.
+        everEased: false,
+        quick: 0,
         slowest: 0,
     };
 }
@@ -12743,10 +13463,27 @@ function notePace(pace, ms) {
     if (!Number.isFinite(ms) || ms <= 0) return;
     pace.slowest = Math.max(pace.slowest, ms);
     if (ms < pace.best) pace.best = ms;
-    if (pace.eased) return;
+
+    if (pace.eased) {
+        // Back up again once the queue has drained. Held to a lower
+        // bar than the one that eased it, so a walk cannot oscillate
+        // on one borderline page.
+        if (ms < Math.max(pace.best * 2, RELEASE_SLOW_FLOOR)) pace.quick += 1;
+        else pace.quick = 0;
+        if (pace.quick >= RELEASE_RECOVER_AFTER) {
+            pace.eased = false;
+            pace.quick = 0;
+            pace.inFlight = RELEASE_IN_FLIGHT;
+            pace.gap = RELEASE_START_GAP;
+        }
+        return;
+    }
+
     if (ms < RELEASE_SLOW_FLOOR) return;
     if (ms < pace.best * RELEASE_SLOW_FACTOR) return;
     pace.eased = true;
+    pace.everEased = true;
+    pace.quick = 0;
     pace.inFlight = RELEASE_EASY_IN_FLIGHT;
     pace.gap = RELEASE_EASY_GAP;
 }
@@ -12762,15 +13499,42 @@ function notePace(pace, ms) {
  */
 function releaseProse(body) {
     const copy = ownContent(body);
-    for (const link of copy.querySelectorAll("a[href], .link_removed, .codetitle, .code")) link.remove();
+    for (const node of copy.querySelectorAll("a[href], .link_removed, " + CODE_BLOCKS)) node.remove();
     return copy.textContent.replace(/\s+/g, " ").trim();
 }
 
+/* Goldberg is a Steam emulator, and a Steam emulator is two
+   different releases depending on what the post wanted out of it.
+
+   Half this board uses Goldberg as the crack: a pre-installed build
+   with the Steam stub swapped for an emulator so it starts without
+   Steam. The other half uses the same file to put multiplayer back,
+   which is an online fix. The word alone cannot tell them apart, so
+   what the post says around it decides — online, multiplayer, co-op,
+   LAN, servers means the second, and nothing means the first.
+
+   "Goldberg emulator used for patching. Thanks MR_Goldberg for the
+   emulator." is a crack, and used to be tagged Online fix. */
+const STEAM_EMU_RE = /\bgoldberg\b|\bsteam[\s_-]?emu(?:lator)?\b|\bsmart\s?steam\s?emu\b|голдберг|эмулятор\s+steam/i;
+/* Tight on purpose. A post that says "online fix" in so many words
+   is matched by the kind above and never reaches here; this only has
+   to answer "does this Goldberg mention mean multiplayer", and the
+   default when it cannot tell is a crack.
+
+   Bare `online` and bare `server` were in here and both were wrong
+   off the live board: "click on the All Links and download from other
+   download servers", under a pre-installed single-player release,
+   came back tagged Online fix. */
+const ONLINE_INTENT_RE = /\bmultiplayer\b|\bco-?op\b|\bcoop\b|\bmatchmaking\b|\blobb(?:y|ies)\b|\blan\s+(?:play|party|game)\b|\bplay(?:ing)?\s+(?:online|with\s+friends)\b|\bonline\s+(?:play|works?|working|mode|multiplayer|co-?op)\b|мультиплеер|кооп|по\s+сети/i;
+
 /** Which kinds a post's own words match. */
 function releaseKinds(text) {
+    const emulated = STEAM_EMU_RE.test(text)
+        ? (ONLINE_INTENT_RE.test(text) ? "online" : "crack")
+        : null;
     const found = [];
     for (const kind of RELEASE_KINDS) {
-        if (kind.re.test(text)) found.push(kind);
+        if (kind.re.test(text) || kind.id === emulated) found.push(kind);
     }
     return found;
 }
@@ -12781,47 +13545,45 @@ function describeRelease(post, page) {
     const text = releaseProse(post.body);
     const kinds = releaseKinds(text);
 
-    /* Two ways in.
+    /* Nothing was posted here.
 
-       The narrow bar — enough links, release words or a version to be
-       a release rather than a reply about one. It would rather miss a
-       release than list a conversation.
+       A release is a thing you can get: a file host, a login-walled
+       link, a magnet, a torrent, an attachment. Every rule under this
+       one is about telling apart two posts that offer something; this
+       one is about the rest of the topic, which is most of it.
 
-       Or one off-site link and one recognised kind, which is the case
-       that bar was dropping: a language pack, a trainer, a mod tool.
-       None of those carry a version or any of the fifteen release
-       words, so a post offering one scored three against a threshold
-       of four and never appeared — in a panel whose job is to list
-       every kind of thing posted. */
-    const known = kinds.length > 0 && scored.links > 0;
-    if (scored.score < 4 && !known) return null;
+       It replaces three rules that each tried to reach the same
+       answer from a different direction — a score, then "links alone
+       are not enough", then "words alone are not enough" — and that
+       between them still let through every question with a version
+       number in it. On the 429 page HITMAN topic that was two rows in
+       three: "Is there any way to upgrade from v3.140 to v3.170.1?"
+       has a version, two release words and no file behind it.
 
-    /* Links alone are never enough either.
+       A store page, a video and an image host are not offers;
+       hostName() already refuses those, so a post linking a trailer
+       carries nothing. */
+    if (!scored.offers) return null;
 
-       Two off-site links score six against a bar of four, so a post
-       that says "I'm also having this exact problem" and links to two
-       screenshots was listed as a release, tagged "2 links". Across
-       thirty real topics, nine rows were tagged by link count alone and
-       eight of those were conversation: a Reddit thread, a hosting
-       recommendation, a thank-you. The one real release among them
-       named no version and used none of the words — thin evidence for
-       a panel whose stated preference is to miss a release rather than
-       list a conversation. */
+    /* Asked, not offered.
+
+       A question with a link in it clears the rule above — "does this
+       work with 3.170.1? [screenshot]" — and is still a question. A
+       post with an attachment or an archive password on it is not
+       one, whatever its first sentence looks like. */
+    if (scored.asking && !scored.password && !scored.attached) return null;
+
+    /* What kind of thing it is, or a number on it.
+
+       An offer with neither is a link nobody said anything about, and
+       across thirty topics eight of nine of those were conversation:
+       a Reddit thread, a hosting recommendation, a thank-you. The
+       narrow bar underneath is the older, score-shaped version of the
+       same question, kept for the posts that use none of the words:
+       one recognised kind is enough on its own, because a language
+       pack and a trainer carry no version and none of them. */
     if (!kinds.length && !scored.version && !scored.build) return null;
-
-    /* Words alone are never enough.
-     *
-     * The bar is a score, and a score can be reached by vocabulary: two
-     * recognised words are four points and four points is the bar. That
-     * was survivable while the vocabulary was narrow, and stopped being
-     * so the moment "hypervisor" joined it — "Does the hypervisor crack
-     * need Core Isolation off?" is two release words, no links, no
-     * version, and it scored exactly like a release. On the live Black
-     * Flag topic that shape is most of the thread.
-     *
-     * A thing that was posted has somewhere to get it or a number on
-     * it. A post with neither is a post *about* a release. */
-    if (!scored.links && !scored.version && !scored.build) return null;
+    if (scored.score < 4 && !kinds.length) return null;
 
     return {
         id: post.id,
@@ -12970,7 +13732,7 @@ function rememberPages(topicId, pages, total) {
  * Returns the pages to fetch in reading order, plus the canary whose
  * answer decides whether the kept pages may be believed at all.
  */
-function planWalk(topicId, info, total) {
+function planWalk(topicId, info, total, depth, order) {
     const current = info.current || 1;
     const kept = PAGE.topicId ? pageCache(topicId) : null;
     const known = kept && kept.pages ? kept.pages : {};
@@ -12983,34 +13745,56 @@ function planWalk(topicId, info, total) {
     };
 
     const reuse = [];
-    let fetch_ = [];
+    let want = [];
     for (let page = 1; page <= total; page += 1) {
         if (page === current) continue;
         if (kept && reusable(page)) reuse.push(page);
-        else fetch_.push(page);
+        else want.push(page);
     }
 
     /* The canary: the highest page being reused. A post deleted
        anywhere in the topic shifts every page after it, so the page
        furthest down the topic is the one that shows it. */
     const canary = reuse.length ? reuse[reuse.length - 1] : null;
-    if (canary !== null) fetch_.push(canary);
-    fetch_.sort((a, b) => a - b);
+    if (canary !== null && !want.includes(canary)) want.push(canary);
 
-    /* The cap is on what is asked of the board, not on how far the
-       topic goes. A topic of 120 pages used to be read to page 80 and
-       stopped, and the newest forty — where the latest release is —
-       were the ones never looked at. The oldest pages are dropped
-       instead, and the panel says how many. */
-    let skipped = 0;
-    if (fetch_.length > RELEASE_MAX_PAGES) {
-        const keep = new Set(fetch_.slice(fetch_.length - RELEASE_MAX_PAGES));
-        if (canary !== null) keep.add(canary);
-        skipped = fetch_.filter((page) => !keep.has(page)).length;
-        fetch_ = fetch_.filter((page) => keep.has(page));
+    /* Which end to start from.
+
+       Newest first by default, because the question the panel exists
+       to answer is "which version is this thread on now" and the
+       answer is at the end of the topic. Read in page order it
+       arrives last — on a 429 page topic, a quarter of an hour after
+       the first row appears. Read backwards it is the first thing on
+       screen, and the rest is detail the reader can watch fill in or
+       stop with Escape.
+
+       Oldest first is the other real question — what was posted here
+       first, and in what order — so it is a choice rather than a
+       rule, and the panel carries the control.
+
+       Either way page 1 goes first. On this board the opening post of
+       a game topic is the index: whoever owns the thread keeps the
+       current links in it, so it is the single most useful page there
+       is and it costs one request to have it. Reading backwards that
+       has to be said; reading forwards it is where you start anyway. */
+    want.sort(order === "oldest" ? (a, b) => a - b : (a, b) => b - a);
+    const first = want.indexOf(1);
+    if (first > 0) {
+        want.splice(first, 1);
+        want.unshift(1);
     }
 
-    return { reuse: reuse, fetch: fetch_, known: known, canary: canary, skipped: skipped };
+    /* One pass, not the whole topic. What is left over is offered
+       rather than dropped — see RELEASE_PASS_PAGES. */
+    let deferred = 0;
+    if (want.length > depth) {
+        const keep = want.slice(0, depth);
+        if (canary !== null && !keep.includes(canary)) keep.push(canary);
+        deferred = want.length - keep.length;
+        want = keep;
+    }
+
+    return { reuse: reuse, fetch: want, known: known, canary: canary, deferred: deferred };
 }
 
 /* ---- Asking, a few at a time -------------------------------------- */
@@ -13053,38 +13837,80 @@ async function pacedPool(items, worker, state, pace) {
         }
     };
 
-    const workers = Math.min(pace.inFlight, items.length);
-    await Promise.all(Array.from({ length: workers }, run));
-
-    /* A back-off can leave items unclaimed, because the workers that
-       stood down were the ones that would have taken them. Whatever is
-       left is finished at the eased pace. */
-    if (next < items.length && !state.cancelled && !state.stopped) {
-        await Promise.all(Array.from({ length: Math.min(pace.inFlight, items.length - next) }, run));
+    /* A back-off leaves items unclaimed, because the workers that
+       stood down were the ones that would have taken them; so does a
+       recovery, which raises the ceiling above the number of workers
+       there are. Either way, whatever is left is picked up at
+       whatever the pace is by then. Each turn of this loop claims at
+       least one item, because nothing stands down while none is
+       running. */
+    while (next < items.length && !state.cancelled && !state.stopped) {
+        const workers = Math.min(pace.inFlight, items.length - next);
+        await Promise.all(Array.from({ length: workers }, run));
     }
     return results;
 }
 
+/** Every release across a set of pages, newest page first, deduped. */
+function rowsFromPages(pages, total) {
+    const found = [];
+    const seen = new Set();
+    for (let page = total; page >= 1; page -= 1) {
+        const entry = pages[String(page)];
+        if (!entry) continue;
+        for (const row of entry.rows) {
+            if (seen.has(row.id)) continue;
+            seen.add(row.id);
+            found.push(row);
+        }
+    }
+    found.sort((a, b) => (b.page - a.page) || (Number(b.id) - Number(a.id)));
+    return dedupeReleases(found);
+}
+
 /**
- * Read the whole topic and return every release in it.
+ * Read as much of the topic as this pass covers, and report as it goes.
  *
  * The page in front of you is never fetched; pages this browser has
  * already read are not fetched either unless the canary says they may
- * have moved. What is left goes to the pool above, a few at a time.
+ * have moved. What is left goes to the pool above, a few at a time,
+ * newest page first.
+ *
+ * `onRows` is called with the whole list every time a page lands. A
+ * walk over a long topic is minutes of work, and a panel that shows
+ * nothing until the last page is a panel that looks broken for all of
+ * them; the first row now appears on the first answer, and it is the
+ * newest one because that is the page the walk starts at.
  */
-async function walkTopic(info, state, onProgress) {
+async function walkTopic(info, state, onProgress, onRows) {
     const total = info.total || 1;
     const current = info.current || 1;
-    const plan = planWalk(PAGE.topicId, info, total);
+    const plan = planWalk(PAGE.topicId, info, total, RELEASE_PASS_PAGES, state.order);
     const pace = makePace();
+    const reused = new Set(plan.reuse);
 
     const read = new Map();
     read.set(current, readTopicPage(posts(), current));
 
+    /* Everything held right now — read this time, believed from last
+       time — as one set of pages. */
+    const gather = () => {
+        const pages = {};
+        for (let page = 1; page <= total; page += 1) {
+            const fresh = read.get(page);
+            const entry = fresh || (reused.has(page) ? plan.known[String(page)] : null);
+            if (!entry) continue;
+            pages[String(page)] = { rows: entry.rows, first: entry.first, newest: entry.newest, count: entry.count };
+        }
+        return pages;
+    };
+
     let done = 0;
-    const target = total - plan.skipped;
-    const say = () => onProgress(Math.min(target, done + plan.reuse.length + 1), target);
+    const of = plan.fetch.length + plan.reuse.length + 1;
+    const say = () => onProgress(Math.min(of, done + plan.reuse.length + 1), of);
+    const show = () => { if (onRows) onRows(rowsFromPages(gather(), total)); };
     say();
+    show();
 
     const fetchOne = async (page) => {
         const href = pageHref(page);
@@ -13102,6 +13928,7 @@ async function walkTopic(info, state, onProgress) {
         } finally {
             done += 1;
             say();
+            show();
         }
     };
 
@@ -13127,47 +13954,41 @@ async function walkTopic(info, state, onProgress) {
         if (PAGE.topicId) store.set(RELEASE_PAGES_KEY,
             Object.assign({}, store.get(RELEASE_PAGES_KEY, {}), { [String(PAGE.topicId)]: undefined }));
         const again = Object.assign({}, info);
-        return walkTopic(again, Object.assign(state, { retried: true }), onProgress);
+        return walkTopic(again, Object.assign(state, { retried: true }), onProgress, onRows);
     }
 
-    /* Everything read this time, plus everything believed from last
-       time, as one set of pages. */
-    const pages = {};
+    const pages = gather();
     let newest = 0;
     let scanned = 0;
-    for (let page = 1; page <= total; page += 1) {
-        const fresh = read.get(page);
-        const held = plan.known[String(page)];
-        const entry = fresh || (plan.reuse.includes(page) ? held : null);
-        if (!entry) continue;
-        pages[String(page)] = { rows: entry.rows, first: entry.first, newest: entry.newest, count: entry.count };
-        newest = Math.max(newest, entry.newest || 0);
+    for (const key of Object.keys(pages)) {
+        newest = Math.max(newest, pages[key].newest || 0);
         scanned += 1;
     }
 
-    const found = [];
-    const seen = new Set();
-    for (let page = total; page >= 1; page -= 1) {
-        const entry = pages[String(page)];
-        if (!entry) continue;
-        for (const row of entry.rows) {
-            if (seen.has(row.id)) continue;
-            seen.add(row.id);
-            found.push(row);
-        }
-    }
-    found.sort((a, b) => (b.page - a.page) || (Number(b.id) - Number(a.id)));
+    const pending = Math.max(0, total - scanned);
+    const complete = !state.cancelled && !state.stopped && pending === 0;
 
-    const complete = !state.cancelled && !state.stopped && scanned + plan.skipped >= total;
-    if (PAGE.topicId && complete) rememberPages(PAGE.topicId, pages, total);
+    /* Kept whether or not the pass finished.
+     *
+     * This used to be written only on a complete walk, so a topic
+     * read to page thirty and then stopped — by Escape, by a 503, by
+     * a pass ending — kept nothing and started again from nothing the
+     * next time. What makes a partial set safe to keep is the canary
+     * above: a page that was never read is simply absent, and one
+     * that has moved throws the whole set away.
+     *
+     * `scanned > 1` because the page in front of the reader is always
+     * in the set and is not worth a write on its own. */
+    if (PAGE.topicId && scanned > 1) rememberPages(PAGE.topicId, pages, total);
 
     return {
-        rows: dedupeReleases(found),
+        rows: rowsFromPages(pages, total),
         done: complete,
         scanned: scanned,
-        // Oldest pages left unread because the topic is longer than the
-        // cap on requests; the panel says so.
-        skipped: plan.skipped,
+        // Pages of this topic still unread: the rest of a long topic
+        // that this pass did not reach, plus anything that failed.
+        // The panel offers them rather than dropping them.
+        pending: pending,
         newest: newest,
         // How much of this answer came out of this browser rather than
         // off the board, which is the whole point of keeping it.
@@ -13176,7 +13997,7 @@ async function walkTopic(info, state, onProgress) {
         refused: state.stopped || null,
         // Whether the board asked for room, so the panel can say the
         // walk went slowly on purpose rather than looking stuck.
-        eased: pace.eased,
+        eased: pace.everEased,
     };
 }
 
@@ -13277,13 +14098,48 @@ function saysGameVersion(row) {
 /** The highest version anybody posted *of the game* — the question the
     thread was opened with. Build ids are excluded: "build 24127279" is
     eight digits and beats every real version it is compared against. */
+/* One reply's slip is not the topic's version.
+ *
+ * Off the live board, one post in a 429 page thread reads "I had some
+ * trouble getting V270.1 to work with Peacock" — the poster dropped
+ * the 3. off 3.270.1 — and 270 beats every real version in the topic
+ * on the first digit. The headline announced the game as being on
+ * v270.1.
+ *
+ * What tells that apart from a release is company: every other
+ * version in that topic shares a first part with several others, and
+ * that one shared it with nothing. So a first part that exactly one
+ * row uses is not allowed to set the headline while another first
+ * part is used by more than one.
+ *
+ * The company has to be real company. In a topic with three releases
+ * in it, one first part having two rows and another having one says
+ * nothing, and the first release of a genuinely new major version is
+ * alone on its first part by definition. So the rule only applies
+ * where some first part has three rows or more — an established
+ * thread — and even there it can hold a brand new major back until
+ * the second post about it, which is the conservative half of a
+ * trade whose other half was announcing a game as being on v270.
+ */
+const VERSION_CROWD = 3;
+
 function latestVersion(rows) {
-    let best = null;
-    for (const row of rows) {
-        if (!row.version || !saysGameVersion(row)) continue;
+    const candidates = rows.filter((row) =>
         // A bare number read off the prose is shown on its row and is
         // not evidence about the game; see versionsIn().
-        if (row.versionNamed === false) continue;
+        row.version && row.versionNamed !== false && saysGameVersion(row));
+
+    const majors = new Map();
+    for (const row of candidates) {
+        const major = versionRank(row.version)[0];
+        majors.set(major, (majors.get(major) || 0) + 1);
+    }
+    let crowd = 0;
+    for (const count of majors.values()) crowd = Math.max(crowd, count);
+
+    let best = null;
+    for (const row of candidates) {
+        if (crowd >= VERSION_CROWD && majors.get(versionRank(row.version)[0]) === 1) continue;
         if (versionNewer(row.version, best)) best = row.version;
     }
     return best;
@@ -13484,7 +14340,7 @@ function initReleases() {
        two copies: the rows, the filters and the counts all differ, and
        a hidden second list is a second thing to keep in step. */
     const panel = el("section.rr-releases", { "aria-label": t("Releases in this topic") });
-    const state = { cancelled: false, stopped: null, scope: "page", topic: kept };
+    const state = { cancelled: false, stopped: null, scope: "page", topic: kept, order: releaseOrder() };
 
     const count = el("span.rr-releases__count");
     const scope = el("div.rr-releases__scope", { role: "tablist", "aria-label": t("How much to look at") });
@@ -13512,6 +14368,37 @@ function initReleases() {
             : t("This topic is one page — you are looking at all of it"));
     }
     scope.append(pageTab, topicTab);
+
+    /* Which end of the topic to read from.
+
+       Beside the scope control because it qualifies it: "All 429
+       pages, newest first" is one sentence. Only drawn where it
+       decides something — a one page topic, or the whole-topic walk
+       switched off, and there is no direction to choose. */
+    const orderSeg = el("div.rr-seg.rr-releases__order", {
+        role: "group", "aria-label": t("Which end to read from"),
+    });
+    const syncOrder = () => {
+        for (const button of orderSeg.children) {
+            button.setAttribute("aria-pressed", button.dataset.value === state.order ? "true" : "false");
+        }
+    };
+    for (const option of [
+        { value: "newest", label: t("Newest first"), hint: t("Start at the last page and work back") },
+        { value: "oldest", label: t("Oldest first"), hint: t("Start at page one and work forward") },
+    ]) {
+        const button = el("button", { type: "button", title: option.hint }, [option.label]);
+        button.dataset.value = option.value;
+        button.addEventListener("click", () => {
+            if (state.order === option.value) return;
+            state.order = option.value;
+            store.set(RELEASE_ORDER_KEY, option.value);
+            syncOrder();
+            render();
+        });
+        orderSeg.append(button);
+    }
+    syncOrder();
 
     /* The board's own "only show me the drops" filter. It was in a
        strip along the bottom of the panel while the scope control was
@@ -13573,7 +14460,7 @@ function initReleases() {
     panel.append(
         el("div.rr-releases__head", {}, [
             fold,
-            el("div.rr-releases__controls", {}, [scope, linkFilter, copyList]),
+            el("div.rr-releases__controls", {}, [scope, canWalk && multi ? orderSeg : null, linkFilter, copyList]),
         ]),
         body,
     );
@@ -13585,37 +14472,69 @@ function initReleases() {
             : t(rows.length === 1 ? "{n} release" : "{n} releases", { n: rows.length }) + (scoped ? "" : t(" on this page"));
     };
 
+    /* A walk over a long topic is minutes of work, so what it has
+       found is drawn as it finds it rather than at the end. The list
+       is repainted at most three times a second: sixty pages arriving
+       is sixty repaints of a list that grows by a row or two, and the
+       rows carry click handlers.
+
+       A full render() is what repaints, filter chips and all. A chip
+       pressed while the walk is running comes back unpressed on the
+       next page, which is a fair trade for not keeping two ways of
+       drawing the same list in step. */
+    let painted = 0;
+    const paint = (rows, force) => {
+        state.topic = Object.assign(state.topic || {}, { rows: rows, total: total });
+        const now = Date.now();
+        if (!force && now - painted < 350) return;
+        painted = now;
+        state.scope = "topic";
+        render();
+    };
+
     const walk = () => {
         state.cancelled = false;
         state.stopped = null;
         topicTab.disabled = true;
         topicTab.setAttribute("aria-busy", "true");
+        // The pass has its direction now; changing it mid-walk would
+        // only change the list, which reads as the walk turning round.
+        for (const button of orderSeg.children) button.disabled = true;
+        state.topic = {
+            at: Date.now(), rows: (state.topic && state.topic.rows) || [],
+            scanned: 0, done: false, total: total, live: true,
+        };
 
         const finish = () => {
             topicTab.disabled = false;
             topicTab.removeAttribute("aria-busy");
             topicTab.textContent = topicLabel;
+            for (const button of orderSeg.children) button.disabled = false;
+            if (state.topic) state.topic.live = false;
         };
 
         walkTopic(info, state, (at, of) => {
             topicTab.textContent = t("Reading {a} of {b}…", { a: at, b: of });
-        }).then((result) => {
+            if (state.topic) state.topic.scanned = at;
+        }, (rows) => paint(rows)).then((result) => {
             finish();
             state.topic = {
                 at: Date.now(), rows: result.rows, scanned: result.scanned,
-                done: result.done, total: total,
+                done: result.done, total: total, pending: result.pending,
                 newest: Math.max(result.newest || 0, hereNewest),
                 fetched: result.fetched, reused: result.reused,
                 eased: result.eased,
             };
             if (PAGE.topicId) rememberIndex(PAGE.topicId, state.topic);
-            if (result.refused) toast("The board asked for a slower pace, so the topic was only read this far");
+            if (result.refused) toast(t("The board asked for a slower pace, so the topic was only read this far"));
             state.scope = "topic";
             render();
         }).catch((err) => {
             finish();
             console.warn("[RIN Reforged] topic index:", err);
             toast(t("Could not read the whole topic"));
+            // Otherwise the panel is left saying "reading…" for good.
+            render();
         });
     };
 
@@ -13625,25 +14544,47 @@ function initReleases() {
         topicTab.setAttribute("aria-selected", state.scope === "topic" ? "true" : "false");
 
         const scoped = state.scope === "topic";
-        const rows = scoped ? (state.topic ? state.topic.rows : []) : pageRows;
+        // Both scopes read in the direction the panel is set to, so
+        // the control means one thing rather than two.
+        const rows = inReadingOrder(scoped ? (state.topic ? state.topic.rows : []) : pageRows, state.order);
         const latest = scoped ? latestVersion(rows) : null;
 
         if (scoped && state.topic) {
-            const again = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
+            const live = Boolean(state.topic.live);
+            const pending = state.topic.pending || 0;
+
+            const again = el("button.rr-btn", { type: "button", "data-variant": "quiet", disabled: live || null }, [
                 icon("layers", 12), t("Read it again"),
             ]);
             again.addEventListener("click", walk);
+
+            /* The rest of a long topic, offered rather than dropped.
+               The panel used to read the newest eighty pages of a 429
+               page thread, say "the oldest 348 were not read" in small
+               text, and that was the end of it. */
+            const more = pending && !live
+                ? el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
+                    icon("arrowDown", 12),
+                    t("Read {n} more", { n: Math.min(pending, RELEASE_PASS_PAGES) }),
+                ])
+                : null;
+            if (more) {
+                more.setAttribute("title",
+                    t("Keep going back through the topic, {n} pages at a time", { n: RELEASE_PASS_PAGES }));
+                more.addEventListener("click", walk);
+            }
             /* One sentence, not three spans run together. Read by eye
                the gaps between them are the punctuation; read aloud
                they are nothing, and the line came out as
                "Latest posted: v1.10.05 pages read". */
             const said = [
                 latest ? t("Latest posted: version {v}", { v: latest }) : null,
-                pagesReadText(state.topic.scanned),
-                state.topic.skipped ? t("the oldest {n} pages were not read", { n: state.topic.skipped }) : null,
-                state.topic.done ? null : t("stopped early"),
+                pagesReadText(state.topic.scanned || 0),
+                live ? t("still reading") : null,
+                pending && !live ? t("{n} pages have not been read yet", { n: pending }) : null,
+                live || pending || state.topic.done ? null : t("stopped early"),
                 state.topic.eased ? t("the board was busy, so this was read slowly") : null,
-                t("read {ago}", { ago: agoText(state.topic.at || Date.now()) }),
+                live ? null : t("read {ago}", { ago: agoText(state.topic.at || Date.now()) }),
                 staleBy ? t("{n} new since", { n: staleBy }) : null,
             ].filter(Boolean).join(". ");
 
@@ -13656,20 +14597,20 @@ function initReleases() {
                 el("span.rr-spacer"),
                 el("div.rr-releases__read", {}, [
                     el("span", { "aria-hidden": "true" }, [
-                        pagesReadText(state.topic.scanned),
-                        state.topic.skipped ? " · " + t("oldest {n} skipped", { n: state.topic.skipped }) : "",
-                        state.topic.done ? "" : " · " + t("stopped early"),
-                        " · " + agoText(state.topic.at || Date.now()),
+                        pagesReadText(state.topic.scanned || 0),
+                        live ? " · " + t("reading…") : "",
+                        pending && !live ? " · " + t("{n} left", { n: pending }) : "",
+                        live || pending || state.topic.done ? "" : " · " + t("stopped early"),
+                        live ? "" : " · " + agoText(state.topic.at || Date.now()),
                     ].join("")),
-                    /* Why it took as long as it did. A walk that drops
-                       to one request at a time because the board is
-                       queueing looks exactly like a walk that has hung,
-                       and the difference matters to whoever is watching
-                       it. */
+                    /* Why it took as long as it did. A walk that halves
+                       its pace because the board is queueing looks
+                       exactly like a walk that has hung, and the
+                       difference matters to whoever is watching it. */
                     state.topic.eased
                         ? el("span.rr-releases__eased", {
                             "aria-hidden": "true",
-                            title: t("The board was answering slowly, so this was read one page at a time"),
+                            title: t("The board was answering slowly, so this was read a couple of pages at a time"),
                         }, [t("read gently")])
                         : null,
                     staleBy
@@ -13677,6 +14618,7 @@ function initReleases() {
                             staleBy === 1 ? t("1 newer post since") : t("{n} newer posts since", { n: staleBy }),
                         ])
                         : null,
+                    more,
                     again,
                 ]),
             ]));
@@ -13906,7 +14848,7 @@ function isQuietPost(post, limit) {
     }
 
     // Code, a spoiler or an attachment is content by itself.
-    if (post.body.querySelector(".code, .codetitle, .spoiler, pre, .attachtitle")) return false;
+    if (post.body.querySelector(CODE_BLOCKS + ", .spoiler, pre, .attachtitle")) return false;
 
     // A screenshot is an answer. A smiley is not.
     for (const img of post.body.querySelectorAll("img")) {
@@ -15297,6 +16239,477 @@ function initPeople() {
     }
 }
 
+/* ================= src/modules/preview.js ================= */
+/* ------------------------------------------------------------------
+   Topics in the palette, and a look inside one.
+
+   Two features that only make sense together.
+
+   The board has one search box and it reloads the page, so the palette
+   offers a row that hands the query to search.php. That is the right
+   escape hatch and the wrong first answer: you cannot see what you are
+   choosing between until after a page load, and this board will not
+   let you search twice in a row anyway — phpBB's flood interval on
+   cs.rin.ru is about half a minute, measured, and a search typed one
+   letter at a time would burn it on the prefixes and be refused on the
+   word.
+
+   So nothing here searches. Every listing this browser opens is
+   already a hundred topic titles arriving for free; they are kept, and
+   typing filters what has been seen. That is instant, costs no
+   request, and cannot be rate limited.
+
+   And resting on one fetches its first page, once, to show what is in
+   it — the board it is in, how long it runs, who opened it and what
+   they said. viewtopic.php has no flood interval; a page is 40-110 KB
+   and about 350ms.
+   ------------------------------------------------------------------ */
+
+/* Eight hundred topics is 110 KB, which localStorage holds ten times
+   over, and about eight listings' worth — far more than anyone types
+   against in one sitting, and small enough that the write at the end
+   of a listing is not felt. */
+const TOPIC_BUCKET = "topics";
+const TOPIC_LIMIT = 800;
+
+/* How long the reader has to stay on a row before it is fetched.
+
+   Long enough that arrowing from the top of the list to the fourth
+   entry does not ask for four pages, short enough that stopping on
+   one feels like it answered rather than like it thought about it. */
+const PREVIEW_DWELL = 260;
+
+/* The pane hangs off the centre line, past the palette's own 320px
+   half and a 12px gap, so the room it has is what is left of the
+   half-window after those. At 1200px that bottoms out at 256px, which
+   still holds a title and four lines of a post; below it there is not
+   enough left to read, and the fetch would be spent on something
+   nobody can see. features.css hides the pane at the same width; this
+   is what stops the request. A phone is also the worst place to spend
+   110 KB. */
+const PREVIEW_MIN_WIDTH = 1200;
+
+/* Measured on the live board: one search, then refusals at +1s, +8s
+   and +8s again, then an answer at +20s. "A few minutes" is what the
+   board says and about half a minute is what it does, so this is a
+   warning and never a block — the number is the board's to enforce. */
+const SEARCH_INTERVAL = 30000;
+
+/* ---- What this browser has seen ----------------------------------- */
+
+/**
+ * One canonical URL for a topic.
+ *
+ * The board hangs a session id on every link, stamps `lang=` on some,
+ * and points a title at `&start=225` or `#unread` depending on where
+ * it was picked up. All of those are the same topic, and left alone
+ * they would be four entries in the index and four fetches for one
+ * preview.
+ */
+function topicKey(href) {
+    const id = String(href || "").match(/[?&]t=(\d+)/);
+    return id ? id[1] : null;
+}
+
+function canonicalTopicHref(href) {
+    const id = topicKey(href);
+    if (!id) return null;
+    const forum = String(href).match(/[?&]f=(\d+)/);
+    return "./viewtopic.php?" + (forum ? "f=" + forum[1] + "&" : "") + "t=" + id;
+}
+
+function knownTopics() {
+    const held = bucket.get(TOPIC_BUCKET, []);
+    return Array.isArray(held) ? held : [];
+}
+
+/** The board a listing is showing, for the line under a title. */
+function listingBoardName() {
+    const crumbs = Array.from(document.querySelectorAll("#wrapcentre a.breadcrumbs, .rr-nav__crumbs a"));
+    const last = crumbs[crumbs.length - 1];
+    const name = last ? last.textContent.replace(/\s+/g, " ").trim() : "";
+    return name && name.length <= 48 ? name : null;
+}
+
+/**
+ * Keep the topics on this page.
+ *
+ * Runs on anything that lists topics — a forum, a search result, the
+ * active-topics page — because all three are `a.topictitle` and the
+ * reader does not care which one a title was picked up from.
+ *
+ * Written once per page, at the end, and only when something actually
+ * changed: a listing revisited unchanged costs a read and no write.
+ */
+function harvestTopics() {
+    if (!settings.get("paletteTopics")) return;
+
+    const rows = topicRows();
+    if (!rows.length) return;
+
+    const board = listingBoardName();
+    const now = Date.now();
+    const held = knownTopics();
+    const byId = new Map(held.map((entry) => [entry.i, entry]));
+    let changed = false;
+
+    for (const row of rows) {
+        if (!row.id || !row.title) continue;
+        const href = canonicalTopicHref(row.link.getAttribute("href"));
+        if (!href) continue;
+        const before = byId.get(row.id);
+        // The title is re-read every time on purpose: a topic renamed
+        // to "[Release] … v2.1" is a different thing to search for.
+        const entry = {
+            i: row.id,
+            t: row.title.slice(0, 140),
+            h: href,
+            b: board || (before && before.b) || null,
+            s: now,
+        };
+        if (!before || before.t !== entry.t || before.b !== entry.b) changed = true;
+        byId.set(row.id, entry);
+    }
+    if (!changed && byId.size === held.length) return;
+
+    // Newest sighting first, so the cap drops what has not been seen
+    // in longest rather than whatever the Map happened to hold last.
+    const next = Array.from(byId.values()).sort((a, b) => b.s - a.s).slice(0, TOPIC_LIMIT);
+
+    /* A full quota is not a reason to lose the feature. Half of an
+       index still answers most of what is typed at it, and the next
+       listing fills it back up to whatever fits. */
+    if (!bucket.set(TOPIC_BUCKET, next) && next.length > 40) {
+        bucket.set(TOPIC_BUCKET, next.slice(0, Math.floor(next.length / 2)));
+    }
+}
+
+/**
+ * Topics matching what has been typed, best first.
+ *
+ * Only ever with a query: eight hundred titles in no order is not a
+ * list anybody reads, and the palette's own groups — bookmarks, the
+ * recent ones — are the answer to an empty box.
+ */
+function matchingTopics(needle, limit) {
+    if (!needle || !settings.get("paletteTopics")) return [];
+
+    const found = [];
+    for (const entry of knownTopics()) {
+        if (!matchesWords(entry.t, needle)) continue;
+        found.push(entry);
+        // Twice the limit, so the sort below has something to choose
+        // from without walking the whole index into an array.
+        if (found.length >= limit * 4) break;
+    }
+
+    /* A title that starts with the query is what was meant more often
+       than one that merely contains it — "elden" should reach Elden
+       Ring before "The Elden Ring of a longer name" — and after that
+       the most recently seen wins, which on this board means the most
+       recently active. */
+    const folded = foldText(needle);
+    const rank = (entry) => (foldText(entry.t).startsWith(folded) ? 0 : 1);
+    found.sort((a, b) => rank(a) - rank(b) || b.s - a.s);
+    return found.slice(0, limit);
+}
+
+/** Palette rows for those, in the shape collectItems() builds. */
+function topicPaletteItems(needle, limit) {
+    return matchingTopics(needle, limit).map((entry) => ({
+        label: entry.t,
+        icon: "topic",
+        hint: entry.b || t("topic"),
+        href: entry.h,
+        preview: entry.h,
+    }));
+}
+
+/* ---- The board's flood interval ----------------------------------- */
+
+/* The palette navigates away when a search is chosen, so there is no
+   answer to read: what the board did with the request is only visible
+   on the page that replaces this one. What can be known is when the
+   last one was asked for, which is enough to say "not yet" before the
+   board says "not at all". */
+function noteBoardSearch() {
+    bucket.set("lastSearch", Date.now());
+}
+
+/** Seconds still to wait, or 0 when a search is worth trying. */
+function searchCooldown() {
+    const last = Number(bucket.get("lastSearch", 0));
+    if (!Number.isFinite(last) || !last) return 0;
+    const left = SEARCH_INTERVAL - (Date.now() - last);
+    // A stamp from the future — a clock put back, a machine restored
+    // from a backup — would otherwise read as a wait of hours. Nothing
+    // longer than the interval itself can be real.
+    if (left <= 0 || left > SEARCH_INTERVAL) return 0;
+    return Math.ceil(left / 1000);
+}
+
+/* ---- Looking inside one ------------------------------------------- */
+
+/* Kept for as long as the tab is open, not written down: a preview is
+   a glance at something that changes, and one page of one topic is
+   110 KB that has no business in storage. Arrowing up and down a list
+   of ten therefore asks for ten pages once and none of them again. */
+const previewCache = new Map();
+
+/** Trim a run of post text to something that fits a pane. */
+function previewBlurb(body) {
+    if (!body) return "";
+    const text = body.textContent.replace(/\s+/g, " ").trim();
+    if (text.length <= 260) return text;
+    // On a word, so the cut does not land mid-title.
+    const cut = text.slice(0, 260);
+    const space = cut.lastIndexOf(" ");
+    return (space > 180 ? cut.slice(0, space) : cut) + "…";
+}
+
+/**
+ * The first image of the opening post, if it is one worth showing.
+ *
+ * The board's CSP is `img-src 'self' https: data:`, so a post's own
+ * imgur or Steam art loads here as well as it does on the page it came
+ * from. Smilies and the template's own icons do not count as art: they
+ * live under styles/ and are the reason for the size floor.
+ */
+function previewImage(doc, body) {
+    if (!body) return null;
+    for (const img of body.querySelectorAll("img")) {
+        const src = img.getAttribute("src") || "";
+        if (!src || /\/(?:images|imageset|smilies)\//i.test(src)) continue;
+        const width = parseInt(img.getAttribute("width") || "0", 10);
+        if (width && width < 120) continue;
+        try {
+            return new URL(src, doc.baseURI || location.href).href;
+        } catch {
+            return null;
+        }
+    }
+    return null;
+}
+
+/** What the topic's own page says about itself. */
+function readTopicPage1(doc, href) {
+    const found = posts(doc);
+    const first = found[0] || null;
+    const heading = doc.querySelector("#pageheader h2, a.titles");
+    const crumbs = Array.from(doc.querySelectorAll("#wrapcentre a.breadcrumbs"));
+    const pages = doc.body.textContent.match(/(?:Page|Страница)\s+\d+\s+(?:of|из)\s+(\d+)/i);
+
+    /* headCell, not head: `head` is the band topic.js draws, and this
+       document was parsed out of a fetch and never went near topic.js.
+       The template's own cell is what a detached page has, and it
+       reads "Post subject: … Posted: Sunday, 12 Oct 2014, 22:49" —
+       both halves in one run of text, in whichever of the board's two
+       languages the reader is in. The date is picked out by its shape
+       rather than by the word in front of it, which also drops the
+       weekday nobody needs. */
+    const posted = first && first.headCell
+        ? first.headCell.textContent.replace(/\s+/g, " ").trim()
+        : "";
+    const when = posted.match(/(\d{1,2}\s+[A-Za-zА-Яа-я]{3,}\s+\d{4}(?:,?\s+\d{1,2}:\d{2})?)/);
+
+    return {
+        href,
+        title: heading ? heading.textContent.replace(/\s+/g, " ").trim() : null,
+        board: crumbs.length ? crumbs[crumbs.length - 1].textContent.trim() : null,
+        pages: pages ? Number(pages[1]) : 1,
+        author: first && first.author ? first.author.textContent.trim() : null,
+        when: when ? when[1].trim().slice(0, 40) : null,
+        blurb: first ? previewBlurb(first.body) : "",
+        image: first ? previewImage(doc, first.body) : null,
+    };
+}
+
+/**
+ * Fetch and read one topic's first page.
+ *
+ * One request per topic per tab, and one in flight per topic however
+ * many times the cursor passes over it: the promise itself is what is
+ * cached, so a second ask while the first is still out waits on it
+ * rather than starting another.
+ */
+function previewTopic(href) {
+    const id = topicKey(href);
+    if (!id) return Promise.reject(new Error("not a topic"));
+    if (previewCache.has(id)) return previewCache.get(id);
+
+    const job = (async () => {
+        const response = await fetch(href, { credentials: "same-origin" });
+        if (!response.ok) throw new Error("the board answered " + response.status);
+        const doc = parseDocument(await response.text());
+        if (!doc) throw new Error("that page could not be read");
+        return readTopicPage1(doc, href);
+    })();
+
+    // A failure is not kept: the next hover should be allowed to try
+    // again rather than repeat an error from ten minutes ago.
+    job.catch(() => previewCache.delete(id));
+    previewCache.set(id, job);
+    return job;
+}
+
+/* ---- The pane ------------------------------------------------------ */
+
+function previewSkeleton() {
+    return el("div.rr-preview__wait", {}, [t("Reading that topic…")]);
+}
+
+/**
+ * The picture, on condition that it turns out to be one.
+ *
+ * Whether an image is worth showing cannot be settled from the markup:
+ * the width attribute is optional and most posts leave it off, so the
+ * only honest test is the file itself. Until it arrives the element is
+ * there and empty; a 16px sprite blown up to the pane's full width, or
+ * a host that refuses to serve it, takes itself back out rather than
+ * standing at the top of the pane as a smear or a broken-image box.
+ */
+function previewArt(src) {
+    const art = el("img.rr-preview__art", {
+        src,
+        alt: "",
+        loading: "lazy",
+        referrerpolicy: "no-referrer",
+    });
+    art.addEventListener("load", () => {
+        if (art.naturalWidth && art.naturalWidth < 120) art.remove();
+    });
+    art.addEventListener("error", () => art.remove());
+    return art;
+}
+
+function renderPreview(pane, info) {
+    const meta = [
+        info.board,
+        info.pages > 1 ? t("{n} pages", { n: info.pages }) : null,
+    ].filter(Boolean).join(" · ");
+
+    /* Filtered, not passed straight to append(): el() drops a null
+       child, and Node.append() turns one into the text "null" — which
+       is what a topic whose opening post has no picture put above its
+       own title. */
+    const parts = [
+        info.image ? previewArt(info.image) : null,
+        el("div.rr-preview__title", {}, [info.title || t("this topic")]),
+        meta ? el("div.rr-preview__meta", {}, [meta]) : null,
+        info.author
+            ? el("div.rr-preview__by", {}, [
+                t("Opened by {who}", { who: info.author }) + (info.when ? " · " + info.when : ""),
+            ])
+            : null,
+        info.blurb ? el("p.rr-preview__blurb", {}, [info.blurb]) : null,
+        el("div.rr-preview__foot", {}, [t("Enter to open")]),
+    ].filter(Boolean);
+
+    pane.textContent = "";
+    pane.append(...parts);
+}
+
+/**
+ * Wire a palette's cursor to a pane beside it.
+ *
+ * Called by the palette once, with the overlay it just built and a way
+ * to ask what the cursor is on.
+ *
+ * The pane goes in the overlay, not in the panel: the panel clips its
+ * own corners, so a child hung off its right edge would be cut off at
+ * it, and a sibling laid out beside it in the overlay's centred row
+ * would shove the list 170px to the left the first time one opened.
+ * Positioned against the centre line instead, the list never moves.
+ */
+function attachTopicPreview(overlay, currentItem) {
+    if (!settings.get("palettePreview")) return () => {};
+    if (window.innerWidth < PREVIEW_MIN_WIDTH) return () => {};
+
+    const pane = el("aside.rr-preview", { hidden: true, "aria-live": "polite" });
+    overlay.append(pane);
+
+    let timer = 0;
+    let shown = null;
+
+    const clear = () => {
+        window.clearTimeout(timer);
+        timer = 0;
+    };
+
+    const show = (href) => {
+        const id = topicKey(href);
+        if (!id || id === shown) return;
+        // Checked again here, not only when the palette opened: a
+        // window narrowed since then has the stylesheet hiding the
+        // pane, and a fetch for something nobody can see is the one
+        // request this feature has no excuse for.
+        if (window.innerWidth < PREVIEW_MIN_WIDTH) return;
+        shown = id;
+        pane.hidden = false;
+        pane.textContent = "";
+        pane.append(previewSkeleton());
+        previewTopic(href).then(
+            (info) => { if (shown === id) renderPreview(pane, info); },
+            (err) => {
+                if (shown !== id) return;
+                pane.textContent = "";
+                pane.append(el("div.rr-preview__wait", {}, [String(err.message || err)]));
+            },
+        );
+    };
+
+    const settle = () => {
+        clear();
+        const item = currentItem();
+        const href = item && item.preview;
+        if (!href) return;
+        // Already read: no reason to make the reader wait out a dwell
+        // for something that is in memory.
+        if (previewCache.has(topicKey(href))) { show(href); return; }
+        timer = window.setTimeout(() => show(href), PREVIEW_DWELL);
+    };
+
+    return settle;
+}
+
+/* ---- Forgetting it ------------------------------------------------- */
+
+/* "Clear data" in the settings panel says it forgets bookmarks, reading
+   history, hidden members and the Releases cache — everything the
+   script keeps for itself. The index of titles is that too, and it is
+   the largest of them; it lives on its own key rather than in rr:data,
+   so store.replace({}) does not reach it and it has to be named. */
+function forgetTopicIndex() {
+    bucket.drop(TOPIC_BUCKET);
+    bucket.drop("lastSearch");
+}
+
+/* ---- Boot ---------------------------------------------------------- */
+
+function initTopicIndex() {
+    /* A search from the board's own box spends the same interval the
+       palette's row does. Caught here rather than in navbar.js so the
+       box can be rebuilt without anyone remembering to tell this.
+       Capture, because the board's own handler may stop the event. */
+    document.addEventListener("submit", (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) return;
+        if (/search\.php/.test(form.getAttribute("action") || "")) noteBoardSearch();
+    }, true);
+
+    /* After the page is drawn. A hundred titles and one write is not
+       worth a millisecond of the first paint, and nothing reads the
+       index until Ctrl+K. */
+    const later = window.requestIdleCallback || ((fn) => window.setTimeout(fn, 400));
+    later(() => {
+        try {
+            harvestTopics();
+        } catch (err) {
+            console.warn("[RIN Reforged] topic index:", err);
+        }
+    });
+}
+
 /* ================= src/modules/palette.js ================= */
 /* ------------------------------------------------------------------
    Command palette.
@@ -15332,26 +16745,39 @@ const SEARCH_DEPTH = {
  * Scoped to the current board when there is one, the way the board's
  * own "Search this forum" box is.
  */
-/** Whether a search from here is scoped to the board the reader is in. */
-function searchScoped() {
-    return Boolean((PAGE.isForum || PAGE.isTopic) && PAGE.forumId);
-}
-
-/** The board's name off the breadcrumbs, when the page has them. */
-function currentBoardName() {
-    const crumb = Array.from(document.querySelectorAll("a.breadcrumbs, .rr-nav__crumbs a")).pop();
-    const name = crumb ? crumb.textContent.trim() : "";
-    return name && name.length <= 60 ? name : null;
+/**
+ * Which forum a search from the palette goes to, or null for the board.
+ *
+ * The same answer the box in the bar gives, from the same two places:
+ * the breadcrumb, because half the links on this board carry no forum
+ * id and PAGE.forumId is null on any topic reached from a listing;
+ * and the remembered choice, so the palette and the box cannot
+ * disagree about where a search goes.
+ */
+function paletteSearchPlace() {
+    if (!(PAGE.isForum || PAGE.isTopic)) return null;
+    const trail = forumTrail();
+    if (!trail.length) return null;
+    const here = trail[trail.length - 1];
+    const up = parentForum(trail);
+    const kept = searchPrefs().where;
+    if (kept === "board") return null;
+    if (kept === "here") return here;
+    if (kept === "up") return up || here;
+    // Nobody has chosen: the forum above a topic, the forum itself on
+    // a listing. See parentForum().
+    return PAGE.isTopic ? (up || here) : here;
 }
 
 function boardSearchUrl(query) {
     const depth = SEARCH_DEPTH[searchDepthChoice()] || SEARCH_DEPTH.titleonly;
+    const place = paletteSearchPlace();
     const url = new URL("./search.php", location.href);
     url.searchParams.set("keywords", query);
     url.searchParams.set("terms", "all");
     url.searchParams.set("sf", depth.sf);
     url.searchParams.set("sr", "topics");
-    if (searchScoped()) url.searchParams.set("fid[]", String(PAGE.forumId));
+    if (place) url.searchParams.set("fid[]", place.id);
     return url.toString();
 }
 
@@ -15429,12 +16855,17 @@ function paletteActions() {
 function collectItems() {
     const groups = [];
 
+    /* A bookmark and a recent topic are topics, so they get the pane
+       beside the palette too (preview.js): the palette opens on these
+       two lists, and resting on one is the first thing anybody does
+       with it. `preview` is the URL to read; a board or an action has
+       none and gets no pane. */
     const bookmarks = store.get("bookmarks", []);
     if (bookmarks.length) {
         groups.push({
             title: "Bookmarks",
             items: bookmarks.map((item) => ({
-                label: item.title, icon: "star", hint: t("topic"), href: item.href,
+                label: item.title, icon: "star", hint: t("topic"), href: item.href, preview: item.href,
             })),
         });
     }
@@ -15454,7 +16885,7 @@ function collectItems() {
         groups.push({
             title: t("Recent"),
             items: history.slice(0, 12).map((item) => ({
-                label: item.title, icon: "clock", hint: t("topic"), href: item.href,
+                label: item.title, icon: "clock", hint: t("topic"), href: item.href, preview: item.href,
             })),
         });
     }
@@ -15498,18 +16929,31 @@ function openPalette() {
     let flat = [];
     let cursor = 0;
 
-    const searchItem = (query) => ({
+    const searchItem = (query) => {
         /* It says where it will look. The row said "the forum" and
-           searched the board the reader was in. */
-        label: searchScoped()
-            ? (currentBoardName()
-                ? t("Search {forum} for {q}", { forum: currentBoardName(), q: query })
-                : t("Search this board for {q}", { q: query }))
-            : t("Search the forum for {q}", { q: query }),
-        icon: "search",
-        hint: SEARCH_DEPTH[searchDepthChoice()]?.hint || "Enter",
-        href: boardSearchUrl(query),
-    });
+           searched the board the reader was in — and later named the
+           last crumb, which on a topic page is the topic. */
+        const place = paletteSearchPlace();
+        const cooldown = searchCooldown();
+        return {
+            label: place
+                ? t("Search {forum} for {q}", { forum: place.name, q: query })
+                : t("Search the forum for {q}", { q: query }),
+            icon: "search",
+            /* The board allows one search about every half minute and
+               answers the ones in between with "you cannot use search
+               at this time" — a page load spent to be told no. The row
+               still works; it says what it is about to cost. */
+            hint: cooldown
+                ? t("wait {n}s", { n: cooldown })
+                : (SEARCH_DEPTH[searchDepthChoice()]?.hint || "Enter"),
+            href: boardSearchUrl(query),
+            run: () => {
+                noteBoardSearch();
+                location.href = boardSearchUrl(query);
+            },
+        };
+    };
 
     const render = (query) => {
         list.textContent = "";
@@ -15517,6 +16961,14 @@ function openPalette() {
         const needle = query.trim().toLowerCase();
 
         if (needle) list.append(renderGroup(t("Search"), [searchItem(query.trim())], flat));
+
+        /* Topics this browser has already walked past, filtered as you
+           type (preview.js). Above the boards and below the search
+           row: what someone typing a game name wants is the thread,
+           and the row that hands the query to the board is the one
+           thing that can find a thread nobody here has seen. */
+        const seen = needle ? topicPaletteItems(needle, 8) : [];
+        if (seen.length) list.append(renderGroup(t("Topics"), seen, flat));
 
         for (const group of groups) {
             const matches = needle
@@ -15568,10 +17020,16 @@ function openPalette() {
             node.addEventListener("mousemove", () => { cursor = sink.indexOf(node); highlight(); });
             sink.push(node);
             node._run = go;
+            // What the preview pane reads off the cursor (preview.js).
+            node._item = item;
             fragment.append(node);
         }
         return fragment;
     };
+
+    // A pane beside the panel, fed by whatever the cursor is on
+    // (preview.js). Returns a no-op where there is no room for it.
+    const onCursor = attachTopicPreview(overlay, () => (flat[cursor] ? flat[cursor]._item : null));
 
     const highlight = () => {
         flat.forEach((node, index) => node.setAttribute("aria-selected", index === cursor ? "true" : "false"));
@@ -15582,6 +17040,7 @@ function openPalette() {
         } else {
             input.removeAttribute("aria-activedescendant");
         }
+        onCursor();
     };
 
     const previous = document.activeElement;
@@ -16023,6 +17482,7 @@ function bootLate() {
     guard("icons", initIcons);
     guard("navbar", initNavbar);
     guard("lists", initLists);
+    guard("topic index", initTopicIndex);
     guard("index", initBoardIndex);
     guard("topic", initTopic);
     guard("releases", initReleases);

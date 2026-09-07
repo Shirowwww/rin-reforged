@@ -478,13 +478,18 @@ html[data-rr] input.rr-search__go:hover {
    while the box is set to look somewhere other than its default, so a
    reader can tell from across the bar that it will. */
 .rr-search { position: relative; }
+/* The trigger carries the name of the room it will search, so it is
+   as wide as that name and no wider — a glyph on its own said there
+   were options and nothing about what they were set to. */
 html[data-rr] button.rr-search__opts {
-    display: inline-grid;
-    place-items: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     flex: none;
-    width: 24px;
+    min-width: 24px;
+    max-width: 148px;
     height: 24px;
-    padding: 0;
+    padding: 0 6px 0 4px;
     background: transparent;
     border: 0;
     border-radius: 4px;
@@ -495,13 +500,28 @@ html[data-rr] button.rr-search__opts {
 html[data-rr] button.rr-search__opts:hover,
 html[data-rr] button.rr-search__opts[aria-expanded="true"] { background: var(--rr-surface-3); color: var(--rr-text-strong); }
 html[data-rr] button.rr-search__opts[data-rr-active] { color: var(--rr-accent); }
-html[data-rr] button.rr-search__opts svg { width: 13px; height: 13px; }
+html[data-rr] button.rr-search__opts svg { width: 13px; height: 13px; flex: none; }
+.rr-search__where {
+    overflow: hidden;
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.rr-search__where:empty { display: none; }
+/* Where the field's own prompt already names the room — "Search Main
+   Forum" — the control does not say it a second time. It appears the
+   moment there is a query in the way of the prompt, which is when
+   knowing where the search is aimed starts to matter. */
+html[data-rr] .rr-search[data-rr-echo] input.rr-search__input:placeholder-shown ~ .rr-search__opts .rr-search__where {
+    display: none;
+}
 .rr-search__pop {
     position: absolute;
     top: calc(100% + 6px);
     right: 0;
     z-index: 950;
-    min-width: 280px;
+    min-width: 300px;
+    max-width: min(360px, 90vw);
     padding: 10px 12px;
     display: flex;
     flex-direction: column;
@@ -514,12 +534,17 @@ html[data-rr] button.rr-search__opts svg { width: 13px; height: 13px; }
     color: var(--rr-text);
 }
 .rr-search__pop[hidden] { display: none; }
+/* Rooms are named now — "Temporarily Restricted Topics" is a segment
+   in this row — so the row and the control inside it both wrap rather
+   than pushing the popover off the side of the screen. */
 .rr-search__row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: var(--rr-s3);
+    gap: var(--rr-s2) var(--rr-s3);
 }
+.rr-search__row .rr-seg { flex-wrap: wrap; }
 .rr-search__row[hidden] { display: none; }
 .rr-search__rowlabel {
     font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
@@ -761,6 +786,10 @@ tr[data-rr-hidden] { display: none; }
     font: var(--rr-fs) / var(--rr-lh) var(--rr-font);
     box-sizing: border-box;
 }
+/* The board's field rules no longer reach the script's own controls
+   (forum.css, "only the board's fields"), so the ones that do want an
+   accent border on focus say so themselves. */
+html[data-rr] textarea.rr-reply__text:focus { border-color: var(--rr-accent); outline: none; }
 .rr-reply__actions { display: flex; gap: var(--rr-s2); align-items: center; }
 
 .rr-quote-bubble {
@@ -904,6 +933,7 @@ html[data-rr] a.rr-pager__step svg { width: 13px; height: 13px; flex: none; }
     font: var(--rr-fs-sm) / 1 var(--rr-font-mono);
     text-align: center;
 }
+html[data-rr] input.rr-pager__input:focus { border-color: var(--rr-accent); outline: none; }
 .rr-pager [hidden] { display: none; }
 
 /* ---- A cluster of controls ------------------------------------------ */
@@ -1242,16 +1272,35 @@ html[data-rr] a.rr-postnum:hover {
     box-shadow: var(--rr-shadow-pop);
     overflow: hidden;
 }
-.rr-palette__input {
+/* input.rr-palette__input, not the bare class, for the reason
+   input.rr-search__input carries the same shape above: the board's
+   field rules reach this input through `input[type="text"]:focus` too,
+   and a class alone loses that tie — which lit the divider under the
+   box accent-red for as long as the palette was open, which is always.
+   The box itself is the panel; the field draws nothing of its own. */
+html[data-rr] input.rr-palette__input {
+    /* The panel is a flex column against a max-height, so the field
+       was a shrinkable item beside a list of forty boards: it gave up
+       13 of its 48px to them, and the palette opened on a field
+       shorter than its own rows. The list scrolls; the field does not
+       move. */
+    flex: none;
     height: 48px;
     padding: 0 var(--rr-s4);
     background: none;
     border: 0;
     border-bottom: 1px solid var(--rr-line);
+    border-radius: 0;
     color: var(--rr-text-strong);
     font: var(--rr-fs-lg) / 1 var(--rr-font);
     outline: none;
+    box-sizing: border-box;
 }
+/* The board's field rules colour a focused border accent, and four
+   :not()s make that rule specific enough to win here. The palette's
+   field is focused from the moment it opens, so the divider under it
+   read as a red rule across the panel rather than as a divider. */
+html[data-rr] input.rr-palette__input:focus { border-bottom-color: var(--rr-line); }
 .rr-palette__list { overflow-y: auto; padding: var(--rr-s1); margin: 0; list-style: none; }
 .rr-palette__group {
     padding: var(--rr-s2) var(--rr-s3) var(--rr-s1);
@@ -1310,7 +1359,9 @@ html[data-rr] a.rr-postnum:hover {
 .rr-panel__id { display: flex; align-items: baseline; gap: 6px; flex: none; }
 .rr-panel__title { font: 650 var(--rr-fs-lg) / 1.2 var(--rr-font); color: var(--rr-text-strong); margin: 0; }
 .rr-panel__ver { font: var(--rr-fs-xs) / 1 var(--rr-font-mono); color: var(--rr-faint); }
-.rr-panel__search {
+/* Same shape as the palette's field, and for the same reason: this one
+   is type="search", which the board's field rules also reach. */
+html[data-rr] input.rr-panel__search {
     flex: 1;
     min-width: 0;
     height: 32px;
@@ -1321,7 +1372,9 @@ html[data-rr] a.rr-postnum:hover {
     color: var(--rr-text);
     font: var(--rr-fs-sm) / 1 var(--rr-font);
     outline: none;
+    box-sizing: border-box;
 }
+html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
 
 /* The rail and the page beside it. The rail scrolls on its own, so a
    long category cannot push the categories off the bottom. */

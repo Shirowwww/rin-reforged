@@ -124,11 +124,21 @@ const SETTINGS_SCHEMA = [
         title: "Search and finding",
         short: "Search",
         icon: "search",
-        note: "Main Forum holds 61,000 topics across 615 pages, so finding matters more than paging. Where a search looks — this forum or the whole board, titles or every post — is chosen in the search box itself.",
+        note: "Main Forum holds 61,000 topics across 615 pages, so finding matters more than paging. Where a search looks is chosen in the search box itself, which names the room it will search: the forum above the one a topic sits in, since a cracked game lives in a subforum and the thing you are looking for does not.",
         fields: [
             {
                 id: "palette", label: "Command palette", type: "toggle", default: true,
                 desc: "Ctrl+K opens search, forum jumps, bookmarks and every script action in one box.",
+            },
+            {
+                id: "paletteTopics", label: "Topics in the palette", type: "toggle", default: true,
+                desc: "Keeps the titles from every listing you open, so the palette can offer real topics as you type. The board allows one search about every half minute, which is why this looks in what you have already seen rather than asking it again.",
+                when: "palette",
+            },
+            {
+                id: "palettePreview", label: "Look inside a topic", type: "toggle", default: true,
+                desc: "Resting on a topic in the palette reads its first page and shows the board, the length, who opened it and what they said. One request per topic, only when you stop on it, and only on a wide enough window.",
+                when: "paletteTopics",
             },
             {
                 id: "listFilter", label: "Filter box over a listing", type: "toggle", default: true,
@@ -144,7 +154,7 @@ const SETTINGS_SCHEMA = [
             },
             {
                 id: "topicIndex", label: "Read the whole topic", type: "toggle", default: true,
-                desc: "The panel can read every page of a topic once, on a click, and list everything ever posted in it. Never runs on its own; Escape stops it.",
+                desc: "The panel can read a topic page by page and list everything posted in it — from the last page back by default, or from the first forward, sixty pages a click. Never runs on its own; Escape stops it and keeps what it read.",
                 when: "finder",
             },
         ],

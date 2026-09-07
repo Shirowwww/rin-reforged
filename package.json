@@ -11,7 +11,7 @@
     "test:serve": "python test/serve.py",
     "test:pages": "node test/check.js",
     "test:features": "node test/features.js",
-    "test:fixtures": "node test/make-quotes-fixture.js && node test/make-member-fixtures.js",
+    "test:fixtures": "node test/make-quotes-fixture.js && node test/make-member-fixtures.js && node test/make-posting-fixture.js",
     "test:live": "node test/live.js",
     "test:measure": "node test/measure.js",
     "test:shots": "node test/shots.js",

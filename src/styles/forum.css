@@ -166,11 +166,29 @@ html[data-rr] table.tablebg[data-rr-post] > tbody > tr > td.row1,
 html[data-rr] table.tablebg[data-rr-post] > tbody > tr > td.row2 { background: transparent; }
 /* And a little more room inside than a listing row gets: a post is
    read, a row is scanned. Not a folded reply, which owns its own
-   padding (features.css) and is one line by design. */
+   padding (features.css) and is one line by design.
+
+   `tr.row1 > td` as well as `td.row1`: this board writes the class on
+   the row and leaves the cells bare, so the cell branch alone never
+   matched a single post here. The inset was the 4px the original
+   sheet pads a cell with, while the author band pulled itself out by
+   the 18px it was promised — which is how the band came to draw wider
+   than the card it heads. */
 html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row1,
-html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row2 {
+html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row2,
+html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr.row1 > td,
+html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr.row2 > td {
     padding: var(--rr-post-pad-top) var(--rr-post-pad) 14px;
 }
+/* subsilver2 wraps the message in one more table at cellspacing="5",
+   and the original sheet pads every cell. That is 7px of chrome
+   between the cell the band lives in and the cell that carries the
+   post's own inset, and the band cleared the card by exactly that
+   much. Flattened here so --rr-post-pad is the only inset there is.
+   Direct children only: a quote or a code block is a table too, and
+   deeper in. */
+html[data-rr] table.tablebg[data-rr-post] > tbody > tr > td > table { border-spacing: 0; }
+html[data-rr] table.tablebg[data-rr-post] > tbody > tr > td > table > tbody > tr > td { padding: 0; }
 
 /* The original stylesheet paints `th a` #CCCCCC: on the light theme the
    member list's sortable headers were pale grey on paler grey while
@@ -246,36 +264,53 @@ html[data-rr] td.cat a { color: var(--rr-text-strong); margin: 0; font-size: var
 
 /* A category row is one cell plus a few empty ones the table needs to
    keep its columns. Tinting the whole row stops it reading as a bar
-   that runs out halfway across. */
+   that runs out halfway across.
+
+   And a stronger hairline than a listing row gets: the index stacks
+   two category headings straight on top of each other — a collapsed
+   category has nothing between them — and at --rr-line, a hair off the
+   tint itself, the pair read as one slab with two titles in it. */
 html[data-rr] tr[data-rr-cat-row] > td {
     background: color-mix(in srgb, var(--rr-accent) 5%, var(--rr-surface-2));
-    border-bottom: 1px solid var(--rr-line);
+    border-bottom: 1px solid var(--rr-line-strong);
 }
 /* The strips that are not section heads — "Mark forums read" alone at
    the right, the sort controls — are plain. */
 html[data-rr] tr[data-rr-cat-row="plain"] > td,
 html[data-rr] tr[data-rr-cat-row="controls"] > td { background: var(--rr-surface-2); }
 
-/* The collapse control is an <input type="button"> the original theme
-   dressed with a background image. Here it becomes a chevron that
-   points the way the click will move things. */
+/* The collapse control (boardindex.js, tidyCategoryToggles). The
+   board's own <input> is hidden and clicked from here: a chevron next
+   to the words it folds, pointing the way the click will move things,
+   on a cell that folds on a click of its own. The cell it used to sit
+   in is empty now and keeps the columns lined up. */
 html[data-rr] td.catdiv { text-align: right; }
-html[data-rr] input.ccopen[type="button"],
-html[data-rr] input.ccclose[type="button"] {
-    width: 26px;
-    height: 22px;
-    padding: 0;
-    font-size: 0;
-    background: transparent no-repeat center / 13px 13px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b95a3' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    border: 1px solid transparent;
-    border-radius: var(--rr-radius);
-    cursor: pointer;
-    transition: background-color var(--rr-speed) ease, transform var(--rr-speed) ease;
+html[data-rr] td.cat.rr-catfold-cell { cursor: pointer; user-select: none; }
+html[data-rr] tr[data-rr-cat-row] > td.cat.rr-catfold-cell:hover {
+    background: color-mix(in srgb, var(--rr-accent) 10%, var(--rr-surface-2));
 }
-html[data-rr] input.ccopen[type="button"] { transform: rotate(-90deg); }
-html[data-rr] input.ccopen[type="button"]:hover,
-html[data-rr] input.ccclose[type="button"]:hover { background-color: var(--rr-surface-3); border-color: var(--rr-line); }
+/* The heading is a block, and the chevron would sit on a line of its
+   own above it. */
+html[data-rr] td.cat.rr-catfold-cell > h4 { display: inline; vertical-align: middle; }
+html[data-rr] button.rr-catfold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-right: 4px;
+    padding: 0;
+    vertical-align: middle;
+    background: none;
+    border: 0;
+    border-radius: var(--rr-radius);
+    color: var(--rr-faint);
+    cursor: pointer;
+    transition: background var(--rr-speed) ease, color var(--rr-speed) ease, transform var(--rr-speed) ease;
+}
+html[data-rr] button.rr-catfold > svg { width: 13px; height: 13px; }
+html[data-rr] button.rr-catfold:hover { background: var(--rr-surface-3); color: var(--rr-text-strong); }
+html[data-rr] tr[data-rr-folded] > td.cat > button.rr-catfold { transform: rotate(-90deg); }
 
 /* Some .cat cells are not section heads at all: they hold the print /
    previous / next strip, or the "Display posts from previous / Sort by
@@ -371,7 +406,13 @@ html[data-rr] table[data-rr-list][data-rr-rowclick] td[data-rr-col="title"] butt
 /* The words beside a lone checkbox toggle it (lists.js). */
 html[data-rr] td[data-rr-check-label] { cursor: pointer; }
 
-html[data-rr] tr:last-child > td { border-bottom: 0; }
+/* The last row of a card sits on the rounded bottom edge and wants no
+   hairline over it. `tr:last-child` alone said that of the last row of
+   every <tbody>, and the index opens one per category (`flist26`,
+   `flist27`) so it can show and hide them: each category heading, being
+   the last row of the tbody before it, lost its underline, and two
+   headings in a row read as one slab with two titles in it. */
+html[data-rr] table > tbody:last-child > tr:last-child > td { border-bottom: 0; }
 
 /* The marker gutter: read/unread, and whether the topic is bookmarked.
 
@@ -642,6 +683,49 @@ html[data-rr] #pageheader h2 {
 html[data-rr] #pageheader h2 > .rr-tag { align-self: center; }
 html[data-rr] #pageheader h2 a.titles { color: var(--rr-text-strong); }
 
+/* ---- The forum-rules notice -------------------------------------- */
+
+/* Marked by lists.js (markForumRules). It is prose, not a listing row:
+   the room a panel gets, a heading told apart from the rules under it,
+   the tinted ground and the accent mark that say "this is a heading,
+   what follows belongs to it" everywhere else on the board, and no
+   hairline drawn along the bottom of a card with one row in it. */
+html[data-rr] table.tablebg[data-rr-rules] > tbody > tr > td.row3 {
+    position: relative;
+    padding: var(--rr-s4) var(--rr-s5) var(--rr-s4) 26px;
+    background: color-mix(in srgb, var(--rr-accent) 5%, var(--rr-surface-2));
+    border-bottom: 0;
+    vertical-align: top;
+}
+html[data-rr] table.tablebg[data-rr-rules] > tbody > tr > td.row3::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: calc(var(--rr-s4) + 3px);
+    width: 3px;
+    height: 14px;
+    border-radius: 2px;
+    background: var(--rr-accent);
+}
+html[data-rr] table.tablebg[data-rr-rules] h4,
+html[data-rr] table.tablebg[data-rr-rules] p.rules {
+    margin: 0 0 var(--rr-s2);
+    font-size: var(--rr-fs-sm);
+    font-weight: 650;
+    color: var(--rr-text-strong);
+}
+html[data-rr] table.tablebg[data-rr-rules] .postbody {
+    font-size: var(--rr-fs-sm);
+    line-height: var(--rr-lh);
+    color: var(--rr-muted);
+}
+/* The board writes its rules with <br><br> between paragraphs and a
+   list under them, and a <ul> arrives with the browser's own 40px
+   indent on top of the cell's. */
+html[data-rr] table.tablebg[data-rr-rules] ul,
+html[data-rr] table.tablebg[data-rr-rules] ol { margin: var(--rr-s2) 0; padding-left: var(--rr-s5); }
+html[data-rr] table.tablebg[data-rr-rules] li { margin: 2px 0; }
+
 /* ---- Posts ------------------------------------------------------ */
 
 html[data-rr] .postbody {
@@ -862,14 +946,21 @@ html[data-rr] hr { border: 0; border-top: 1px solid var(--rr-line); margin: var(
 
 /* ---- Forms ------------------------------------------------------ */
 
-html[data-rr] input[type="text"],
-html[data-rr] input[type="password"],
-html[data-rr] input[type="search"],
-html[data-rr] input[type="email"],
-html[data-rr] select,
-html[data-rr] textarea,
-html[data-rr] .inputbox,
-html[data-rr] .post {
+/* The board's own fields, brought up to date — and only the board's.
+   `input[type="text"]` is one element more specific than a class, so
+   this block reached the script's own fields too and won every tie
+   against them: the command palette's search box came out as a
+   rounded, bordered, sunken field whose corners stood outside the
+   panel's own, and lit its border accent on focus. The exclusion is
+   the one the sizing rule below already uses. */
+html[data-rr] input[type="text"]:not([class*="rr-"]),
+html[data-rr] input[type="password"]:not([class*="rr-"]),
+html[data-rr] input[type="search"]:not([class*="rr-"]),
+html[data-rr] input[type="email"]:not([class*="rr-"]),
+html[data-rr] select:not([class*="rr-"]),
+html[data-rr] textarea:not([class*="rr-"]),
+html[data-rr] .inputbox:not([class*="rr-"]),
+html[data-rr] .post:not([class*="rr-"]) {
     background: var(--rr-bg-sunken);
     color: var(--rr-text);
     border: 1px solid var(--rr-line-strong);
@@ -909,17 +1000,23 @@ html[data-rr] #wrapcentre input[type="email"]:not([class*="rr-"]) {
     width: auto;
     min-width: min(100%, 22em);
 }
-html[data-rr] input:hover,
-html[data-rr] select:hover,
-html[data-rr] textarea:hover { border-color: var(--rr-faint); }
+html[data-rr] input:not([class*="rr-"]):hover,
+html[data-rr] select:not([class*="rr-"]):hover,
+html[data-rr] textarea:not([class*="rr-"]):hover { border-color: var(--rr-faint); }
 /* A field shows focus by colouring its own border, so the ring is not
    drawn twice. Only a field: a submit button matches `input` too, has
    no border to colour, and was left with no focus indicator at all —
    which a Tab through a live topic page found on the board's own
-   Search button. Buttons keep the ring the rule above gives them. */
-html[data-rr] input:not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):focus,
-html[data-rr] select:focus,
-html[data-rr] textarea:focus { border-color: var(--rr-accent); outline: none; }
+   Search button. Buttons keep the ring the rule above gives them.
+
+   And only the board's fields, like the block above: four :not()s make
+   this selector specific enough to beat anything the script's own
+   stylesheet says about its own controls, which is how the command
+   palette came to draw an accent-red rule under its search box for as
+   long as it was open — which is always. */
+html[data-rr] input:not([class*="rr-"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):focus,
+html[data-rr] select:not([class*="rr-"]):focus,
+html[data-rr] textarea:not([class*="rr-"]):focus { border-color: var(--rr-accent); outline: none; }
 html[data-rr] ::placeholder { color: var(--rr-faint); }
 
 html[data-rr] input.button1,

@@ -49,6 +49,12 @@ async function assertFreshBuild(tab) {
 const INDEX = "/forum/index.php";
 const FORUM = "/forum/viewforum.php?f=10";
 const TOPIC = "/forum/topic/viewtopic.php?f=10&t=133316";
+/* The same topic one room deeper: Main Forum » Temporarily Restricted
+   Topics, which is where a search from a topic should not be aimed. */
+const DEEP = "/forum/deep/viewtopic.php?t=133316";
+/* Five posts, each one a way the Releases panel used to read a post
+   wrong. See make-quotes-fixture.js. */
+const KINDS = "/forum/kinds/viewtopic.php?f=14&t=950000";
 const REPLIES = "/forum/replies/viewtopic.php?f=14&t=75717&start=225";
 const QUOTES = "/forum/quotes/viewtopic.php?f=14&t=75717&start=225";
 const MEMBER = "/forum/member/viewtopic.php?f=14&t=75717&start=225";
@@ -498,16 +504,67 @@ const CHECKS = [
         },
     },
     {
-        name: "search: the topic box still searches inside the topic",
+        /* The board's own box searches the thread you are in. That
+           answers "where in here did somebody say that" and not "what
+           else is there like this", and the second is what people open
+           a search box for — so the box starts on the forum and the
+           thread is one segment away. */
+        name: "search: the topic box starts on a forum, not inside the topic",
         url: TOPIC,
         run: () => {
             const form = document.querySelector("#topic-search");
             if (!form) return "the topic search box is gone";
+            const fid = form.querySelector('[name="fid[]"]');
+            if (!fid || !fid.value) return "no fid[], so a search from here goes to the whole board";
+            if (form.querySelector('[name="t"]')) return "still scoped to the topic";
+            const sf = form.querySelector('[name="sf"]');
+            if (!sf || sf.value !== "titleonly") return "sf=" + (sf && sf.value);
+            return null;
+        },
+    },
+    {
+        name: "search: from a subforum it starts on the forum above",
+        url: DEEP,
+        run: () => {
+            const form = document.querySelector("#topic-search");
+            if (!form) return "the topic search box is gone";
+            const fid = form.querySelector('[name="fid[]"]');
+            // Main Forum, not Temporarily Restricted Topics (f=41).
+            if (!fid || fid.value !== "10") return "fid[]=" + (fid && fid.value);
+            const frame = form.closest(".rr-search");
+            const said = frame.querySelector(".rr-search__where");
+            if (!said || !/Main Forum/.test(said.textContent)) {
+                return "the trigger does not name the room: " + (said && said.textContent);
+            }
+            const rooms = Array.from(frame.querySelectorAll(".rr-search__pop .rr-seg button"))
+                .map((button) => button.textContent);
+            if (!rooms.some((name) => /Temporarily/.test(name))) {
+                return "the room the topic is in is not offered: " + rooms.join(", ");
+            }
+            return null;
+        },
+    },
+    {
+        name: "search: This topic is one click away and still searches the topic",
+        fresh: true,
+        url: TOPIC,
+        run: () => {
+            const frame = document.querySelector("#topic-search").closest(".rr-search");
+            const buttons = Array.from(frame.querySelectorAll(".rr-search__pop .rr-seg button"));
+            const topic = buttons.find((button) => /^This topic$/.test(button.textContent.trim()));
+            const before = buttons.find((button) => button.getAttribute("aria-pressed") === "true");
+            if (!topic) return "no This topic segment among: " + buttons.map((b) => b.textContent).join(", ");
+            topic.click();
+            const form = document.querySelector("#topic-search");
             const t = form.querySelector('[name="t"]');
             const sf = form.querySelector('[name="sf"]');
-            if (!t || !t.value) return "no topic id, so it would search the whole board";
-            if (!sf || sf.value !== "msgonly") return "sf=" + (sf && sf.value);
-            return null;
+            const said = !t || !t.value ? "choosing This topic did not restore the topic id"
+                : (!sf || sf.value !== "msgonly") ? "sf=" + (sf && sf.value)
+                : null;
+            // Choosing is remembered, so put it back for the checks
+            // that run after this one.
+            if (before) before.click();
+            return said;
         },
     },
     {
@@ -523,9 +580,24 @@ const CHECKS = [
             input.value = "dogma";
             input.dispatchEvent(new Event("input", { bubbles: true }));
 
-            return new Promise((resolve) => setTimeout(() => {
-                const entry = document.querySelector('.rr-palette__item[data-href*="search.php"]');
-                if (!entry) return resolve("no search entry with a URL");
+            /* The palette debounces its typing by 60 ms and this used
+               to wait a flat 150, which is not a margin on a loaded
+               machine — two palette checks failed together in one run
+               and passed in the next. Waiting for the row rather than
+               for the clock. */
+            return new Promise((resolve) => {
+                const deadline = Date.now() + 5000;
+                const look = () => {
+                /* The row this check is about, not the first row
+                   whose URL happens to be search.php: "View active
+                   topics" is one of those and it is drawn before the
+                   typing is debounced, so polling for search.php alone
+                   asserted against the wrong row every time. */
+                const entry = document.querySelector('.rr-palette__item[data-href*="keywords="]');
+                if (!entry) {
+                    if (Date.now() < deadline) return void setTimeout(look, 60);
+                    return resolve("no search entry with a URL");
+                }
                 const url = new URL(entry.getAttribute("data-href"), location.href);
                 const problems = [];
                 if (url.searchParams.get("sr") !== "topics") {
@@ -535,7 +607,9 @@ const CHECKS = [
                 if (url.searchParams.get("keywords") !== "dogma") problems.push("keywords lost");
                 document.querySelector(".rr-overlay")?.remove();
                 resolve(problems.length ? problems.join(", ") : null);
-            }, 150));
+                };
+                look();
+            });
         },
     },
     {
@@ -1250,6 +1324,86 @@ const CHECKS = [
                     if (!row) return resolve("the changelog post was dropped");
                     const shown = row.querySelector(".rr-releases__version").textContent.trim();
                     return resolve(shown === "v2.8.3" ? null : "its row shows " + shown + ", wanted v2.8.3");
+                };
+                setTimeout(look, 150);
+            });
+        },
+    },
+    {
+        /* Which end of the topic the walk starts from is a choice, and
+           the list follows it: reading backwards puts the last page at
+           the top, reading forwards puts page one there. */
+        name: "releases: the topic can be read from either end",
+        url: HV,
+        settle: 500,
+        fresh: true,
+        run: () => {
+            const seg = document.querySelector(".rr-releases__order");
+            if (!seg) return "no reading-direction control on a multi-page topic";
+            const button = (value) => seg.querySelector('button[data-value="' + value + '"]');
+            if (!button("newest") || !button("oldest")) {
+                return "the control offers " + Array.from(seg.children).map((b) => b.dataset.value).join(", ");
+            }
+            if (button("newest").getAttribute("aria-pressed") !== "true") {
+                return "the default is not newest first";
+            }
+            const control = Array.from(document.querySelectorAll(".rr-releases__tab"))
+                .find((n) => /All \d+ page/.test(n.textContent));
+            control.click();
+            return new Promise((resolve) => {
+                const deadline = Date.now() + 30000;
+                const topPage = () => {
+                    const cell = document.querySelector(".rr-releases__row .rr-releases__page");
+                    return cell ? cell.textContent.trim() : "";
+                };
+                const look = () => {
+                    const tab = Array.from(document.querySelectorAll(".rr-releases__tab"))
+                        .find((n) => /All \d+ page|Reading /.test(n.textContent));
+                    if (!tab || tab.disabled) {
+                        if (Date.now() > deadline) return resolve("the walk never finished");
+                        return void setTimeout(look, 150);
+                    }
+                    const back = topPage();
+                    if (back !== "p.2") return resolve("reading backwards, the list opens on " + back);
+                    // Flipping re-sorts what is already read; no second walk.
+                    button("oldest").click();
+                    const forward = topPage();
+                    const said = forward === "p.1" ? null : "reading forwards, the list opens on " + forward;
+                    button("newest").click();      // the choice is remembered
+                    return resolve(said);
+                };
+                setTimeout(look, 150);
+            });
+        },
+    },
+    {
+        name: "releases: a version nothing else in the topic shares is not the headline",
+        url: HV,
+        settle: 500,
+        fresh: true,
+        run: () => {
+            const control = Array.from(document.querySelectorAll(".rr-releases__tab"))
+                .find((n) => /All \d+ page/.test(n.textContent));
+            control.click();
+            return new Promise((resolve) => {
+                const deadline = Date.now() + 30000;
+                const look = () => {
+                    const tab = Array.from(document.querySelectorAll(".rr-releases__tab"))
+                        .find((n) => /All \d+ page|Reading /.test(n.textContent));
+                    if (!tab || tab.disabled) {
+                        if (Date.now() > deadline) return resolve("the walk never finished");
+                        return void setTimeout(look, 150);
+                    }
+                    /* "getting v90.7 to work" — a poster's slip, and 90
+                       beats every real version in the topic on the first
+                       digit. It is on its row and it is not the line. */
+                    const said = (document.querySelector(".rr-releases__latest") || {}).textContent || "";
+                    if (/90\.7/.test(said)) return resolve("a lone first part became the headline: " + said);
+                    const row = Array.from(document.querySelectorAll(".rr-releases__row"))
+                        .find((r) => (r.querySelector(".rr-releases__who") || {}).textContent === "Typo");
+                    if (!row) return resolve("the post was dropped instead of being listed");
+                    const shown = row.querySelector(".rr-releases__version").textContent.trim();
+                    return resolve(shown === "v90.7" ? null : "its row shows " + shown + ", wanted v90.7");
                 };
                 setTimeout(look, 150);
             });
@@ -2588,39 +2742,374 @@ const CHECKS = [
     },
 
     /* ---- The index page ------------------------------------------- */
+    /* ---- Topics in the palette, and looking inside one ------------- */
+    {
+        name: "palette: a listing is kept, so the palette can offer its topics",
+        fresh: true,
+        url: FORUM,
+        run: () => {
+            const raw = localStorage.getItem("rr:topics");
+            if (!raw) return "the listing was not kept";
+            const held = JSON.parse(raw);
+            const rows = document.querySelectorAll("a.topictitle").length;
+            if (held.length !== rows) return held.length + " kept out of " + rows + " on the page";
+            const first = held[0];
+            if (!first.i || !first.t) return "an entry with no id or no title";
+            // One canonical URL per topic: the board hangs a session id
+            // on every link and points some at &start= or #unread, and
+            // four spellings of one topic is four entries in the index
+            // and four fetches for one preview.
+            if (!/^\.\/viewtopic\.php\?(?:f=\d+&)?t=\d+$/.test(first.h)) return "not a canonical href: " + first.h;
+            if (!first.b) return "no board name on the entry";
+            return null;
+        },
+    },
+    {
+        name: "palette: typing offers real topics and asks the board for nothing",
+        fresh: true,
+        url: INDEX,
+        buckets: {
+            topics: [
+                { i: "930000", t: "Deep Rock Galactic", h: "./viewtopic.php?f=14&t=930000", b: "Releases", s: 2 },
+                { i: "930001", t: "Rocket League", h: "./viewtopic.php?f=14&t=930001", b: "Releases", s: 1 },
+            ],
+        },
+        run: () => {
+            let asked = 0;
+            const real = window.fetch;
+            window.fetch = (...args) => { asked += 1; return real.apply(window, args); };
+
+            document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+            const input = document.querySelector(".rr-palette__input");
+            if (!input) return "the palette did not open";
+            input.value = "rock";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+
+            return new Promise((resolve) => setTimeout(() => {
+                window.fetch = real;
+                const groups = Array.from(document.querySelectorAll(".rr-palette__group")).map((n) => n.textContent);
+                if (!groups.includes("Topics")) return resolve("no Topics group, only " + groups.join(", "));
+                const labels = Array.from(document.querySelectorAll(".rr-palette__item .rr-palette__label"))
+                    .map((n) => n.textContent);
+                if (!labels.some((l) => /Deep Rock Galactic/.test(l))) return resolve("the matching topic was not offered");
+                if (!labels.some((l) => /Rocket League/.test(l))) return resolve("only one of the two matched");
+                // The board refuses a second search for about half a
+                // minute, so a feature that searched as you typed would
+                // spend the interval on the prefixes and be refused on
+                // the word. This one reads what has already been seen.
+                if (asked) return resolve(asked + " requests went out while typing");
+                resolve(null);
+            }, 260));
+        },
+    },
+    {
+        name: "palette: a title that starts with the word beats one that merely holds it",
+        fresh: true,
+        url: INDEX,
+        buckets: {
+            topics: [
+                { i: "1", t: "The long Elden name that came first", h: "./viewtopic.php?f=1&t=1", b: "Main", s: 9 },
+                { i: "2", t: "Elden Ring", h: "./viewtopic.php?f=1&t=2", b: "Main", s: 1 },
+            ],
+        },
+        run: () => {
+            document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+            const input = document.querySelector(".rr-palette__input");
+            input.value = "elden";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            return new Promise((resolve) => setTimeout(() => {
+                const labels = Array.from(document.querySelectorAll(".rr-palette__item .rr-palette__label"))
+                    .map((n) => n.textContent);
+                const ring = labels.findIndex((l) => /^Elden Ring/.test(l));
+                const other = labels.findIndex((l) => /long Elden name/.test(l));
+                if (ring < 0 || other < 0) return resolve("both topics should be listed");
+                // Even though the other one was seen more recently.
+                resolve(ring < other ? null : "the title that starts with the word came second");
+            }, 260));
+        },
+    },
+    {
+        name: "palette: nothing is fetched until the cursor rests on a topic",
+        fresh: true,
+        url: INDEX,
+        buckets: {
+            topics: [{ i: "930000", t: "Deep Rock Galactic", h: "./viewtopic.php?f=14&t=930000", b: "Releases", s: 2 }],
+        },
+        run: () => {
+            const asked = [];
+            const real = window.fetch;
+            window.fetch = (url, ...rest) => { asked.push(String(url)); return real.call(window, url, ...rest); };
+            const down = () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+
+            document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+            const input = document.querySelector(".rr-palette__input");
+            input.value = "deep";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+
+            return new Promise((resolve) => setTimeout(() => {
+                // Onto the topic row, and straight past it: arrowing
+                // down a list of ten may not ask for ten pages.
+                down();
+                setTimeout(() => {
+                    const early = asked.length;
+                    down();
+                    setTimeout(() => {
+                        window.fetch = real;
+                        if (!document.querySelector(".rr-preview")) return resolve("no pane was built at this width");
+                        resolve(early ? "arrowing past a row already fetched it" : null);
+                    }, 120);
+                }, 90);
+            }, 200));
+        },
+    },
+    {
+        name: "palette: resting on a topic shows what is in it, once",
+        fresh: true,
+        settle: 500,
+        url: INDEX,
+        buckets: {
+            topics: [{ i: "930000", t: "Long Thread", h: "./long/viewtopic.php?f=14&t=930000", b: "Releases", s: 2 }],
+        },
+        run: () => {
+            const asked = [];
+            const real = window.fetch;
+            window.fetch = (url, ...rest) => { asked.push(String(url)); return real.call(window, url, ...rest); };
+            const finish = (problem) => { window.fetch = real; return problem; };
+            const key = (name) => document.dispatchEvent(new KeyboardEvent("keydown", { key: name, bubbles: true }));
+
+            document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+            const input = document.querySelector(".rr-palette__input");
+            input.value = "long";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+
+            return new Promise((resolve) => setTimeout(() => {
+                key("ArrowDown");
+                setTimeout(() => {
+                    const pane = document.querySelector(".rr-preview");
+                    if (!pane || pane.hidden) return resolve(finish("the pane never opened"));
+                    const title = pane.querySelector(".rr-preview__title");
+                    if (!title || !/Long Thread/.test(title.textContent)) {
+                        return resolve(finish("the pane says " + (title ? title.textContent : "nothing")));
+                    }
+                    if (!pane.querySelector(".rr-preview__blurb")) return resolve(finish("no opening post was shown"));
+                    /* This topic's opening post has no picture, and
+                       Node.append() turns a null child into the text
+                       "null" — which is what stood above the title
+                       until the parts were filtered first. */
+                    if (/null|undefined/.test(pane.textContent)) {
+                        return resolve(finish("the pane printed a missing part: " + pane.textContent.slice(0, 60)));
+                    }
+                    const meta = pane.querySelector(".rr-preview__meta");
+                    if (!meta || !/20 pages/.test(meta.textContent)) {
+                        return resolve(finish("the length reads " + (meta ? meta.textContent : "as nothing")));
+                    }
+                    // Off the row and back onto it. The page is held for
+                    // as long as the tab is open, so this costs nothing.
+                    key("ArrowUp");
+                    setTimeout(() => {
+                        const before = asked.length;
+                        key("ArrowDown");
+                        setTimeout(() => {
+                            resolve(finish(asked.length > before ? "it read the same page twice" : null));
+                        }, 500);
+                    }, 400);
+                }, 900);
+            }, 220));
+        },
+    },
+    {
+        name: "palette: clearing the script's data forgets the remembered titles",
+        fresh: true,
+        url: FORUM,
+        run: () => {
+            /* The index is the biggest thing the script keeps and it
+               lives on a key of its own, so store.replace({}) — which
+               is all "Clear data" used to do — walked straight past it
+               and left 25 KB of titles behind a button that said it had
+               forgotten them. */
+            if (!localStorage.getItem("rr:topics")) return "the listing was not kept in the first place";
+            localStorage.setItem("rr:lastSearch", String(Date.now()));
+
+            // Through the button, because everything the script
+            // declares lives inside one closure and none of it is
+            // reachable from here by name.
+            let asked = null;
+            const confirm = window.confirm;
+            window.confirm = (text) => { asked = text; return true; };
+            const cog = document.querySelector(".rr-nav__actions button.rr-icon-btn:last-of-type");
+            if (!cog) { window.confirm = confirm; return "no settings button in the bar"; }
+            cog.click();
+
+            return new Promise((resolve) => setTimeout(() => {
+                const done = (problem) => { window.confirm = confirm; resolve(problem); };
+                const button = Array.from(document.querySelectorAll(".rr-panel button"))
+                    .find((n) => /Clear data/.test(n.textContent));
+                if (!button) return done("no Clear data button in the panel");
+                button.click();
+
+                setTimeout(() => {
+                    if (!/remembered topic titles/.test(asked || "")) {
+                        return done("it did not say it would: " + String(asked).slice(0, 80));
+                    }
+                    if (localStorage.getItem("rr:topics") !== null) return done("the titles are still there");
+                    if (localStorage.getItem("rr:lastSearch") !== null) return done("the search stamp is still there");
+                    done(null);
+                }, 120);
+            }, 260));
+        },
+    },
+    {
+        name: "palette: the search row says when the board will refuse it",
+        fresh: true,
+        url: INDEX,
+        run: () => {
+            /* Measured on the live board: one search, refusals at +1s
+               and +8s, an answer at +20s. The row still works — the
+               interval is the board's to enforce — but it says what it
+               is about to cost. */
+            localStorage.setItem("rr:lastSearch", String(Date.now()));
+            document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+            const input = document.querySelector(".rr-palette__input");
+            input.value = "cyberpunk";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            return new Promise((resolve) => setTimeout(() => {
+                const row = document.querySelector(".rr-palette__item");
+                const hint = row ? row.querySelector(".rr-palette__hint") : null;
+                if (!hint) return resolve("the search row has no hint");
+                if (!/wait \d+s/.test(hint.textContent)) return resolve("it says " + hint.textContent);
+                if (!/search\.php/.test(row.getAttribute("data-href") || "")) {
+                    return resolve("the row stopped pointing at a search");
+                }
+                resolve(null);
+            }, 260));
+        },
+    },
+    {
+        name: "palette: the pane fits the window it is drawn in",
+        fresh: true,
+        width: 1280,
+        settle: 500,
+        url: INDEX,
+        buckets: {
+            topics: [{ i: "930000", t: "Long Thread", h: "./long/viewtopic.php?f=14&t=930000", b: "Releases", s: 2 }],
+        },
+        run: () => {
+            /* The pane hangs off the centre line, past the palette's
+               own half. A width fixed at 340px passed the check that
+               opened it and then ran 150px off the right edge of the
+               window, so the room is measured rather than assumed. */
+            document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+            const input = document.querySelector(".rr-palette__input");
+            input.value = "long";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            return new Promise((resolve) => setTimeout(() => {
+                document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+                setTimeout(() => {
+                    const pane = document.querySelector(".rr-preview");
+                    if (!pane || pane.hidden) return resolve("no pane at 1280px, where there is room for one");
+                    const box = pane.getBoundingClientRect();
+                    const palette = document.querySelector(".rr-palette").getBoundingClientRect();
+                    if (box.left < palette.right) return resolve("the pane overlaps the palette");
+                    if (box.right > window.innerWidth) {
+                        return resolve("it runs " + Math.round(box.right - window.innerWidth) + "px off the right edge");
+                    }
+                    // 256px is the floor the formula bottoms out at,
+                    // at the 1200px where the pane stops being drawn
+                    // at all. Below it a title and four lines of a
+                    // post do not fit, which is all the pane is for.
+                    if (box.width < 256) return resolve("only " + Math.round(box.width) + "px wide");
+                    resolve(null);
+                }, 900);
+            }, 220));
+        },
+    },
+    {
+        name: "palette: a window with no room for the pane asks for nothing",
+        fresh: true,
+        width: 1100,
+        url: INDEX,
+        buckets: {
+            topics: [{ i: "930000", t: "Long Thread", h: "./long/viewtopic.php?f=14&t=930000", b: "Releases", s: 2 }],
+        },
+        run: () => {
+            const asked = [];
+            const real = window.fetch;
+            window.fetch = (url, ...rest) => { asked.push(String(url)); return real.call(window, url, ...rest); };
+
+            document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+            const input = document.querySelector(".rr-palette__input");
+            input.value = "long";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            return new Promise((resolve) => setTimeout(() => {
+                document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+                setTimeout(() => {
+                    window.fetch = real;
+                    // A laptop is still wide enough to want the list.
+                    const groups = Array.from(document.querySelectorAll(".rr-palette__group")).map((n) => n.textContent);
+                    if (!groups.includes("Topics")) return resolve("the topics went away with the pane");
+                    if (document.querySelector(".rr-preview")) return resolve("a pane was built at 1100px");
+                    resolve(asked.length ? "it read a page it could not show" : null);
+                }, 900);
+            }, 220));
+        },
+    },
+    {
+        name: "palette: a phone lists topics and builds no pane",
+        fresh: true,
+        width: 390,
+        url: INDEX,
+        buckets: {
+            topics: [{ i: "930000", t: "Deep Rock Galactic", h: "./viewtopic.php?f=14&t=930000", b: "Releases", s: 2 }],
+        },
+        run: () => {
+            document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+            const input = document.querySelector(".rr-palette__input");
+            input.value = "deep";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            return new Promise((resolve) => setTimeout(() => {
+                const groups = Array.from(document.querySelectorAll(".rr-palette__group")).map((n) => n.textContent);
+                if (!groups.includes("Topics")) return resolve("the index is useful on a phone too");
+                // 110 KB spent on a pane there is no room for.
+                resolve(document.querySelector(".rr-preview") ? "a pane was built at 390px" : null);
+            }, 260));
+        },
+    },
     {
         name: "index: the category collapse control is usable and can be seen",
         url: INDEX,
         run: () => {
             // The board ships this as <input type="button" value=" ">
             // drawn entirely by a background image: a button with a
-            // single space for a name, which is no name at all.
-            const toggles = Array.from(document.querySelectorAll(".ccclose, .ccopen"));
-            if (!toggles.length) return "the index drew no collapse control";
+            // single space for a name, which is no name at all, at the
+            // far right of a cell spanning three columns. It is hidden
+            // and kept for its handler; this is the control that
+            // replaced it, beside the heading it folds.
+            const natives = Array.from(document.querySelectorAll(".ccclose, .ccopen"));
+            if (!natives.length) return "the index drew no collapse control";
+            const folds = Array.from(document.querySelectorAll("button.rr-catfold"));
+            if (folds.length !== natives.length) {
+                return natives.length + " categories but " + folds.length + " chevrons";
+            }
 
             const problems = [];
-            for (const toggle of toggles) {
-                const box = toggle.getBoundingClientRect();
-                const style = getComputedStyle(toggle);
-                const focusable = /^(INPUT|BUTTON|A)$/.test(toggle.tagName)
-                    || toggle.getAttribute("tabindex") === "0";
-                const name = (toggle.getAttribute("aria-label") || "").trim();
-                const glyph = (toggle.tagName === "INPUT" ? toggle.value : toggle.textContent).trim();
+            for (const fold of folds) {
+                const box = fold.getBoundingClientRect();
+                const name = (fold.getAttribute("aria-label") || "").trim();
 
-                if (!focusable) problems.push("not reachable by keyboard");
-                else if (name.length < 4) problems.push("no accessible name");
-                else if (!toggle.hasAttribute("aria-expanded")) problems.push("does not say its state");
+                if (!name || name.length < 4) problems.push("no accessible name");
+                else if (!fold.hasAttribute("aria-expanded")) problems.push("does not say its state");
                 else if (box.width < 16 || box.height < 16) {
                     problems.push("only " + Math.round(box.width) + "x" + Math.round(box.height));
                 }
-                // The arrow is the input's value, because ::after
-                // generates nothing on a replaced element. Drawn at 0px
-                // — which is what the board's own cascade resolved it
-                // to — the control is a bordered empty box.
-                else if (!glyph) problems.push("nothing drawn in it");
-                else if (parseFloat(style.fontSize) < 9) problems.push("its glyph is set at " + style.fontSize);
+                // A chevron, drawn as an svg the way every other one on
+                // the page is. The board's own control could not carry
+                // one: ::before generates nothing on a replaced element.
+                else if (!fold.querySelector("svg")) problems.push("nothing drawn in it");
+                // And it belongs to the words it folds, not to the far
+                // end of the row: the heading cell is what it sits in.
+                else if (!fold.closest("td.cat")) problems.push("not in the heading cell");
             }
-            return problems.length ? toggles.length + " toggles: " + problems[0] : null;
+            return problems.length ? folds.length + " toggles: " + problems[0] : null;
         },
     },
     {
@@ -2628,20 +3117,27 @@ const CHECKS = [
         fresh: true,
         url: INDEX,
         run: () => {
-            const toggle = document.querySelector(".ccclose, .ccopen");
-            if (!toggle) return "no collapse control";
-            const before = toggle.getAttribute("aria-expanded");
-            const nameBefore = toggle.getAttribute("aria-label");
-            toggle.click();
+            const fold = document.querySelector("button.rr-catfold");
+            if (!fold) return "no collapse control";
+            const row = fold.closest("tr");
+            const before = fold.getAttribute("aria-expanded");
+            const nameBefore = fold.getAttribute("aria-label");
+            const foldedBefore = row.hasAttribute("data-rr-folded");
+            fold.click();
             return new Promise((resolve) => setTimeout(() => {
-                if (toggle.getAttribute("aria-expanded") === before) {
+                if (fold.getAttribute("aria-expanded") === before) {
                     return resolve("aria-expanded stayed " + before);
                 }
-                if (toggle.getAttribute("aria-label") === nameBefore) {
+                if (fold.getAttribute("aria-label") === nameBefore) {
                     return resolve("still says \"" + nameBefore + "\" after flipping");
                 }
+                // Which way the chevron points is the other half of
+                // saying so, and the stylesheet turns it off this.
+                if (row.hasAttribute("data-rr-folded") === foldedBefore) {
+                    return resolve("the row did not change state");
+                }
                 resolve(null);
-            }, 60));
+            }, 80));
         },
     },
     {
@@ -3705,12 +4201,86 @@ const CHECKS = [
             const input = document.querySelector(".rr-palette__input");
             input.value = "denuvo";
             input.dispatchEvent(new Event("input", { bubbles: true }));
-            return new Promise((done) => setTimeout(() => {
-                const item = document.querySelector(".rr-palette__item");
-                const text = item ? item.textContent : "";
-                if (!/^Search /.test(text.trim())) return done("the first row is not the search: " + text.trim().slice(0, 60));
-                done(/Search the forum for/.test(text) ? "the row says \"the forum\" for a search scoped to one board" : null);
-            }, 150));
+            return new Promise((done) => {
+                const deadline = Date.now() + 5000;
+                const look = () => {
+                    const item = document.querySelector(".rr-palette__item");
+                    const text = item ? item.textContent : "";
+                    if (!/^Search /.test(text.trim())) {
+                        if (Date.now() < deadline) return void setTimeout(look, 60);
+                        return done("the first row is not the search: " + text.trim().slice(0, 60));
+                    }
+                    done(/Search the forum for/.test(text) ? "the row says \"the forum\" for a search scoped to one board" : null);
+                };
+                look();
+            });
+        },
+    },
+    {
+        /* The headline case: a pre-installed release whose crack is a
+           Steam emulator. "Goldberg emulator used for patching" is not
+           an online fix, and "DataNodes Mirror:" is a link label rather
+           than a reupload. */
+        name: "releases: a Goldberg crack is a crack, not an online fix",
+        url: KINDS,
+        run: () => {
+            const rows = Array.from(document.querySelectorAll(".rr-releases__row"));
+            if (!rows.length) return "the panel listed nothing at all";
+            const row = rows.find((node) => /AnkerGames/.test(node.textContent));
+            if (!row) return "the release post was not listed";
+            const tags = Array.from(row.querySelectorAll(".rr-releases__tag")).map((n) => n.textContent.trim());
+            if (tags.includes("Online fix")) return "tagged Online fix: " + tags.join(", ");
+            if (tags.includes("Reupload")) return "a mirror link label read as a reupload: " + tags.join(", ");
+            if (!tags.includes("Crack")) return "not tagged Crack: " + tags.join(", ");
+            return null;
+        },
+    },
+    {
+        name: "releases: an actual online fix is still one",
+        url: KINDS,
+        run: () => {
+            const row = Array.from(document.querySelectorAll(".rr-releases__row"))
+                .find((node) => /netfix/.test(node.textContent));
+            if (!row) return "the online fix was not listed";
+            const tags = Array.from(row.querySelectorAll(".rr-releases__tag")).map((n) => n.textContent.trim());
+            return tags.includes("Online fix") ? null : "tags: " + tags.join(", ");
+        },
+    },
+    {
+        name: "releases: a question and a reply are not releases",
+        url: KINDS,
+        run: () => {
+            const said = Array.from(document.querySelectorAll(".rr-releases__row"))
+                .map((node) => node.textContent);
+            const asked = said.filter((text) => /asker|regular/.test(text));
+            return asked.length ? asked.length + " conversation row(s): " + asked[0].slice(0, 80) : null;
+        },
+    },
+    {
+        name: "releases: an archive extension is not part of the version",
+        url: KINDS,
+        run: () => {
+            const row = Array.from(document.querySelectorAll(".rr-releases__row"))
+                .find((node) => /seeder/.test(node.textContent));
+            if (!row) return "the torrent post was not listed, so nothing carried a version";
+            const version = row.querySelector(".rr-releases__version").textContent.trim();
+            return version === "v5.3.0" ? null : "version reads " + version;
+        },
+    },
+    {
+        /* The results page could refine a query and not move it: a
+           search of titles in one forum that found nothing had to be
+           retyped into the full form to become a search of every post. */
+        name: "search results: the page says where it looked and can move the search",
+        url: SEARCH,
+        run: () => {
+            const said = document.querySelector(".rr-search__where");
+            if (!said || !said.textContent.trim()) return "the results page does not say where it looked";
+            const rooms = Array.from(document.querySelectorAll(".rr-search__pop .rr-seg button"))
+                .map((button) => button.textContent.trim());
+            if (!rooms.includes("All posts")) return "no way to look deeper: " + rooms.join(", ");
+            if (!rooms.includes("Whole board")) return "no way to widen it: " + rooms.join(", ");
+            return null;
         },
     },
     {
@@ -3769,17 +4339,21 @@ async function main() {
             try {
                 if (seed.settings) localStorage.setItem("rr:settings", seed.settings);
                 if (seed.data) localStorage.setItem("rr:data", seed.data);
+                // Buckets are keys of their own, one per name, because
+                // they hold things too big to sit in rr:data.
+                for (const [name, value] of seed.buckets) localStorage.setItem("rr:" + name, value);
             } catch { /* private mode */ }
         }, {
             settings: check.settings ? JSON.stringify(check.settings) : null,
             data: check.data ? JSON.stringify(check.data) : null,
+            buckets: Object.entries(check.buckets || {}).map(([name, value]) => [name, JSON.stringify(value)]),
         });
         return ctx;
     };
 
     for (const check of CHECKS) {
         const own = Boolean(check.fresh || check.width || check.settings || check.data
-            || check.offline || check.stub || check.noGrant || check.media || check.slow);
+            || check.buckets || check.offline || check.stub || check.noGrant || check.media || check.slow);
         let tab = own ? null : cache.get(check.url);
         const disposable = !tab;
         let ctx = null;

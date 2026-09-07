@@ -167,11 +167,58 @@ const SEARCH_IN = [
     { value: "all", label: "All posts" },
 ];
 
+/* ---- Which forum you are actually in -------------------------------
+
+   The breadcrumb is the only thing on the page that knows. Half the
+   links on this board are written `viewtopic.php?t=105454` with no
+   forum id at all, so PAGE.forumId is null on any topic reached from
+   a listing — and every search made from one went to the whole board
+   while saying it was searching this one.
+
+   The trail comes back outermost first: English Forums, Main Forum,
+   Temporarily Restricted Topics. */
+function forumTrail() {
+    const out = [];
+    const source = document.querySelector("p.breadcrumbs") || document.querySelector(".rr-nav__crumbs");
+    for (const link of source ? source.querySelectorAll("a") : []) {
+        const match = (link.getAttribute("href") || "").match(/viewforum\.php\?f=(\d+)/);
+        if (!match) continue;
+        if (out.some((entry) => entry.id === match[1])) continue;
+        out.push({ id: match[1], name: link.textContent.trim() });
+    }
+    return out;
+}
+
+/* The forum above the one you are in, when there is one worth having.
+
+   This board moves topics: a cracked game lives in Main Forum »
+   Temporarily Restricted Topics, and searching Temporarily Restricted
+   Topics finds the handful of topics that happen to be in that state
+   today rather than the 61,000 the reader meant. The room above is
+   the one people mean by "this forum".
+
+   The first crumb after Board index is a category — English Forums —
+   which holds no topics of its own, so a trail only two deep has
+   nothing above it to offer. */
+function parentForum(trail) {
+    return trail.length >= 3 ? trail[trail.length - 2] : null;
+}
+
+/** A forum name that fits on a chip, with the whole of it on hover. */
+function shortForumName(name) {
+    const said = String(name || "").trim();
+    return said.length > 24 ? said.slice(0, 23).trimEnd() + "\u2026" : said;
+}
+
 const SEARCH_PREFS_KEY = "searchPrefs";
 
+/* `where` starts as null rather than "here" on purpose: it has to be
+   possible to tell "nobody has chosen" from "somebody chose this
+   forum", because the two get different defaults. Only a click writes
+   it. */
 function searchPrefs() {
     const kept = store.get(SEARCH_PREFS_KEY, null);
-    return Object.assign({ sf: "titleonly", where: "here" }, kept && typeof kept === "object" ? kept : {});
+    return Object.assign({ sf: "titleonly", where: null }, kept && typeof kept === "object" ? kept : {});
 }
 
 function setSearchPref(key, value) {
@@ -186,82 +233,64 @@ function searchDepthChoice() {
     return SEARCH_IN.some((option) => option.value === sf) ? sf : "titleonly";
 }
 
-function addSearchOptions(frame, form, field, submit) {
-    const hidden = (name) => form.querySelector('input[type="hidden"][name="' + name + '"]');
-    const topicId = hidden("t") ? hidden("t").value : null;
-    const forumId = hidden("fid[]") ? hidden("fid[]").value : (PAGE.forumId ? String(PAGE.forumId) : null);
-    // Only the two boxes that search a place: a "Search these results"
-    // box on a results page refines a query, and its fields are not
-    // ours to move.
-    if (!topicId && !hidden("fid[]")) return;
+/* ---- The popover both search boxes share ---------------------------
 
-    const setHidden = (name, value) => {
-        let input = hidden(name);
-        if (value === null) { if (input) input.remove(); return; }
-        if (!input) { input = el("input", { type: "hidden", name }); form.append(input); }
-        input.value = value;
-    };
+   Where to look and how deep, drawn once. What a choice *means* is the
+   caller's: on a forum or a topic it rewrites the form's hidden fields
+   and the reader presses Search, and on a results page there is
+   nothing left to submit — the query has already run — so choosing
+   runs it again.
 
-    const places = [];
-    if (topicId) places.push({ value: "topic", label: t("This topic") });
-    if (forumId) places.push({ value: "here", label: t("This forum") });
-    places.push({ value: "board", label: t("Whole board") });
+   `onChange(place, depth, first)` is called on every choice and once
+   at the start with `first` true, which is how the results page tells
+   "this is where the search went" from "take it somewhere else". */
+function buildSearchPopover(frame, field, submit, config) {
+    const places = config.places;
+    let where = config.where;
+    let depth = config.depth;
 
-    const prefs = searchPrefs();
-    // A topic's box starts on the topic, as the board draws it; a
-    // forum's on the forum. The remembered choice only reaches as far
-    // as this box can honour it.
-    let where = topicId ? "topic" : (prefs.where === "board" ? "board" : "here");
-    let depth = searchDepthChoice();
-
-    const inRow = el("div.rr-search__row");
     const whereSeg = el("div.rr-seg", { role: "group", "aria-label": t("Where to search") });
     const inSeg = el("div.rr-seg", { role: "group", "aria-label": t("What to search") });
+    const inRow = el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Look in")]), inSeg]);
 
-    const apply = () => {
-        if (where === "topic") {
-            setHidden("t", topicId);
-            setHidden("fid[]", null);
-            setHidden("sf", "msgonly");
-            setHidden("sr", null);
-        } else {
-            setHidden("t", null);
-            setHidden("fid[]", where === "here" ? forumId : null);
-            setHidden("sf", depth);
-            setHidden("sr", "topics");
-            setHidden("terms", "all");
+    /* The trigger carries the answer. A box that searches somewhere
+       other than the room named above it is the sort of thing you find
+       out about from the results; the room is printed on the control
+       that changes it, visible without opening anything. */
+    const whereNow = el("span.rr-search__where", { "aria-hidden": "true" });
+    const opts = labelled(
+        el("button.rr-search__opts", { type: "button", "aria-expanded": "false" }, [icon("sliders", 13), whereNow]),
+        t("Search options"));
+
+    const chosen = () => places.find((entry) => entry.value === where) || places[places.length - 1];
+
+    const sync = (first) => {
+        const place = chosen();
+        inRow.hidden = place.value === "topic";
+        for (const button of whereSeg.children) {
+            button.setAttribute("aria-pressed", button.dataset.value === where ? "true" : "false");
         }
-        inRow.hidden = where === "topic";
-        for (const button of whereSeg.children) button.setAttribute("aria-pressed", button.dataset.value === where ? "true" : "false");
-        for (const button of inSeg.children) button.setAttribute("aria-pressed", button.dataset.value === depth ? "true" : "false");
-        if (field) {
-            field.setAttribute("placeholder", where === "topic" ? t("Search this topic")
-                : where === "here" ? t("Search this forum") : t("Search the whole board"));
-            field.setAttribute("aria-label", field.getAttribute("placeholder"));
+        for (const button of inSeg.children) {
+            button.setAttribute("aria-pressed", button.dataset.value === depth ? "true" : "false");
         }
-        // Says, from across the bar, that this box does not search the
-        // default place any more.
-        opts.toggleAttribute("data-rr-active", where === "board" || (where !== "topic" && depth !== "titleonly"));
+        whereNow.textContent = place.label;
+        labelled(opts, t("Search options — looking in {where}", { where: place.full || place.label }));
+        /* The room is printed on the control now, so the accent is kept
+           for the half that is not: how deep it looks. */
+        opts.toggleAttribute("data-rr-active", place.value !== "topic" && depth !== "titleonly");
+        config.onChange(place, depth, Boolean(first));
     };
 
     for (const place of places) {
-        const button = el("button", { type: "button" }, [place.label]);
+        const button = el("button", { type: "button", title: place.full || null }, [place.label]);
         button.dataset.value = place.value;
-        button.addEventListener("click", () => {
-            where = place.value;
-            if (!topicId) setSearchPref("where", where);
-            apply();
-        });
+        button.addEventListener("click", () => { where = place.value; sync(); });
         whereSeg.append(button);
     }
     for (const option of SEARCH_IN) {
         const button = el("button", { type: "button" }, [t(option.label)]);
         button.dataset.value = option.value;
-        button.addEventListener("click", () => {
-            depth = option.value;
-            setSearchPref("sf", depth);
-            apply();
-        });
+        button.addEventListener("click", () => { depth = option.value; sync(); });
         inSeg.append(button);
     }
 
@@ -269,10 +298,7 @@ function addSearchOptions(frame, form, field, submit) {
         el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Where")]), whereSeg]),
         inRow,
     ]);
-    inRow.append(el("span.rr-search__rowlabel", {}, [t("Look in")]), inSeg);
 
-    const opts = labelled(el("button.rr-search__opts", { type: "button", "aria-expanded": "false" }, [icon("sliders", 13)]),
-        t("Search options"));
     const close = () => {
         pop.hidden = true;
         opts.setAttribute("aria-expanded", "false");
@@ -281,19 +307,196 @@ function addSearchOptions(frame, form, field, submit) {
     };
     const onOutside = (event) => { if (!frame.contains(event.target)) close(); };
     const onKey = (event) => { if (event.key === "Escape") { close(); opts.focus(); } };
-    opts.addEventListener("click", () => {
-        if (!pop.hidden) { close(); return; }
+    const open = () => {
+        if (!pop.hidden) return;
         pop.hidden = false;
         opts.setAttribute("aria-expanded", "true");
         document.addEventListener("mousedown", onOutside, true);
         document.addEventListener("keydown", onKey, true);
-    });
+    };
+    opts.addEventListener("click", () => { if (pop.hidden) open(); else close(); });
+
+    /* Reachable from the field, mid-query, without leaving the
+       keyboard: the down arrow opens the choices the way it opens a
+       combobox everywhere else, and the current one takes focus.
+       Typing a query and finding out afterwards that it went to the
+       wrong room is the whole complaint this control answers. */
+    if (field) {
+        field.addEventListener("keydown", (event) => {
+            if (event.key !== "ArrowDown" || event.altKey || event.ctrlKey || event.metaKey) return;
+            event.preventDefault();
+            open();
+            const first = whereSeg.querySelector('button[aria-pressed="true"]') || whereSeg.firstElementChild;
+            if (first) first.focus();
+        });
+    }
 
     if (submit) submit.before(opts);
-    else form.append(opts);
+    else (frame.querySelector("form") || frame).append(opts);
     frame.append(pop);
-    apply();
+    sync(true);
+    return { close: close };
 }
+
+/* ---- The box on a forum or a topic ---------------------------------- */
+
+function addSearchOptions(frame, form, field, submit) {
+    const hidden = (name) => form.querySelector('input[type="hidden"][name="' + name + '"]');
+    const topicId = hidden("t") ? hidden("t").value : null;
+    const trail = forumTrail();
+    const here = trail.length ? trail[trail.length - 1] : null;
+    const up = parentForum(trail);
+    const forumId = (hidden("fid[]") && hidden("fid[]").value)
+        || (here && here.id)
+        || (PAGE.forumId ? String(PAGE.forumId) : null);
+
+    // A results page refines rather than searches a place; its box gets
+    // the control below instead.
+    if (PAGE.isSearch) return addResultOptions(frame, field, submit);
+    if (!topicId && !forumId) return;
+
+    const setHidden = (name, value) => {
+        let input = hidden(name);
+        if (value === null) { if (input) input.remove(); return; }
+        if (!input) { input = el("input", { type: "hidden", name }); form.append(input); }
+        input.value = value;
+    };
+
+    /* The rooms are named rather than described. "This forum" is a
+       word longer than "Main Forum" and says less: on a board that
+       moves topics between rooms, which room you are in is exactly the
+       thing worth printing. */
+    const places = [];
+    if (topicId) places.push({ value: "topic", label: t("This topic") });
+    if (here) places.push({ value: "here", label: shortForumName(here.name), full: here.name, forum: here.id });
+    else if (forumId) places.push({ value: "here", label: t("This forum"), forum: forumId });
+    if (up && here && up.id !== here.id) {
+        places.push({ value: "up", label: shortForumName(up.name), full: up.name, forum: up.id });
+    }
+    places.push({ value: "board", label: t("Whole board") });
+
+    const prefs = searchPrefs();
+    const offered = new Set(places.map((place) => place.value));
+
+    /* Where it starts when nobody has said.
+     *
+     * From a topic, the forum above the one it sits in — see
+     * parentForum(). The board's own box starts on the topic, which
+     * answers "where in this thread did somebody say that" rather than
+     * "what else is there like this", and the second is what people
+     * open the box for. Both are one click apart and the choice
+     * sticks.
+     *
+     * From a listing, the listing: you are already in the room you
+     * meant. */
+    const fallback = topicId && offered.has("up") ? "up" : (offered.has("here") ? "here" : "board");
+
+    buildSearchPopover(frame, field, submit, {
+        places: places,
+        where: offered.has(prefs.where) ? prefs.where : fallback,
+        depth: searchDepthChoice(),
+        onChange: (place, depth, first) => {
+            if (place.value === "topic") {
+                setHidden("t", topicId);
+                setHidden("fid[]", null);
+                setHidden("sf", "msgonly");
+                setHidden("sr", null);
+            } else {
+                setHidden("t", null);
+                setHidden("fid[]", place.forum || null);
+                setHidden("sf", depth);
+                setHidden("sr", "topics");
+                setHidden("terms", "all");
+            }
+            if (!first) {
+                setSearchPref("where", place.value);
+                setSearchPref("sf", depth);
+                if (field) field.focus();
+            }
+            if (field) {
+                field.setAttribute("placeholder", place.value === "topic" ? t("Search this topic")
+                    : place.value === "board" ? t("Search the whole board")
+                    : t("Search {forum}", { forum: place.full || place.label }));
+                field.setAttribute("aria-label", field.getAttribute("placeholder"));
+                /* The prompt in the field says the room too, so the
+                   control stops repeating it until a query covers the
+                   prompt up. The results page has no such prompt and
+                   is not marked. */
+                frame.setAttribute("data-rr-echo", "");
+            }
+        },
+    });
+}
+
+/* ---- Re-aiming a search you are already looking at ------------------
+
+   The results page has one box and it refines: it adds words to the
+   query that already ran. What it cannot do is move it. A search of
+   titles in one forum that found nothing has to be retyped into the
+   full search form to become a search of every post on the board,
+   which is the second thing anybody wants after the first search
+   misses — and until you have retyped it, nothing on the page says
+   where the first one looked.
+
+   phpBB keeps the whole query in the URL, so it can simply be run
+   again with one field changed. */
+function searchQuery() {
+    const here = new URLSearchParams(location.search);
+    if (here.get("keywords")) return here;
+    // A search submitted as a POST lands on a page whose own form
+    // action carries the query instead.
+    const form = document.querySelector('#search-box form[action*="keywords="], form[action*="keywords="]');
+    const action = form ? form.getAttribute("action") || "" : "";
+    const at = action.indexOf("?");
+    const fallback = new URLSearchParams(at > -1 ? action.slice(at + 1) : "");
+    return fallback.get("keywords") ? fallback : here;
+}
+
+/** A forum's name from the list the palette cached off the index. */
+function knownForumName(id) {
+    const hit = store.get("forums", []).find((entry) => String(entry.id) === String(id));
+    return hit ? hit.title : null;
+}
+
+function addResultOptions(frame, field, submit) {
+    const query = searchQuery();
+    const keywords = query.get("keywords");
+    // "View active topics" and the unanswered list are searches with no
+    // words in them; there is nothing to re-aim.
+    if (!keywords) return;
+
+    const forumId = query.get("fid[]");
+    const places = [];
+    if (forumId) {
+        const name = knownForumName(forumId);
+        places.push(name
+            ? { value: "here", label: shortForumName(name), full: name, forum: forumId }
+            : { value: "here", label: t("That forum"), forum: forumId });
+    }
+    places.push({ value: "board", label: t("Whole board") });
+
+    const depths = new Set(SEARCH_IN.map((option) => option.value));
+    const sf = query.get("sf");
+
+    buildSearchPopover(frame, field, submit, {
+        places: places,
+        where: forumId ? "here" : "board",
+        depth: depths.has(sf) ? sf : "titleonly",
+        onChange: (place, depth, first) => {
+            // The first call is the page reporting where it looked.
+            if (first) return;
+            setSearchPref("sf", depth);
+            const url = new URL("./search.php", location.href);
+            url.searchParams.set("keywords", keywords);
+            url.searchParams.set("terms", query.get("terms") || "all");
+            url.searchParams.set("sr", query.get("sr") || "topics");
+            url.searchParams.set("sf", depth);
+            if (place.value === "here" && place.forum) url.searchParams.set("fid[]", place.forum);
+            location.href = url.toString();
+        },
+    });
+}
+
 
 /** Frame one of the board's own search boxes where it stands, rather
     than at the end of whatever cell it was in. */

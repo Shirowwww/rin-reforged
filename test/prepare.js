@@ -55,6 +55,20 @@ const PAGES = [
     { fixture: "index.html", out: "forum/index.php" },
     { fixture: "viewforum.html", out: "forum/viewforum.php" },
     { fixture: "viewtopic.html", out: "forum/topic/viewtopic.php" },
+    /* The same topic one room deeper — Main Forum » Temporarily
+       Restricted Topics — which is where this board puts a game once
+       it is cracked, and the case the search box's default exists for:
+       searching the room a topic was moved to finds the handful of
+       topics that happen to be in that state today. Built off the same
+       fixture rather than saved twice; the breadcrumb is the only
+       difference that matters. */
+    {
+        fixture: "viewtopic.html",
+        out: "forum/deep/viewtopic.php",
+        tweak: (html) => html.replace(
+            /(<a class="breadcrumbs" href="\.\/viewforum\.php\?f=10[^"]*">Main Forum<\/a>)/g,
+            (crumb) => crumb + ' &#187; <a class="breadcrumbs" href="./viewforum.php?f=41">Temporarily Restricted Topics</a>'),
+    },
     { fixture: "viewtopic-replies.html", out: "forum/replies/viewtopic.php" },
     // Synthesised by make-quotes-fixture.js: the release-plus-quoting-
     // replies case none of the saved threads happens to contain.
@@ -63,11 +77,14 @@ const PAGES = [
     // page of a long thread, so the short case — which is most of the
     // board — had no page to be tested on.
     { fixture: "viewtopic-single.html", out: "forum/single/viewtopic.php" },
+    // Five posts, each one a way the Releases panel used to read a
+    // post wrong. Synthesised by make-quotes-fixture.js.
+    { fixture: "viewtopic-kinds.html", out: "forum/kinds/viewtopic.php" },
     // A hypervisor release naming its version the way the publisher
     // does, and a post naming somebody else's utility version beside
     // it. Both off the live board; neither is in any saved thread.
     { fixture: "viewtopic-hypervisor-1.html", out: "forum/hypervisor/viewtopic.php" },
-    { fixture: "viewtopic-hypervisor-2.html", out: "forum/hypervisor/viewtopic.start-4.php" },
+    { fixture: "viewtopic-hypervisor-2.html", out: "forum/hypervisor/viewtopic.start-5.php" },
     { fixture: "viewtopic-member.html", out: "forum/member/viewtopic.php" },
     { fixture: "viewtopic-locked.html", out: "forum/locked/viewtopic.php" },
     // The quick reply fetches this from beside the page it is on, so
@@ -170,6 +187,7 @@ async function main() {
         }
 
         let html = fs.readFileSync(path.join(IN, page.fixture), "utf8");
+        if (page.tweak) html = page.tweak(html);
 
         // Point the stylesheet and the logo at the local copies, and drop
         // the scripts; cs.rin.ru sends CORP: same-origin, so nothing can

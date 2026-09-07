@@ -32,26 +32,39 @@ const SEARCH_DEPTH = {
  * Scoped to the current board when there is one, the way the board's
  * own "Search this forum" box is.
  */
-/** Whether a search from here is scoped to the board the reader is in. */
-function searchScoped() {
-    return Boolean((PAGE.isForum || PAGE.isTopic) && PAGE.forumId);
-}
-
-/** The board's name off the breadcrumbs, when the page has them. */
-function currentBoardName() {
-    const crumb = Array.from(document.querySelectorAll("a.breadcrumbs, .rr-nav__crumbs a")).pop();
-    const name = crumb ? crumb.textContent.trim() : "";
-    return name && name.length <= 60 ? name : null;
+/**
+ * Which forum a search from the palette goes to, or null for the board.
+ *
+ * The same answer the box in the bar gives, from the same two places:
+ * the breadcrumb, because half the links on this board carry no forum
+ * id and PAGE.forumId is null on any topic reached from a listing;
+ * and the remembered choice, so the palette and the box cannot
+ * disagree about where a search goes.
+ */
+function paletteSearchPlace() {
+    if (!(PAGE.isForum || PAGE.isTopic)) return null;
+    const trail = forumTrail();
+    if (!trail.length) return null;
+    const here = trail[trail.length - 1];
+    const up = parentForum(trail);
+    const kept = searchPrefs().where;
+    if (kept === "board") return null;
+    if (kept === "here") return here;
+    if (kept === "up") return up || here;
+    // Nobody has chosen: the forum above a topic, the forum itself on
+    // a listing. See parentForum().
+    return PAGE.isTopic ? (up || here) : here;
 }
 
 function boardSearchUrl(query) {
     const depth = SEARCH_DEPTH[searchDepthChoice()] || SEARCH_DEPTH.titleonly;
+    const place = paletteSearchPlace();
     const url = new URL("./search.php", location.href);
     url.searchParams.set("keywords", query);
     url.searchParams.set("terms", "all");
     url.searchParams.set("sf", depth.sf);
     url.searchParams.set("sr", "topics");
-    if (searchScoped()) url.searchParams.set("fid[]", String(PAGE.forumId));
+    if (place) url.searchParams.set("fid[]", place.id);
     return url.toString();
 }
 
@@ -129,12 +142,17 @@ function paletteActions() {
 function collectItems() {
     const groups = [];
 
+    /* A bookmark and a recent topic are topics, so they get the pane
+       beside the palette too (preview.js): the palette opens on these
+       two lists, and resting on one is the first thing anybody does
+       with it. `preview` is the URL to read; a board or an action has
+       none and gets no pane. */
     const bookmarks = store.get("bookmarks", []);
     if (bookmarks.length) {
         groups.push({
             title: "Bookmarks",
             items: bookmarks.map((item) => ({
-                label: item.title, icon: "star", hint: t("topic"), href: item.href,
+                label: item.title, icon: "star", hint: t("topic"), href: item.href, preview: item.href,
             })),
         });
     }
@@ -154,7 +172,7 @@ function collectItems() {
         groups.push({
             title: t("Recent"),
             items: history.slice(0, 12).map((item) => ({
-                label: item.title, icon: "clock", hint: t("topic"), href: item.href,
+                label: item.title, icon: "clock", hint: t("topic"), href: item.href, preview: item.href,
             })),
         });
     }
@@ -198,18 +216,31 @@ function openPalette() {
     let flat = [];
     let cursor = 0;
 
-    const searchItem = (query) => ({
+    const searchItem = (query) => {
         /* It says where it will look. The row said "the forum" and
-           searched the board the reader was in. */
-        label: searchScoped()
-            ? (currentBoardName()
-                ? t("Search {forum} for {q}", { forum: currentBoardName(), q: query })
-                : t("Search this board for {q}", { q: query }))
-            : t("Search the forum for {q}", { q: query }),
-        icon: "search",
-        hint: SEARCH_DEPTH[searchDepthChoice()]?.hint || "Enter",
-        href: boardSearchUrl(query),
-    });
+           searched the board the reader was in — and later named the
+           last crumb, which on a topic page is the topic. */
+        const place = paletteSearchPlace();
+        const cooldown = searchCooldown();
+        return {
+            label: place
+                ? t("Search {forum} for {q}", { forum: place.name, q: query })
+                : t("Search the forum for {q}", { q: query }),
+            icon: "search",
+            /* The board allows one search about every half minute and
+               answers the ones in between with "you cannot use search
+               at this time" — a page load spent to be told no. The row
+               still works; it says what it is about to cost. */
+            hint: cooldown
+                ? t("wait {n}s", { n: cooldown })
+                : (SEARCH_DEPTH[searchDepthChoice()]?.hint || "Enter"),
+            href: boardSearchUrl(query),
+            run: () => {
+                noteBoardSearch();
+                location.href = boardSearchUrl(query);
+            },
+        };
+    };
 
     const render = (query) => {
         list.textContent = "";
@@ -217,6 +248,14 @@ function openPalette() {
         const needle = query.trim().toLowerCase();
 
         if (needle) list.append(renderGroup(t("Search"), [searchItem(query.trim())], flat));
+
+        /* Topics this browser has already walked past, filtered as you
+           type (preview.js). Above the boards and below the search
+           row: what someone typing a game name wants is the thread,
+           and the row that hands the query to the board is the one
+           thing that can find a thread nobody here has seen. */
+        const seen = needle ? topicPaletteItems(needle, 8) : [];
+        if (seen.length) list.append(renderGroup(t("Topics"), seen, flat));
 
         for (const group of groups) {
             const matches = needle
@@ -268,10 +307,16 @@ function openPalette() {
             node.addEventListener("mousemove", () => { cursor = sink.indexOf(node); highlight(); });
             sink.push(node);
             node._run = go;
+            // What the preview pane reads off the cursor (preview.js).
+            node._item = item;
             fragment.append(node);
         }
         return fragment;
     };
+
+    // A pane beside the panel, fed by whatever the cursor is on
+    // (preview.js). Returns a no-op where there is no room for it.
+    const onCursor = attachTopicPreview(overlay, () => (flat[cursor] ? flat[cursor]._item : null));
 
     const highlight = () => {
         flat.forEach((node, index) => node.setAttribute("aria-selected", index === cursor ? "true" : "false"));
@@ -282,6 +327,7 @@ function openPalette() {
         } else {
             input.removeAttribute("aria-activedescendant");
         }
+        onCursor();
     };
 
     const previous = document.activeElement;

@@ -15,10 +15,19 @@
    loaded and guesses at nothing beyond what a post says.
    ------------------------------------------------------------------ */
 
+/* "emulator" is not in this list, and used to be.
+
+   It is the one word here that is not about this board: a post
+   mentioning an emulator is as likely to be about RPCS3, Yuzu or a
+   PS2 thread as about a Steam stub, and every one of them collected
+   two points towards being read as a release. "goldberg" and "steam
+   emu" say the same thing without saying it about half the emulators
+   ever written. */
 const RELEASE_WORDS = [
     "clean steam files", "steam files", "reupload", "re-upload",
     "update", "updated", "patch", "hotfix", "repack", "crack",
-    "build", "denuvo", "dlc unlocker", "goldberg", "emulator",
+    "build", "denuvo", "dlc unlocker", "goldberg", "steam emu",
+    "online fix",
     // A hypervisor crack is a release of its own kind on this board,
     // with its own how-to threads and its own requirements.
     "hypervisor", "title update",
@@ -98,7 +107,16 @@ function looksLikeDate(version) {
  */
 const VERSION_RE_ALL = new RegExp(VERSION_RE.source, "gi");
 
-function versionsIn(text) {
+/* An archive extension is not part of the version.
+
+   "Peacock-v5.3.0.7z" is version 5.3.0 in a 7-Zip file, and the
+   pattern read it as 5.3.0.7z — a fourth part and a letter, both off
+   the file name. Blanked before matching rather than trimmed after,
+   so the number that comes out is the number that was written. */
+const ARCHIVE_SUFFIX_RE = /\.(?:7z|zip|rar|tar|gz|bz2|iso|exe|bin|torrent|part\d*)\b/gi;
+
+function versionsIn(said) {
+    const text = String(said || "").replace(ARCHIVE_SUFFIX_RE, " ");
     const all = VERSION_RE_ALL;
     all.lastIndex = 0;
     const found = { version: null, build: null, named: false };
@@ -303,6 +321,78 @@ function linkHosts(links) {
     return out;
 }
 
+/* A code block, in the classes this board actually writes.
+
+   phpBB3 marks one `.codetitle` + `.code`; subsilver2 on cs.rin.ru
+   marks `.codebox > .codeheader + .codeholder`, and this module asked
+   only for the first pair. So no code block on the live board was
+   ever recognised: the score never gained its point for one, and
+   releases.js went on matching release words against the contents of
+   every pasted config file, magnet link and error log in the topic. */
+const CODE_BLOCKS = ".code, .codetitle, .codebox, .codeheader, .codeholder";
+
+/* What a post is *offering*, as against what it is talking about.
+
+   A file host in a link, a login-walled link, a magnet, a torrent, an
+   attachment. This is the distinction the panel had no word for, and
+   the reason a 429 page topic listed a page of questions as releases:
+   the entry rules asked for links, or a version, or a recognised word,
+   and a question about a version has a version in it.
+
+   Store pages, video links and image hosts are not offers — hostName()
+   already refuses those — so a post linking a trailer and asking when
+   the crack lands carries nothing. */
+const CARRIED_RE = /magnet:\?xt=|\.torrent\b/i;
+const ATTACHED = ".attachtitle, .attachcontent, .attachrow";
+
+/**
+ * Login-walled links, not counting the ones that are people.
+ *
+ * The board writes a mention as "@" followed by a link to the member,
+ * and a guest sees that link replaced by
+ * "[[Please login to see this link.]]" exactly like a link to a file
+ * host. So every reply that opened by naming who it was answering
+ * counted as a post carrying a download — which on a busy topic is
+ * most replies, and is how "@someone, AFAIK, not currently" came to be
+ * listed as a release with one link on it.
+ *
+ * Signed in the same mention is an ordinary anchor at memberlist.php,
+ * which isOffsite() already refuses. This is the guest's half of the
+ * same rule.
+ */
+function hiddenLinks(own) {
+    let count = 0;
+    for (const node of own.querySelectorAll(".link_removed")) {
+        const before = node.previousSibling;
+        if (before && before.nodeType === 3 && /@\s*$/.test(before.textContent)) continue;
+        count += 1;
+    }
+    return count;
+}
+
+/* A post that asks is not a post that offers.
+
+   Off the live board, all of these were rows in the Releases panel:
+   "Is there any way to upgrade from v3.140 to v3.170.1?", "How can i
+   access DLC with peacock v6.3?", "Anyone know what version that one
+   torrent from April is?". Each carries a version and two release
+   words because it is asking *about* a release.
+
+   Only the opening sentence is read, and it has to both start like a
+   question and end in one, so a release post that closes with "any
+   problems, let me know?" is untouched. */
+/* Where the first sentence ends. A full stop between two digits is
+   part of a version number rather than the end of anything: without
+   that, "What person did you use cracked Peacock v8.8.1 from?" has
+   its first sentence end at "v8" and reads as a statement. */
+const ASKING_RE = /^(?:[^.!?]|\.(?=\S)){0,240}\?/;
+const ASKING_OPENERS = /^[\s\W]*(?:@\S*[\s,]*)*(?:is|are|was|were|does|do|did|can|could|would|will|should|has|have|any(?:one|body|way)|some(?:one|body)|how|what|where|when|why|which|who|whose|hi|hello|hey|help|please)\b/i;
+
+function looksLikeAQuestion(text) {
+    const said = String(text || "").replace(/\s+/g, " ").trim();
+    return ASKING_RE.test(said) && ASKING_OPENERS.test(said);
+}
+
 function describePost(post) {
     const own = ownContent(post.body);
     const text = own.textContent;
@@ -313,7 +403,9 @@ function describePost(post) {
 
     // Guests see "[[Please login to see this link.]]" instead of an
     // anchor, so those count as links too.
-    const hidden = own.querySelectorAll(".link_removed").length;
+    const hidden = hiddenLinks(own);
+    const attached = own.querySelectorAll(ATTACHED).length > 0;
+    const hosts = linkHosts(links);
 
     const words = RELEASE_WORDS.filter((word) => lower.includes(word));
     /* A dotted version and a Steam build id are both matched by
@@ -333,12 +425,17 @@ function describePost(post) {
         // reply that quotes a release is not a release, and this one
         // term was still reading the quote: a "thanks" quoting a post
         // with a code block scored for the code block.
-        (own.querySelector(".code, .codetitle, .spoiler") ? 1 : 0);
+        (own.querySelector(CODE_BLOCKS + ", .spoiler") ? 1 : 0);
 
     return {
         post,
         links: links.length + hidden,
-        hosts: linkHosts(links),
+        hosts,
+        // Somewhere to actually get the thing. Distinct hosts rather
+        // than anchors, so eight mirrors of one upload are one offer.
+        offers: hosts.length + hidden + (attached ? 1 : 0) + (CARRIED_RE.test(text) ? 1 : 0),
+        attached,
+        asking: looksLikeAQuestion(text),
         password: passwordIn(text),
         words,
         version: named.version,

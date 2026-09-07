@@ -98,6 +98,9 @@ const RU_WORDS = {
     "Search this topic": "Поиск в теме",
     "Search this forum": "Поиск в форуме",
     "Search the whole board": "Поиск по всему форуму",
+    "Search {forum}": "Поиск в «{forum}»",
+    "Search options — looking in {where}": "Параметры поиска — ищет в «{where}»",
+    "That forum": "Тот форум",
 
     // Who is online
     "{n} online": "{n} онлайн",
@@ -120,6 +123,11 @@ const RU_WORDS = {
     "All {n} pages": ({ n }) => "Все " + n + " " + ruPlural(n, "страница", "страницы", "страниц"),
     "Filter by kind": "Фильтр по типу",
     "Reading {a} of {b}…": "Читаю {a} из {b}…",
+    "Which end to read from": "С какого конца читать",
+    "Newest first": "Сначала новые",
+    "Oldest first": "Сначала старые",
+    "Start at the last page and work back": "Начать с последней страницы и идти назад",
+    "Start at page one and work forward": "Начать с первой страницы и идти вперёд",
     "Could not read the whole topic": "Не удалось прочитать всю тему",
     "Stopped reading the topic": "Чтение темы остановлено",
     "Reading a whole topic is switched off in the settings": "Чтение всей темы отключено в настройках",
@@ -134,11 +142,16 @@ const RU_WORDS = {
     "Read it again": "Прочитать заново",
     "1 page read": "Прочитана 1 страница",
     "{n} pages read": ({ n }) => "Прочитано " + n + " " + ruPlural(n, "страница", "страницы", "страниц"),
-    "the oldest {n} pages were not read": ({ n }) => "Первые " + n + " " + ruPlural(n, "страница", "страницы", "страниц") + " не прочитаны",
-    "oldest {n} skipped": "первые {n} пропущены",
+    "{n} pages have not been read yet": ({ n }) => n + " " + ruPlural(n, "страница", "страницы", "страниц") + " ещё не прочитано",
+    "{n} left": "осталось {n}",
+    "still reading": "чтение продолжается",
+    "reading…": "читаю…",
+    "Read {n} more": "Прочитать ещё {n}",
+    "Keep going back through the topic, {n} pages at a time": "Читать тему дальше назад, по {n} страниц за раз",
     "stopped early": "остановлено раньше",
     "the board was busy, so this was read slowly": "форум был занят, поэтому чтение шло медленно",
-    "The board was answering slowly, so this was read one page at a time": "Форум отвечал медленно, поэтому страницы читались по одной",
+    "The board was answering slowly, so this was read a couple of pages at a time": "Форум отвечал медленно, поэтому страницы читались по две",
+    "The board asked for a slower pace, so the topic was only read this far": "Форум попросил сбавить темп, поэтому тема прочитана только досюда",
     "read gently": "читалось бережно",
     "read {ago}": "прочитано {ago}",
     "{n} new since": ({ n }) => n + " " + ruPlural(n, "новое", "новых", "новых") + " с тех пор",
@@ -243,7 +256,6 @@ const RU_WORDS = {
     "Actions": "Действия",
     "Search the forum, or jump to a board": "Поиск по форуму или переход в раздел",
     "Search the forum for {q}": "Искать на форуме: {q}",
-    "Search this board for {q}": "Искать в этом разделе: {q}",
     "Search {forum} for {q}": "Искать в «{forum}»: {q}",
     "Releases in this topic": "Релизы в этой теме",
     "How much to look at": "Сколько смотреть",
@@ -251,6 +263,24 @@ const RU_WORDS = {
     "Nothing matches that": "Ничего не найдено",
     "topic": "тема",
     "board": "раздел",
+
+    // Topics in the palette, and the pane beside it
+    "Topics": "Темы",
+    "wait {n}s": "подождите {n} с",
+    "Reading that topic…": "Читаю тему…",
+    "this topic": "эта тема",
+    "Opened by {who}": "Создал {who}",
+    "Enter to open": "Enter — открыть",
+    "{n} pages": (vars) => {
+        // Страница / страницы / страниц: the count decides, and the
+        // teens are the exception that catches every naive rule.
+        const n = Number(vars.n) || 0;
+        const teens = n % 100 >= 11 && n % 100 <= 14;
+        const last = n % 10;
+        if (!teens && last === 1) return n + " страница";
+        if (!teens && last >= 2 && last <= 4) return n + " страницы";
+        return n + " страниц";
+    },
 };
 
 /**

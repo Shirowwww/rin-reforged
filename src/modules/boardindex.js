@@ -106,80 +106,64 @@ function dropDuplicateSearch() {
 
 /**
  * The board's own "collapse this category" control: an `<input
- * type="button">` carrying `value=" "` and drawn by a 12x12 background
- * image the board injects in a <style> block.
+ * type="button">` carrying `value=" "`, drawn by a 12x12 background
+ * image from a <style> block, alone at the right end of a cell that
+ * spans three columns — a thousand pixels from the heading it belongs
+ * to, with no accessible name, on a row that gives no other sign it
+ * opens at all.
  *
- * So it has no accessible name — a space is not one — and the heading
- * beside it becomes that name. And it cannot be redrawn from the
- * stylesheet: an <input> is a replaced element, `::before` generates
- * nothing on it, so the chevron has to be the value.
- *
- * The board's own handler is untouched: `flipf()` reads the class
- * rather than the value, so writing one cannot confuse it.
+ * Redrawing it where it stood was a losing fight: an <input> is a
+ * replaced element, so `::before` generates nothing on it, and between
+ * the board's own <style> and the generic input[type=button] rules a
+ * class selector kept losing the size and the font — which is how the
+ * control came to be a bare text triangle. So it is hidden and kept
+ * for its handler, which is the part that matters: `flipf()` reads its
+ * class, flips it, and shows or hides the category. A chevron beside
+ * the heading clicks it, and the heading cell folds on a click of its
+ * own, the way a listing's section heading already does.
  */
 function tidyCategoryToggles() {
-    for (const toggle of document.querySelectorAll("#wrapcentre .ccclose, #wrapcentre .ccopen")) {
-        if (toggle.hasAttribute("data-rr-cc")) continue;
-        toggle.setAttribute("data-rr-cc", "");
+    for (const native of document.querySelectorAll("#wrapcentre .ccclose, #wrapcentre .ccopen")) {
+        if (native.hasAttribute("data-rr-cc")) continue;
+        native.setAttribute("data-rr-cc", "");
 
         // The heading is in a sibling cell — the control gets a cell to
-        // itself — so the row is what has to be read.
-        const heading = toggle.closest("tr")?.textContent.replace(/\s+/g, " ").trim().slice(0, 60);
+        // itself — so the row is what has to be walked to reach it.
+        const row = native.closest("tr");
+        const cell = row && row.querySelector("td.cat");
+        if (!cell) continue;
+        const heading = cell.textContent.replace(/\s+/g, " ").trim().slice(0, 60);
 
+        native.style.display = "none";
+
+        const fold = el("button.rr-catfold", { type: "button" }, [icon("chevronD", 13)]);
         const sync = () => {
-            const collapsed = toggle.classList.contains("ccopen");
+            const collapsed = native.classList.contains("ccopen");
             const name = t(collapsed ? "Show " : "Hide ") + (heading || t("this category"));
-            toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-            toggle.setAttribute("title", name);
-            toggle.setAttribute("aria-label", name);
-            // Decorative: aria-label above is what is read out. The same
-            // glyph either way; the stylesheet turns the closed one to
-            // point right, so the pair reads closed ▸ / open ▾ rather
-            // than ▸ / ▴, which pointed two ways at once.
-            const glyph = "\u25BE";
-            if (toggle.tagName === "INPUT") toggle.value = glyph;
-            else toggle.textContent = glyph;
+            row.toggleAttribute("data-rr-folded", collapsed);
+            fold.setAttribute("aria-expanded", collapsed ? "false" : "true");
+            fold.setAttribute("title", name);
+            fold.setAttribute("aria-label", name);
         };
-
-        // An <input type="button"> is already a button and already a
-        // tab stop. A <div> with an onclick, which other phpBB styles
-        // use for the same control, is neither — so both are covered
-        // rather than assuming which one this board ships.
-        if (toggle.tagName !== "INPUT" && toggle.tagName !== "BUTTON") {
-            toggle.setAttribute("role", "button");
-            toggle.setAttribute("tabindex", "0");
-            toggle.addEventListener("keydown", (event) => {
-                if (event.key !== "Enter" && event.key !== " ") return;
-                event.preventDefault();
-                toggle.click();
-            });
-        }
-
-        /* The box, set inline rather than from the stylesheet.
-
-           The board sizes this control from a <style> block it writes
-           into the body, and the generic input[type=button] styling in
-           forum.css also matches it; between them a class rule loses
-           the padding, the border and — measurably — the font size,
-           which resolved to 0px and made the glyph invisible whatever
-           it was. An inline style is what the icon pass already uses
-           to take an imageset GIF out of the way, and it is the one
-           thing neither of those can outrank. Colour and hover stay in
-           the stylesheet, where they can follow the theme. */
-        Object.assign(toggle.style, {
-            width: "24px",
-            height: "24px",
-            minWidth: "0",
-            padding: "0",
-            fontSize: "12px",
-            lineHeight: "1",
-            backgroundImage: "none",
-        });
-
-        sync();
         // The board's handler swaps the class rather than telling
         // anyone, so the state is read back off it afterwards.
-        toggle.addEventListener("click", () => setTimeout(sync, 0));
+        const flip = () => {
+            native.click();
+            setTimeout(sync, 0);
+        };
+
+        fold.addEventListener("click", flip);
+        // The heading itself is a link to the category's own page, so a
+        // click on the words still goes there; the rest of the cell
+        // folds.
+        cell.addEventListener("click", (event) => {
+            if (event.target instanceof Element && event.target.closest("a, input, select, button")) return;
+            flip();
+        });
+
+        cell.classList.add("rr-catfold-cell");
+        cell.prepend(fold);
+        sync();
     }
 }
 

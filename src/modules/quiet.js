@@ -41,7 +41,7 @@ function isQuietPost(post, limit) {
     }
 
     // Code, a spoiler or an attachment is content by itself.
-    if (post.body.querySelector(".code, .codetitle, .spoiler, pre, .attachtitle")) return false;
+    if (post.body.querySelector(CODE_BLOCKS + ", .spoiler, pre, .attachtitle")) return false;
 
     // A screenshot is an answer. A smiley is not.
     for (const img of post.body.querySelectorAll("img")) {

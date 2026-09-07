@@ -68,6 +68,7 @@ function bootLate() {
     guard("icons", initIcons);
     guard("navbar", initNavbar);
     guard("lists", initLists);
+    guard("topic index", initTopicIndex);
     guard("index", initBoardIndex);
     guard("topic", initTopic);
     guard("releases", initReleases);

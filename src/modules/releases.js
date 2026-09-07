@@ -39,10 +39,25 @@ const RELEASE_KINDS = [
        short word to match on, so it has to stand alone; nothing else on
        this board is spelled HV. */
     { id: "hypervisor", label: "Hypervisor", re: /\bhyper[\s-]?visor\b|\bhv\b|гипервизор/i },
-    { id: "online", label: "Online fix", re: /\bonline[\s-]?fix\b|\bgoldberg\b|\bsteam\s?emu\b|\bmultiplayer\s+fix\b|\bco-?op\s+fix\b|\bemulator\b|онлайн\s*фикс|голдберг/i },
+    /* An online fix restores multiplayer. It is not every Steam
+       emulator ever posted, which is what this pattern used to say:
+       `goldberg`, `steam emu` and a bare `emulator` were all in here,
+       so "Goldberg emulator used for patching" — a pre-installed
+       single-player release with the Steam stub swapped out — came
+       back tagged Online fix, and so did every post in a topic that
+       mentioned an emulator at all. Which emulator a post means, and
+       what it wanted out of it, is decided below. */
+    { id: "online", label: "Online fix", re: /\bonline[\s-]?fix(?:\.me)?\b|\bmultiplayer\s+fix\b|\bco-?op\s+fix\b|\blan\s+fix\b|онлайн[\s-]*фикс/i },
     { id: "dlc", label: "DLC", re: /\bdlcs?\b|\bunlocker\b|\bcream\s?api\b|\bsmart\s?steam\b|длс|разблокировщик/i },
     { id: "update", label: "Update", re: /\bupdate[ds]?\b|\bpatch(?:ed|es)?\b|\bhotfix\b|\bupgrade\b|обновлени|обнова|патч/i },
-    { id: "reupload", label: "Reupload", re: /\bre-?upload(?:ed|s)?\b|\bmirror(?:s|ed)?\b|\breup\b|перезалив|зеркало/i },
+    /* "Mirror" twice over: the word people write above a second
+       download link, and the word for having uploaded something
+       again. Only the second is a Reupload, and the first is how the
+       board labels links — "DataNodes Mirror:", "Mirror 1", "Mirror
+       #2" — so a mirror followed by a colon, a hash or a number is
+       read as the label it is. Link labels being read as prose, one
+       layer down. */
+    { id: "reupload", label: "Reupload", re: /\bre-?upload(?:ed|s|ing)?\b|\bmirrors?\b(?!\s*[:#=]|\s*\d)|\breup\b|перезалив|зеркало/i },
     { id: "trainer", label: "Trainer", re: /\btrainer\b|\bcheat\s+(?:tables?|engines?)\b|\bsave\s?game\b|трейнер|сохранени/i },
     { id: "language", label: "Language", re: /\blanguage\s+(?:pack|files?)\b|\blocali[sz]ation\b|\btranslation\b|русификатор|локализаци/i },
     { id: "tool", label: "Tool", re: /\btool(?:s|kit)?\b|\bmod\s+manager\b|\binstaller\b|активатор|установщик/i },
@@ -86,7 +101,38 @@ function releaseFamily(kind) {
 
 const RELEASE_CACHE_KEY = "topicIndex";
 const RELEASE_CACHE_TOPICS = 8;
-const RELEASE_MAX_PAGES = 80;
+
+/* How many pages one click reads.
+
+   This used to be a cap: 80 pages, and a topic longer than that had
+   its oldest pages dropped and never offered again. On the 429 page
+   HITMAN topic that read 81 pages, said so in small text, and left
+   the other 348 unreachable.
+
+   It is a pass instead. The newest 60 unread pages are read on the
+   first click, the panel says how many are left, and another click
+   reads the next 60 — so the far end of a very long topic is a few
+   clicks away rather than impossible, and no single click commits
+   anyone to a quarter of an hour. */
+const RELEASE_PASS_PAGES = 60;
+
+/* Which end of the topic a walk starts from, kept in this browser for
+   every topic like the fold state is. "newest" reads the last page
+   first and works backwards, which answers "what is it on now";
+   "oldest" reads from page one forwards, which answers "what was
+   posted here, in order". Both the walk and the list follow it. */
+const RELEASE_ORDER_KEY = "releaseOrder";
+
+function releaseOrder() {
+    return store.get(RELEASE_ORDER_KEY, "newest") === "oldest" ? "oldest" : "newest";
+}
+
+/** Rows in the reading direction: last page first, or page one first. */
+function inReadingOrder(rows, order) {
+    const back = order === "oldest" ? -1 : 1;
+    return rows.slice().sort((a, b) =>
+        back * ((b.page - a.page) || (Number(b.id) - Number(a.id))));
+}
 
 /* ---- How the walk asks the board for pages -------------------------
 
@@ -107,9 +153,22 @@ const RELEASE_MAX_PAGES = 80;
    at all, which is what the page cache below is for. */
 const RELEASE_IN_FLIGHT = 3;
 const RELEASE_START_GAP = 160;        /* between request starts, ms   */
-/* Where it goes when the board starts queueing. */
-const RELEASE_EASY_IN_FLIGHT = 1;
-const RELEASE_EASY_GAP = 700;
+/* Where it goes when the board starts queueing.
+
+   Not to one request at a time with three quarters of a second
+   between them, which is where this used to go. The board queues
+   rather than refusing: measured, it hands out one slot roughly every
+   two seconds however many requests are waiting. A gap on top of that
+   is time spent waiting for a server that is already making you wait,
+   and it made a long topic crawl. Two in flight with a short gap
+   holds the same place in the same queue and gets a page every two
+   seconds instead of every two and three quarters. */
+const RELEASE_EASY_IN_FLIGHT = 2;
+const RELEASE_EASY_GAP = 300;
+/* How many prompt answers in a row mean the queue has drained. A walk
+   that eased on page four of four hundred crawled the rest of the way
+   because nothing ever put it back. */
+const RELEASE_RECOVER_AFTER = 4;
 /* How much slower than its own best an answer has to be before that
    counts as the board asking for room, and the floor below which it is
    never read as one — a page that took 900 ms after one that took 200
@@ -133,6 +192,11 @@ function makePace() {
         gap: RELEASE_START_GAP,
         best: Infinity,
         eased: false,
+        // Whether it ever eased, which is what the panel reports: a
+        // walk that eased and recovered still went slowly for a while
+        // and the reader watched it happen.
+        everEased: false,
+        quick: 0,
         slowest: 0,
     };
 }
@@ -142,10 +206,27 @@ function notePace(pace, ms) {
     if (!Number.isFinite(ms) || ms <= 0) return;
     pace.slowest = Math.max(pace.slowest, ms);
     if (ms < pace.best) pace.best = ms;
-    if (pace.eased) return;
+
+    if (pace.eased) {
+        // Back up again once the queue has drained. Held to a lower
+        // bar than the one that eased it, so a walk cannot oscillate
+        // on one borderline page.
+        if (ms < Math.max(pace.best * 2, RELEASE_SLOW_FLOOR)) pace.quick += 1;
+        else pace.quick = 0;
+        if (pace.quick >= RELEASE_RECOVER_AFTER) {
+            pace.eased = false;
+            pace.quick = 0;
+            pace.inFlight = RELEASE_IN_FLIGHT;
+            pace.gap = RELEASE_START_GAP;
+        }
+        return;
+    }
+
     if (ms < RELEASE_SLOW_FLOOR) return;
     if (ms < pace.best * RELEASE_SLOW_FACTOR) return;
     pace.eased = true;
+    pace.everEased = true;
+    pace.quick = 0;
     pace.inFlight = RELEASE_EASY_IN_FLIGHT;
     pace.gap = RELEASE_EASY_GAP;
 }
@@ -161,15 +242,42 @@ function notePace(pace, ms) {
  */
 function releaseProse(body) {
     const copy = ownContent(body);
-    for (const link of copy.querySelectorAll("a[href], .link_removed, .codetitle, .code")) link.remove();
+    for (const node of copy.querySelectorAll("a[href], .link_removed, " + CODE_BLOCKS)) node.remove();
     return copy.textContent.replace(/\s+/g, " ").trim();
 }
 
+/* Goldberg is a Steam emulator, and a Steam emulator is two
+   different releases depending on what the post wanted out of it.
+
+   Half this board uses Goldberg as the crack: a pre-installed build
+   with the Steam stub swapped for an emulator so it starts without
+   Steam. The other half uses the same file to put multiplayer back,
+   which is an online fix. The word alone cannot tell them apart, so
+   what the post says around it decides — online, multiplayer, co-op,
+   LAN, servers means the second, and nothing means the first.
+
+   "Goldberg emulator used for patching. Thanks MR_Goldberg for the
+   emulator." is a crack, and used to be tagged Online fix. */
+const STEAM_EMU_RE = /\bgoldberg\b|\bsteam[\s_-]?emu(?:lator)?\b|\bsmart\s?steam\s?emu\b|голдберг|эмулятор\s+steam/i;
+/* Tight on purpose. A post that says "online fix" in so many words
+   is matched by the kind above and never reaches here; this only has
+   to answer "does this Goldberg mention mean multiplayer", and the
+   default when it cannot tell is a crack.
+
+   Bare `online` and bare `server` were in here and both were wrong
+   off the live board: "click on the All Links and download from other
+   download servers", under a pre-installed single-player release,
+   came back tagged Online fix. */
+const ONLINE_INTENT_RE = /\bmultiplayer\b|\bco-?op\b|\bcoop\b|\bmatchmaking\b|\blobb(?:y|ies)\b|\blan\s+(?:play|party|game)\b|\bplay(?:ing)?\s+(?:online|with\s+friends)\b|\bonline\s+(?:play|works?|working|mode|multiplayer|co-?op)\b|мультиплеер|кооп|по\s+сети/i;
+
 /** Which kinds a post's own words match. */
 function releaseKinds(text) {
+    const emulated = STEAM_EMU_RE.test(text)
+        ? (ONLINE_INTENT_RE.test(text) ? "online" : "crack")
+        : null;
     const found = [];
     for (const kind of RELEASE_KINDS) {
-        if (kind.re.test(text)) found.push(kind);
+        if (kind.re.test(text) || kind.id === emulated) found.push(kind);
     }
     return found;
 }
@@ -180,47 +288,45 @@ function describeRelease(post, page) {
     const text = releaseProse(post.body);
     const kinds = releaseKinds(text);
 
-    /* Two ways in.
+    /* Nothing was posted here.
 
-       The narrow bar — enough links, release words or a version to be
-       a release rather than a reply about one. It would rather miss a
-       release than list a conversation.
+       A release is a thing you can get: a file host, a login-walled
+       link, a magnet, a torrent, an attachment. Every rule under this
+       one is about telling apart two posts that offer something; this
+       one is about the rest of the topic, which is most of it.
 
-       Or one off-site link and one recognised kind, which is the case
-       that bar was dropping: a language pack, a trainer, a mod tool.
-       None of those carry a version or any of the fifteen release
-       words, so a post offering one scored three against a threshold
-       of four and never appeared — in a panel whose job is to list
-       every kind of thing posted. */
-    const known = kinds.length > 0 && scored.links > 0;
-    if (scored.score < 4 && !known) return null;
+       It replaces three rules that each tried to reach the same
+       answer from a different direction — a score, then "links alone
+       are not enough", then "words alone are not enough" — and that
+       between them still let through every question with a version
+       number in it. On the 429 page HITMAN topic that was two rows in
+       three: "Is there any way to upgrade from v3.140 to v3.170.1?"
+       has a version, two release words and no file behind it.
 
-    /* Links alone are never enough either.
+       A store page, a video and an image host are not offers;
+       hostName() already refuses those, so a post linking a trailer
+       carries nothing. */
+    if (!scored.offers) return null;
 
-       Two off-site links score six against a bar of four, so a post
-       that says "I'm also having this exact problem" and links to two
-       screenshots was listed as a release, tagged "2 links". Across
-       thirty real topics, nine rows were tagged by link count alone and
-       eight of those were conversation: a Reddit thread, a hosting
-       recommendation, a thank-you. The one real release among them
-       named no version and used none of the words — thin evidence for
-       a panel whose stated preference is to miss a release rather than
-       list a conversation. */
+    /* Asked, not offered.
+
+       A question with a link in it clears the rule above — "does this
+       work with 3.170.1? [screenshot]" — and is still a question. A
+       post with an attachment or an archive password on it is not
+       one, whatever its first sentence looks like. */
+    if (scored.asking && !scored.password && !scored.attached) return null;
+
+    /* What kind of thing it is, or a number on it.
+
+       An offer with neither is a link nobody said anything about, and
+       across thirty topics eight of nine of those were conversation:
+       a Reddit thread, a hosting recommendation, a thank-you. The
+       narrow bar underneath is the older, score-shaped version of the
+       same question, kept for the posts that use none of the words:
+       one recognised kind is enough on its own, because a language
+       pack and a trainer carry no version and none of them. */
     if (!kinds.length && !scored.version && !scored.build) return null;
-
-    /* Words alone are never enough.
-     *
-     * The bar is a score, and a score can be reached by vocabulary: two
-     * recognised words are four points and four points is the bar. That
-     * was survivable while the vocabulary was narrow, and stopped being
-     * so the moment "hypervisor" joined it — "Does the hypervisor crack
-     * need Core Isolation off?" is two release words, no links, no
-     * version, and it scored exactly like a release. On the live Black
-     * Flag topic that shape is most of the thread.
-     *
-     * A thing that was posted has somewhere to get it or a number on
-     * it. A post with neither is a post *about* a release. */
-    if (!scored.links && !scored.version && !scored.build) return null;
+    if (scored.score < 4 && !kinds.length) return null;
 
     return {
         id: post.id,
@@ -369,7 +475,7 @@ function rememberPages(topicId, pages, total) {
  * Returns the pages to fetch in reading order, plus the canary whose
  * answer decides whether the kept pages may be believed at all.
  */
-function planWalk(topicId, info, total) {
+function planWalk(topicId, info, total, depth, order) {
     const current = info.current || 1;
     const kept = PAGE.topicId ? pageCache(topicId) : null;
     const known = kept && kept.pages ? kept.pages : {};
@@ -382,34 +488,56 @@ function planWalk(topicId, info, total) {
     };
 
     const reuse = [];
-    let fetch_ = [];
+    let want = [];
     for (let page = 1; page <= total; page += 1) {
         if (page === current) continue;
         if (kept && reusable(page)) reuse.push(page);
-        else fetch_.push(page);
+        else want.push(page);
     }
 
     /* The canary: the highest page being reused. A post deleted
        anywhere in the topic shifts every page after it, so the page
        furthest down the topic is the one that shows it. */
     const canary = reuse.length ? reuse[reuse.length - 1] : null;
-    if (canary !== null) fetch_.push(canary);
-    fetch_.sort((a, b) => a - b);
+    if (canary !== null && !want.includes(canary)) want.push(canary);
 
-    /* The cap is on what is asked of the board, not on how far the
-       topic goes. A topic of 120 pages used to be read to page 80 and
-       stopped, and the newest forty — where the latest release is —
-       were the ones never looked at. The oldest pages are dropped
-       instead, and the panel says how many. */
-    let skipped = 0;
-    if (fetch_.length > RELEASE_MAX_PAGES) {
-        const keep = new Set(fetch_.slice(fetch_.length - RELEASE_MAX_PAGES));
-        if (canary !== null) keep.add(canary);
-        skipped = fetch_.filter((page) => !keep.has(page)).length;
-        fetch_ = fetch_.filter((page) => keep.has(page));
+    /* Which end to start from.
+
+       Newest first by default, because the question the panel exists
+       to answer is "which version is this thread on now" and the
+       answer is at the end of the topic. Read in page order it
+       arrives last — on a 429 page topic, a quarter of an hour after
+       the first row appears. Read backwards it is the first thing on
+       screen, and the rest is detail the reader can watch fill in or
+       stop with Escape.
+
+       Oldest first is the other real question — what was posted here
+       first, and in what order — so it is a choice rather than a
+       rule, and the panel carries the control.
+
+       Either way page 1 goes first. On this board the opening post of
+       a game topic is the index: whoever owns the thread keeps the
+       current links in it, so it is the single most useful page there
+       is and it costs one request to have it. Reading backwards that
+       has to be said; reading forwards it is where you start anyway. */
+    want.sort(order === "oldest" ? (a, b) => a - b : (a, b) => b - a);
+    const first = want.indexOf(1);
+    if (first > 0) {
+        want.splice(first, 1);
+        want.unshift(1);
     }
 
-    return { reuse: reuse, fetch: fetch_, known: known, canary: canary, skipped: skipped };
+    /* One pass, not the whole topic. What is left over is offered
+       rather than dropped — see RELEASE_PASS_PAGES. */
+    let deferred = 0;
+    if (want.length > depth) {
+        const keep = want.slice(0, depth);
+        if (canary !== null && !keep.includes(canary)) keep.push(canary);
+        deferred = want.length - keep.length;
+        want = keep;
+    }
+
+    return { reuse: reuse, fetch: want, known: known, canary: canary, deferred: deferred };
 }
 
 /* ---- Asking, a few at a time -------------------------------------- */
@@ -452,38 +580,80 @@ async function pacedPool(items, worker, state, pace) {
         }
     };
 
-    const workers = Math.min(pace.inFlight, items.length);
-    await Promise.all(Array.from({ length: workers }, run));
-
-    /* A back-off can leave items unclaimed, because the workers that
-       stood down were the ones that would have taken them. Whatever is
-       left is finished at the eased pace. */
-    if (next < items.length && !state.cancelled && !state.stopped) {
-        await Promise.all(Array.from({ length: Math.min(pace.inFlight, items.length - next) }, run));
+    /* A back-off leaves items unclaimed, because the workers that
+       stood down were the ones that would have taken them; so does a
+       recovery, which raises the ceiling above the number of workers
+       there are. Either way, whatever is left is picked up at
+       whatever the pace is by then. Each turn of this loop claims at
+       least one item, because nothing stands down while none is
+       running. */
+    while (next < items.length && !state.cancelled && !state.stopped) {
+        const workers = Math.min(pace.inFlight, items.length - next);
+        await Promise.all(Array.from({ length: workers }, run));
     }
     return results;
 }
 
+/** Every release across a set of pages, newest page first, deduped. */
+function rowsFromPages(pages, total) {
+    const found = [];
+    const seen = new Set();
+    for (let page = total; page >= 1; page -= 1) {
+        const entry = pages[String(page)];
+        if (!entry) continue;
+        for (const row of entry.rows) {
+            if (seen.has(row.id)) continue;
+            seen.add(row.id);
+            found.push(row);
+        }
+    }
+    found.sort((a, b) => (b.page - a.page) || (Number(b.id) - Number(a.id)));
+    return dedupeReleases(found);
+}
+
 /**
- * Read the whole topic and return every release in it.
+ * Read as much of the topic as this pass covers, and report as it goes.
  *
  * The page in front of you is never fetched; pages this browser has
  * already read are not fetched either unless the canary says they may
- * have moved. What is left goes to the pool above, a few at a time.
+ * have moved. What is left goes to the pool above, a few at a time,
+ * newest page first.
+ *
+ * `onRows` is called with the whole list every time a page lands. A
+ * walk over a long topic is minutes of work, and a panel that shows
+ * nothing until the last page is a panel that looks broken for all of
+ * them; the first row now appears on the first answer, and it is the
+ * newest one because that is the page the walk starts at.
  */
-async function walkTopic(info, state, onProgress) {
+async function walkTopic(info, state, onProgress, onRows) {
     const total = info.total || 1;
     const current = info.current || 1;
-    const plan = planWalk(PAGE.topicId, info, total);
+    const plan = planWalk(PAGE.topicId, info, total, RELEASE_PASS_PAGES, state.order);
     const pace = makePace();
+    const reused = new Set(plan.reuse);
 
     const read = new Map();
     read.set(current, readTopicPage(posts(), current));
 
+    /* Everything held right now — read this time, believed from last
+       time — as one set of pages. */
+    const gather = () => {
+        const pages = {};
+        for (let page = 1; page <= total; page += 1) {
+            const fresh = read.get(page);
+            const entry = fresh || (reused.has(page) ? plan.known[String(page)] : null);
+            if (!entry) continue;
+            pages[String(page)] = { rows: entry.rows, first: entry.first, newest: entry.newest, count: entry.count };
+        }
+        return pages;
+    };
+
     let done = 0;
-    const target = total - plan.skipped;
-    const say = () => onProgress(Math.min(target, done + plan.reuse.length + 1), target);
+    const of = plan.fetch.length + plan.reuse.length + 1;
+    const say = () => onProgress(Math.min(of, done + plan.reuse.length + 1), of);
+    const show = () => { if (onRows) onRows(rowsFromPages(gather(), total)); };
     say();
+    show();
 
     const fetchOne = async (page) => {
         const href = pageHref(page);
@@ -501,6 +671,7 @@ async function walkTopic(info, state, onProgress) {
         } finally {
             done += 1;
             say();
+            show();
         }
     };
 
@@ -526,47 +697,41 @@ async function walkTopic(info, state, onProgress) {
         if (PAGE.topicId) store.set(RELEASE_PAGES_KEY,
             Object.assign({}, store.get(RELEASE_PAGES_KEY, {}), { [String(PAGE.topicId)]: undefined }));
         const again = Object.assign({}, info);
-        return walkTopic(again, Object.assign(state, { retried: true }), onProgress);
+        return walkTopic(again, Object.assign(state, { retried: true }), onProgress, onRows);
     }
 
-    /* Everything read this time, plus everything believed from last
-       time, as one set of pages. */
-    const pages = {};
+    const pages = gather();
     let newest = 0;
     let scanned = 0;
-    for (let page = 1; page <= total; page += 1) {
-        const fresh = read.get(page);
-        const held = plan.known[String(page)];
-        const entry = fresh || (plan.reuse.includes(page) ? held : null);
-        if (!entry) continue;
-        pages[String(page)] = { rows: entry.rows, first: entry.first, newest: entry.newest, count: entry.count };
-        newest = Math.max(newest, entry.newest || 0);
+    for (const key of Object.keys(pages)) {
+        newest = Math.max(newest, pages[key].newest || 0);
         scanned += 1;
     }
 
-    const found = [];
-    const seen = new Set();
-    for (let page = total; page >= 1; page -= 1) {
-        const entry = pages[String(page)];
-        if (!entry) continue;
-        for (const row of entry.rows) {
-            if (seen.has(row.id)) continue;
-            seen.add(row.id);
-            found.push(row);
-        }
-    }
-    found.sort((a, b) => (b.page - a.page) || (Number(b.id) - Number(a.id)));
+    const pending = Math.max(0, total - scanned);
+    const complete = !state.cancelled && !state.stopped && pending === 0;
 
-    const complete = !state.cancelled && !state.stopped && scanned + plan.skipped >= total;
-    if (PAGE.topicId && complete) rememberPages(PAGE.topicId, pages, total);
+    /* Kept whether or not the pass finished.
+     *
+     * This used to be written only on a complete walk, so a topic
+     * read to page thirty and then stopped — by Escape, by a 503, by
+     * a pass ending — kept nothing and started again from nothing the
+     * next time. What makes a partial set safe to keep is the canary
+     * above: a page that was never read is simply absent, and one
+     * that has moved throws the whole set away.
+     *
+     * `scanned > 1` because the page in front of the reader is always
+     * in the set and is not worth a write on its own. */
+    if (PAGE.topicId && scanned > 1) rememberPages(PAGE.topicId, pages, total);
 
     return {
-        rows: dedupeReleases(found),
+        rows: rowsFromPages(pages, total),
         done: complete,
         scanned: scanned,
-        // Oldest pages left unread because the topic is longer than the
-        // cap on requests; the panel says so.
-        skipped: plan.skipped,
+        // Pages of this topic still unread: the rest of a long topic
+        // that this pass did not reach, plus anything that failed.
+        // The panel offers them rather than dropping them.
+        pending: pending,
         newest: newest,
         // How much of this answer came out of this browser rather than
         // off the board, which is the whole point of keeping it.
@@ -575,7 +740,7 @@ async function walkTopic(info, state, onProgress) {
         refused: state.stopped || null,
         // Whether the board asked for room, so the panel can say the
         // walk went slowly on purpose rather than looking stuck.
-        eased: pace.eased,
+        eased: pace.everEased,
     };
 }
 
@@ -676,13 +841,48 @@ function saysGameVersion(row) {
 /** The highest version anybody posted *of the game* — the question the
     thread was opened with. Build ids are excluded: "build 24127279" is
     eight digits and beats every real version it is compared against. */
+/* One reply's slip is not the topic's version.
+ *
+ * Off the live board, one post in a 429 page thread reads "I had some
+ * trouble getting V270.1 to work with Peacock" — the poster dropped
+ * the 3. off 3.270.1 — and 270 beats every real version in the topic
+ * on the first digit. The headline announced the game as being on
+ * v270.1.
+ *
+ * What tells that apart from a release is company: every other
+ * version in that topic shares a first part with several others, and
+ * that one shared it with nothing. So a first part that exactly one
+ * row uses is not allowed to set the headline while another first
+ * part is used by more than one.
+ *
+ * The company has to be real company. In a topic with three releases
+ * in it, one first part having two rows and another having one says
+ * nothing, and the first release of a genuinely new major version is
+ * alone on its first part by definition. So the rule only applies
+ * where some first part has three rows or more — an established
+ * thread — and even there it can hold a brand new major back until
+ * the second post about it, which is the conservative half of a
+ * trade whose other half was announcing a game as being on v270.
+ */
+const VERSION_CROWD = 3;
+
 function latestVersion(rows) {
-    let best = null;
-    for (const row of rows) {
-        if (!row.version || !saysGameVersion(row)) continue;
+    const candidates = rows.filter((row) =>
         // A bare number read off the prose is shown on its row and is
         // not evidence about the game; see versionsIn().
-        if (row.versionNamed === false) continue;
+        row.version && row.versionNamed !== false && saysGameVersion(row));
+
+    const majors = new Map();
+    for (const row of candidates) {
+        const major = versionRank(row.version)[0];
+        majors.set(major, (majors.get(major) || 0) + 1);
+    }
+    let crowd = 0;
+    for (const count of majors.values()) crowd = Math.max(crowd, count);
+
+    let best = null;
+    for (const row of candidates) {
+        if (crowd >= VERSION_CROWD && majors.get(versionRank(row.version)[0]) === 1) continue;
         if (versionNewer(row.version, best)) best = row.version;
     }
     return best;
@@ -883,7 +1083,7 @@ function initReleases() {
        two copies: the rows, the filters and the counts all differ, and
        a hidden second list is a second thing to keep in step. */
     const panel = el("section.rr-releases", { "aria-label": t("Releases in this topic") });
-    const state = { cancelled: false, stopped: null, scope: "page", topic: kept };
+    const state = { cancelled: false, stopped: null, scope: "page", topic: kept, order: releaseOrder() };
 
     const count = el("span.rr-releases__count");
     const scope = el("div.rr-releases__scope", { role: "tablist", "aria-label": t("How much to look at") });
@@ -911,6 +1111,37 @@ function initReleases() {
             : t("This topic is one page — you are looking at all of it"));
     }
     scope.append(pageTab, topicTab);
+
+    /* Which end of the topic to read from.
+
+       Beside the scope control because it qualifies it: "All 429
+       pages, newest first" is one sentence. Only drawn where it
+       decides something — a one page topic, or the whole-topic walk
+       switched off, and there is no direction to choose. */
+    const orderSeg = el("div.rr-seg.rr-releases__order", {
+        role: "group", "aria-label": t("Which end to read from"),
+    });
+    const syncOrder = () => {
+        for (const button of orderSeg.children) {
+            button.setAttribute("aria-pressed", button.dataset.value === state.order ? "true" : "false");
+        }
+    };
+    for (const option of [
+        { value: "newest", label: t("Newest first"), hint: t("Start at the last page and work back") },
+        { value: "oldest", label: t("Oldest first"), hint: t("Start at page one and work forward") },
+    ]) {
+        const button = el("button", { type: "button", title: option.hint }, [option.label]);
+        button.dataset.value = option.value;
+        button.addEventListener("click", () => {
+            if (state.order === option.value) return;
+            state.order = option.value;
+            store.set(RELEASE_ORDER_KEY, option.value);
+            syncOrder();
+            render();
+        });
+        orderSeg.append(button);
+    }
+    syncOrder();
 
     /* The board's own "only show me the drops" filter. It was in a
        strip along the bottom of the panel while the scope control was
@@ -972,7 +1203,7 @@ function initReleases() {
     panel.append(
         el("div.rr-releases__head", {}, [
             fold,
-            el("div.rr-releases__controls", {}, [scope, linkFilter, copyList]),
+            el("div.rr-releases__controls", {}, [scope, canWalk && multi ? orderSeg : null, linkFilter, copyList]),
         ]),
         body,
     );
@@ -984,37 +1215,69 @@ function initReleases() {
             : t(rows.length === 1 ? "{n} release" : "{n} releases", { n: rows.length }) + (scoped ? "" : t(" on this page"));
     };
 
+    /* A walk over a long topic is minutes of work, so what it has
+       found is drawn as it finds it rather than at the end. The list
+       is repainted at most three times a second: sixty pages arriving
+       is sixty repaints of a list that grows by a row or two, and the
+       rows carry click handlers.
+
+       A full render() is what repaints, filter chips and all. A chip
+       pressed while the walk is running comes back unpressed on the
+       next page, which is a fair trade for not keeping two ways of
+       drawing the same list in step. */
+    let painted = 0;
+    const paint = (rows, force) => {
+        state.topic = Object.assign(state.topic || {}, { rows: rows, total: total });
+        const now = Date.now();
+        if (!force && now - painted < 350) return;
+        painted = now;
+        state.scope = "topic";
+        render();
+    };
+
     const walk = () => {
         state.cancelled = false;
         state.stopped = null;
         topicTab.disabled = true;
         topicTab.setAttribute("aria-busy", "true");
+        // The pass has its direction now; changing it mid-walk would
+        // only change the list, which reads as the walk turning round.
+        for (const button of orderSeg.children) button.disabled = true;
+        state.topic = {
+            at: Date.now(), rows: (state.topic && state.topic.rows) || [],
+            scanned: 0, done: false, total: total, live: true,
+        };
 
         const finish = () => {
             topicTab.disabled = false;
             topicTab.removeAttribute("aria-busy");
             topicTab.textContent = topicLabel;
+            for (const button of orderSeg.children) button.disabled = false;
+            if (state.topic) state.topic.live = false;
         };
 
         walkTopic(info, state, (at, of) => {
             topicTab.textContent = t("Reading {a} of {b}…", { a: at, b: of });
-        }).then((result) => {
+            if (state.topic) state.topic.scanned = at;
+        }, (rows) => paint(rows)).then((result) => {
             finish();
             state.topic = {
                 at: Date.now(), rows: result.rows, scanned: result.scanned,
-                done: result.done, total: total,
+                done: result.done, total: total, pending: result.pending,
                 newest: Math.max(result.newest || 0, hereNewest),
                 fetched: result.fetched, reused: result.reused,
                 eased: result.eased,
             };
             if (PAGE.topicId) rememberIndex(PAGE.topicId, state.topic);
-            if (result.refused) toast("The board asked for a slower pace, so the topic was only read this far");
+            if (result.refused) toast(t("The board asked for a slower pace, so the topic was only read this far"));
             state.scope = "topic";
             render();
         }).catch((err) => {
             finish();
             console.warn("[RIN Reforged] topic index:", err);
             toast(t("Could not read the whole topic"));
+            // Otherwise the panel is left saying "reading…" for good.
+            render();
         });
     };
 
@@ -1024,25 +1287,47 @@ function initReleases() {
         topicTab.setAttribute("aria-selected", state.scope === "topic" ? "true" : "false");
 
         const scoped = state.scope === "topic";
-        const rows = scoped ? (state.topic ? state.topic.rows : []) : pageRows;
+        // Both scopes read in the direction the panel is set to, so
+        // the control means one thing rather than two.
+        const rows = inReadingOrder(scoped ? (state.topic ? state.topic.rows : []) : pageRows, state.order);
         const latest = scoped ? latestVersion(rows) : null;
 
         if (scoped && state.topic) {
-            const again = el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
+            const live = Boolean(state.topic.live);
+            const pending = state.topic.pending || 0;
+
+            const again = el("button.rr-btn", { type: "button", "data-variant": "quiet", disabled: live || null }, [
                 icon("layers", 12), t("Read it again"),
             ]);
             again.addEventListener("click", walk);
+
+            /* The rest of a long topic, offered rather than dropped.
+               The panel used to read the newest eighty pages of a 429
+               page thread, say "the oldest 348 were not read" in small
+               text, and that was the end of it. */
+            const more = pending && !live
+                ? el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
+                    icon("arrowDown", 12),
+                    t("Read {n} more", { n: Math.min(pending, RELEASE_PASS_PAGES) }),
+                ])
+                : null;
+            if (more) {
+                more.setAttribute("title",
+                    t("Keep going back through the topic, {n} pages at a time", { n: RELEASE_PASS_PAGES }));
+                more.addEventListener("click", walk);
+            }
             /* One sentence, not three spans run together. Read by eye
                the gaps between them are the punctuation; read aloud
                they are nothing, and the line came out as
                "Latest posted: v1.10.05 pages read". */
             const said = [
                 latest ? t("Latest posted: version {v}", { v: latest }) : null,
-                pagesReadText(state.topic.scanned),
-                state.topic.skipped ? t("the oldest {n} pages were not read", { n: state.topic.skipped }) : null,
-                state.topic.done ? null : t("stopped early"),
+                pagesReadText(state.topic.scanned || 0),
+                live ? t("still reading") : null,
+                pending && !live ? t("{n} pages have not been read yet", { n: pending }) : null,
+                live || pending || state.topic.done ? null : t("stopped early"),
                 state.topic.eased ? t("the board was busy, so this was read slowly") : null,
-                t("read {ago}", { ago: agoText(state.topic.at || Date.now()) }),
+                live ? null : t("read {ago}", { ago: agoText(state.topic.at || Date.now()) }),
                 staleBy ? t("{n} new since", { n: staleBy }) : null,
             ].filter(Boolean).join(". ");
 
@@ -1055,20 +1340,20 @@ function initReleases() {
                 el("span.rr-spacer"),
                 el("div.rr-releases__read", {}, [
                     el("span", { "aria-hidden": "true" }, [
-                        pagesReadText(state.topic.scanned),
-                        state.topic.skipped ? " · " + t("oldest {n} skipped", { n: state.topic.skipped }) : "",
-                        state.topic.done ? "" : " · " + t("stopped early"),
-                        " · " + agoText(state.topic.at || Date.now()),
+                        pagesReadText(state.topic.scanned || 0),
+                        live ? " · " + t("reading…") : "",
+                        pending && !live ? " · " + t("{n} left", { n: pending }) : "",
+                        live || pending || state.topic.done ? "" : " · " + t("stopped early"),
+                        live ? "" : " · " + agoText(state.topic.at || Date.now()),
                     ].join("")),
-                    /* Why it took as long as it did. A walk that drops
-                       to one request at a time because the board is
-                       queueing looks exactly like a walk that has hung,
-                       and the difference matters to whoever is watching
-                       it. */
+                    /* Why it took as long as it did. A walk that halves
+                       its pace because the board is queueing looks
+                       exactly like a walk that has hung, and the
+                       difference matters to whoever is watching it. */
                     state.topic.eased
                         ? el("span.rr-releases__eased", {
                             "aria-hidden": "true",
-                            title: t("The board was answering slowly, so this was read one page at a time"),
+                            title: t("The board was answering slowly, so this was read a couple of pages at a time"),
                         }, [t("read gently")])
                         : null,
                     staleBy
@@ -1076,6 +1361,7 @@ function initReleases() {
                             staleBy === 1 ? t("1 newer post since") : t("{n} newer posts since", { n: staleBy }),
                         ])
                         : null,
+                    more,
                     again,
                 ]),
             ]));

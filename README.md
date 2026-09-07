@@ -64,6 +64,15 @@ checks this repository and offers new versions on its own.
   that opens its topic, bookmarks and history kept in your browser. The
   board's search box says where it looks: this topic, this forum or the
   whole board, titles or every post, chosen in the box itself.
+- **Topics in the palette, and a look inside one.** The board allows one
+  search about every half minute and answers the ones in between with
+  "you cannot use search at this time", so `Ctrl+K` does not search as you
+  type — it filters the titles from every listing you have opened, which
+  costs nothing and cannot be refused. Rest on one and a pane beside the
+  palette reads its first page: the board it is in, how long it runs, who
+  opened it, what they said and the first picture they posted. One request
+  per topic, only when you stop on it, and the row that hands the query to
+  the board is still there for a thread nobody here has seen.
 - **Optional Steam preview** on hover over a topic title: cover, review score,
   tags and the opening lines of the store description. This is the only thing
   in the script that talks to a server other than the forum, so it is **off

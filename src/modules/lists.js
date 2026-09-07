@@ -1452,8 +1452,41 @@ function initMarkColumn(table) {
     }
 }
 
+/* The forum-rules box.
+
+   subsilver2 writes it as a table of one `td.row3` above everything
+   else on a forum, a topic and the posting form, and this board fills
+   it for members only — which is why it is easy to miss. Two things
+   are wrong with it left alone.
+
+   The template types `style="margin-bottom: 2px"` into the tag, and an
+   inline style beats every rule in this stylesheet without a fight, so
+   the box sat 2px above the topic title: two blocks with nothing to do
+   with each other, touching. And the cell keeps the styling of a
+   listing row — a row's inset, a hairline drawn along the bottom of a
+   card that has no second row, the same ground as everything else —
+   so the one block on the page that is a notice read as a slab of
+   text with no edges and no heading.
+
+   Tagged here; the stylesheet dresses it as the notice it is.  */
+function markForumRules() {
+    for (const cell of document.querySelectorAll("#wrapcentre td.row3")) {
+        const box = cell.closest("table.tablebg");
+        if (!box || box.hasAttribute("data-rr-rules")) continue;
+        // One cell in the whole table, holding a heading or the link
+        // that stands in for one. A listing's own section rows are
+        // td.row3 too — "Global Announcements", "Topics" — and those
+        // sit in a table of a hundred cells.
+        if (box.querySelectorAll("td, th").length !== 1) continue;
+        if (!cell.querySelector("h4, p.rules, .postbody")) continue;
+        box.setAttribute("data-rr-rules", "");
+        if (box.style.marginBottom) box.style.marginBottom = "";
+    }
+}
+
 function initLists() {
     markShapes();
+    markForumRules();
     groupSortControls();
     for (const table of document.querySelectorAll("table.tablebg")) {
         restoreGridCells(table);

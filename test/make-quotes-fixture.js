@@ -35,10 +35,10 @@ const LOCKED = path.join(FIXTURES, "viewtopic-locked.html");
 const CHATTER = path.join(FIXTURES, "viewtopic-chatter.html");
 const LISTING = path.join(FIXTURES, "viewforum-unread.html");
 const FORUM_SOURCE = path.join(FIXTURES, "viewforum.html");
-const POSTING = path.join(FIXTURES, "posting.html");
 const SINGLE = path.join(FIXTURES, "viewtopic-single.html");
+const KINDS = path.join(FIXTURES, "viewtopic-kinds.html");
 const HYPERVISOR_PAGES = 2;
-const HYPERVISOR_PER_PAGE = 4;
+const HYPERVISOR_PER_PAGE = 5;
 const THREAD_PAGES = 5;
 const LONG_PAGES = 20;
 const THREAD_PER_PAGE = 6;
@@ -410,6 +410,33 @@ const HYPERVISOR_POSTS = [
             "works with the hypervisor crack.<br />" + HIDDEN_LINK("Download"),
     },
     {
+        id: "940009",
+        author: "Typo",
+        colour: "#5C8FBF",
+        rank: "Junior Member",
+        posted: "Monday, 04 May 2026, 12:15",
+        subject: "Re: [Info] Test Game Resynced [CRACKED]",
+        /* A first part nothing else in the topic uses. Off the live
+           board: "I had some trouble getting V270.1 to work" in a
+           thread whose game is on 3.270.1 — the poster dropped the
+           leading 3, and 270 beat every real version in the topic on
+           the first digit. Shown on its own row, never on the
+           headline. */
+        body: "I had some trouble getting v90.7 to work with the crack, " +
+            "but this build sorted it: " + HIDDEN_LINK("Download"),
+    },
+    {
+        id: "940010",
+        author: "Rehost",
+        colour: "#5C8FBF",
+        rank: "Advanced Member",
+        posted: "Monday, 04 May 2026, 12:18",
+        subject: "Re: [Info] Test Game Resynced [CRACKED]",
+        // A fourth ordinary release, so the first part every real
+        // version shares has company to be counted against.
+        body: "Reupload of the clean steam files for Title Update 1.0.5.<br />" + HIDDEN_LINK("Download"),
+    },
+    {
         id: "940005",
         author: "Ordas_Farkas",
         colour: "#5C8FBF",
@@ -508,6 +535,91 @@ const THREAD_CAST = [
 
 const HIDDEN_LINKS = (n) =>
     Array.from({ length: n }, (_, i) => HIDDEN_LINK("Mirror " + (i + 1))).join("<br />");
+
+/* ---- What a post is, and what it is not ---------------------------
+
+   Five posts, each one a way the panel used to be wrong, all of them
+   shapes taken off the live board:
+
+     p950001  a pre-installed release cracked with Goldberg, with a
+              "DataNodes Mirror:" link label under it. A Crack, and it
+              came back tagged Online fix and Reupload.
+     p950002  an actual online fix, so the tag still has to be reachable
+     p950003  a question with a screenshot link: a version, two release
+              words and nothing behind it
+     p950004  a reply that opens by naming who it answers. A guest sees
+              that mention as a login-walled link like any other, which
+              made every reply on a busy topic look like an upload.
+     p950005  a torrent in a code block with the archive in the file
+              name: version 5.3.0, not 5.3.0.7z
+
+   The panel must list 950001, 950002 and 950005, and nothing else. */
+const KINDS_POSTS = [
+    {
+        id: "950001",
+        author: "AnkerGames",
+        colour: "#BF0000",
+        rank: "Upload Crew",
+        posted: "Sunday, 06 Sep 2026, 22:15",
+        subject: "Re: [Info] Sovereign Tower",
+        body: "Sovereign Tower &ndash; V 1.0.11 | AnkerGames<br /><br />" +
+            "Based on Owned Steam Files<br />" +
+            "Goldberg emulator used for patching<br />" +
+            "Pre-installed &amp; portable &ndash; no installation needed<br />" +
+            "Version: V 1.0.11 / Build 24973501<br />" +
+            "Size: 1.1 GB<br /><br />" +
+            "Thanks MR_Goldberg for the emulator.<br /><br />" +
+            "Official AnkerGames: " + HIDDEN_LINK("Sovereign Tower") + "<br />" +
+            "DataNodes Mirror: " + HIDDEN_LINK("datanodes.to") + "<br />" +
+            "Password: cs.rin.ru",
+    },
+    {
+        id: "950002",
+        author: "netfix",
+        colour: "#5C8FBF",
+        rank: "Advanced Member",
+        posted: "Sunday, 06 Sep 2026, 23:02",
+        subject: "Re: [Info] Sovereign Tower",
+        body: "Online Fix for v1.0.11 &mdash; co-op and lobbies work, Goldberg build.<br />" +
+            HIDDEN_LINK("Download"),
+    },
+    {
+        id: "950003",
+        author: "asker",
+        colour: "#5C8FBF",
+        rank: "Junior Member",
+        posted: "Monday, 07 Sep 2026, 00:11",
+        subject: "Re: [Info] Sovereign Tower",
+        body: "Is there any way to upgrade from v1.0.9 to v1.0.11 without downloading " +
+            "the whole repack again? Here is what the crack folder looks like: " +
+            HIDDEN_LINK("screenshot"),
+    },
+    {
+        id: "950004",
+        author: "regular",
+        colour: "#5C8FBF",
+        rank: "Advanced Member",
+        posted: "Monday, 07 Sep 2026, 00:40",
+        subject: "Re: [Info] Sovereign Tower",
+        body: "@" + HIDDEN_LINK("asker") + ", not that I know of. The update patch for " +
+            "v1.0.9 was never posted, so it is the repack or nothing.",
+    },
+    {
+        id: "950005",
+        author: "seeder",
+        colour: "#5C8FBF",
+        rank: "Advanced Member",
+        posted: "Monday, 07 Sep 2026, 01:20",
+        subject: "Re: [Info] Sovereign Tower",
+        body: "Clean steam files, torrent only.<br />" +
+            '<div class="codebox"><div class="codeheader">Code:</div>' +
+            '<div class="codeholder"><div class="text"><ol><li class="li1">' +
+            "magnet:?xt=urn:btih:BB8D04ACEEFFCA256CB92B7DC6AA027E9ECC956F&amp;dn=SovereignTower-v5.3.0.7z" +
+            "</li></ol></div></div></div>" +
+            '<div class="attachtitle">Attachment:</div>' +
+            '<div class="attachcontent">SovereignTower-v5.3.0.7z.torrent</div>',
+    },
+];
 
 function threadPost(entry, index) {
     const id = String(920001 + index);
@@ -644,45 +756,15 @@ function withUnreadRows(html, count) {
     }, "");
 }
 
-/* ------------------------------------------------------------------
-   The board's reply form.
-
-   The quick reply fetches posting.php and lifts the real form out of
-   the response — the whole point being that what gets submitted is the
-   board's own form, with its own tokens. Nothing in test/pages served
-   that, so the box could never actually open here and everything
-   downstream of it, the kept draft included, was tested by poking at
-   storage instead of by using the thing.
-
-   This is posting.php cut down to what slimReplyForm reads: the form,
-   the message box, the hidden state and the submit button. The token
-   values are nonsense on purpose — they are copied through, never
-   inspected.
-   ------------------------------------------------------------------ */
-function replyForm() {
-    return `<!DOCTYPE html>
-<html><head><title>Post a reply</title>
-<link rel="stylesheet" href="./styles/forum.css" type="text/css" />
-</head><body>
-<div id="wrapcentre">
-<form action="./posting.php?mode=reply&amp;f=14&amp;t=75717&amp;sid=${SID}" method="post" name="postform">
-<input type="hidden" name="lastclick" value="1767225600" />
-<input type="hidden" name="creation_time" value="1767225600" />
-<input type="hidden" name="form_token" value="0123456789abcdef0123456789abcdef01234567" />
-<input type="hidden" name="topic_cur_post_id" value="900006" />
-<textarea name="message" rows="15" cols="76" class="post"></textarea>
-<input type="submit" name="preview" value="Preview" class="button2" />
-<input type="submit" name="post" value="Submit" class="button1" />
-</form>
-</div>
-</body></html>`;
-}
-
 function main() {
     const source = fs.readFileSync(SOURCE, "utf8");
-    fs.writeFileSync(POSTING, replyForm(), "utf8");
-    console.log("test/fixtures/posting.html                (the board's reply form)");
+    /* posting.html belongs to make-posting-fixture.js.
 
+       This file used to write a cut-down reply form over it, so
+       running the generators in the order package.json lists them
+       replaced the full posting page — toolbar and all — with a form
+       that has no toolbar, and three checks then failed on the
+       fixture rather than on the script. */
     fs.writeFileSync(TARGET, withPosts(source, POSTS), "utf8");
     console.log("test/fixtures/viewtopic-quotes.html   (" + POSTS.length + " posts: a release and the replies quoting it)");
 
@@ -707,6 +789,9 @@ function main() {
         fs.writeFileSync(path.join(FIXTURES, name), html, "utf8");
         console.log("test/fixtures/" + name + "  (a hypervisor release, page " + page + " of " + HYPERVISOR_PAGES + ")");
     }
+
+    fs.writeFileSync(KINDS, asSinglePage(withPosts(source, KINDS_POSTS)), "utf8");
+    console.log("test/fixtures/viewtopic-kinds.html    (what a post is, and what it is not)");
 
     fs.writeFileSync(MEMBER, asMember(source), "utf8");
     console.log("test/fixtures/viewtopic-member.html   (logged in, topic open)");

@@ -165,11 +165,17 @@ function exportSettings() {
     copyText(JSON.stringify(payload, null, 2), "Settings and data copied as JSON");
 }
 
-/* Bookmarks, history, hidden members, the Releases cache: the data the
-   script keeps for itself, gone in one step. The settings stay. */
+/* Bookmarks, history, hidden members, the Releases cache, the titles
+   the palette remembers: the data the script keeps for itself, gone in
+   one step. The settings stay.
+
+   The last of those sits on a key of its own rather than in rr:data
+   (store.js, buckets), so replacing rr:data does not reach it — it is
+   dropped by name, by the module that owns the name. */
 function clearData() {
-    if (!window.confirm("Forget bookmarks, reading history, hidden members and the Releases cache? Your settings stay.")) return;
+    if (!window.confirm("Forget bookmarks, reading history, hidden members, remembered topic titles and the Releases cache? Your settings stay.")) return;
     store.replace({});
+    forgetTopicIndex();
     toast("Data cleared");
     setTimeout(() => location.reload(), 1000);
 }
@@ -352,7 +358,7 @@ function openSettings() {
             }, ["Paste settings"]),
             el("button.rr-btn", {
                 type: "button", "data-variant": "quiet", onclick: clearData,
-                title: "Forget bookmarks, reading history, hidden members and the Releases cache",
+                title: "Forget bookmarks, reading history, hidden members, remembered topic titles and the Releases cache",
             }, ["Clear data"]),
             el("span.rr-spacer"),
             el("button.rr-btn", {
