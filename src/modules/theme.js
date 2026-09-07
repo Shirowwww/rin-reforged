@@ -33,6 +33,13 @@ function applyTheme() {
     root.setAttribute("data-rr-page", PAGE.isTopic ? "topic" : PAGE.isForum ? "forum" : PAGE.isIndex ? "index" : PAGE.isSearch ? "search" : "other");
     root.setAttribute("data-rr-icons", settings.get("modernIcons") ? "on" : "off");
     root.setAttribute("data-rr-nav", settings.get("navbar") ? "on" : "off");
+    /* Whether the board's own header is replaced, which is not the
+       same question as whether the top bar is on: with the bar off the
+       board links row and the masthead still stand in for it. Set here
+       so the original 340px header never flashes; navbar.js corrects
+       it if nothing was actually built. */
+    root.setAttribute("data-rr-header",
+        settings.get("navbar") || settings.get("boardLinks") || settings.get("masthead") ? "rr" : "board");
     root.setAttribute("data-rr-sticky", settings.get("stickyHeads") ? "on" : "off");
     root.toggleAttribute("data-rr-still", Boolean(settings.get("reduceMotion")));
 
@@ -79,7 +86,7 @@ function initTheme() {
     applyTheme();
     ensureViewport();
     settings.onChange((id) => {
-        if (["theme", "accent", "density", "fontSize", "width", "modernIcons", "navbar", "reduceMotion"].includes(id) || id === "*") {
+        if (["theme", "accent", "density", "fontSize", "width", "modernIcons", "navbar", "boardLinks", "masthead", "reduceMotion"].includes(id) || id === "*") {
             applyTheme();
         }
     });

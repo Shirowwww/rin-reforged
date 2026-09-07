@@ -121,7 +121,12 @@ html[data-rr] #pagecontent > br { display: none; }
 
 /* The original 340px-tall masthead is replaced by rr-nav; the node stays
    in the DOM because other userscripts read it, but leaves the flow. */
-html[data-rr][data-rr-nav="on"] #wrapheader { display: none; }
+/* Replaced, not merely covered: the bar, the board links row and the
+   masthead are all built out of what is in here. Keyed on whether
+   anything replaced it rather than on the bar alone — with the bar
+   off and the board links on, uncovering the original left the two
+   headers stacked. */
+html[data-rr][data-rr-header="rr"] #wrapheader { display: none; }
 
 /* ---- Tables ----------------------------------------------------- */
 

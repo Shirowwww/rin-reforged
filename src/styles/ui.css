@@ -272,6 +272,18 @@ html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-tex
     transition: background var(--rr-speed) ease, color var(--rr-speed) ease;
 }
 .rr-boardbar__link:hover { color: var(--rr-text-strong); background: var(--rr-surface-2); text-decoration: none; }
+/* Search and the settings panel, where there is no top bar to hold
+   them. They belong to the reader rather than to the board, so a
+   hairline sets them off from the board's own links — the same
+   distinction the bar draws at its own right-hand end. */
+.rr-headertools {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding-left: var(--rr-s2);
+    border-left: 1px solid var(--rr-line);
+}
+
 .rr-boardbar__flag {
     display: block;
     width: 16px;

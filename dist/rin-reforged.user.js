@@ -497,7 +497,12 @@ html[data-rr] #pagecontent > br { display: none; }
 
 /* The original 340px-tall masthead is replaced by rr-nav; the node stays
    in the DOM because other userscripts read it, but leaves the flow. */
-html[data-rr][data-rr-nav="on"] #wrapheader { display: none; }
+/* Replaced, not merely covered: the bar, the board links row and the
+   masthead are all built out of what is in here. Keyed on whether
+   anything replaced it rather than on the bar alone — with the bar
+   off and the board links on, uncovering the original left the two
+   headers stacked. */
+html[data-rr][data-rr-header="rr"] #wrapheader { display: none; }
 
 /* ---- Tables ----------------------------------------------------- */
 
@@ -2169,6 +2174,18 @@ html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-tex
     transition: background var(--rr-speed) ease, color var(--rr-speed) ease;
 }
 .rr-boardbar__link:hover { color: var(--rr-text-strong); background: var(--rr-surface-2); text-decoration: none; }
+/* Search and the settings panel, where there is no top bar to hold
+   them. They belong to the reader rather than to the board, so a
+   hairline sets them off from the board's own links — the same
+   distinction the bar draws at its own right-hand end. */
+.rr-headertools {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding-left: var(--rr-s2);
+    border-left: 1px solid var(--rr-line);
+}
+
 .rr-boardbar__flag {
     display: block;
     width: 16px;
@@ -7986,6 +8003,13 @@ function applyTheme() {
     root.setAttribute("data-rr-page", PAGE.isTopic ? "topic" : PAGE.isForum ? "forum" : PAGE.isIndex ? "index" : PAGE.isSearch ? "search" : "other");
     root.setAttribute("data-rr-icons", settings.get("modernIcons") ? "on" : "off");
     root.setAttribute("data-rr-nav", settings.get("navbar") ? "on" : "off");
+    /* Whether the board's own header is replaced, which is not the
+       same question as whether the top bar is on: with the bar off the
+       board links row and the masthead still stand in for it. Set here
+       so the original 340px header never flashes; navbar.js corrects
+       it if nothing was actually built. */
+    root.setAttribute("data-rr-header",
+        settings.get("navbar") || settings.get("boardLinks") || settings.get("masthead") ? "rr" : "board");
     root.setAttribute("data-rr-sticky", settings.get("stickyHeads") ? "on" : "off");
     root.toggleAttribute("data-rr-still", Boolean(settings.get("reduceMotion")));
 
@@ -8032,7 +8056,7 @@ function initTheme() {
     applyTheme();
     ensureViewport();
     settings.onChange((id) => {
-        if (["theme", "accent", "density", "fontSize", "width", "modernIcons", "navbar", "reduceMotion"].includes(id) || id === "*") {
+        if (["theme", "accent", "density", "fontSize", "width", "modernIcons", "navbar", "boardLinks", "masthead", "reduceMotion"].includes(id) || id === "*") {
             applyTheme();
         }
     });
@@ -8242,6 +8266,13 @@ function initIcons() {
 
     for (const img of document.querySelectorAll('img[src*="/imageset/"], img[src*="/theme/images/"]')) {
         const src = img.getAttribute("src") || "";
+
+        /* The board's face, not one of its controls. It is an <img>
+           alone inside a link to the index, which is the shape
+           controlLink() is for — so the masthead came out as a chip
+           reading "Logo", its own alt text. Invisible while the top bar
+           covered the header; the whole header, with the bar off. */
+        if (/site_logo|imageset\/logo/i.test(src)) continue;
 
         if (STATUS_RE.test(src)) { statusDot(img); continue; }
         if (/icon_topic_latest/.test(src)) { latestPostArrow(img); continue; }
@@ -9658,16 +9689,48 @@ function addSkipLink() {
     document.body.prepend(skip);
 }
 
-function initNavbar() {
-    if (!settings.get("navbar")) return;
+/**
+ * The script's own controls, for a page with no top bar to hold them.
+ *
+ * Search, the palette and the settings panel live on the bar and
+ * nowhere else, so switching the bar off switched off the only way into
+ * any of them. They are not the board's controls, so they end the board
+ * links row past a hairline, exactly the way they end the bar.
+ */
+function buildHeaderTools() {
+    const tools = el("div.rr-headertools");
 
-    const bar = buildNavbar();
-    document.body.prepend(bar);
+    if (settings.get("palette")) {
+        const search = labelled(
+            el("button.rr-icon-btn", { type: "button" }, [icon("search")]),
+            t("Search and jump (Ctrl+K)"));
+        search.addEventListener("click", () => openPalette());
+        tools.append(search);
+    }
+
+    const panel = labelled(
+        el("button.rr-icon-btn", { type: "button" }, [icon("settings")]),
+        t("RIN Reforged settings"));
+    panel.addEventListener("click", () => openSettings());
+    tools.append(panel);
+
+    return tools;
+}
+
+function initNavbar() {
+    const bar = settings.get("navbar") ? buildNavbar() : null;
+    if (bar) document.body.prepend(bar);
     addSkipLink();                 // prepended after, so it lands first
 
     const centre = document.querySelector("#wrapcentre");
     const board = settings.get("boardLinks") ? buildBoardBar() : null;
-    const banner = PAGE.isIndex && settings.get("masthead") ? buildMasthead() : null;
+    /* On the index with the bar, and on every page without one. The
+       masthead is the board's face and the bar is what carries it
+       elsewhere; with no bar, nothing else on the page says which board
+       this is, which is why the board itself prints it on every page. */
+    const banner = settings.get("masthead") && (PAGE.isIndex || !bar) ? buildMasthead() : null;
+
+    if (board && !bar) (board.querySelector(".rr-boardbar__end") || board).append(buildHeaderTools());
 
     /* The board's own art and the row of links it used to sit above,
        as one header block.
@@ -9686,6 +9749,15 @@ function initNavbar() {
     else if (centre && board) centre.prepend(board);
     else if (centre && banner) centre.prepend(banner);
 
+    /* The board's own 340px masthead is worth uncovering only where
+       nothing here replaced it — with the bar off and the board links
+       off, the reader has asked for the board's own header and should
+       get it. The attribute is set optimistically at document-start
+       (theme.js) so the original never flashes; this is the correction
+       for the page where neither was built. */
+    document.documentElement.setAttribute("data-rr-header", bar || board || banner ? "rr" : "board");
+
+    if (!bar) return;
     // The forum anchors "back to top" at <a name="top">, which now sits
     // under the sticky bar; offset it so jumps land in the right place.
     // The same padding is what lands a post under the bar rather than

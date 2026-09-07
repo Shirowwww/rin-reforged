@@ -141,6 +141,13 @@ function initIcons() {
     for (const img of document.querySelectorAll('img[src*="/imageset/"], img[src*="/theme/images/"]')) {
         const src = img.getAttribute("src") || "";
 
+        /* The board's face, not one of its controls. It is an <img>
+           alone inside a link to the index, which is the shape
+           controlLink() is for — so the masthead came out as a chip
+           reading "Logo", its own alt text. Invisible while the top bar
+           covered the header; the whole header, with the bar off. */
+        if (/site_logo|imageset\/logo/i.test(src)) continue;
+
         if (STATUS_RE.test(src)) { statusDot(img); continue; }
         if (/icon_topic_latest/.test(src)) { latestPostArrow(img); continue; }
         if (/icon_topic_attach/.test(src)) { attachmentGlyph(img); continue; }
