@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.12.0
+// @version         0.12.1
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -18441,7 +18441,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.12.0";
+const RR_VERSION = "0.12.1";
 
 function injectStyles() {
     const host = document.head || document.documentElement;
