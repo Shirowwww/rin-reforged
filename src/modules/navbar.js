@@ -1184,11 +1184,19 @@ function dropStraySeparators() {
  * needs that strip.
  */
 function tidyCrumbStrip() {
-    if (!settings.get("navbar")) return;
+    if (document.documentElement.getAttribute("data-rr-header") !== "rr") return;
 
     for (const crumbs of document.querySelectorAll("#wrapcentre p.breadcrumbs")) {
         const strip = crumbs.closest("table.tablebg");
         if (!strip) continue;
+        /* Without the bar the breadcrumb is not duplicated anywhere —
+           it is the only one on the page — so the strip has earned its
+           place whatever else is in it. */
+        if (crumbs.getClientRects().length) {
+            strip.setAttribute("data-rr-crumbstrip", "");
+            frameBoardSearch(strip.querySelector("#search-box form, form#forum-search, form#topic-search"));
+            continue;
+        }
         // A control that is still in the strip but no longer drawn does
         // not earn it a place: the board writes its search box into the
         // strip at the top of the page and the one at the bottom, and

@@ -1621,11 +1621,27 @@ html[data-rr] p.rr-pagejump a:hover {
    empty category strip and the wall of vertical space around the forum
    title are all redundant once it does. */
 html[data-rr][data-rr-nav="on"] td.row5 > p.breadcrumbs { display: none; }
-html[data-rr][data-rr-nav="on"] td.row5 {
+/* Keyed on whether this script drew the header rather than on the bar:
+   with the bar off the strip is still the board's own, sitting under a
+   header this script built, and it drew a full-width grey band with the
+   breadcrumb jammed against the search field. Only the breadcrumb's own
+   line above stays bar-only — nothing else carries it without one. */
+html[data-rr][data-rr-header="rr"] td.row5 {
     padding: var(--rr-s2) var(--rr-s3);
     border-radius: var(--rr-radius-lg);
 }
-html[data-rr][data-rr-nav="on"] td.row5:has(> #search-box) { display: flex; justify-content: flex-end; }
+html[data-rr][data-rr-header="rr"] td.row5:has(> #search-box) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--rr-s3);
+}
+/* \`:has()\` sees a search box the page has hidden, so this cell is a
+   flex row on every listing — and with the bar off the breadcrumb is
+   still in it and was pushed to the far right with the box. The two
+   take an end each; where the box is hidden the crumb is the only item
+   and lands where it belongs, at the start. */
+html[data-rr][data-rr-nav="off"] td.row5:has(> #search-box) { justify-content: space-between; }
 
 /* The strip that is left holding nothing but the board's search box
    (navbar.js, tidyCrumbStrip): on a profile or the member list there
@@ -2164,7 +2180,12 @@ html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-tex
 .rr-boardbar__link:first-child { border-radius: calc(var(--rr-radius) - 1px) 0 0 calc(var(--rr-radius) - 1px); }
 .rr-boardbar__link:last-child { border-radius: 0 calc(var(--rr-radius) - 1px) calc(var(--rr-radius) - 1px) 0; }
 .rr-boardbar__link:only-child { border-radius: calc(var(--rr-radius) - 1px); }
-.rr-boardbar__link {
+/* Carrying \`html[data-rr] a\` for the same reason .rr-langswitch__option
+   does: the generic link rule is (0,1,1) and a bare class is (0,1,0), so
+   a whole row of quiet chips came out in link red — eleven of them,
+   louder than anything under them, on the very page where the row is
+   the header. */
+html[data-rr] a.rr-boardbar__link {
     display: inline-flex;
     align-items: center;
     padding: 4px 10px;
@@ -2173,7 +2194,8 @@ html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-tex
     white-space: nowrap;
     transition: background var(--rr-speed) ease, color var(--rr-speed) ease;
 }
-.rr-boardbar__link:hover { color: var(--rr-text-strong); background: var(--rr-surface-2); text-decoration: none; }
+html[data-rr] a.rr-boardbar__link:hover { color: var(--rr-text-strong); background: var(--rr-surface-2); text-decoration: none; }
+html[data-rr] a.rr-boardbar__link:visited { color: var(--rr-muted); }
 /* Search and the settings panel, where there is no top bar to hold
    them. They belong to the reader rather than to the board, so a
    hairline sets them off from the board's own links — the same
@@ -2759,14 +2781,6 @@ html[data-rr] textarea.rr-reply__text:focus { border-color: var(--rr-accent); ou
     font-variant-numeric: tabular-nums;
 }
 
-/* Four hundred names in link red, over a legend saying red is an
-   administrator. The board sends them as bare links — it colours a
-   name by group in a topic, never here — so the red was the script's
-   own and it made the legend under it mean nothing. Ordinary text,
-   lit on hover like any other link. A name the board did colour is
-   untouched: that is an inline style and this is not. */
-html[data-rr] td[data-rr-online] a[href*="viewprofile"] { color: var(--rr-text); }
-html[data-rr] td[data-rr-online] a[href*="viewprofile"]:hover { color: var(--rr-text-strong); }
 
 /* ---- Topic action bar -------------------------------------------- */
 
@@ -9917,11 +9931,19 @@ function dropStraySeparators() {
  * needs that strip.
  */
 function tidyCrumbStrip() {
-    if (!settings.get("navbar")) return;
+    if (document.documentElement.getAttribute("data-rr-header") !== "rr") return;
 
     for (const crumbs of document.querySelectorAll("#wrapcentre p.breadcrumbs")) {
         const strip = crumbs.closest("table.tablebg");
         if (!strip) continue;
+        /* Without the bar the breadcrumb is not duplicated anywhere —
+           it is the only one on the page — so the strip has earned its
+           place whatever else is in it. */
+        if (crumbs.getClientRects().length) {
+            strip.setAttribute("data-rr-crumbstrip", "");
+            frameBoardSearch(strip.querySelector("#search-box form, form#forum-search, form#topic-search"));
+            continue;
+        }
         // A control that is still in the strip but no longer drawn does
         // not earn it a place: the board writes its search box into the
         // strip at the top of the page and the one at the bottom, and
@@ -11912,18 +11934,8 @@ function initBoardIndex() {
     // The list of who is online ends every forum and every topic too —
     // 272 names and 360px under the last post — and the fold is the
     // same fold: it finds the cell by what is in it, not by page.
-    //
-    // Marked whether or not it folds: the legend under it says red
-    // means an administrator, and the board sends these four hundred
-    // names as bare links, so painting them all link-red said every one
-    // of them was staff. The mark is what the stylesheet quiets them
-    // with; a name the board did colour keeps its colour, an inline
-    // style outranking anything here.
     const online = whoIsOnlineCell();
-    if (online) {
-        online.setAttribute("data-rr-online", "");
-        if (settings.get("foldWhoIsOnline")) collapseWhoIsOnline(online);
-    }
+    if (online && settings.get("foldWhoIsOnline")) collapseWhoIsOnline(online);
     if (!PAGE.isIndex) return;
     dropDuplicateSearch();
     tidyCategoryToggles();

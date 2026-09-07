@@ -1245,11 +1245,27 @@ html[data-rr] p.rr-pagejump a:hover {
    empty category strip and the wall of vertical space around the forum
    title are all redundant once it does. */
 html[data-rr][data-rr-nav="on"] td.row5 > p.breadcrumbs { display: none; }
-html[data-rr][data-rr-nav="on"] td.row5 {
+/* Keyed on whether this script drew the header rather than on the bar:
+   with the bar off the strip is still the board's own, sitting under a
+   header this script built, and it drew a full-width grey band with the
+   breadcrumb jammed against the search field. Only the breadcrumb's own
+   line above stays bar-only — nothing else carries it without one. */
+html[data-rr][data-rr-header="rr"] td.row5 {
     padding: var(--rr-s2) var(--rr-s3);
     border-radius: var(--rr-radius-lg);
 }
-html[data-rr][data-rr-nav="on"] td.row5:has(> #search-box) { display: flex; justify-content: flex-end; }
+html[data-rr][data-rr-header="rr"] td.row5:has(> #search-box) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--rr-s3);
+}
+/* `:has()` sees a search box the page has hidden, so this cell is a
+   flex row on every listing — and with the bar off the breadcrumb is
+   still in it and was pushed to the far right with the box. The two
+   take an end each; where the box is hidden the crumb is the only item
+   and lands where it belongs, at the start. */
+html[data-rr][data-rr-nav="off"] td.row5:has(> #search-box) { justify-content: space-between; }
 
 /* The strip that is left holding nothing but the board's search box
    (navbar.js, tidyCrumbStrip): on a profile or the member list there

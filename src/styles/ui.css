@@ -262,7 +262,12 @@ html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-tex
 .rr-boardbar__link:first-child { border-radius: calc(var(--rr-radius) - 1px) 0 0 calc(var(--rr-radius) - 1px); }
 .rr-boardbar__link:last-child { border-radius: 0 calc(var(--rr-radius) - 1px) calc(var(--rr-radius) - 1px) 0; }
 .rr-boardbar__link:only-child { border-radius: calc(var(--rr-radius) - 1px); }
-.rr-boardbar__link {
+/* Carrying `html[data-rr] a` for the same reason .rr-langswitch__option
+   does: the generic link rule is (0,1,1) and a bare class is (0,1,0), so
+   a whole row of quiet chips came out in link red — eleven of them,
+   louder than anything under them, on the very page where the row is
+   the header. */
+html[data-rr] a.rr-boardbar__link {
     display: inline-flex;
     align-items: center;
     padding: 4px 10px;
@@ -271,7 +276,8 @@ html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-tex
     white-space: nowrap;
     transition: background var(--rr-speed) ease, color var(--rr-speed) ease;
 }
-.rr-boardbar__link:hover { color: var(--rr-text-strong); background: var(--rr-surface-2); text-decoration: none; }
+html[data-rr] a.rr-boardbar__link:hover { color: var(--rr-text-strong); background: var(--rr-surface-2); text-decoration: none; }
+html[data-rr] a.rr-boardbar__link:visited { color: var(--rr-muted); }
 /* Search and the settings panel, where there is no top bar to hold
    them. They belong to the reader rather than to the board, so a
    hairline sets them off from the board's own links — the same
@@ -857,14 +863,6 @@ html[data-rr] textarea.rr-reply__text:focus { border-color: var(--rr-accent); ou
     font-variant-numeric: tabular-nums;
 }
 
-/* Four hundred names in link red, over a legend saying red is an
-   administrator. The board sends them as bare links — it colours a
-   name by group in a topic, never here — so the red was the script's
-   own and it made the legend under it mean nothing. Ordinary text,
-   lit on hover like any other link. A name the board did colour is
-   untouched: that is an inline style and this is not. */
-html[data-rr] td[data-rr-online] a[href*="viewprofile"] { color: var(--rr-text); }
-html[data-rr] td[data-rr-online] a[href*="viewprofile"]:hover { color: var(--rr-text-strong); }
 
 /* ---- Topic action bar -------------------------------------------- */
 
