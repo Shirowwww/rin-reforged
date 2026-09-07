@@ -51,8 +51,12 @@ checks this repository and offers new versions on its own.
 - **Finds the current version.** A **Releases** panel lists everything ever
   posted in a topic — release, update, repack, crack, hypervisor crack, clean
   Steam files, online fix, DLC unlocker, trainer, language pack, tool — with
-  its version, who posted it, when, and which page it is on. The highest
-  version anybody posted is called out at the top.
+  its version, who posted it, when, and which page it is on. It lists what a
+  post is *offering*: a question about a release, a link to a store page or a
+  patch note, and a pasted log are not releases, and a release that hides its
+  mirrors inside a spoiler is. The highest version anybody posted **of the
+  game** is called out at the top — not the trainer's, not the emulator's, not
+  the number in a reply that dropped a digit.
 - **Game info card** on the first post of a game thread: header art, AppID,
   developer, publisher, release date, genres and languages, with the Steam
   marketing copy folded away and lookups to SteamDB, the store, SteamCharts,

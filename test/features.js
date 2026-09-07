@@ -1548,6 +1548,53 @@ const CHECKS = [
             });
         },
     },
+    {
+        /* Two more shapes the headline has to survive, both off the
+           live board.
+
+           A companion product named right in front of its own number —
+           "I tried to update the Peacock crack to version v8.9.0" —
+           announced HITMAN 3 as being on v8.9.0 while the game was on
+           3.280. And a number on a line of its own: Black Flag's
+           twenty-two releases are 1.0.x, one reply recommends v1.6.0
+           of an overlay, and 1.6.0 beats every one of them on the
+           second digit. Both posts stay in the list; only the one line
+           is decided differently. */
+        name: "releases: a companion product's version never becomes the headline",
+        url: HV,
+        settle: 500,
+        fresh: true,
+        run: () => {
+            const control = Array.from(document.querySelectorAll(".rr-releases__tab"))
+                .find((n) => /All \d+ page/.test(n.textContent));
+            if (!control) return "no way to read the whole topic";
+            control.click();
+
+            return new Promise((resolve) => {
+                const deadline = Date.now() + 30000;
+                const look = () => {
+                    const tab = Array.from(document.querySelectorAll(".rr-releases__tab"))
+                        .find((n) => /All \d+ page|Reading /.test(n.textContent));
+                    if (!tab || tab.disabled) {
+                        if (Date.now() > deadline) return resolve("the walk never finished");
+                        return void setTimeout(look, 150);
+                    }
+                    const latest = document.querySelector(".rr-releases__latest");
+                    if (!latest) return resolve("the whole-topic read has no headline");
+                    const said = latest.textContent.trim();
+                    if (/9\.9\.0/.test(said)) return resolve("the headline is the Peacock server's version: " + said);
+                    if (/1\.9\.0/.test(said)) return resolve("the headline is on a line one post uses: " + said);
+                    if (!/1\.0\.7/.test(said)) return resolve("the headline says " + said + ", wanted v1.0.7");
+
+                    const who = Array.from(document.querySelectorAll(".rr-releases__who")).map((n) => n.textContent);
+                    if (!who.includes("peacocker")) return resolve("the cracked-server post was dropped from the list");
+                    if (!who.includes("fixmaker")) return resolve("the fix post was dropped from the list");
+                    return resolve(null);
+                };
+                setTimeout(look, 150);
+            });
+        },
+    },
 
     {
         name: "releases: a page with nothing on it still offers the rest of the topic",
@@ -4329,6 +4376,44 @@ const CHECKS = [
             if (!row) return "the torrent post was not listed, so nothing carried a version";
             const version = row.querySelector(".rr-releases__version").textContent.trim();
             return version === "v5.3.0" ? null : "version reads " + version;
+        },
+    },
+    {
+        /* The board hides download links behind its own spoiler, and a
+           spoiler's body wears `.quotecontent` — the same class a quote
+           wears. Reading a post's own words meant dropping every
+           `.quotecontent`, so every release that put its mirrors in a
+           spoiler came back carrying nothing at all. On the live board
+           that was the ElAmigos updates, the DODI repacks, the clean
+           Steam files posts and the scene release itself. */
+        name: "releases: a release that hides its links in a spoiler is still one",
+        url: KINDS,
+        run: () => {
+            const row = Array.from(document.querySelectorAll(".rr-releases__row"))
+                .find((node) => /packer/.test(node.textContent));
+            if (!row) return "a release whose only links are inside a spoiler was not listed";
+            const hosts = Array.from(row.querySelectorAll(".rr-releases__host")).map((n) => n.textContent.trim());
+            // And the host is named after itself rather than after its
+            // top-level domain: rootz.so used to read as "So".
+            if (!hosts.includes("Rootz")) return "hosts read " + (hosts.join(", ") || "(none)");
+            const version = row.querySelector(".rr-releases__version").textContent.trim();
+            // "Bonus chip worth 1.000.000 credits" is a price, not a
+            // version one million.
+            return version === "v1.0.12" ? null : "version reads " + version;
+        },
+    },
+    {
+        /* Three ways a post carries a link and offers nothing: a
+           question about somebody else's table, a store page, and a
+           pasted log. All three were rows, and the first was tagged
+           Update because it used the word "updated". */
+        name: "releases: a question, a store page and a log are not releases",
+        url: KINDS,
+        run: () => {
+            const said = Array.from(document.querySelectorAll(".rr-releases__row"))
+                .map((node) => node.textContent);
+            const wrong = said.filter((text) => /tableuser|shopper|logger/.test(text));
+            return wrong.length ? wrong.length + " row(s) that offer nothing: " + wrong[0].slice(0, 80) : null;
         },
     },
     {

@@ -115,11 +115,42 @@ const VERSION_RE_ALL = new RegExp(VERSION_RE.source, "gi");
    so the number that comes out is the number that was written. */
 const ARCHIVE_SUFFIX_RE = /\.(?:7z|zip|rar|tar|gz|bz2|iso|exe|bin|torrent|part\d*)\b/gi;
 
+/* A price is not a version.
+
+   "The 'Casino Monarchique' Chip (1.000.000)" — an in-game chip
+   denomination in a post about a DLC item not showing up — matched the
+   bare three-part form and read as version one million. Every other
+   number on that board is written with the parts free to be any
+   length; a thousands separator writes them in threes with the zeros
+   kept, which nothing versions itself as. Only the bare form is
+   checked: if a post says "v1.000.000" it means it. */
+function looksLikeAThousand(version) {
+    const parts = version.split(".");
+    if (parts.length !== 3) return false;
+    if (parts[1].length !== 3 || parts[2].length !== 3) return false;
+    return /^0/.test(parts[1]) || /^0/.test(parts[2]);
+}
+
+/* Somebody else's product, and the version is theirs.
+ *
+ * A game topic on this board runs on companion software — Peacock,
+ * Goldberg, GreenLuma, an achievement overlay — and every one of them
+ * has its own version, written the same way, in the same sentence as
+ * the game's. "I tried to update the Peacock crack to version v8.9.0"
+ * announced HITMAN 3 as being on v8.9.0; the game was on 3.280.
+ *
+ * Read backwards from the number only. Forwards is where the game's
+ * own extras are listed — "v3.190 + Peacock + ALL DLC" is the game's
+ * version followed by what comes with it — and reading that direction
+ * threw away real answers to catch this one. */
+const COMPANION_RE = /\b(?:peacock|goldberg|greenluma|smoke\s?api|cream\s?api|uplay\s?r2|achievement\s?overlay|reshade|dxvk|proton|lutris|vcredist|directx|cheat\s?engine|fling|steamtools|simple\s?mod\s?framework|winrar|7-?zip)\b/i;
+const COMPANION_WINDOW = 32;
+
 function versionsIn(said) {
     const text = String(said || "").replace(ARCHIVE_SUFFIX_RE, " ");
     const all = VERSION_RE_ALL;
     all.lastIndex = 0;
-    const found = { version: null, build: null, named: false };
+    const found = { version: null, build: null, named: false, theirs: false };
     let match;
     while ((match = all.exec(text)) !== null) {
         if (match[2]) {
@@ -128,6 +159,7 @@ function versionsIn(said) {
         }
         const number = match[1] || match[3] || match[4];
         if (!number || looksLikeDate(number)) continue;
+        if (!match[1] && !match[3] && looksLikeAThousand(number)) continue;
         /* Whether the post *called* it a version — a v in front, or
            "Title Update" / "updated to" leading in — or whether it is
            a bare three-part number read off the prose. Both go on the
@@ -138,6 +170,8 @@ function versionsIn(said) {
         if (!found.version) {
             found.version = number;
             found.named = Boolean(match[1] || match[3]);
+            found.theirs = COMPANION_RE.test(
+                text.slice(Math.max(0, match.index - COMPANION_WINDOW), match.index));
         }
     }
     /* "Updated from 1.0.5 to 1.0.7": the first version in the post is
@@ -147,6 +181,8 @@ function versionsIn(said) {
     if (step && !looksLikeDate(step[2]) && compareVersions(step[2], step[1]) > 0) {
         found.version = step[2];
         found.named = true;
+        found.theirs = COMPANION_RE.test(
+            text.slice(Math.max(0, step.index - COMPANION_WINDOW), step.index));
     }
     return found;
 }
@@ -190,9 +226,38 @@ function isOffsite(href) {
  * Scoring a post on its own words is what stops that. The clone is
  * detached, so nothing the reader sees is touched.
  */
+/* A spoiler is not a quote, and on this board it wears the same class.
+ *
+ * subsilver2 here writes a spoiler as
+ *
+ *     div.spoiler > div (the Show button) + div.quotecontent > div[hidden]
+ *
+ * — the body of a spoiler is a `.quotecontent`, exactly like the body
+ * of a quote. So the line above threw away every spoiler in the topic,
+ * and on this board the spoiler is *where the download links go*:
+ * "Download:" then a spoiler holding the mirrors. Counted across the
+ * 53 pages read for this: 779 `.quotecontent`, of which 608 are quotes
+ * and 171 are spoilers.
+ *
+ * What that cost: every ElAmigos update post, every DODI repack, the
+ * CharmKat clean-Steam-files posts and the RIDDICK releases came back
+ * with no links, no version and no words — offers zero — and none of
+ * them was ever listed. The most important rows in a game topic were
+ * the ones this could not see.
+ *
+ * A quote is a `.quotecontent` whose parent is the post; a spoiler's
+ * is a `.quotecontent` whose parent is the `.spoiler`. A quote *inside*
+ * a spoiler is still a quote and still goes.
+ */
+function isSpoilerBody(node) {
+    const parent = node.parentElement;
+    return Boolean(parent && parent.classList && parent.classList.contains("spoiler"));
+}
+
 function ownContent(body) {
     const copy = body.cloneNode(true);
     for (const quote of copy.querySelectorAll(".quotecontent, .quotetitle, blockquote, cite")) {
+        if (isSpoilerBody(quote)) continue;
         quote.remove();
     }
     spaceOutLines(copy);
@@ -295,8 +360,45 @@ const HOST_NAMES = {
 
 /* Where a release is not: a store page, a video, a screenshot, an
    article. Listing those beside the hosts would say a post is on five
-   mirrors when it is on two. */
-const NOT_HOSTS = /(?:steampowered|steamcommunity|steamdb|steamcharts|protondb|pcgamingwiki|youtube|youtu\.be|imgur|ibb\.co|prnt\.sc|gyazo|postimg|twitter|x\.com|reddit|wikipedia|discord|patreon|paypal|google\.[a-z]+|bing|duckduckgo|pcgamebenchmark|blockchair|mempool)/i;
+   mirrors when it is on two.
+
+   The publishers and the games press are in here for a second reason.
+   A link to ioi.dk's patch notes or to store.epicgames.com is the
+   commonest thing a *reply* carries — "the patch is out", "get the
+   free demo here" — and counting it as somewhere to download is what
+   put a page of conversation in the panel. */
+const NOT_HOSTS = new RegExp([
+    "steampowered|steamcommunity|steamdb|steamcharts|protondb|pcgamingwiki|pcgamebenchmark",
+    // Stores. Somewhere to buy is not somewhere to download.
+    "epicgames|gog\\.com|ubisoft\\.com|ubi\\.com|origin\\.com|ea\\.com|xbox\\.com|microsoft\\.com",
+    "playstation\\.com|nintendo\\.|humblebundle|itch\\.io|greenmangaming|fanatical|gamesplanet",
+    // Publishers and the games press, which announce rather than host.
+    "ioi\\.dk|rockstargames|bethesda|square-enix|capcom|bandainamco|sega\\.com",
+    "pcgamer|vg247|eurogamer|ign\\.com|gamespot|kotaku|rockpapershotgun|dsogaming|wccftech|videocardz",
+    // Video, pictures, talk.
+    "youtube|youtu\\.be|imgur|ibb\\.co|prnt\\.sc|gyazo|postimg|imageban|fastpic|pixhost|imgbox",
+    "lensdump|imagizer|googleusercontent|twitch|twitter|x\\.com|reddit|wikipedia|discord|patreon|paypal",
+    "google\\.[a-z]+|bing|duckduckgo|blockchair|mempool",
+].join("|"), "i");
+
+/* Suffixes where the interesting label is one further left than the
+   rule below would take: co.uk is not a name, and neither is the
+   github.io a guide is published under. */
+const HOST_SUFFIX_2 = /\.(?:co|com|net|org|gov|ac|edu)\.[a-z]{2,3}$|\.(?:github|gitlab)\.io$|\.(?:blogspot|netlify|vercel|pages|workers)\.(?:com|app|dev)$/i;
+
+/* The label a reader would call the host by.
+ *
+ * This used to strip a fixed list of suffixes and take whatever label
+ * came last, which on any domain outside that list handed back the
+ * top-level domain: rootz.so read as "So", pearcrypt.lol as "Lol",
+ * ioi.dk as "Dk", twitchdrops.app as "App". Taking the label before
+ * the public suffix instead gets the name in every one of those. */
+function hostLabel(host) {
+    const bare = host.replace(HOST_SUFFIX_2, "").replace(/\.[a-z]{2,24}$/i, "");
+    const label = bare.split(".").pop();
+    if (!label || label.length < 2) return null;
+    return label.charAt(0).toUpperCase() + label.slice(1);
+}
 
 function hostName(href) {
     let host;
@@ -304,10 +406,72 @@ function hostName(href) {
     catch { return null; }
     if (NOT_HOSTS.test(host)) return null;
     if (HOST_NAMES[host]) return HOST_NAMES[host];
-    const bare = host.replace(/\.(?:com|net|org|io|to|cc|gg|nz|co|me|ru|de|fr|is|se|sh|cm|xyz|top|link|site|online|download)$/i, "");
-    const last = bare.split(".").pop();
-    if (!last || last.length < 2) return null;
-    return last.charAt(0).toUpperCase() + last.slice(1);
+    return hostLabel(host);
+}
+
+/* ---- What a link is for -------------------------------------------
+
+   A post that offers something and a post that cites something both
+   carry links, and until this told them apart the panel could not:
+   "Yeah they don't support piracy, read their website for yourself:
+   [wiki page]" and "Here is the gofile folder with the crack" both
+   read as one off-site link and both were listed as releases.
+
+   Three answers. `null` is the board itself. "read" is somewhere to
+   read — a store, a patch note, a wiki page, a repository you would
+   browse, a paste. "file" is somewhere to get the thing, which is
+   what a release is.
+
+   The path matters as much as the host. github.com/user/project is a
+   repository to look at; github.com/user/project/releases is a
+   download page, and the same host serves both. Anything unrecognised
+   is "file": this board's uploaders use a new host every month, and
+   the safe default is to trust an unknown one rather than lose a real
+   release to a list that could never keep up. */
+const READ_PATH_RE = /\/(?:wiki|blob|commits?|issues?|pull|tree|discussions?|patch-?notes?|news|roadmaps?|changelog|faq|about|profile|memberlist)(?:\/|\?|$)/i;
+
+/* Pastes and link lists. On this board these hold real releases — a
+   rentry with the mirrors on it, a privatebin with the link list —
+   and they equally hold a log somebody pasted, a guide, a wiki dump.
+   Neither reading counts on its own, so a link to one is an offer
+   only where the post says it is offering something: a size, a
+   password, a download label, a release name. */
+const NOTE_HOST_RE = /^(?:rentry\.|privatebin|paste\.|pastebin|hastebin|justpaste|controlc|ghostbin|dpaste|termbin|textbin|telegra\.ph)/i;
+
+const CODE_HOST_RE = /^(?:github|gitlab|codeberg|sourceforge)\.(?:com|net|org|io)$/i;
+const CODE_FILE_PATH_RE = /\/(?:releases|releases\/download|raw|archive|downloads?|files)(?:\/|\?|$)/i;
+const STATIC_SITE_RE = /\.(?:github|gitlab)\.io$/i;
+
+function linkRole(href) {
+    const raw = String(href || "");
+    if (/^magnet:/i.test(raw)) return "file";
+    let url;
+    try { url = new URL(raw, location.href); }
+    catch { return null; }
+    if (!/^https?:$/.test(url.protocol)) return null;
+    const host = url.hostname.replace(/^www\./, "");
+    if (host === location.hostname || host.endsWith(".rin.ru")) return null;
+    if (NOT_HOSTS.test(host)) return "read";
+    if (STATIC_SITE_RE.test(host)) return "read";
+    if (CODE_HOST_RE.test(host)) return CODE_FILE_PATH_RE.test(url.pathname) ? "file" : "read";
+    if (READ_PATH_RE.test(url.pathname)) return "read";
+    if (NOTE_HOST_RE.test(host)) return "note";
+    return "file";
+}
+
+/* What a post says when it is handing something over: how big it is,
+   what it is called, where the link is, what the archive password is.
+   Used to decide whether a paste counts, and nowhere else — these are
+   markers of intent, not of quality. */
+const OFFER_SIZE_RE = /\b\d{1,5}(?:[.,]\d+)?\s?(?:[KMGT]i?B)\b/i;
+const OFFER_LABEL_RE = /\bdownloads?\s*(?:links?|mirrors?)?\s*[:\-–>]|\blinks?(?:\(s\))?\s*[:\-–]|\bmirrors?\s*\d*\s*[:\-–]|\bpass(?:word)?\s*[:\-–=]|\bпароль/i;
+/* A scene release name — Foo.Bar.v1.0.2-GROUP — or an archive file
+   somebody named. Either is a thing rather than a subject. */
+const OFFER_NAME_RE = /\b[A-Za-z0-9]+(?:\.[A-Za-z0-9]+){2,}-[A-Za-z0-9]{2,}\b|\b[\w.\-]{3,}\.(?:7z|rar|zip|iso|torrent)\b/i;
+
+function saysItIsHandingSomethingOver(text, attached) {
+    if (attached) return true;
+    return OFFER_SIZE_RE.test(text) || OFFER_LABEL_RE.test(text) || OFFER_NAME_RE.test(text);
 }
 
 /* Magnet links have no host at all. */
@@ -385,12 +549,62 @@ function hiddenLinks(own) {
    part of a version number rather than the end of anything: without
    that, "What person did you use cracked Peacock v8.8.1 from?" has
    its first sentence end at "v8" and reads as a statement. */
+/* `any` on its own, and not only anyone/anybody/anyway.
+
+   "Any news on the updated inventory table? doesn't work at all." is
+   the post this list was written against and the one it missed: a
+   question, tagged Update, listed as a release. Bare `any` opens more
+   questions on this board than all three compounds together — any
+   news, any word, any chance, any idea, any fix. */
 const ASKING_RE = /^(?:[^.!?]|\.(?=\S)){0,240}\?/;
-const ASKING_OPENERS = /^[\s\W]*(?:@\S*[\s,]*)*(?:is|are|was|were|does|do|did|can|could|would|will|should|has|have|any(?:one|body|way)|some(?:one|body)|how|what|where|when|why|which|who|whose|hi|hello|hey|help|please)\b/i;
+const ASKING_OPENERS = /^[\s\W]*(?:@\S*[\s,]*)*(?:is|are|was|were|does|do|did|can|could|would|will|should|has|have|any(?:one|body|way|thing)?|some(?:one|body)|how|what|where|when|why|which|who|whose|hi|hello|hey|help|please|sorry|guys?)\b/i;
 
 function looksLikeAQuestion(text) {
     const said = String(text || "").replace(/\s+/g, " ").trim();
     return ASKING_RE.test(said) && ASKING_OPENERS.test(said);
+}
+
+/* A post that says it did not work is not a post that published it.
+
+   "I tried both Peacock stable version from their Discord/GitHub and
+   also the cracked one v6 from here, and they don't seem to work" is
+   the shape: a version, a release word, one link to where the thing
+   came from, and nothing offered. Read as a release it is one; read
+   as English it is somebody stuck.
+
+   Only the failure is matched, and up to two words are allowed inside
+   it ("don't seem to work", "does not appear to run"). A release post
+   that says "if it doesn't work, verify your files" is not caught,
+   because this is only ever asked of a post that is handing nothing
+   over — no attachment, no password, no size, no release name.
+
+   The failure has to have a subject, and that is not fussiness. A
+   release post said "Doesnt work on demo" about the copy its upload
+   is for — a caveat on what it is handing over — and a bare pattern
+   read that as the poster reporting it broken and dropped the whole
+   upload. "they don't seem to work" has somebody saying so; "doesn't
+   work on demo" is a note on the label. */
+const FAILED_RE = /\b(?:(?:it|they|this|that|these|those|mine|game|crack|patch|link|files?|version|copy|method|mod|emu|setup|nothing|none|i)\s+(?:do(?:es)?\s?n[o']?t|won'?t|can'?t|isn'?t|aren'?t|still\s+do(?:es)?\s?n[o']?t)\s+(?:\w+\s+){0,2}(?:work|launch|start|run|load|open)|no\s+luck|stuck\s+(?:at|on)|keeps?\s+crashing|crashes?\s+(?:on|at|when|immediately)|fail(?:s|ed)?\s+to\s+(?:work|launch|start|run|install))\b/i;
+
+function reportsAFailure(text) {
+    return FAILED_RE.test(String(text || ""));
+}
+
+/* A post that opens by answering somebody is a reply.
+ *
+ * The board writes a mention as an anchor, so once the links are out
+ * the post begins "@, No problem, glad you got it working" — and
+ * "Response to wasdfghj" is the same thing typed by hand. Both were
+ * listed as releases on the strength of one link further down that
+ * pointed at where somebody else's upload is.
+ *
+ * Only the opening, and only where the post hands nothing over: a
+ * reply that answers "@someone" and then attaches the file is still
+ * an upload. */
+const REPLYING_RE = /^[\s\W]{0,4}(?:@|re\s*:|response\s+to\b|reply\s+to\b|quote\s*:)/i;
+
+function looksLikeAReply(text) {
+    return REPLYING_RE.test(String(text || "").replace(/\s+/g, " ").trim());
 }
 
 function describePost(post) {
@@ -405,7 +619,14 @@ function describePost(post) {
     // anchor, so those count as links too.
     const hidden = hiddenLinks(own);
     const attached = own.querySelectorAll(ATTACHED).length > 0;
-    const hosts = linkHosts(links);
+
+    /* Which of those links are somewhere to get something, and which
+       are somewhere to read. A paste sits in between and is settled by
+       whether the post sounds like it is handing something over. */
+    const roles = links.map((a) => linkRole(a.getAttribute("href")));
+    const handing = saysItIsHandingSomethingOver(text, attached);
+    const files = links.filter((_, i) => roles[i] === "file" || (roles[i] === "note" && handing));
+    const hosts = linkHosts(files);
 
     const words = RELEASE_WORDS.filter((word) => lower.includes(word));
     /* A dotted version and a Steam build id are both matched by
@@ -432,14 +653,27 @@ function describePost(post) {
         links: links.length + hidden,
         hosts,
         // Somewhere to actually get the thing. Distinct hosts rather
-        // than anchors, so eight mirrors of one upload are one offer.
+        // than anchors, so eight mirrors of one upload are one offer,
+        // and only the links that lead to a file — a store page, a
+        // patch note and a repository you would browse are not offers
+        // however many of them a reply carries.
         offers: hosts.length + hidden + (attached ? 1 : 0) + (CARRIED_RE.test(text) ? 1 : 0),
+        // Whether anything the post carries is only a citation. A post
+        // whose every link is one has not published anything.
+        cites: roles.filter((role) => role === "read").length,
+        handing,
         attached,
         asking: looksLikeAQuestion(text),
+        failed: reportsAFailure(text),
+        replying: looksLikeAReply(text),
         password: passwordIn(text),
         words,
         version: named.version,
         versionNamed: named.named,
+        // Whose version it is. A number a companion product was named
+        // right before is still shown on its row; it just never sets
+        // the headline.
+        versionTheirs: named.theirs,
         build: named.build,
         score,
         date: postDate(post),

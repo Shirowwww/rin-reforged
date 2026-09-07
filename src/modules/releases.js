@@ -49,7 +49,13 @@ const RELEASE_KINDS = [
        what it wanted out of it, is decided below. */
     { id: "online", label: "Online fix", re: /\bonline[\s-]?fix(?:\.me)?\b|\bmultiplayer\s+fix\b|\bco-?op\s+fix\b|\blan\s+fix\b|онлайн[\s-]*фикс/i },
     { id: "dlc", label: "DLC", re: /\bdlcs?\b|\bunlocker\b|\bcream\s?api\b|\bsmart\s?steam\b|длс|разблокировщик/i },
-    { id: "update", label: "Update", re: /\bupdate[ds]?\b|\bpatch(?:ed|es)?\b|\bhotfix\b|\bupgrade\b|обновлени|обнова|патч/i },
+    /* "Updated" in a release name is a build stamp, not an update.
+       FLiNG names its trainers
+       `…Plus.30.Trainer.Updated.2026.09.02-FLiNG`, and every one of
+       them came back tagged both Trainer and Update — the second one
+       saying something about the game that the post never said. A
+       date immediately after the word is what tells them apart. */
+    { id: "update", label: "Update", re: /\bupdate[ds]?\b(?!\.\d{4}\b)|\bpatch(?:ed|es)?\b|\bhotfix\b|\bupgrade\b|обновлени|обнова|патч/i },
     /* "Mirror" twice over: the word people write above a second
        download link, and the word for having uploaded something
        again. Only the second is a Reupload, and the first is how the
@@ -308,13 +314,21 @@ function describeRelease(post, page) {
        carries nothing. */
     if (!scored.offers) return null;
 
-    /* Asked, not offered.
+    /* Asked, or reported. Neither is offered.
 
        A question with a link in it clears the rule above — "does this
-       work with 3.170.1? [screenshot]" — and is still a question. A
-       post with an attachment or an archive password on it is not
-       one, whatever its first sentence looks like. */
-    if (scored.asking && !scored.password && !scored.attached) return null;
+       work with 3.170.1? [screenshot]" — and is still a question. So
+       is a post that says the thing did not work: on the two topics
+       this was read against, both shapes carried a version, a release
+       word and one link to wherever the thing came from, and both
+       were listed as releases.
+
+       A post handing something over is exempt whatever its first
+       sentence looks like: an attachment, an archive password, a
+       size, a download label, a release name. A release post is
+       allowed to open with a question and allowed to say what to do
+       when it does not work. */
+    if ((scored.asking || scored.failed || scored.replying) && !scored.password && !scored.handing) return null;
 
     /* What kind of thing it is, or a number on it.
 
@@ -335,6 +349,7 @@ function describeRelease(post, page) {
         date: postDate(post),
         version: scored.version,
         versionNamed: scored.versionNamed,
+        versionTheirs: scored.versionTheirs,
         build: scored.build,
         links: scored.links,
         hosts: scored.hosts,
@@ -448,8 +463,28 @@ function readTopicPage(found, page) {
 
    Kept for fewer topics than the row index: this holds every page of a
    topic rather than the answer. */
+/* How many topics keep their pages.
+ *
+ * Four, and a reader who looks at five game threads in an evening has
+ * paid for the first one twice. Raised to eight after measuring what a
+ * page actually costs on this board, which is the only thing that
+ * makes a walk slow.
+ *
+ * The board does not answer 429; it queues. Timed live: three requests
+ * in flight and it answers in 165 ms a page, four or five and it is
+ * briefly faster — until a burst budget runs out, and from then on it
+ * hands out one page every 1.8 seconds however many are asked for. At
+ * eight in flight the same ten pages took 5.9 seconds instead of 0.9.
+ * So there is no concurrency to win: the pace below is already at the
+ * knee, and the only way to be faster is to ask for less. That is
+ * this cache, and it is worth spending a little more of the browser's
+ * storage on.
+ *
+ * A whole topic's pages are a few tens of kilobytes — the rows plus
+ * one opening post id per page — so eight of them sit well inside what
+ * either backing store will hold. */
 const RELEASE_PAGES_KEY = "topicPages";
-const RELEASE_PAGES_TOPICS = 4;
+const RELEASE_PAGES_TOPICS = 8;
 
 function pageCache(topicId) {
     const all = store.get(RELEASE_PAGES_KEY, {});
@@ -866,23 +901,96 @@ function saysGameVersion(row) {
  */
 const VERSION_CROWD = 3;
 
+/* The line a version is on: its first part, and its first two.
+ *
+ * A game topic runs on one line and everything else in it runs on
+ * another. Black Flag's releases are 1.0.2, 1.0.4, 1.0.5, 1.0.6,
+ * 1.0.7 — seventeen rows on the line 1.0 — and one reply recommending
+ * "v1.6.0 or later" of an achievement overlay is alone on 1.6 and
+ * beats every one of them on the second digit. The first part alone
+ * cannot see that: all eighteen are on 1.
+ *
+ * So the crowd is counted twice: once on the first part, which throws
+ * out Peacock's 6.x and 8.x in a topic about a game on 3.x, and once
+ * on the first two, which throws out 1.6 in a topic on 1.0. Both are
+ * held to VERSION_CROWD, so a small topic and the first release of a
+ * genuinely new line are left alone.
+ */
+function versionLine(version, parts) {
+    return versionRank(version).slice(0, parts).join(".");
+}
+
+/** The value used by the most rows, or null if nothing leads. */
+function commonest(counts) {
+    let best = null;
+    let most = 0;
+    for (const [key, count] of counts) {
+        if (count > most) { most = count; best = key; }
+    }
+    return { key: best, count: most };
+}
+
+function countLines(rows, parts) {
+    const counts = new Map();
+    for (const row of rows) {
+        const line = versionLine(row.version, parts);
+        counts.set(line, (counts.get(line) || 0) + 1);
+    }
+    return counts;
+}
+
+/* How many of the newest rows have to agree before a line nobody else
+   is on becomes the answer. A game moving from 1.x to 2.0 is alone on
+   its line by definition, and holding the headline back for ever
+   would be worse than the noise this exists to stop; three release
+   posts about it is a thread that has moved. */
+const VERSION_RECENT = 3;
+
 function latestVersion(rows) {
     const candidates = rows.filter((row) =>
         // A bare number read off the prose is shown on its row and is
-        // not evidence about the game; see versionsIn().
-        row.version && row.versionNamed !== false && saysGameVersion(row));
+        // not evidence about the game; see versionsIn(). Nor is a
+        // number a companion product was named right before.
+        row.version && row.versionNamed !== false && !row.versionTheirs && saysGameVersion(row));
+    if (!candidates.length) return null;
 
-    const majors = new Map();
-    for (const row of candidates) {
-        const major = versionRank(row.version)[0];
-        majors.set(major, (majors.get(major) || 0) + 1);
-    }
-    let crowd = 0;
-    for (const count of majors.values()) crowd = Math.max(crowd, count);
+    /* The thread's own line, and the line its newest posts are on. The
+       second wins where enough of them agree, which is what lets a new
+       major version through without waiting for it to outnumber the
+       old one. */
+    const newest = candidates.slice()
+        .sort((a, b) => Number(b.id) - Number(a.id))
+        .slice(0, VERSION_RECENT);
+    const recent = newest.length >= VERSION_RECENT && new Set(newest.map((row) => versionLine(row.version, 1))).size === 1
+        ? versionLine(newest[0].version, 1)
+        : null;
+
+    const majors = countLines(candidates, 1);
+    const lead = commonest(majors);
+    const line = recent || (lead.count >= VERSION_CROWD ? lead.key : null);
+    const online = line === null
+        ? candidates
+        : candidates.filter((row) => versionLine(row.version, 1) === line);
+
+    /* Same question one digit down, among what is left — but only
+       where there is an answer to it.
+
+       A minor line has to hold most of the rows on its major before a
+       line with one row is read as an outlier. Black Flag's twenty-two
+       releases are all on 1.0 and the odd one out is on 1.6, which is
+       an outlier; HITMAN 3 moves its minor every release — 3.11, 3.20,
+       3.40, 3.120, 3.130, 3.150, 3.190, 3.260 — and every one of those
+       is alone on its line. Without the majority test the second topic
+       lost every version above 3.120 to a rule written for the
+       first. */
+    const minors = countLines(online, 2);
+    const minor = commonest(minors);
+    const kept = minor.count >= VERSION_CROWD && minor.count * 2 > online.length
+        ? online.filter((row) => minors.get(versionLine(row.version, 2)) > 1)
+        : online;
 
     let best = null;
-    for (const row of candidates) {
-        if (crowd >= VERSION_CROWD && majors.get(versionRank(row.version)[0]) === 1) continue;
+    for (const row of (kept.length ? kept : online)) {
         if (versionNewer(row.version, best)) best = row.version;
     }
     return best;

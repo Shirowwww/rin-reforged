@@ -46,8 +46,16 @@ function initProgress() {
     // the releases panel filling in — changes the denominator, and
     // without this the bar keeps answering the old question until the
     // next scroll.
+    /* The first reading is not taken here.
+     *
+     * `scrollHeight` makes the browser lay the whole page out before it
+     * can answer, and this runs while the stylesheet is still holding
+     * the page back — so the reader waits for a number that says
+     * "you are at the top", which is the state the bar is already
+     * drawn in. A ResizeObserver's first callback arrives after the
+     * layout the first paint needed anyway, so it costs nothing. */
     if (window.ResizeObserver) new ResizeObserver(() => update()).observe(document.documentElement);
-    update();
+    else requestAnimationFrame(update);
 }
 
 /* The two floating buttons.
@@ -74,7 +82,9 @@ function initJumpButtons() {
         "Back to top (g then t)");
     up.addEventListener("click", () => window.scrollTo({ top: 0, behavior: scrollBehaviour() }));
 
-    const down = tip(el("button", { type: "button" }, [icon("arrowDown")]),
+    // Hidden until the first reading says otherwise, so a page with
+    // nothing below the fold never shows it at all.
+    const down = tip(el("button", { type: "button", hidden: true }, [icon("arrowDown")]),
         "Jump to the end (g then b)");
     down.addEventListener("click", () => window.scrollTo({ top: document.body.scrollHeight, behavior: scrollBehaviour() }));
 
@@ -87,7 +97,11 @@ function initJumpButtons() {
         down.hidden = window.scrollY > doc.scrollHeight - doc.clientHeight - 400;
     };
     on(window, "scroll", update, { passive: true });
-    update();
+    // Same reason as the progress bar: reading the page height here
+    // costs a full layout inside the gate that holds the page back,
+    // and the answer only decides whether a button in the corner is
+    // drawn. One frame later it is free.
+    requestAnimationFrame(update);
 }
 
 /** The board renders a donation overlay on every visit until its cookie

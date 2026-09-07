@@ -14,9 +14,16 @@
    and visible to the finder, which reads the DOM.
    ------------------------------------------------------------------ */
 
-/** Quote blocks in post content, outermost first. */
+/** Quote blocks in post content, outermost first.
+
+    A spoiler's body wears `.quotecontent` too on this board — the
+    board reuses the class — so a spoiler somebody opened was measured
+    as a quote and folded behind a "show more" of its own, one click
+    after they had just asked to see it. A spoiler is the board's own
+    fold and does not need a second one. */
 function quoteBlocks(root = document) {
-    return Array.from(root.querySelectorAll(".postbody .quotecontent, .postbody blockquote"));
+    return Array.from(root.querySelectorAll(".postbody .quotecontent, .postbody blockquote"))
+        .filter((node) => !(node.parentElement && node.parentElement.classList.contains("spoiler")));
 }
 
 /**
