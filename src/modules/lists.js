@@ -366,6 +366,48 @@ function dedupeSearchBoxes() {
 }
 
 /**
+ * Open and close the prefix menu.
+ *
+ * The same manners as the search box's own options popover: outside
+ * click and Escape close it, Escape puts focus back on the trigger,
+ * and the down arrow opens it from the field without leaving the
+ * keyboard. Choosing a prefix closes it — unlike the search options,
+ * where a choice is a setting rather than an answer, one prefix is the
+ * whole question the menu asks.
+ */
+function wireTagMenu(frame, trigger, field) {
+    const pop = frame.querySelector(".rr-toolbar__tagpop");
+
+    const close = () => {
+        pop.hidden = true;
+        trigger.setAttribute("aria-expanded", "false");
+        document.removeEventListener("mousedown", onOutside, true);
+        document.removeEventListener("keydown", onKey, true);
+    };
+    const onOutside = (event) => { if (!frame.contains(event.target)) close(); };
+    const onKey = (event) => { if (event.key === "Escape") { close(); trigger.focus(); } };
+    const open = () => {
+        if (!pop.hidden) return;
+        pop.hidden = false;
+        trigger.setAttribute("aria-expanded", "true");
+        document.addEventListener("mousedown", onOutside, true);
+        document.addEventListener("keydown", onKey, true);
+    };
+
+    trigger.addEventListener("click", () => { if (pop.hidden) open(); else close(); });
+    pop.addEventListener("click", (event) => { if (event.target.closest("button")) close(); });
+    if (field) {
+        field.addEventListener("keydown", (event) => {
+            if (event.key !== "ArrowDown" || event.altKey || event.ctrlKey || event.metaKey) return;
+            event.preventDefault();
+            open();
+            const first = pop.querySelector('button[aria-pressed="true"]') || pop.querySelector("button");
+            if (first) first.focus();
+        });
+    }
+}
+
+/**
  * `rich` builds the whole bar: filter box, prefix chips, count. Without
  * it the bar is only a home for the board's own refine box — see
  * FILTER_MIN_ROWS.
@@ -390,7 +432,12 @@ function buildToolbar(entries, prefixes, rich) {
             : t("{a} of {b} on this page", { a: shown, b: entries.length });
     };
 
-    const input = el("input", {
+    /* Classed, and the class matters: the board's own text fields get a
+       22em floor so a size="25" from 2003 is not cramped on a fluid
+       frame, and that rule reaches any field without an `rr-` class.
+       This one is the script's own and sizes itself — unclassed it
+       refused to shrink, and pushed the prefix trigger off a phone. */
+    const input = el("input.rr-toolbar__input", {
         type: "search",
         placeholder: t("Filter this page by title"),
         "aria-label": t("Filter topics on this page"),
@@ -400,17 +447,46 @@ function buildToolbar(entries, prefixes, rich) {
         if (event.key === "Escape") { input.value = ""; state.text = ""; apply(); }
     });
 
+    /* Nine coloured chips side by side made the densest line on the
+       page out of the least important thing on it, and put a small
+       rainbow above a listing whose own colours are the point. The
+       prefixes move behind one trigger in the filter box; it carries
+       the name of the one that is on, so nothing is hidden that was
+       being read. */
     const tagRow = el("div.rr-toolbar__tags");
+    const tagName = el("span.rr-toolbar__tagname", { "aria-hidden": "true" });
+    const tagBtn = el("button.rr-toolbar__tagbtn", { type: "button", "aria-expanded": "false" },
+        [tagName, icon("chevronD", 12)]);
+
+    const syncTags = () => {
+        let on = null;
+        for (const button of tagRow.children) {
+            const pressed = button.dataset.value === state.tag;
+            button.setAttribute("aria-pressed", pressed ? "true" : "false");
+            if (pressed) on = button;
+        }
+        tagName.textContent = on ? on.textContent : t("Tag");
+        tagBtn.toggleAttribute("data-rr-active", Boolean(on));
+        // The trigger wears the colour of the prefix it is holding, so
+        // the one chip that is on is still legible as itself.
+        if (on && on.dataset.tag) tagBtn.setAttribute("data-tag", on.dataset.tag);
+        else tagBtn.removeAttribute("data-tag");
+        labelled(tagBtn, on
+            ? t("Showing only {x} — pick another or clear", { x: on.textContent })
+            : t("Show only one kind of topic"));
+    };
+
     const setTag = (tag) => {
         state.tag = state.tag === tag ? null : tag;
-        for (const button of tagRow.children) {
-            button.setAttribute("aria-pressed", button.dataset.value === state.tag ? "true" : "false");
-        }
+        syncTags();
         apply();
     };
     /* Everything on this page with something new in it. The board says
        so with a dot beside the row and gives no way to ask for only
-       those. */
+       those. The one filter worth a permanent chip: it is the question
+       most readers arrive with, and it is on or off rather than one of
+       nine. */
+    const quick = el("div.rr-toolbar__quick");
     const unreadCount = entries.filter((entry) => entry.unread).length;
     if (unreadCount && unreadCount < entries.length) {
         const unreadChip = el("button.rr-tag.rr-tag--unread", {
@@ -423,7 +499,7 @@ function buildToolbar(entries, prefixes, rich) {
             unreadChip.setAttribute("aria-pressed", state.unread ? "true" : "false");
             apply();
         });
-        tagRow.append(unreadChip);
+        quick.append(unreadChip);
     }
 
     for (const [name, kind] of prefixes) {
@@ -440,20 +516,45 @@ function buildToolbar(entries, prefixes, rich) {
 
     const bar = el("div.rr-toolbar", { role: "search" });
     if (rich) {
-        bar.append(el("div.rr-toolbar__filter", {}, [icon("filter"), input]));
+        const frame = el("div.rr-toolbar__filter", {}, [icon("filter"), input]);
         // One chip filters every row down to every row. Chips are worth
-        // their line only once there is a choice to make between them.
-        if (tagRow.children.length > 1) bar.append(tagRow);
+        // their trigger only once there is a choice to make between them.
+        if (tagRow.children.length > 1) {
+            frame.append(tagBtn, el("div.rr-toolbar__tagpop", {
+                role: "group", "aria-label": t("Show only one kind of topic"), hidden: true,
+            }, [tagRow]));
+            wireTagMenu(frame, tagBtn, input);
+            syncTags();
+        }
+        bar.append(frame);
+        if (quick.children.length) bar.append(quick);
         bar.append(count);
     }
 
-    // The board's own "Search this forum" box sits in a strip of its
-    // own above the listing. It belongs next to the filter, so it moves
-    // here rather than being duplicated.
+    /* The board's own "Search this forum" box sat here, beside the
+       filter, because the strip it came in cost a band of its own. The
+       palette now aims a search at this forum without leaving the
+       keyboard and says so on its trigger, which left three search
+       boxes on one screen answering the same question. This one is the
+       one that goes — except with the palette turned off, when it is
+       the only one left, and on a results page, where the same box is
+       not a third way to search a room but the only way to narrow a
+       set of results the palette knows nothing about. */
     const boardSearch = document.querySelector("#search-box form, #topic-search");
     if (boardSearch) {
         const strip = boardSearch.closest("td.row5") || boardSearch.closest("table");
-        bar.append(el("div.rr-toolbar__board", {}, [adoptBoardSearch(boardSearch)]));
+        const spare = settings.get("palette") && !PAGE.isSearch;
+        // Moved out of the strip so the band can go, and parked on the
+        // body rather than removed: CS.RIN.RU Enhanced looks for this
+        // form, and a bar with nothing to draw is never placed, so the
+        // bar is not a safe place to park it.
+        if (spare) {
+            boardSearch.setAttribute("data-rr-dupe", "");
+            boardSearch.style.display = "none";
+            document.body.append(boardSearch);
+        } else {
+            bar.append(el("div.rr-toolbar__board", {}, [adoptBoardSearch(boardSearch)]));
+        }
         if (strip && !strip.textContent.trim()) {
             const holder = strip.closest("table");
             if (holder) holder.style.display = "none";
@@ -495,6 +596,11 @@ function buildForumBar() {
        lifted here in whichever language the board printed it. */
     tidyBoardPagerStrip(bar, bar);
 
+    // Subscribe forum and Mark topics read, which the board gives a
+    // band of their own. Only ever drawn for a member, so on a logged
+    // out page this finds nothing and the bar is what it was.
+    adoptForumActions(bar);
+
     /* "Go to page 1, 2, 3, 4, 5 … 137  Next", right-aligned above the
        table: the same journey as the pager in the bar, in a row of its
        own. The topic page hides its copy above the posts and keeps the
@@ -514,6 +620,71 @@ function buildForumBar() {
     bar.prepend(heading);
 
     return bar;
+}
+
+/**
+ * Subscribe forum and Mark topics read.
+ *
+ * The two things a member can do to a forum rather than to a topic in
+ * it. subsilver2 prints them for members only, in cells of their own
+ * above the listing and again below it — which is a whole band of the
+ * screen, between the bar and the first topic, for two links pressed
+ * once each. They are forum actions; they join the others in the bar
+ * that already carries the forum's name, in the words the board gave
+ * them ("Unsubscribe forum" when you already are).
+ *
+ * The same move the topic page makes with Subscribe, Bookmark and
+ * E-mail friend, so the two pages answer the same way.
+ */
+const FORUM_ACTION = 'a[href*="watch=forum"], a[href*="mark=topics"]';
+
+/* Where the board puts them: a `tr.nav` of two cells — one link at each
+   end — nested inside the `td.cat` that caps the listing table, plus
+   the same row again under it. The cells themselves carry no class, so
+   the row is what identifies them; `td.nav` and `td.gensmall` are the
+   shapes the strip takes elsewhere on the board. */
+const FORUM_ACTION_CELLS = "#wrapcentre tr.nav > td, #wrapcentre td.nav, #wrapcentre td.gensmall";
+
+function adoptForumActions(bar) {
+    const cells = Array.from(document.querySelectorAll(FORUM_ACTION_CELLS))
+        .filter((cell) => cell.querySelector(FORUM_ACTION) && !cell.closest(".rr-topicbar"));
+    if (!cells.length) return;
+
+    // Both copies are walked, because the board does not always print
+    // the same pair top and bottom; the first of each kind wins.
+    const seen = new Set();
+    const actions = [];
+    for (const cell of cells) {
+        for (const link of cell.querySelectorAll(FORUM_ACTION)) {
+            const kind = /mark=topics/.test(link.getAttribute("href") || "") ? "mark" : "watch";
+            if (seen.has(kind)) continue;
+            const label = link.textContent.replace(/\s+/g, " ").trim() || link.getAttribute("title") || "";
+            if (!label) continue;
+            seen.add(kind);
+            link.classList.add("rr-btn", "rr-forumnav");
+            link.setAttribute("data-variant", "quiet");
+            link.setAttribute("title", label);
+            actions.push(link);
+        }
+    }
+    if (!actions.length) return;
+
+    bar.append(el("span.rr-topicbar__spacer"));
+    for (const link of actions) bar.append(link);
+
+    /* The cells go, and so does what held them. The band is a `td.cat`
+       wrapping a table of two cells, and markShapes reads that table
+       as a strip of controls and gives the row a surface of its own —
+       so emptying the cells is not enough: with the links gone the
+       whole row has to go, or the band stays exactly where it was with
+       nothing in it. */
+    for (const cell of cells) {
+        hideWithEmptyRow(cell);
+        const cat = cell.closest("td.cat");
+        if (!cat || cat.querySelector("a[href], input, select, h4")) continue;
+        const row = cat.parentElement;
+        if (row && row.tagName === "TR") row.style.display = "none";
+    }
 }
 
 /* ---- Last post ----------------------------------------------------- */

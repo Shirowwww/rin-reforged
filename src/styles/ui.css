@@ -670,6 +670,9 @@ html[data-rr] [data-rr-tip]:focus-visible::after,
    Scoped to the wrapper's own children, so this costs nothing on the
    ancestors of a page full of them. */
 html[data-rr] [data-rr-tip]:has(> :focus-visible)::after { display: block; }
+/* A control that has opened something says what it does with the thing
+   it opened. The label would land on top of it. */
+html[data-rr] [data-rr-tip][aria-expanded="true"]::after { display: none; }
 /* Near the right edge the label would still push the page sideways
    while it is up, so those hang off their own right edge instead. The
    last control in the top bar is against the window; so is the corner
@@ -747,13 +750,17 @@ span.rr-tag { cursor: default; }
     background: color-mix(in srgb, var(--rr-tag-ink) 15%, transparent);
     border-color: color-mix(in srgb, var(--rr-tag-ink) 32%, transparent);
 }
-.rr-tag[data-tag="info"]      { --rr-tag-ink: var(--rr-tag-info); }
-.rr-tag[data-tag="release"]   { --rr-tag-ink: var(--rr-tag-release); }
-.rr-tag[data-tag="problem"]   { --rr-tag-ink: var(--rr-tag-problem); }
-.rr-tag[data-tag="important"] { --rr-tag-ink: var(--rr-tag-important); }
-.rr-tag[data-tag="tutorial"]  { --rr-tag-ink: var(--rr-tag-tutorial); }
-.rr-tag[data-tag="request"]   { --rr-tag-ink: var(--rr-tag-request); }
-.rr-tag[data-tag="scs"]       { --rr-tag-ink: var(--rr-tag-scs); }
+/* Declared on the attribute rather than on `.rr-tag`, because the
+   filter's trigger wears the ink of the prefix it is holding and is
+   not a tag. Nothing is painted here — only the token is named — so
+   the pair of rules above stays the only thing that draws a chip. */
+[data-tag="info"]      { --rr-tag-ink: var(--rr-tag-info); }
+[data-tag="release"]   { --rr-tag-ink: var(--rr-tag-release); }
+[data-tag="problem"]   { --rr-tag-ink: var(--rr-tag-problem); }
+[data-tag="important"] { --rr-tag-ink: var(--rr-tag-important); }
+[data-tag="tutorial"]  { --rr-tag-ink: var(--rr-tag-tutorial); }
+[data-tag="request"]   { --rr-tag-ink: var(--rr-tag-request); }
+[data-tag="scs"]       { --rr-tag-ink: var(--rr-tag-scs); }
 
 /* ---- Toolbar above topic lists ---------------------------------- */
 
@@ -769,13 +776,14 @@ span.rr-tag { cursor: default; }
     border-radius: var(--rr-radius-lg);
 }
 .rr-toolbar__filter {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 6px;
     flex: 1 1 220px;
     min-width: 180px;
     height: 34px;
-    padding: 0 12px;
+    padding: 0 4px 0 12px;
     background: var(--rr-bg-sunken);
     border: 1px solid var(--rr-line);
     border-radius: var(--rr-radius);
@@ -803,8 +811,51 @@ span.rr-tag { cursor: default; }
     border-left: 1px solid var(--rr-line);
 }
 .rr-toolbar__board .rr-search { min-width: 200px; }
+.rr-toolbar__quick { display: flex; gap: 4px; flex-wrap: wrap; flex: none; }
+.rr-toolbar__quick .rr-tag { margin: 0; opacity: .55; }
+.rr-toolbar__quick .rr-tag[aria-pressed="true"] { opacity: 1; }
+
+/* The prefixes, behind one trigger at the end of the filter box. The
+   hairline is the whole separation it needs: it is inside the control
+   it narrows, not a control of its own. */
+.rr-toolbar__tagbtn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: none;
+    height: 26px;
+    padding: 0 6px 0 10px;
+    background: none;
+    border: 0;
+    border-left: 1px solid var(--rr-line);
+    border-radius: 0;
+    color: var(--rr-faint);
+    font: 500 var(--rr-fs-xs) / 1 var(--rr-font);
+    cursor: pointer;
+}
+.rr-toolbar__tagbtn:hover { color: var(--rr-text); }
+.rr-toolbar__tagbtn svg { width: 12px; height: 12px; flex: none; opacity: .7; }
+.rr-toolbar__tagbtn[data-rr-active] {
+    color: color-mix(in srgb, var(--rr-tag-ink, var(--rr-text)) 84%, var(--rr-text-strong));
+}
+.rr-toolbar__tagbtn[aria-expanded="true"] { color: var(--rr-text); }
+
+.rr-toolbar__tagpop {
+    position: absolute;
+    z-index: 950;
+    top: calc(100% + 6px);
+    right: -1px;
+    max-width: min(320px, 80vw);
+    padding: 10px;
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius);
+    box-shadow: var(--rr-shadow-pop);
+}
+.rr-toolbar__tagpop[hidden] { display: none; }
 .rr-toolbar__tags { display: flex; gap: 4px; flex-wrap: wrap; }
-.rr-toolbar__tags .rr-tag { margin: 0; opacity: .5; }
+.rr-toolbar__tags .rr-tag { margin: 0; opacity: .62; }
+.rr-toolbar__tags .rr-tag:hover,
 .rr-toolbar__tags .rr-tag[aria-pressed="true"] { opacity: 1; }
 
 tr[data-rr-hidden] { display: none; }
@@ -933,6 +984,21 @@ html[data-rr] textarea.rr-reply__text:focus { border-color: var(--rr-accent); ou
 .rr-topicbar__count { color: var(--rr-muted); font-size: var(--rr-fs-sm); }
 .rr-topicbar__search .rr-search { min-width: 210px; }
 .rr-topicbar .rr-pager { margin: 0; }
+
+/* Acting on the forum or the topic rather than on what is in it:
+   subscribing, bookmarking, marking read. Once each, at the far end of
+   the bar, in the same quiet the topic page gives leaving a topic.
+
+   `html[data-rr] a.nav` colours these accent — they arrive as the
+   board's own nav links and keep the class — and it outranks the quiet
+   variant by a whole class, so it takes this much selector to say that
+   a link adopted into the bar is a control in the bar now. */
+html[data-rr] a.rr-forumnav {
+    color: var(--rr-muted);
+    font-weight: 500;
+    font-size: var(--rr-fs-xs);
+}
+html[data-rr] a.rr-forumnav:hover { color: var(--rr-text); text-decoration: none; }
 
 /* Leaving this topic is quieter than acting on it. */
 .rr-topicbar__row[data-rr-row="away"] .rr-btn {
@@ -1384,6 +1450,71 @@ html[data-rr] button.rr-palette__scope { max-width: 170px; height: 28px; }
     color: var(--rr-text);
 }
 .rr-palette__pop[hidden] { display: none; }
+/* The rooms are a column rather than a row of pills: twenty of them
+   with subforums indented under their board is a tree, and a tree that
+   wraps is a wall. It scrolls at about eight rows, which is where the
+   popover stops being taller than the palette it hangs off. */
+.rr-palette__poprow { display: flex; flex-direction: column; gap: var(--rr-s1); }
+.rr-palette__rooms {
+    max-height: 208px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 2px;
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+}
+html[data-rr] button.rr-palette__room {
+    display: block;
+    /* Twenty rows in a scroller that stops at 208px: as flex items
+       they shared the height out between them and drew twenty 10px
+       slivers of text. The list scrolls; a row is the height it
+       needs. */
+    flex: none;
+    width: 100%;
+    padding: 5px 8px;
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    color: var(--rr-text);
+    cursor: pointer;
+    font: var(--rr-fs-xs) / 1.4 var(--rr-font);
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+html[data-rr] button.rr-palette__room:hover { background: var(--rr-surface-3); color: var(--rr-text-strong); }
+html[data-rr] button.rr-palette__room[aria-pressed="true"] {
+    background: var(--rr-surface-3);
+    color: var(--rr-text-strong);
+    font-weight: 600;
+}
+/* A category holds no topics of its own, so it is a heading and not
+   somewhere a search can be sent. */
+.rr-palette__roomcat {
+    flex: none;
+    padding: var(--rr-s2) 8px 2px;
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
+    color: var(--rr-faint);
+    letter-spacing: .03em;
+}
+html[data-rr] input.rr-palette__author {
+    flex: 1 1 140px;
+    min-width: 0;
+    max-width: 190px;
+    height: 26px;
+    padding: 0 8px;
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+    color: var(--rr-text-strong);
+    font: var(--rr-fs-xs) / 1 var(--rr-font);
+    box-sizing: border-box;
+}
+html[data-rr] input.rr-palette__author:focus { border-color: var(--rr-accent); outline: none; }
 /* The board's field rules colour a focused border accent, and four
    :not()s make that rule specific enough to win here. The palette's
    field is focused from the moment it opens, so the divider under it

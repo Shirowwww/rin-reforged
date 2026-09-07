@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.12.2
+// @version         0.13.0
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -2591,6 +2591,9 @@ html[data-rr] [data-rr-tip]:focus-visible::after,
    Scoped to the wrapper's own children, so this costs nothing on the
    ancestors of a page full of them. */
 html[data-rr] [data-rr-tip]:has(> :focus-visible)::after { display: block; }
+/* A control that has opened something says what it does with the thing
+   it opened. The label would land on top of it. */
+html[data-rr] [data-rr-tip][aria-expanded="true"]::after { display: none; }
 /* Near the right edge the label would still push the page sideways
    while it is up, so those hang off their own right edge instead. The
    last control in the top bar is against the window; so is the corner
@@ -2668,13 +2671,17 @@ span.rr-tag { cursor: default; }
     background: color-mix(in srgb, var(--rr-tag-ink) 15%, transparent);
     border-color: color-mix(in srgb, var(--rr-tag-ink) 32%, transparent);
 }
-.rr-tag[data-tag="info"]      { --rr-tag-ink: var(--rr-tag-info); }
-.rr-tag[data-tag="release"]   { --rr-tag-ink: var(--rr-tag-release); }
-.rr-tag[data-tag="problem"]   { --rr-tag-ink: var(--rr-tag-problem); }
-.rr-tag[data-tag="important"] { --rr-tag-ink: var(--rr-tag-important); }
-.rr-tag[data-tag="tutorial"]  { --rr-tag-ink: var(--rr-tag-tutorial); }
-.rr-tag[data-tag="request"]   { --rr-tag-ink: var(--rr-tag-request); }
-.rr-tag[data-tag="scs"]       { --rr-tag-ink: var(--rr-tag-scs); }
+/* Declared on the attribute rather than on \`.rr-tag\`, because the
+   filter's trigger wears the ink of the prefix it is holding and is
+   not a tag. Nothing is painted here — only the token is named — so
+   the pair of rules above stays the only thing that draws a chip. */
+[data-tag="info"]      { --rr-tag-ink: var(--rr-tag-info); }
+[data-tag="release"]   { --rr-tag-ink: var(--rr-tag-release); }
+[data-tag="problem"]   { --rr-tag-ink: var(--rr-tag-problem); }
+[data-tag="important"] { --rr-tag-ink: var(--rr-tag-important); }
+[data-tag="tutorial"]  { --rr-tag-ink: var(--rr-tag-tutorial); }
+[data-tag="request"]   { --rr-tag-ink: var(--rr-tag-request); }
+[data-tag="scs"]       { --rr-tag-ink: var(--rr-tag-scs); }
 
 /* ---- Toolbar above topic lists ---------------------------------- */
 
@@ -2690,13 +2697,14 @@ span.rr-tag { cursor: default; }
     border-radius: var(--rr-radius-lg);
 }
 .rr-toolbar__filter {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 6px;
     flex: 1 1 220px;
     min-width: 180px;
     height: 34px;
-    padding: 0 12px;
+    padding: 0 4px 0 12px;
     background: var(--rr-bg-sunken);
     border: 1px solid var(--rr-line);
     border-radius: var(--rr-radius);
@@ -2724,8 +2732,51 @@ span.rr-tag { cursor: default; }
     border-left: 1px solid var(--rr-line);
 }
 .rr-toolbar__board .rr-search { min-width: 200px; }
+.rr-toolbar__quick { display: flex; gap: 4px; flex-wrap: wrap; flex: none; }
+.rr-toolbar__quick .rr-tag { margin: 0; opacity: .55; }
+.rr-toolbar__quick .rr-tag[aria-pressed="true"] { opacity: 1; }
+
+/* The prefixes, behind one trigger at the end of the filter box. The
+   hairline is the whole separation it needs: it is inside the control
+   it narrows, not a control of its own. */
+.rr-toolbar__tagbtn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: none;
+    height: 26px;
+    padding: 0 6px 0 10px;
+    background: none;
+    border: 0;
+    border-left: 1px solid var(--rr-line);
+    border-radius: 0;
+    color: var(--rr-faint);
+    font: 500 var(--rr-fs-xs) / 1 var(--rr-font);
+    cursor: pointer;
+}
+.rr-toolbar__tagbtn:hover { color: var(--rr-text); }
+.rr-toolbar__tagbtn svg { width: 12px; height: 12px; flex: none; opacity: .7; }
+.rr-toolbar__tagbtn[data-rr-active] {
+    color: color-mix(in srgb, var(--rr-tag-ink, var(--rr-text)) 84%, var(--rr-text-strong));
+}
+.rr-toolbar__tagbtn[aria-expanded="true"] { color: var(--rr-text); }
+
+.rr-toolbar__tagpop {
+    position: absolute;
+    z-index: 950;
+    top: calc(100% + 6px);
+    right: -1px;
+    max-width: min(320px, 80vw);
+    padding: 10px;
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius);
+    box-shadow: var(--rr-shadow-pop);
+}
+.rr-toolbar__tagpop[hidden] { display: none; }
 .rr-toolbar__tags { display: flex; gap: 4px; flex-wrap: wrap; }
-.rr-toolbar__tags .rr-tag { margin: 0; opacity: .5; }
+.rr-toolbar__tags .rr-tag { margin: 0; opacity: .62; }
+.rr-toolbar__tags .rr-tag:hover,
 .rr-toolbar__tags .rr-tag[aria-pressed="true"] { opacity: 1; }
 
 tr[data-rr-hidden] { display: none; }
@@ -2854,6 +2905,21 @@ html[data-rr] textarea.rr-reply__text:focus { border-color: var(--rr-accent); ou
 .rr-topicbar__count { color: var(--rr-muted); font-size: var(--rr-fs-sm); }
 .rr-topicbar__search .rr-search { min-width: 210px; }
 .rr-topicbar .rr-pager { margin: 0; }
+
+/* Acting on the forum or the topic rather than on what is in it:
+   subscribing, bookmarking, marking read. Once each, at the far end of
+   the bar, in the same quiet the topic page gives leaving a topic.
+
+   \`html[data-rr] a.nav\` colours these accent — they arrive as the
+   board's own nav links and keep the class — and it outranks the quiet
+   variant by a whole class, so it takes this much selector to say that
+   a link adopted into the bar is a control in the bar now. */
+html[data-rr] a.rr-forumnav {
+    color: var(--rr-muted);
+    font-weight: 500;
+    font-size: var(--rr-fs-xs);
+}
+html[data-rr] a.rr-forumnav:hover { color: var(--rr-text); text-decoration: none; }
 
 /* Leaving this topic is quieter than acting on it. */
 .rr-topicbar__row[data-rr-row="away"] .rr-btn {
@@ -3305,6 +3371,71 @@ html[data-rr] button.rr-palette__scope { max-width: 170px; height: 28px; }
     color: var(--rr-text);
 }
 .rr-palette__pop[hidden] { display: none; }
+/* The rooms are a column rather than a row of pills: twenty of them
+   with subforums indented under their board is a tree, and a tree that
+   wraps is a wall. It scrolls at about eight rows, which is where the
+   popover stops being taller than the palette it hangs off. */
+.rr-palette__poprow { display: flex; flex-direction: column; gap: var(--rr-s1); }
+.rr-palette__rooms {
+    max-height: 208px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 2px;
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+}
+html[data-rr] button.rr-palette__room {
+    display: block;
+    /* Twenty rows in a scroller that stops at 208px: as flex items
+       they shared the height out between them and drew twenty 10px
+       slivers of text. The list scrolls; a row is the height it
+       needs. */
+    flex: none;
+    width: 100%;
+    padding: 5px 8px;
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    color: var(--rr-text);
+    cursor: pointer;
+    font: var(--rr-fs-xs) / 1.4 var(--rr-font);
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+html[data-rr] button.rr-palette__room:hover { background: var(--rr-surface-3); color: var(--rr-text-strong); }
+html[data-rr] button.rr-palette__room[aria-pressed="true"] {
+    background: var(--rr-surface-3);
+    color: var(--rr-text-strong);
+    font-weight: 600;
+}
+/* A category holds no topics of its own, so it is a heading and not
+   somewhere a search can be sent. */
+.rr-palette__roomcat {
+    flex: none;
+    padding: var(--rr-s2) 8px 2px;
+    font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
+    color: var(--rr-faint);
+    letter-spacing: .03em;
+}
+html[data-rr] input.rr-palette__author {
+    flex: 1 1 140px;
+    min-width: 0;
+    max-width: 190px;
+    height: 26px;
+    padding: 0 8px;
+    background: var(--rr-surface-2);
+    border: 1px solid var(--rr-line);
+    border-radius: var(--rr-radius);
+    color: var(--rr-text-strong);
+    font: var(--rr-fs-xs) / 1 var(--rr-font);
+    box-sizing: border-box;
+}
+html[data-rr] input.rr-palette__author:focus { border-color: var(--rr-accent); outline: none; }
 /* The board's field rules colour a focused border accent, and four
    :not()s make that rule specific enough to win here. The palette's
    field is focused from the moment it opens, so the divider under it
@@ -4491,7 +4622,13 @@ html[data-rr] .ccopen:hover {
    the way to gone, and Info and Tutorial in particular stopped being
    legible as words. They rest higher on Paper and land in the same
    place visually. */
-html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
+html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag,
+html[data-rr][data-rr-theme="paper"] .rr-toolbar__quick .rr-tag { opacity: .78; }
+/* The chip that is on is on in every theme: this outranks the rest
+   state above, which it did not before. */
+html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag:hover,
+html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag[aria-pressed="true"],
+html[data-rr][data-rr-theme="paper"] .rr-toolbar__quick .rr-tag[aria-pressed="true"] { opacity: 1; }
 
 
 /* ---- The board's masthead ---------------------------------------- */
@@ -5135,7 +5272,8 @@ html[data-rr] .rr-preview__wait { color: var(--rr-faint); font-size: var(--rr-fs
 
     /* The prefix chips are a filter here, not a label on a title: 18px
        is a fine badge and a poor thing to hit with a thumb. */
-    html[data-rr] .rr-toolbar__tags .rr-tag { height: 26px; padding: 0 10px; }
+    html[data-rr] .rr-toolbar__tags .rr-tag,
+    html[data-rr] .rr-toolbar__quick .rr-tag { height: 26px; padding: 0 10px; }
     /* Collapsed to a bare glyph, this control kept the desktop pill's
        frame — a border and a sunken fill — so it sat in the bar as a
        boxed search field beside two borderless icon buttons: three
@@ -7853,6 +7991,9 @@ const RU_WORDS = {
     "Filter this page by title": "Фильтр по названию",
     "Filter topics on this page": "Фильтр тем на этой странице",
     "Show only {x}": "Показать только {x}",
+    "Tag": "Метка",
+    "Show only one kind of topic": "Показать только один вид тем",
+    "Showing only {x} — pick another or clear": "Показаны только {x} — выберите другую или снимите",
     "Bookmark this topic": "В закладки",
     "{n} topics": ({ n }) => n + " " + ruPlural(n, "тема", "темы", "тем"),
     "Fold this section": "Свернуть раздел",
@@ -7867,7 +8008,14 @@ const RU_WORDS = {
     "Look in": "Искать в",
     "Titles": "Названия",
     "First post": "Первое сообщение",
+    "Message text": "Текст сообщений",
     "All posts": "Все сообщения",
+    "Terms": "Слова",
+    "All words": "Все слова",
+    "Any word": "Любое слово",
+    "Posts": "Сообщения",
+    "Author": "Автор",
+    "Any member": "Любой участник",
     "Where to search": "Где искать",
     "What to search": "Что искать",
     "Search options": "Параметры поиска",
@@ -8039,6 +8187,10 @@ const RU_WORDS = {
     "Search the forum, or jump to a board": "Поиск по форуму или переход в раздел",
     "Search the forum for {q}": "Искать на форуме: {q}",
     "Search {forum} for {q}": "Искать в «{forum}»: {q}",
+    "Search the forum for {q} by {who}": "Искать на форуме: {q} — от {who}",
+    "Search {forum} for {q} by {who}": "Искать в «{forum}»: {q} — от {who}",
+    "Everything {who} posted": "Все сообщения {who}",
+    "Everything {who} posted in {forum}": "Все сообщения {who} в «{forum}»",
     "Releases in this topic": "Релизы в этой теме",
     "How much to look at": "Сколько смотреть",
     "Search": "Поиск",
@@ -9011,10 +9163,29 @@ function adoptBoardSearch(form) {
 
    The choice is kept in this browser, so a reader who always wants to
    search every post sets it once. */
+/* The four the full search form offers, in the board's own order of
+   reach. "Message text" is the one that finds a phrase somebody typed
+   inside a thread whose title says nothing about it, which is most of
+   what this board is; it was missing here because the board's own
+   boxes never offer it. */
 const SEARCH_IN = [
     { value: "titleonly", label: "Titles" },
     { value: "firstpost", label: "First post" },
+    { value: "msgonly", label: "Message text" },
     { value: "all", label: "All posts" },
+];
+
+/* Two more from the full form, kept with the rest so the box and the
+   palette cannot disagree about them either: every word or any word,
+   and whether the answer is a list of threads or a list of posts. */
+const SEARCH_TERMS = [
+    { value: "all", label: "All words" },
+    { value: "any", label: "Any word" },
+];
+
+const SEARCH_SHOW = [
+    { value: "topics", label: "Topics" },
+    { value: "posts", label: "Posts" },
 ];
 
 /* ---- Which forum you are actually in -------------------------------
@@ -9068,7 +9239,14 @@ const SEARCH_PREFS_KEY = "searchPrefs";
    it. */
 function searchPrefs() {
     const kept = store.get(SEARCH_PREFS_KEY, null);
-    return Object.assign({ sf: "titleonly", where: null }, kept && typeof kept === "object" ? kept : {});
+    return Object.assign({ sf: "titleonly", where: null, terms: "all", sr: "topics" },
+        kept && typeof kept === "object" ? kept : {});
+}
+
+/** One of a list of {value,label}, or the first of them. */
+function searchChoice(key, options) {
+    const kept = searchPrefs()[key];
+    return options.some((option) => option.value === kept) ? kept : options[0].value;
 }
 
 function setSearchPref(key, value) {
@@ -9255,8 +9433,11 @@ function addSearchOptions(frame, form, field, submit) {
                 setHidden("t", null);
                 setHidden("fid[]", place.forum || null);
                 setHidden("sf", depth);
-                setHidden("sr", "topics");
-                setHidden("terms", "all");
+                // The palette offers these two and remembers them;
+                // the box submits the same search, so it sends what
+                // was chosen rather than its own idea of it.
+                setHidden("sr", searchChoice("sr", SEARCH_SHOW));
+                setHidden("terms", searchChoice("terms", SEARCH_TERMS));
             }
             if (!first) {
                 setSearchPref("where", place.value);
@@ -9305,7 +9486,12 @@ function searchQuery() {
 /** A forum's name from the list the palette cached off the index. */
 function knownForumName(id) {
     const hit = store.get("forums", []).find((entry) => String(entry.id) === String(id));
-    return hit ? hit.title : null;
+    if (hit) return hit.title;
+    // The index knows the boards it lists; the tree knows the
+    // subforums under them, which is where a search picked from the
+    // palette's chooser is most likely aimed (palette.js, forumTree).
+    const room = forumTree().find((entry) => String(entry.id) === String(id));
+    return room ? room.title : null;
 }
 
 function addResultOptions(frame, field, submit) {
@@ -10480,6 +10666,48 @@ function dedupeSearchBoxes() {
 }
 
 /**
+ * Open and close the prefix menu.
+ *
+ * The same manners as the search box's own options popover: outside
+ * click and Escape close it, Escape puts focus back on the trigger,
+ * and the down arrow opens it from the field without leaving the
+ * keyboard. Choosing a prefix closes it — unlike the search options,
+ * where a choice is a setting rather than an answer, one prefix is the
+ * whole question the menu asks.
+ */
+function wireTagMenu(frame, trigger, field) {
+    const pop = frame.querySelector(".rr-toolbar__tagpop");
+
+    const close = () => {
+        pop.hidden = true;
+        trigger.setAttribute("aria-expanded", "false");
+        document.removeEventListener("mousedown", onOutside, true);
+        document.removeEventListener("keydown", onKey, true);
+    };
+    const onOutside = (event) => { if (!frame.contains(event.target)) close(); };
+    const onKey = (event) => { if (event.key === "Escape") { close(); trigger.focus(); } };
+    const open = () => {
+        if (!pop.hidden) return;
+        pop.hidden = false;
+        trigger.setAttribute("aria-expanded", "true");
+        document.addEventListener("mousedown", onOutside, true);
+        document.addEventListener("keydown", onKey, true);
+    };
+
+    trigger.addEventListener("click", () => { if (pop.hidden) open(); else close(); });
+    pop.addEventListener("click", (event) => { if (event.target.closest("button")) close(); });
+    if (field) {
+        field.addEventListener("keydown", (event) => {
+            if (event.key !== "ArrowDown" || event.altKey || event.ctrlKey || event.metaKey) return;
+            event.preventDefault();
+            open();
+            const first = pop.querySelector('button[aria-pressed="true"]') || pop.querySelector("button");
+            if (first) first.focus();
+        });
+    }
+}
+
+/**
  * `rich` builds the whole bar: filter box, prefix chips, count. Without
  * it the bar is only a home for the board's own refine box — see
  * FILTER_MIN_ROWS.
@@ -10504,7 +10732,12 @@ function buildToolbar(entries, prefixes, rich) {
             : t("{a} of {b} on this page", { a: shown, b: entries.length });
     };
 
-    const input = el("input", {
+    /* Classed, and the class matters: the board's own text fields get a
+       22em floor so a size="25" from 2003 is not cramped on a fluid
+       frame, and that rule reaches any field without an `rr-` class.
+       This one is the script's own and sizes itself — unclassed it
+       refused to shrink, and pushed the prefix trigger off a phone. */
+    const input = el("input.rr-toolbar__input", {
         type: "search",
         placeholder: t("Filter this page by title"),
         "aria-label": t("Filter topics on this page"),
@@ -10514,17 +10747,46 @@ function buildToolbar(entries, prefixes, rich) {
         if (event.key === "Escape") { input.value = ""; state.text = ""; apply(); }
     });
 
+    /* Nine coloured chips side by side made the densest line on the
+       page out of the least important thing on it, and put a small
+       rainbow above a listing whose own colours are the point. The
+       prefixes move behind one trigger in the filter box; it carries
+       the name of the one that is on, so nothing is hidden that was
+       being read. */
     const tagRow = el("div.rr-toolbar__tags");
+    const tagName = el("span.rr-toolbar__tagname", { "aria-hidden": "true" });
+    const tagBtn = el("button.rr-toolbar__tagbtn", { type: "button", "aria-expanded": "false" },
+        [tagName, icon("chevronD", 12)]);
+
+    const syncTags = () => {
+        let on = null;
+        for (const button of tagRow.children) {
+            const pressed = button.dataset.value === state.tag;
+            button.setAttribute("aria-pressed", pressed ? "true" : "false");
+            if (pressed) on = button;
+        }
+        tagName.textContent = on ? on.textContent : t("Tag");
+        tagBtn.toggleAttribute("data-rr-active", Boolean(on));
+        // The trigger wears the colour of the prefix it is holding, so
+        // the one chip that is on is still legible as itself.
+        if (on && on.dataset.tag) tagBtn.setAttribute("data-tag", on.dataset.tag);
+        else tagBtn.removeAttribute("data-tag");
+        labelled(tagBtn, on
+            ? t("Showing only {x} — pick another or clear", { x: on.textContent })
+            : t("Show only one kind of topic"));
+    };
+
     const setTag = (tag) => {
         state.tag = state.tag === tag ? null : tag;
-        for (const button of tagRow.children) {
-            button.setAttribute("aria-pressed", button.dataset.value === state.tag ? "true" : "false");
-        }
+        syncTags();
         apply();
     };
     /* Everything on this page with something new in it. The board says
        so with a dot beside the row and gives no way to ask for only
-       those. */
+       those. The one filter worth a permanent chip: it is the question
+       most readers arrive with, and it is on or off rather than one of
+       nine. */
+    const quick = el("div.rr-toolbar__quick");
     const unreadCount = entries.filter((entry) => entry.unread).length;
     if (unreadCount && unreadCount < entries.length) {
         const unreadChip = el("button.rr-tag.rr-tag--unread", {
@@ -10537,7 +10799,7 @@ function buildToolbar(entries, prefixes, rich) {
             unreadChip.setAttribute("aria-pressed", state.unread ? "true" : "false");
             apply();
         });
-        tagRow.append(unreadChip);
+        quick.append(unreadChip);
     }
 
     for (const [name, kind] of prefixes) {
@@ -10554,20 +10816,45 @@ function buildToolbar(entries, prefixes, rich) {
 
     const bar = el("div.rr-toolbar", { role: "search" });
     if (rich) {
-        bar.append(el("div.rr-toolbar__filter", {}, [icon("filter"), input]));
+        const frame = el("div.rr-toolbar__filter", {}, [icon("filter"), input]);
         // One chip filters every row down to every row. Chips are worth
-        // their line only once there is a choice to make between them.
-        if (tagRow.children.length > 1) bar.append(tagRow);
+        // their trigger only once there is a choice to make between them.
+        if (tagRow.children.length > 1) {
+            frame.append(tagBtn, el("div.rr-toolbar__tagpop", {
+                role: "group", "aria-label": t("Show only one kind of topic"), hidden: true,
+            }, [tagRow]));
+            wireTagMenu(frame, tagBtn, input);
+            syncTags();
+        }
+        bar.append(frame);
+        if (quick.children.length) bar.append(quick);
         bar.append(count);
     }
 
-    // The board's own "Search this forum" box sits in a strip of its
-    // own above the listing. It belongs next to the filter, so it moves
-    // here rather than being duplicated.
+    /* The board's own "Search this forum" box sat here, beside the
+       filter, because the strip it came in cost a band of its own. The
+       palette now aims a search at this forum without leaving the
+       keyboard and says so on its trigger, which left three search
+       boxes on one screen answering the same question. This one is the
+       one that goes — except with the palette turned off, when it is
+       the only one left, and on a results page, where the same box is
+       not a third way to search a room but the only way to narrow a
+       set of results the palette knows nothing about. */
     const boardSearch = document.querySelector("#search-box form, #topic-search");
     if (boardSearch) {
         const strip = boardSearch.closest("td.row5") || boardSearch.closest("table");
-        bar.append(el("div.rr-toolbar__board", {}, [adoptBoardSearch(boardSearch)]));
+        const spare = settings.get("palette") && !PAGE.isSearch;
+        // Moved out of the strip so the band can go, and parked on the
+        // body rather than removed: CS.RIN.RU Enhanced looks for this
+        // form, and a bar with nothing to draw is never placed, so the
+        // bar is not a safe place to park it.
+        if (spare) {
+            boardSearch.setAttribute("data-rr-dupe", "");
+            boardSearch.style.display = "none";
+            document.body.append(boardSearch);
+        } else {
+            bar.append(el("div.rr-toolbar__board", {}, [adoptBoardSearch(boardSearch)]));
+        }
         if (strip && !strip.textContent.trim()) {
             const holder = strip.closest("table");
             if (holder) holder.style.display = "none";
@@ -10609,6 +10896,11 @@ function buildForumBar() {
        lifted here in whichever language the board printed it. */
     tidyBoardPagerStrip(bar, bar);
 
+    // Subscribe forum and Mark topics read, which the board gives a
+    // band of their own. Only ever drawn for a member, so on a logged
+    // out page this finds nothing and the bar is what it was.
+    adoptForumActions(bar);
+
     /* "Go to page 1, 2, 3, 4, 5 … 137  Next", right-aligned above the
        table: the same journey as the pager in the bar, in a row of its
        own. The topic page hides its copy above the posts and keeps the
@@ -10628,6 +10920,71 @@ function buildForumBar() {
     bar.prepend(heading);
 
     return bar;
+}
+
+/**
+ * Subscribe forum and Mark topics read.
+ *
+ * The two things a member can do to a forum rather than to a topic in
+ * it. subsilver2 prints them for members only, in cells of their own
+ * above the listing and again below it — which is a whole band of the
+ * screen, between the bar and the first topic, for two links pressed
+ * once each. They are forum actions; they join the others in the bar
+ * that already carries the forum's name, in the words the board gave
+ * them ("Unsubscribe forum" when you already are).
+ *
+ * The same move the topic page makes with Subscribe, Bookmark and
+ * E-mail friend, so the two pages answer the same way.
+ */
+const FORUM_ACTION = 'a[href*="watch=forum"], a[href*="mark=topics"]';
+
+/* Where the board puts them: a `tr.nav` of two cells — one link at each
+   end — nested inside the `td.cat` that caps the listing table, plus
+   the same row again under it. The cells themselves carry no class, so
+   the row is what identifies them; `td.nav` and `td.gensmall` are the
+   shapes the strip takes elsewhere on the board. */
+const FORUM_ACTION_CELLS = "#wrapcentre tr.nav > td, #wrapcentre td.nav, #wrapcentre td.gensmall";
+
+function adoptForumActions(bar) {
+    const cells = Array.from(document.querySelectorAll(FORUM_ACTION_CELLS))
+        .filter((cell) => cell.querySelector(FORUM_ACTION) && !cell.closest(".rr-topicbar"));
+    if (!cells.length) return;
+
+    // Both copies are walked, because the board does not always print
+    // the same pair top and bottom; the first of each kind wins.
+    const seen = new Set();
+    const actions = [];
+    for (const cell of cells) {
+        for (const link of cell.querySelectorAll(FORUM_ACTION)) {
+            const kind = /mark=topics/.test(link.getAttribute("href") || "") ? "mark" : "watch";
+            if (seen.has(kind)) continue;
+            const label = link.textContent.replace(/\s+/g, " ").trim() || link.getAttribute("title") || "";
+            if (!label) continue;
+            seen.add(kind);
+            link.classList.add("rr-btn", "rr-forumnav");
+            link.setAttribute("data-variant", "quiet");
+            link.setAttribute("title", label);
+            actions.push(link);
+        }
+    }
+    if (!actions.length) return;
+
+    bar.append(el("span.rr-topicbar__spacer"));
+    for (const link of actions) bar.append(link);
+
+    /* The cells go, and so does what held them. The band is a `td.cat`
+       wrapping a table of two cells, and markShapes reads that table
+       as a strip of controls and gives the row a surface of its own —
+       so emptying the cells is not enough: with the links gone the
+       whole row has to go, or the band stays exactly where it was with
+       nothing in it. */
+    for (const cell of cells) {
+        hideWithEmptyRow(cell);
+        const cat = cell.closest("td.cat");
+        if (!cat || cat.querySelector("a[href], input, select, h4")) continue;
+        const row = cat.parentElement;
+        if (row && row.tagName === "TR") row.style.display = "none";
+    }
 }
 
 /* ---- Last post ----------------------------------------------------- */
@@ -17883,8 +18240,17 @@ let paletteHost = null;
 const SEARCH_DEPTH = {
     titleonly: { sf: "titleonly", hint: "titles" },
     firstpost: { sf: "firstpost", hint: "titles + first post" },
+    msgonly:   { sf: "msgonly",   hint: "post text" },
     all:       { sf: "all",       hint: "every post" },
 };
+
+/* The author to search for, from the chooser's own field.
+ *
+ * Not stored with the rest: a remembered room narrows a search in a
+ * way the chip prints on itself, and a remembered name would narrow
+ * every later search to one member with nothing on screen saying so.
+ * It lives as long as the palette is open. */
+let searchAuthor = "";
 
 /**
  * The board's search URL for a query, from wherever the reader is.
@@ -17930,10 +18296,14 @@ function boardSearchUrl(query) {
     const depth = SEARCH_DEPTH[searchDepthChoice()] || SEARCH_DEPTH.titleonly;
     const place = paletteSearchPlace();
     const url = new URL("./search.php", location.href);
-    url.searchParams.set("keywords", query);
-    url.searchParams.set("terms", "all");
+    // The board takes a search with no words in it as long as there is
+    // a name on it, which is what "everything this member posted in
+    // Releases" is.
+    if (query) url.searchParams.set("keywords", query);
+    if (searchAuthor) url.searchParams.set("author", searchAuthor);
+    url.searchParams.set("terms", searchChoice("terms", SEARCH_TERMS));
     url.searchParams.set("sf", depth.sf);
-    url.searchParams.set("sr", "topics");
+    url.searchParams.set("sr", searchChoice("sr", SEARCH_SHOW));
     if (place) url.searchParams.set("fid[]", place.id);
     return url.toString();
 }
@@ -17946,86 +18316,215 @@ function boardSearchUrl(query) {
    and there was no way to send it anywhere else without closing the
    palette and finding a search box.
 
-   So the two choices that box offers are offered here as well, in the
-   same shapes, from one control at the head of the field: which room,
-   and how deep. Which room is the longer of the two lists — the
-   palette is opened from the index at least as often as from a forum,
-   and from the index there is no room to be in — so it names every
-   board the index cached (cacheForumList), not just the two or three
-   on the breadcrumb. */
-function paletteScopePlaces() {
-    const places = [{ value: "board", label: t("Whole board") }];
-    const trail = forumTrail();
-    const here = trail.length ? trail[trail.length - 1] : null;
-    const up = parentForum(trail);
+   So what the full search form asks — which rooms, how deep, every
+   word or any word, threads or posts, whose posts — is asked here
+   instead, from one control at the head of the field. The form itself
+   is a page load away and comes back as a page of results; this is the
+   same query, aimed before it is sent.
 
-    // The room you are in reaches the list twice — once off the
-    // breadcrumb, once out of the cache — and it is one room.
-    const add = (entry) => {
-        if (!places.some((seen) => seen.forum === entry.forum)) places.push(entry);
-    };
-    if (here) add({ value: "here", forum: String(here.id), label: shortForumName(here.name), full: here.name });
-    if (up) add({ value: "up", forum: String(up.id), label: shortForumName(up.name), full: up.name });
-    for (const forum of store.get("forums", [])) {
-        add({ value: "f:" + forum.id, forum: String(forum.id), label: shortForumName(forum.title), full: forum.title });
+   Not all of it: sorting, the date range and how many characters of a
+   post to print back are choices about a page of results, and the
+   place to make those is the page of results. */
+
+const FORUM_TREE_KEY = "forumTree";
+
+/**
+ * Every room the reader may search, in the board's own order.
+ *
+ * Two sources, and the better one wins. The full search form prints
+ * the whole tree in one <select> — categories, forums, subforums,
+ * indented with non-breaking spaces — as the reader's own account sees
+ * it, so a member with a restricted room gets it and everyone else
+ * does not. The index knows less: top-level forums and the subforum
+ * links under them, and no idea of what it cannot see. The index is
+ * visited by everyone and the search form by almost nobody, so the
+ * index fills the list until the form has been opened once.
+ */
+function storeForumTree(rooms, source) {
+    if (!rooms.length) return;
+    const kept = store.get(FORUM_TREE_KEY, null);
+    if (source === "index" && kept && kept.source === "form") return;
+    store.set(FORUM_TREE_KEY, { source: source, rooms: rooms });
+}
+
+function forumTree() {
+    const kept = store.get(FORUM_TREE_KEY, null);
+    return kept && Array.isArray(kept.rooms) ? kept.rooms : [];
+}
+
+/* The search form's own list of rooms.
+ *
+ * Depth is the indent the template wrote: "&nbsp; &nbsp;" per level,
+ * three characters once the entities are text. A row with something
+ * deeper under it and nothing above it is a category — "English
+ * Forums" holds no topics of its own — so it is a heading here rather
+ * than somewhere a search can be sent. */
+function cacheSearchFormForums() {
+    const select = document.querySelector('select[name="fid[]"]');
+    if (!select) return;
+
+    const rooms = Array.from(select.options).map((option) => {
+        const raw = option.textContent || "";
+        const title = raw.replace(/[\s ]+/g, " ").trim();
+        const lead = raw.length - raw.replace(/^[\s ]+/, "").length;
+        return { id: option.value, title: title, depth: Math.min(Math.round(lead / 3), 3) };
+    }).filter((room) => /^\d+$/.test(room.id) && room.title);
+
+    rooms.forEach((room, index) => {
+        const next = rooms[index + 1];
+        if (!room.depth && next && next.depth > room.depth) room.cat = true;
+    });
+    storeForumTree(rooms, "form");
+}
+
+/** The same list off the index, which is poorer but always seen. */
+function cacheIndexForums() {
+    const rooms = [];
+    for (const entry of forumRows()) {
+        rooms.push({ id: entry.id, title: entry.title, depth: 0 });
+        for (const link of entry.row.querySelectorAll("a.subforum")) {
+            const match = (link.getAttribute("href") || "").match(/[?&]f=(\d+)/);
+            if (match) rooms.push({ id: match[1], title: link.textContent.trim(), depth: 1 });
+        }
     }
-    return places;
+    storeForumTree(rooms, "index");
 }
 
 /**
- * The control, its popover, and the pressed states kept in line with
+ * The rooms the chooser offers, and what picking one is stored as.
+ *
+ * `where` is shared with the box in the bar, which knows three words:
+ * the room you are in, the one above it, and the whole board. A room
+ * picked from the tree that happens to be one of those is stored as
+ * that word, so the box keeps honouring it; anything else is stored as
+ * `f:<id>`, which the box does not recognise and falls back from. */
+function scopeValueFor(id) {
+    const trail = forumTrail();
+    const here = trail.length ? trail[trail.length - 1] : null;
+    const up = parentForum(trail);
+    if (here && String(here.id) === String(id)) return "here";
+    if (up && String(up.id) === String(id)) return "up";
+    return "f:" + id;
+}
+
+function paletteScopeRooms() {
+    const tree = forumTree();
+    if (tree.length) return tree;
+
+    // Nothing cached yet — this browser has opened neither the index
+    // nor the search form. The breadcrumb still knows two rooms.
+    const trail = forumTrail();
+    const here = trail.length ? trail[trail.length - 1] : null;
+    const up = parentForum(trail);
+    const rooms = [];
+    if (up) rooms.push({ id: String(up.id), title: up.name, depth: 0 });
+    if (here && (!up || up.id !== here.id)) rooms.push({ id: String(here.id), title: here.name, depth: up ? 1 : 0 });
+    return rooms;
+}
+
+/**
+ * The control, its popover, and every pressed state kept in line with
  * what is stored.
  *
  * `onPick` redraws the palette behind it: the row that hands the query
- * to the board names the room and says how deep it will look, so a
- * choice that did not redraw would leave the answer to the question
- * the reader just asked sitting one line under the control.
+ * to the board names the room, says how deep it will look and whose
+ * posts it will look at, so a choice that did not redraw would leave
+ * the answer to the question the reader just asked sitting one line
+ * under the control.
  */
 function buildPaletteScope(onPick) {
-    const whereSeg = el("div.rr-seg", { role: "group", "aria-label": t("Where to search") });
+    const rooms = el("div.rr-palette__rooms", { role: "group", "aria-label": t("Where to search") });
     const inSeg = el("div.rr-seg", { role: "group", "aria-label": t("What to search") });
+    const termsSeg = el("div.rr-seg", { role: "group", "aria-label": t("Terms") });
+    const showSeg = el("div.rr-seg", { role: "group", "aria-label": t("Show") });
+    const author = el("input.rr-palette__author", {
+        type: "text",
+        placeholder: t("Any member"),
+        "aria-label": t("Author"),
+        autocomplete: "off",
+        spellcheck: "false",
+    });
+
     const where = el("span.rr-search__where");
     const button = labelled(
         el("button.rr-search__opts.rr-palette__scope", { type: "button", "aria-expanded": "false" }, [icon("sliders", 13), where]),
         t("Search options"));
+
     const pop = el("div.rr-palette__pop", { role: "group", "aria-label": t("Search options"), hidden: true }, [
-        el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Where")]), whereSeg]),
+        el("div.rr-palette__poprow", {}, [el("span.rr-search__rowlabel", {}, [t("Where")]), rooms]),
         el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Look in")]), inSeg]),
+        el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Terms")]), termsSeg]),
+        el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Show")]), showSeg]),
+        el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Author")]), author]),
     ]);
 
-    /* Matched on the forum id rather than on the stored word: the same
-       room is "here" from inside it and `f:10` from the cached list,
-       and both have to light the same segment. */
+    /* Rooms are matched on the forum id rather than on the stored word:
+       the same room is "here" from inside it and `f:10` from the tree,
+       and both have to light the same row. */
     const sync = () => {
         const place = paletteSearchPlace();
         const id = place ? String(place.id) : null;
         const depth = searchDepthChoice();
         where.textContent = place ? shortForumName(place.name) : t("Whole board");
         // The room is printed on the chip, so the accent is kept for
-        // the half that is not — how deep the search will look — the
-        // same way the box in the bar spends it.
-        button.toggleAttribute("data-rr-active", depth !== "titleonly");
-        for (const node of whereSeg.children) {
+        // everything that is not — how deep it looks, whose posts, any
+        // word rather than all of them — the same way the box in the
+        // bar spends it.
+        button.toggleAttribute("data-rr-active", depth !== "titleonly"
+            || Boolean(searchAuthor)
+            || searchChoice("terms", SEARCH_TERMS) !== "all"
+            || searchChoice("sr", SEARCH_SHOW) !== "topics");
+        for (const node of rooms.querySelectorAll("button")) {
             node.setAttribute("aria-pressed", (node.dataset.forum || null) === id ? "true" : "false");
         }
         for (const node of inSeg.children) {
             node.setAttribute("aria-pressed", node.dataset.value === depth ? "true" : "false");
         }
+        for (const node of termsSeg.children) {
+            node.setAttribute("aria-pressed", node.dataset.value === searchChoice("terms", SEARCH_TERMS) ? "true" : "false");
+        }
+        for (const node of showSeg.children) {
+            node.setAttribute("aria-pressed", node.dataset.value === searchChoice("sr", SEARCH_SHOW) ? "true" : "false");
+        }
     };
 
-    for (const place of paletteScopePlaces()) {
-        const node = el("button", { type: "button", title: place.full || null }, [place.label]);
-        node.dataset.value = place.value;
-        if (place.forum) node.dataset.forum = place.forum;
-        node.addEventListener("click", () => { setSearchPref("where", place.value); sync(); onPick(); });
-        whereSeg.append(node);
+    const choose = (key, value) => { setSearchPref(key, value); sync(); onPick(); };
+
+    const room = (label, forum, depth) => {
+        const node = el("button.rr-palette__room", { type: "button", title: label }, [label]);
+        if (forum) node.dataset.forum = forum;
+        node.style.paddingLeft = 8 + depth * 12 + "px";
+        node.addEventListener("click", () => choose("where", forum ? scopeValueFor(forum) : "board"));
+        return node;
+    };
+
+    rooms.append(room(t("Whole board"), null, 0));
+    for (const entry of paletteScopeRooms()) {
+        if (entry.cat) {
+            rooms.append(el("div.rr-palette__roomcat", {}, [entry.title]));
+            continue;
+        }
+        rooms.append(room(entry.title, String(entry.id), entry.depth || 0));
     }
-    for (const option of SEARCH_IN) {
-        const node = el("button", { type: "button" }, [t(option.label)]);
-        node.dataset.value = option.value;
-        node.addEventListener("click", () => { setSearchPref("sf", option.value); sync(); onPick(); });
-        inSeg.append(node);
-    }
+
+    const segment = (seg, options, key) => {
+        for (const option of options) {
+            const node = el("button", { type: "button" }, [t(option.label)]);
+            node.dataset.value = option.value;
+            node.addEventListener("click", () => choose(key, option.value));
+            seg.append(node);
+        }
+    };
+    segment(inSeg, SEARCH_IN, "sf");
+    segment(termsSeg, SEARCH_TERMS, "terms");
+    segment(showSeg, SEARCH_SHOW, "sr");
+
+    author.value = searchAuthor;
+    author.addEventListener("input", debounce(() => {
+        searchAuthor = author.value.trim();
+        sync();
+        onPick();
+    }, 120));
 
     const close = () => {
         pop.hidden = true;
@@ -18036,12 +18535,23 @@ function buildPaletteScope(onPick) {
         button.setAttribute("aria-expanded", "true");
         // Somewhere to arrow from, and the answer to "where is it set"
         // under the cursor.
-        const first = whereSeg.querySelector('button[aria-pressed="true"]') || whereSeg.firstElementChild;
+        const first = rooms.querySelector('button[aria-pressed="true"]') || rooms.firstElementChild;
         if (first) first.focus();
+        if (first) first.scrollIntoView({ block: "nearest" });
     };
     button.addEventListener("click", () => {
         if (pop.hidden) open();
         else { close(); button.focus(); }
+    });
+
+    /* Enter in the author field is the reader saying they are done
+       here, not asking for a member list: it puts the choices away and
+       hands focus back to the query, where Enter runs the search. */
+    author.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        close();
+        onPick("focus");
     });
 
     sync();
@@ -18067,6 +18577,13 @@ function cacheForumList() {
 
     forums.sort((a, b) => b.topics - a.topics);
     if (forums.length) store.set("forums", forums);
+
+    /* Ranked by traffic for the jump list above; in the board's own
+       order, subforums and all, for the chooser. Two lists because
+       they answer different questions: "which board do I mean" wants
+       Main Forum first, "which board do I search" wants Releases
+       under it. */
+    cacheIndexForums();
 }
 
 /** The board's own donation link, wherever the template put it. */
@@ -18207,9 +18724,20 @@ function openPalette() {
         const place = paletteSearchPlace();
         const cooldown = searchCooldown();
         return {
-            label: place
-                ? t("Search {forum} for {q}", { forum: place.name, q: query })
-                : t("Search the forum for {q}", { q: query }),
+            /* Four sentences rather than one with pieces bolted on: a
+               name and no words is a whole search on this board — what
+               did this member post in Releases — and reads as one. */
+            label: searchAuthor
+                ? (query
+                    ? (place
+                        ? t("Search {forum} for {q} by {who}", { forum: place.name, q: query, who: searchAuthor })
+                        : t("Search the forum for {q} by {who}", { q: query, who: searchAuthor }))
+                    : (place
+                        ? t("Everything {who} posted in {forum}", { who: searchAuthor, forum: place.name })
+                        : t("Everything {who} posted", { who: searchAuthor })))
+                : (place
+                    ? t("Search {forum} for {q}", { forum: place.name, q: query })
+                    : t("Search the forum for {q}", { q: query })),
             icon: "search",
             /* The board allows one search about every half minute and
                answers the ones in between with "you cannot use search
@@ -18231,7 +18759,9 @@ function openPalette() {
         flat = [];
         const needle = query.trim().toLowerCase();
 
-        if (needle) list.append(renderGroup(t("Search"), [searchItem(query.trim())], flat));
+        // A name in the chooser is a search on its own, with or without
+        // words to go with it.
+        if (needle || searchAuthor) list.append(renderGroup(t("Search"), [searchItem(query.trim())], flat));
 
         /* Topics this browser has already walked past, filtered as you
            type (preview.js). Above the boards and below the search
@@ -18314,7 +18844,11 @@ function openPalette() {
         onCursor();
     };
 
-    const scope = buildPaletteScope(() => { render(input.value); });
+    searchAuthor = "";
+    const scope = buildPaletteScope((what) => {
+        render(input.value);
+        if (what === "focus") input.focus();
+    });
     bar.prepend(scope.button);
     bar.append(scope.pop);
 
@@ -18377,6 +18911,9 @@ function openPalette() {
 
 function initPalette() {
     cacheForumList();
+    // The full search form, met on its own page. Nothing else on the
+    // board prints the whole tree.
+    cacheSearchFormForums();
     if (!settings.get("palette")) return;
     document.addEventListener("keydown", (event) => {
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
@@ -18732,7 +19269,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.12.2";
+const RR_VERSION = "0.13.0";
 
 function injectStyles() {
     const host = document.head || document.documentElement;

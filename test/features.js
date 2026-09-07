@@ -2943,13 +2943,17 @@ const CHECKS = [
     },
     {
         name: "search: the trigger's own label does not cover the choices it opens",
-        url: FORUM,
+        url: TOPIC,
         run: () => {
             /* The label hangs 6px under the control, which is exactly
                where the popover's first row lands. Open the choices
                with the pointer still on the trigger and "Main Forum /
                Whole board" was behind a tip repeating the question —
                the button read as doing nothing at all. */
+            /* Asked on a topic rather than on a listing: a listing's
+               copy of this box went when the palette learned to aim a
+               search itself, and the topic's is the one that still
+               offers rooms to choose between. */
             const opts = document.querySelector(".rr-search__opts");
             if (!opts) return "no search options control";
             opts.click();

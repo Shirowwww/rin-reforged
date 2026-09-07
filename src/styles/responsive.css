@@ -55,7 +55,8 @@
 
     /* The prefix chips are a filter here, not a label on a title: 18px
        is a fine badge and a poor thing to hit with a thumb. */
-    html[data-rr] .rr-toolbar__tags .rr-tag { height: 26px; padding: 0 10px; }
+    html[data-rr] .rr-toolbar__tags .rr-tag,
+    html[data-rr] .rr-toolbar__quick .rr-tag { height: 26px; padding: 0 10px; }
     /* Collapsed to a bare glyph, this control kept the desktop pill's
        frame — a border and a sunken fill — so it sat in the bar as a
        boxed search field beside two borderless icon buttons: three

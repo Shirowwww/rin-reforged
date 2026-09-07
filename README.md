@@ -68,9 +68,12 @@ checks this repository and offers new versions on its own.
   that opens its topic, bookmarks and history kept in your browser. The
   board's search box says where it looks: this topic, this forum or the
   whole board, titles or every post, chosen in the box itself — and the
-  palette says the same at the head of its own field, where the board to
-  search is picked from the whole list rather than from the room you
-  happen to be standing in.
+  palette says the same at the head of its own field, and asks the rest
+  of what the full search form asks: which room, from the board's whole
+  tree with its subforums; titles, first post, message text or every
+  post; all the words or any of them; threads or posts; and whose posts,
+  so “everything this member wrote in Releases” is a search you can aim
+  without loading the form.
 - **Topics in the palette, and a look inside one.** The board allows one
   search about every half minute and answers the ones in between with
   "you cannot use search at this time", so `Ctrl+K` does not search as you

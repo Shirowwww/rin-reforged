@@ -345,7 +345,13 @@ html[data-rr] .ccopen:hover {
    the way to gone, and Info and Tutorial in particular stopped being
    legible as words. They rest higher on Paper and land in the same
    place visually. */
-html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
+html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag,
+html[data-rr][data-rr-theme="paper"] .rr-toolbar__quick .rr-tag { opacity: .78; }
+/* The chip that is on is on in every theme: this outranks the rest
+   state above, which it did not before. */
+html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag:hover,
+html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag[aria-pressed="true"],
+html[data-rr][data-rr-theme="paper"] .rr-toolbar__quick .rr-tag[aria-pressed="true"] { opacity: 1; }
 
 
 /* ---- The board's masthead ---------------------------------------- */

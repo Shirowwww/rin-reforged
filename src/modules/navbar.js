@@ -161,10 +161,29 @@ function adoptBoardSearch(form) {
 
    The choice is kept in this browser, so a reader who always wants to
    search every post sets it once. */
+/* The four the full search form offers, in the board's own order of
+   reach. "Message text" is the one that finds a phrase somebody typed
+   inside a thread whose title says nothing about it, which is most of
+   what this board is; it was missing here because the board's own
+   boxes never offer it. */
 const SEARCH_IN = [
     { value: "titleonly", label: "Titles" },
     { value: "firstpost", label: "First post" },
+    { value: "msgonly", label: "Message text" },
     { value: "all", label: "All posts" },
+];
+
+/* Two more from the full form, kept with the rest so the box and the
+   palette cannot disagree about them either: every word or any word,
+   and whether the answer is a list of threads or a list of posts. */
+const SEARCH_TERMS = [
+    { value: "all", label: "All words" },
+    { value: "any", label: "Any word" },
+];
+
+const SEARCH_SHOW = [
+    { value: "topics", label: "Topics" },
+    { value: "posts", label: "Posts" },
 ];
 
 /* ---- Which forum you are actually in -------------------------------
@@ -218,7 +237,14 @@ const SEARCH_PREFS_KEY = "searchPrefs";
    it. */
 function searchPrefs() {
     const kept = store.get(SEARCH_PREFS_KEY, null);
-    return Object.assign({ sf: "titleonly", where: null }, kept && typeof kept === "object" ? kept : {});
+    return Object.assign({ sf: "titleonly", where: null, terms: "all", sr: "topics" },
+        kept && typeof kept === "object" ? kept : {});
+}
+
+/** One of a list of {value,label}, or the first of them. */
+function searchChoice(key, options) {
+    const kept = searchPrefs()[key];
+    return options.some((option) => option.value === kept) ? kept : options[0].value;
 }
 
 function setSearchPref(key, value) {
@@ -405,8 +431,11 @@ function addSearchOptions(frame, form, field, submit) {
                 setHidden("t", null);
                 setHidden("fid[]", place.forum || null);
                 setHidden("sf", depth);
-                setHidden("sr", "topics");
-                setHidden("terms", "all");
+                // The palette offers these two and remembers them;
+                // the box submits the same search, so it sends what
+                // was chosen rather than its own idea of it.
+                setHidden("sr", searchChoice("sr", SEARCH_SHOW));
+                setHidden("terms", searchChoice("terms", SEARCH_TERMS));
             }
             if (!first) {
                 setSearchPref("where", place.value);
@@ -455,7 +484,12 @@ function searchQuery() {
 /** A forum's name from the list the palette cached off the index. */
 function knownForumName(id) {
     const hit = store.get("forums", []).find((entry) => String(entry.id) === String(id));
-    return hit ? hit.title : null;
+    if (hit) return hit.title;
+    // The index knows the boards it lists; the tree knows the
+    // subforums under them, which is where a search picked from the
+    // palette's chooser is most likely aimed (palette.js, forumTree).
+    const room = forumTree().find((entry) => String(entry.id) === String(id));
+    return room ? room.title : null;
 }
 
 function addResultOptions(frame, field, submit) {
