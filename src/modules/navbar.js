@@ -930,6 +930,38 @@ function buildMasthead() {
 }
 
 /**
+ * The board's name and the line under it.
+ *
+ * The masthead is three things, not one: the art, the name centred
+ * beside it, and the links underneath. With the top bar carrying the
+ * name everywhere, the art alone was the whole of what was worth
+ * keeping — without a bar it is a picture with a row of chips beside
+ * it and nothing saying which board this is, which is the one thing
+ * the board's own header never leaves out.
+ *
+ * Read out of the template rather than moved: #wrapheader is hidden and
+ * kept because other userscripts read it, the same reason the art is a
+ * new <img> rather than the original.
+ */
+function buildBoardName() {
+    const heading = document.querySelector("#logodesc h1, #wrapheader h1");
+    if (!heading) return null;
+
+    const name = heading.textContent.replace(/\s+/g, " ").trim();
+    if (!name) return null;
+
+    const block = el("div.rr-boardname", {}, [el("h1.rr-boardname__title", {}, [name])]);
+
+    // "cs.rin.ru | csrin.org | The password is usually one of these."
+    const strapline = heading.parentElement
+        && heading.parentElement.querySelector("span.gen, span.gensmall");
+    const line = strapline ? strapline.textContent.replace(/\s+/g, " ").trim() : "";
+    if (line) block.append(el("p.rr-boardname__strap", {}, [line]));
+
+    return block;
+}
+
+/**
  * A skip link, as the first thing Tab reaches.
  *
  * The board has none, and the top bar this script adds puts a brand, a
@@ -996,6 +1028,7 @@ function initNavbar() {
        elsewhere; with no bar, nothing else on the page says which board
        this is, which is why the board itself prints it on every page. */
     const banner = settings.get("masthead") && (PAGE.isIndex || !bar) ? buildMasthead() : null;
+    const name = banner && !bar ? buildBoardName() : null;
 
     if (board && !bar) (board.querySelector(".rr-boardbar__end") || board).append(buildHeaderTools());
 
@@ -1012,9 +1045,17 @@ function initNavbar() {
 
        Only the index has a masthead; everywhere else this is the
        board bar on its own, exactly as before. */
-    if (centre && banner && board) centre.prepend(el("div.rr-header", {}, [banner, board]));
-    else if (centre && board) centre.prepend(board);
-    else if (centre && banner) centre.prepend(banner);
+    /* Beside each other with the bar, stacked without it: no bar means
+       this block *is* the board's header, and the board's own is a
+       picture with its name centred beside it and the links on a line
+       of their own underneath. `data-rr-stack` is what the stylesheet
+       reads to lay it out that way. */
+    const parts = [banner, name, board].filter(Boolean);
+    if (centre && parts.length > 1) {
+        centre.prepend(el("div.rr-header", { "data-rr-stack": bar ? null : "" }, parts));
+    } else if (centre && parts.length) {
+        centre.prepend(parts[0]);
+    }
 
     /* The board's own 340px masthead is worth uncovering only where
        nothing here replaced it — with the bar off and the board links

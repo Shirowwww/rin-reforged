@@ -363,7 +363,12 @@ html[data-rr] a.rr-langswitch__option[aria-current] .rr-boardbar__flag { opacity
        wait behind the More control. */
     .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :not([data-rr-group="views"]),
     .rr-boardbar:not([data-rr-open]) [data-rr-group="views"] > :nth-child(n+3),
-    .rr-boardbar:not([data-rr-open]) .rr-boardbar__end { display: none; }
+    .rr-boardbar:not([data-rr-open]) .rr-boardbar__end:not(:has(> .rr-headertools)) { display: none; }
+    /* Except this script's own two. On a page with no top bar the row
+       is the only place search and the settings panel are, and folding
+       them away behind More put the panel two taps from a phone. The
+       board's links in the same half still fold. */
+    .rr-boardbar:not([data-rr-open]) .rr-boardbar__end > :not(.rr-headertools) { display: none; }
     .rr-boardbar__main, .rr-boardbar__end { gap: var(--rr-s2) var(--rr-s3); }
 
     /* The language switch used to be forced onto a full-width line of

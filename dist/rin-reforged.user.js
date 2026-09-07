@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.12.1
+// @version         0.12.2
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -1634,6 +1634,9 @@ html[data-rr][data-rr-header="rr"] td.row5:has(> #search-box) {
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    /* On a phone the breadcrumb and the box will not share a line, and
+       without this the crumb was squeezed to one word a row. */
+    flex-wrap: wrap;
     gap: var(--rr-s3);
 }
 /* \`:has()\` sees a search box the page has hidden, so this cell is a
@@ -2281,7 +2284,12 @@ html[data-rr] a.rr-langswitch__option[aria-current] .rr-boardbar__flag { opacity
        wait behind the More control. */
     .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :not([data-rr-group="views"]),
     .rr-boardbar:not([data-rr-open]) [data-rr-group="views"] > :nth-child(n+3),
-    .rr-boardbar:not([data-rr-open]) .rr-boardbar__end { display: none; }
+    .rr-boardbar:not([data-rr-open]) .rr-boardbar__end:not(:has(> .rr-headertools)) { display: none; }
+    /* Except this script's own two. On a page with no top bar the row
+       is the only place search and the settings panel are, and folding
+       them away behind More put the panel two taps from a phone. The
+       board's links in the same half still fold. */
+    .rr-boardbar:not([data-rr-open]) .rr-boardbar__end > :not(.rr-headertools) { display: none; }
     .rr-boardbar__main, .rr-boardbar__end { gap: var(--rr-s2) var(--rr-s3); }
 
     /* The language switch used to be forced onto a full-width line of
@@ -4476,6 +4484,51 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
         align-items: flex-end;
     }
 }
+/* No top bar: this block stands in for the board's own header, so it
+   is laid out the way the board lays that one out — the art on the
+   left, the name centred in what is left of the line, the links across
+   the full width underneath. Higher specificity than the two-column
+   rules above, so it wins wherever both apply. */
+.rr-header[data-rr-stack] {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--rr-s3) var(--rr-s5);
+    margin-bottom: var(--rr-s4);
+}
+.rr-header[data-rr-stack] > .rr-masthead { grid-column: 1; margin: 0; }
+.rr-header[data-rr-stack] > .rr-boardname { grid-column: 2; }
+/* Full width, and its own hairline is what separates the header from
+   the page — so the margin goes and the border stays. */
+.rr-header[data-rr-stack] > .rr-boardbar { grid-column: 1 / -1; margin: 0; }
+
+/* Under the width where a 380px picture and a centred name share a
+   line, the three stack and the name centres over the art. */
+@media (max-width: 760px) {
+    .rr-header[data-rr-stack] { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+    .rr-header[data-rr-stack] > .rr-masthead,
+    .rr-header[data-rr-stack] > .rr-boardname { grid-column: 1; }
+}
+
+.rr-boardname { min-width: 0; text-align: center; }
+.rr-boardname__title {
+    margin: 0;
+    font-size: calc(var(--rr-fs) + 7px);
+    font-weight: 700;
+    line-height: var(--rr-lh-title);
+    color: var(--rr-text-strong);
+}
+/* Carrying html[data-rr] for the reason csrin-css-cascade lists: the
+   reset styles \`html[data-rr] p\` at (0,1,1) and a bare class loses to
+   it, which left this line at full text weight instead of under the
+   name it belongs to. */
+html[data-rr] p.rr-boardname__strap {
+    margin: 3px 0 0;
+    font-size: var(--rr-fs-sm);
+    line-height: var(--rr-lh-meta);
+    color: var(--rr-muted);
+}
+
 .rr-masthead__link {
     display: inline-block;
     border-radius: var(--rr-radius-lg);
@@ -9677,6 +9730,38 @@ function buildMasthead() {
 }
 
 /**
+ * The board's name and the line under it.
+ *
+ * The masthead is three things, not one: the art, the name centred
+ * beside it, and the links underneath. With the top bar carrying the
+ * name everywhere, the art alone was the whole of what was worth
+ * keeping — without a bar it is a picture with a row of chips beside
+ * it and nothing saying which board this is, which is the one thing
+ * the board's own header never leaves out.
+ *
+ * Read out of the template rather than moved: #wrapheader is hidden and
+ * kept because other userscripts read it, the same reason the art is a
+ * new <img> rather than the original.
+ */
+function buildBoardName() {
+    const heading = document.querySelector("#logodesc h1, #wrapheader h1");
+    if (!heading) return null;
+
+    const name = heading.textContent.replace(/\s+/g, " ").trim();
+    if (!name) return null;
+
+    const block = el("div.rr-boardname", {}, [el("h1.rr-boardname__title", {}, [name])]);
+
+    // "cs.rin.ru | csrin.org | The password is usually one of these."
+    const strapline = heading.parentElement
+        && heading.parentElement.querySelector("span.gen, span.gensmall");
+    const line = strapline ? strapline.textContent.replace(/\s+/g, " ").trim() : "";
+    if (line) block.append(el("p.rr-boardname__strap", {}, [line]));
+
+    return block;
+}
+
+/**
  * A skip link, as the first thing Tab reaches.
  *
  * The board has none, and the top bar this script adds puts a brand, a
@@ -9743,6 +9828,7 @@ function initNavbar() {
        elsewhere; with no bar, nothing else on the page says which board
        this is, which is why the board itself prints it on every page. */
     const banner = settings.get("masthead") && (PAGE.isIndex || !bar) ? buildMasthead() : null;
+    const name = banner && !bar ? buildBoardName() : null;
 
     if (board && !bar) (board.querySelector(".rr-boardbar__end") || board).append(buildHeaderTools());
 
@@ -9759,9 +9845,17 @@ function initNavbar() {
 
        Only the index has a masthead; everywhere else this is the
        board bar on its own, exactly as before. */
-    if (centre && banner && board) centre.prepend(el("div.rr-header", {}, [banner, board]));
-    else if (centre && board) centre.prepend(board);
-    else if (centre && banner) centre.prepend(banner);
+    /* Beside each other with the bar, stacked without it: no bar means
+       this block *is* the board's header, and the board's own is a
+       picture with its name centred beside it and the links on a line
+       of their own underneath. `data-rr-stack` is what the stylesheet
+       reads to lay it out that way. */
+    const parts = [banner, name, board].filter(Boolean);
+    if (centre && parts.length > 1) {
+        centre.prepend(el("div.rr-header", { "data-rr-stack": bar ? null : "" }, parts));
+    } else if (centre && parts.length) {
+        centre.prepend(parts[0]);
+    }
 
     /* The board's own 340px masthead is worth uncovering only where
        nothing here replaced it — with the bar off and the board links
@@ -18441,7 +18535,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.12.1";
+const RR_VERSION = "0.12.2";
 
 function injectStyles() {
     const host = document.head || document.documentElement;

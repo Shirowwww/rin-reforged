@@ -388,6 +388,51 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag { opacity: .72; }
         align-items: flex-end;
     }
 }
+/* No top bar: this block stands in for the board's own header, so it
+   is laid out the way the board lays that one out — the art on the
+   left, the name centred in what is left of the line, the links across
+   the full width underneath. Higher specificity than the two-column
+   rules above, so it wins wherever both apply. */
+.rr-header[data-rr-stack] {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--rr-s3) var(--rr-s5);
+    margin-bottom: var(--rr-s4);
+}
+.rr-header[data-rr-stack] > .rr-masthead { grid-column: 1; margin: 0; }
+.rr-header[data-rr-stack] > .rr-boardname { grid-column: 2; }
+/* Full width, and its own hairline is what separates the header from
+   the page — so the margin goes and the border stays. */
+.rr-header[data-rr-stack] > .rr-boardbar { grid-column: 1 / -1; margin: 0; }
+
+/* Under the width where a 380px picture and a centred name share a
+   line, the three stack and the name centres over the art. */
+@media (max-width: 760px) {
+    .rr-header[data-rr-stack] { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+    .rr-header[data-rr-stack] > .rr-masthead,
+    .rr-header[data-rr-stack] > .rr-boardname { grid-column: 1; }
+}
+
+.rr-boardname { min-width: 0; text-align: center; }
+.rr-boardname__title {
+    margin: 0;
+    font-size: calc(var(--rr-fs) + 7px);
+    font-weight: 700;
+    line-height: var(--rr-lh-title);
+    color: var(--rr-text-strong);
+}
+/* Carrying html[data-rr] for the reason csrin-css-cascade lists: the
+   reset styles `html[data-rr] p` at (0,1,1) and a bare class loses to
+   it, which left this line at full text weight instead of under the
+   name it belongs to. */
+html[data-rr] p.rr-boardname__strap {
+    margin: 3px 0 0;
+    font-size: var(--rr-fs-sm);
+    line-height: var(--rr-lh-meta);
+    color: var(--rr-muted);
+}
+
 .rr-masthead__link {
     display: inline-block;
     border-radius: var(--rr-radius-lg);
