@@ -2742,6 +2742,15 @@ html[data-rr] textarea.rr-reply__text:focus { border-color: var(--rr-accent); ou
     font-variant-numeric: tabular-nums;
 }
 
+/* Four hundred names in link red, over a legend saying red is an
+   administrator. The board sends them as bare links — it colours a
+   name by group in a topic, never here — so the red was the script's
+   own and it made the legend under it mean nothing. Ordinary text,
+   lit on hover like any other link. A name the board did colour is
+   untouched: that is an inline style and this is not. */
+html[data-rr] td[data-rr-online] a[href*="viewprofile"] { color: var(--rr-text); }
+html[data-rr] td[data-rr-online] a[href*="viewprofile"]:hover { color: var(--rr-text-strong); }
+
 /* ---- Topic action bar -------------------------------------------- */
 
 .rr-topicbar {
@@ -3472,8 +3481,13 @@ html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
     flex-direction: column;
     align-items: center;
     gap: 5px;
-    width: 62px;
-    padding: 7px 4px 6px;
+    /* Wide enough to line up, never narrower than its own name. A fixed
+       62px cut "RIN orange" out of the pressed swatch's box on both
+       sides — the label is nowrap, so it overflowed rather than
+       wrapping, and the selected background stopped short of the word
+       it belonged to. */
+    min-width: 62px;
+    padding: 7px 8px 6px;
     background: none;
     border: 1px solid transparent;
     border-radius: var(--rr-radius);
@@ -4201,10 +4215,19 @@ html[data-rr] table.tablebg[data-rr-quiet] > tbody > tr > td { padding: 2px 4px;
     border: 1px solid var(--rr-line);
     border-radius: var(--rr-radius-pill);
     color: var(--rr-faint);
-    font: 600 var(--rr-fs-xs) / 1.5 var(--rr-font);
+    /* 1.5 made the pill 24px against a 20px line of text, so it stood
+       proud of the row whatever it was aligned to. Tight enough now to
+       be the same height as the line it sits in. */
+    font: 600 var(--rr-fs-xs) / 1.25 var(--rr-font);
     cursor: pointer;
     vertical-align: middle;
 }
+/* The row aligns on the baseline, which is right for the name and the
+   message and wrong for the chip: a bordered pill's baseline is the
+   text inside it, so its box hung two pixels above the line it sits
+   on. Centred in the line instead, the way a chip beside running text
+   is set everywhere else. */
+.rr-quiet-chip { align-self: center; }
 .rr-quiet-chip:hover { color: var(--rr-text); border-color: var(--rr-line-strong); }
 .rr-quiet-chip svg { width: 11px; height: 11px; }
 /* Once opened, the post is an ordinary post again and the chip is the
@@ -6247,7 +6270,10 @@ function defaultFor(id) {
      text     free text
      swatch   a colour chosen from a fixed set
    `when` hides a field until another field is on, so the panel stays
-   readable instead of showing sixty controls at once.
+   readable instead of showing sixty controls at once. `reload` marks
+   the few whose effect is built once at load and cannot be undone in
+   place — the panel reloads the page after those rather than leaving
+   half of one applied.
 
    Groups carry an `icon` and a `short` label: the panel is a rail of
    categories beside the controls rather than one long scroll, and the
@@ -6320,7 +6346,7 @@ const SETTINGS_SCHEMA = [
                 desc: "Swaps the GIF button set and read/unread checkboxes for vector icons. Off keeps the board's own 2003 imageset.",
             },
             {
-                id: "masthead", label: "Show the board's masthead on the index", type: "toggle", default: true,
+                id: "masthead", label: "Show the board's masthead on the index", type: "toggle", default: true, reload: true,
                 desc: "The crosshair emblem and the CS.RIN.RU wordmark, kept on the index only. Everywhere else the top bar carries the name.",
             },
         ],
@@ -6333,11 +6359,11 @@ const SETTINGS_SCHEMA = [
         note: "The masthead takes 340px before any content appears. This replaces it.",
         fields: [
             {
-                id: "navbar", label: "Compact top bar", type: "toggle", default: true,
+                id: "navbar", label: "Compact top bar", type: "toggle", default: true, reload: true,
                 desc: "A 48px sticky bar with the breadcrumb, search, private messages and settings.",
             },
             {
-                id: "boardLinks", label: "Board links row", type: "toggle", default: true,
+                id: "boardLinks", label: "Board links row", type: "toggle", default: true, reload: true,
                 desc: "Unanswered and active topics, forum rules, FAQ, chat, donate, your account and the language switch, grouped on one line.",
             },
             {
@@ -8260,7 +8286,8 @@ function hideEmptyRows() {
 
    Generated entirely from the schema, so a new feature is a new entry
    in schema.js and nothing else. Changes apply live: there is no Save
-   button because there is nothing to save at the end.
+   button because there is nothing to save at the end. The exception is
+   the handful of fields the schema marks `reload` — see applyField.
 
    The panel is a rail of categories beside the controls rather than
    one scroll of sixty rows. Picking a category shows that category;
@@ -8270,6 +8297,27 @@ function hideEmptyRows() {
    ------------------------------------------------------------------ */
 
 let panelHost = null;
+
+/**
+ * Store a field's value, and reload where that is the only way to apply
+ * it.
+ *
+ * Nearly everything here is a class or a custom property and lands the
+ * moment it is set. The header is not: the top bar, the board links row
+ * and the masthead are built once at load out of the board's own
+ * markup, and the stylesheet uncovers the board's own 340px masthead
+ * the moment the bar is switched off. Toggled live, that put the two on
+ * top of each other — the board's header showing through, the script's
+ * bar floating over it, the page under both with no room reserved for
+ * either. A field that cannot be undone in place says so in the schema
+ * and gets a reload; the rest still apply as you click them.
+ */
+function applyField(field, value) {
+    settings.set(field.id, value);
+    if (!field.reload) return;
+    toast(t("Applying. Reloading."));
+    setTimeout(() => location.reload(), 600);
+}
 
 /* Every control below exposes a sync() so the panel can be brought back
    in line with a setting that changed somewhere else — the palette's
@@ -8286,7 +8334,7 @@ function buildToggle(field) {
     button.addEventListener("click", () => {
         const next = button.getAttribute("aria-checked") !== "true";
         button.setAttribute("aria-checked", next ? "true" : "false");
-        settings.set(field.id, next);
+        applyField(field, next);
     });
     button.sync = () => button.setAttribute("aria-checked", settings.get(field.id) ? "true" : "false");
     return button;
@@ -8302,7 +8350,7 @@ function buildSegmented(field) {
     for (const option of field.options) {
         const button = el("button", { type: "button" }, [option.label]);
         button.dataset.value = option.value;
-        button.addEventListener("click", () => { settings.set(field.id, option.value); sync(); });
+        button.addEventListener("click", () => { applyField(field, option.value); sync(); });
         group.append(button);
     }
     sync();
@@ -8323,7 +8371,7 @@ function buildRange(field) {
     input.addEventListener("input", () => {
         const value = Number(input.value);
         readout.textContent = value + (field.unit || "");
-        settings.set(field.id, value);
+        applyField(field, value);
     });
     const wrap = el("div.rr-rangewrap", {}, [input, readout]);
     wrap.sync = () => {
@@ -8360,7 +8408,7 @@ function buildSwatches(field) {
             "aria-label": option.label,
         }, [dot, el("span.rr-swatch__name", {}, [option.label])]);
         button.dataset.value = option.value;
-        button.addEventListener("click", () => { settings.set(field.id, option.value); sync(); });
+        button.addEventListener("click", () => { applyField(field, option.value); sync(); });
         group.append(button);
     }
     sync();
@@ -11670,10 +11718,7 @@ function whoIsOnlineCell() {
     return most >= 30 ? best : null;      // a short list is fine as it is
 }
 
-function collapseWhoIsOnline() {
-    const body = whoIsOnlineCell();
-    if (!body) return;
-
+function collapseWhoIsOnline(body) {
     const names = body.querySelectorAll("a[href*='viewprofile']");
     const summary = onlineSummary(body.textContent, names.length);
 
@@ -11795,7 +11840,18 @@ function initBoardIndex() {
     // The list of who is online ends every forum and every topic too —
     // 272 names and 360px under the last post — and the fold is the
     // same fold: it finds the cell by what is in it, not by page.
-    if (settings.get("foldWhoIsOnline")) collapseWhoIsOnline();
+    //
+    // Marked whether or not it folds: the legend under it says red
+    // means an administrator, and the board sends these four hundred
+    // names as bare links, so painting them all link-red said every one
+    // of them was staff. The mark is what the stylesheet quiets them
+    // with; a name the board did colour keeps its colour, an inline
+    // style outranking anything here.
+    const online = whoIsOnlineCell();
+    if (online) {
+        online.setAttribute("data-rr-online", "");
+        if (settings.get("foldWhoIsOnline")) collapseWhoIsOnline(online);
+    }
     if (!PAGE.isIndex) return;
     dropDuplicateSearch();
     tidyCategoryToggles();

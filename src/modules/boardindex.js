@@ -46,10 +46,7 @@ function whoIsOnlineCell() {
     return most >= 30 ? best : null;      // a short list is fine as it is
 }
 
-function collapseWhoIsOnline() {
-    const body = whoIsOnlineCell();
-    if (!body) return;
-
+function collapseWhoIsOnline(body) {
     const names = body.querySelectorAll("a[href*='viewprofile']");
     const summary = onlineSummary(body.textContent, names.length);
 
@@ -171,7 +168,18 @@ function initBoardIndex() {
     // The list of who is online ends every forum and every topic too —
     // 272 names and 360px under the last post — and the fold is the
     // same fold: it finds the cell by what is in it, not by page.
-    if (settings.get("foldWhoIsOnline")) collapseWhoIsOnline();
+    //
+    // Marked whether or not it folds: the legend under it says red
+    // means an administrator, and the board sends these four hundred
+    // names as bare links, so painting them all link-red said every one
+    // of them was staff. The mark is what the stylesheet quiets them
+    // with; a name the board did colour keeps its colour, an inline
+    // style outranking anything here.
+    const online = whoIsOnlineCell();
+    if (online) {
+        online.setAttribute("data-rr-online", "");
+        if (settings.get("foldWhoIsOnline")) collapseWhoIsOnline(online);
+    }
     if (!PAGE.isIndex) return;
     dropDuplicateSearch();
     tidyCategoryToggles();

@@ -3,7 +3,8 @@
 
    Generated entirely from the schema, so a new feature is a new entry
    in schema.js and nothing else. Changes apply live: there is no Save
-   button because there is nothing to save at the end.
+   button because there is nothing to save at the end. The exception is
+   the handful of fields the schema marks `reload` — see applyField.
 
    The panel is a rail of categories beside the controls rather than
    one scroll of sixty rows. Picking a category shows that category;
@@ -13,6 +14,27 @@
    ------------------------------------------------------------------ */
 
 let panelHost = null;
+
+/**
+ * Store a field's value, and reload where that is the only way to apply
+ * it.
+ *
+ * Nearly everything here is a class or a custom property and lands the
+ * moment it is set. The header is not: the top bar, the board links row
+ * and the masthead are built once at load out of the board's own
+ * markup, and the stylesheet uncovers the board's own 340px masthead
+ * the moment the bar is switched off. Toggled live, that put the two on
+ * top of each other — the board's header showing through, the script's
+ * bar floating over it, the page under both with no room reserved for
+ * either. A field that cannot be undone in place says so in the schema
+ * and gets a reload; the rest still apply as you click them.
+ */
+function applyField(field, value) {
+    settings.set(field.id, value);
+    if (!field.reload) return;
+    toast(t("Applying. Reloading."));
+    setTimeout(() => location.reload(), 600);
+}
 
 /* Every control below exposes a sync() so the panel can be brought back
    in line with a setting that changed somewhere else — the palette's
@@ -29,7 +51,7 @@ function buildToggle(field) {
     button.addEventListener("click", () => {
         const next = button.getAttribute("aria-checked") !== "true";
         button.setAttribute("aria-checked", next ? "true" : "false");
-        settings.set(field.id, next);
+        applyField(field, next);
     });
     button.sync = () => button.setAttribute("aria-checked", settings.get(field.id) ? "true" : "false");
     return button;
@@ -45,7 +67,7 @@ function buildSegmented(field) {
     for (const option of field.options) {
         const button = el("button", { type: "button" }, [option.label]);
         button.dataset.value = option.value;
-        button.addEventListener("click", () => { settings.set(field.id, option.value); sync(); });
+        button.addEventListener("click", () => { applyField(field, option.value); sync(); });
         group.append(button);
     }
     sync();
@@ -66,7 +88,7 @@ function buildRange(field) {
     input.addEventListener("input", () => {
         const value = Number(input.value);
         readout.textContent = value + (field.unit || "");
-        settings.set(field.id, value);
+        applyField(field, value);
     });
     const wrap = el("div.rr-rangewrap", {}, [input, readout]);
     wrap.sync = () => {
@@ -103,7 +125,7 @@ function buildSwatches(field) {
             "aria-label": option.label,
         }, [dot, el("span.rr-swatch__name", {}, [option.label])]);
         button.dataset.value = option.value;
-        button.addEventListener("click", () => { settings.set(field.id, option.value); sync(); });
+        button.addEventListener("click", () => { applyField(field, option.value); sync(); });
         group.append(button);
     }
     sync();

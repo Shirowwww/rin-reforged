@@ -12,7 +12,10 @@
      text     free text
      swatch   a colour chosen from a fixed set
    `when` hides a field until another field is on, so the panel stays
-   readable instead of showing sixty controls at once.
+   readable instead of showing sixty controls at once. `reload` marks
+   the few whose effect is built once at load and cannot be undone in
+   place — the panel reloads the page after those rather than leaving
+   half of one applied.
 
    Groups carry an `icon` and a `short` label: the panel is a rail of
    categories beside the controls rather than one long scroll, and the
@@ -85,7 +88,7 @@ const SETTINGS_SCHEMA = [
                 desc: "Swaps the GIF button set and read/unread checkboxes for vector icons. Off keeps the board's own 2003 imageset.",
             },
             {
-                id: "masthead", label: "Show the board's masthead on the index", type: "toggle", default: true,
+                id: "masthead", label: "Show the board's masthead on the index", type: "toggle", default: true, reload: true,
                 desc: "The crosshair emblem and the CS.RIN.RU wordmark, kept on the index only. Everywhere else the top bar carries the name.",
             },
         ],
@@ -98,11 +101,11 @@ const SETTINGS_SCHEMA = [
         note: "The masthead takes 340px before any content appears. This replaces it.",
         fields: [
             {
-                id: "navbar", label: "Compact top bar", type: "toggle", default: true,
+                id: "navbar", label: "Compact top bar", type: "toggle", default: true, reload: true,
                 desc: "A 48px sticky bar with the breadcrumb, search, private messages and settings.",
             },
             {
-                id: "boardLinks", label: "Board links row", type: "toggle", default: true,
+                id: "boardLinks", label: "Board links row", type: "toggle", default: true, reload: true,
                 desc: "Unanswered and active topics, forum rules, FAQ, chat, donate, your account and the language switch, grouped on one line.",
             },
             {

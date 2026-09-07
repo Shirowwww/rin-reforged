@@ -845,6 +845,15 @@ html[data-rr] textarea.rr-reply__text:focus { border-color: var(--rr-accent); ou
     font-variant-numeric: tabular-nums;
 }
 
+/* Four hundred names in link red, over a legend saying red is an
+   administrator. The board sends them as bare links — it colours a
+   name by group in a topic, never here — so the red was the script's
+   own and it made the legend under it mean nothing. Ordinary text,
+   lit on hover like any other link. A name the board did colour is
+   untouched: that is an inline style and this is not. */
+html[data-rr] td[data-rr-online] a[href*="viewprofile"] { color: var(--rr-text); }
+html[data-rr] td[data-rr-online] a[href*="viewprofile"]:hover { color: var(--rr-text-strong); }
+
 /* ---- Topic action bar -------------------------------------------- */
 
 .rr-topicbar {
@@ -1575,8 +1584,13 @@ html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
     flex-direction: column;
     align-items: center;
     gap: 5px;
-    width: 62px;
-    padding: 7px 4px 6px;
+    /* Wide enough to line up, never narrower than its own name. A fixed
+       62px cut "RIN orange" out of the pressed swatch's box on both
+       sides — the label is nowrap, so it overflowed rather than
+       wrapping, and the selected background stopped short of the word
+       it belonged to. */
+    min-width: 62px;
+    padding: 7px 8px 6px;
     background: none;
     border: 1px solid transparent;
     border-radius: var(--rr-radius);

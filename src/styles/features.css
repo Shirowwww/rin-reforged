@@ -158,10 +158,19 @@ html[data-rr] table.tablebg[data-rr-quiet] > tbody > tr > td { padding: 2px 4px;
     border: 1px solid var(--rr-line);
     border-radius: var(--rr-radius-pill);
     color: var(--rr-faint);
-    font: 600 var(--rr-fs-xs) / 1.5 var(--rr-font);
+    /* 1.5 made the pill 24px against a 20px line of text, so it stood
+       proud of the row whatever it was aligned to. Tight enough now to
+       be the same height as the line it sits in. */
+    font: 600 var(--rr-fs-xs) / 1.25 var(--rr-font);
     cursor: pointer;
     vertical-align: middle;
 }
+/* The row aligns on the baseline, which is right for the name and the
+   message and wrong for the chip: a bordered pill's baseline is the
+   text inside it, so its box hung two pixels above the line it sits
+   on. Centred in the line instead, the way a chip beside running text
+   is set everywhere else. */
+.rr-quiet-chip { align-self: center; }
 .rr-quiet-chip:hover { color: var(--rr-text); border-color: var(--rr-line-strong); }
 .rr-quiet-chip svg { width: 11px; height: 11px; }
 /* Once opened, the post is an ordinary post again and the chip is the
