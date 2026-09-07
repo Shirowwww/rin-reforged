@@ -67,7 +67,10 @@ checks this repository and offers new versions on its own.
   type has to match, in any order), coloured topic tags, a whole title cell
   that opens its topic, bookmarks and history kept in your browser. The
   board's search box says where it looks: this topic, this forum or the
-  whole board, titles or every post, chosen in the box itself.
+  whole board, titles or every post, chosen in the box itself — and the
+  palette says the same at the head of its own field, where the board to
+  search is picked from the whole list rather than from the room you
+  happen to be standing in.
 - **Topics in the palette, and a look inside one.** The board allows one
   search about every half minute and answers the ones in between with
   "you cannot use search at this time", so `Ctrl+K` does not search as you

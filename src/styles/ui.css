@@ -1316,7 +1316,13 @@ html[data-rr] a.rr-postnum:hover {
     border: 1px solid var(--rr-line-strong);
     border-radius: var(--rr-radius-lg);
     box-shadow: var(--rr-shadow-pop);
-    overflow: hidden;
+    /* Not clipped: the scope popover hangs off the strip at the top and
+       is taller than the strip, so `overflow: hidden` cut it off at the
+       panel's own edge and swallowed the second row of choices whole.
+       Nothing here paints into the corners — the strip and the list
+       have no background of their own — so the radius holds without
+       it, and the list rounds its own bottom corners. */
+    overflow: visible;
 }
 /* input.rr-palette__input, not the bare class, for the reason
    input.rr-search__input carries the same shape above: the board's
@@ -1325,29 +1331,73 @@ html[data-rr] a.rr-postnum:hover {
    box accent-red for as long as the palette was open, which is always.
    The box itself is the panel; the field draws nothing of its own. */
 html[data-rr] input.rr-palette__input {
-    /* The panel is a flex column against a max-height, so the field
-       was a shrinkable item beside a list of forty boards: it gave up
-       13 of its 48px to them, and the palette opened on a field
-       shorter than its own rows. The list scrolls; the field does not
-       move. */
-    flex: none;
+    /* The strip is a flex row and the field is what stretches in it;
+       the strip itself is what does not shrink. The panel is a flex
+       column against a max-height, and the field was a shrinkable item
+       beside a list of forty boards: it gave up 13 of its 48px to
+       them, and the palette opened on a field shorter than its own
+       rows. The list scrolls; the field does not move. */
+    flex: 1 1 auto;
+    min-width: 0;
     height: 48px;
-    padding: 0 var(--rr-s4);
+    padding: 0 var(--rr-s4) 0 var(--rr-s2);
     background: none;
     border: 0;
-    border-bottom: 1px solid var(--rr-line);
     border-radius: 0;
     color: var(--rr-text-strong);
     font: var(--rr-fs-lg) / 1 var(--rr-font);
     outline: none;
     box-sizing: border-box;
 }
+/* Where a query is aimed, at the head of the field that carries it:
+   which board, and how deep (palette.js, buildPaletteScope). The rule
+   under the strip is the strip's now, so the field draws nothing at
+   all — see the focus note below for why it has to say so twice. */
+.rr-palette__bar {
+    position: relative;
+    flex: none;
+    display: flex;
+    align-items: center;
+    padding-left: var(--rr-s3);
+    border-bottom: 1px solid var(--rr-line);
+}
+/* Room names run long — "Temporarily Restricted Topics" — and this
+   trigger sits in front of the field rather than at the end of a bar,
+   so it is given a little more of the width than the one in the bar. */
+html[data-rr] button.rr-palette__scope { max-width: 170px; height: 28px; }
+.rr-palette__pop {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: var(--rr-s3);
+    z-index: 950;
+    min-width: 320px;
+    max-width: min(420px, calc(100vw - 64px));
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--rr-s2);
+    background: var(--rr-surface);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius);
+    box-shadow: var(--rr-shadow-pop);
+    cursor: default;
+    color: var(--rr-text);
+}
+.rr-palette__pop[hidden] { display: none; }
 /* The board's field rules colour a focused border accent, and four
    :not()s make that rule specific enough to win here. The palette's
    field is focused from the moment it opens, so the divider under it
-   read as a red rule across the panel rather than as a divider. */
-html[data-rr] input.rr-palette__input:focus { border-bottom-color: var(--rr-line); }
-.rr-palette__list { overflow-y: auto; padding: var(--rr-s1); margin: 0; list-style: none; }
+   read as a red rule across the panel rather than as a divider. The
+   divider belongs to the strip now and the field has no border of its
+   own, which is exactly what this has to keep saying under :focus. */
+html[data-rr] input.rr-palette__input:focus { border: 0; }
+.rr-palette__list {
+    overflow-y: auto;
+    padding: var(--rr-s1);
+    margin: 0;
+    list-style: none;
+    border-radius: 0 0 var(--rr-radius-lg) var(--rr-radius-lg);
+}
 .rr-palette__group {
     padding: var(--rr-s2) var(--rr-s3) var(--rr-s1);
     font: 600 var(--rr-fs-xs) / 1 var(--rr-font);

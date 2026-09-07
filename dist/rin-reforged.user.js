@@ -3237,7 +3237,13 @@ html[data-rr] a.rr-postnum:hover {
     border: 1px solid var(--rr-line-strong);
     border-radius: var(--rr-radius-lg);
     box-shadow: var(--rr-shadow-pop);
-    overflow: hidden;
+    /* Not clipped: the scope popover hangs off the strip at the top and
+       is taller than the strip, so \`overflow: hidden\` cut it off at the
+       panel's own edge and swallowed the second row of choices whole.
+       Nothing here paints into the corners — the strip and the list
+       have no background of their own — so the radius holds without
+       it, and the list rounds its own bottom corners. */
+    overflow: visible;
 }
 /* input.rr-palette__input, not the bare class, for the reason
    input.rr-search__input carries the same shape above: the board's
@@ -3246,29 +3252,73 @@ html[data-rr] a.rr-postnum:hover {
    box accent-red for as long as the palette was open, which is always.
    The box itself is the panel; the field draws nothing of its own. */
 html[data-rr] input.rr-palette__input {
-    /* The panel is a flex column against a max-height, so the field
-       was a shrinkable item beside a list of forty boards: it gave up
-       13 of its 48px to them, and the palette opened on a field
-       shorter than its own rows. The list scrolls; the field does not
-       move. */
-    flex: none;
+    /* The strip is a flex row and the field is what stretches in it;
+       the strip itself is what does not shrink. The panel is a flex
+       column against a max-height, and the field was a shrinkable item
+       beside a list of forty boards: it gave up 13 of its 48px to
+       them, and the palette opened on a field shorter than its own
+       rows. The list scrolls; the field does not move. */
+    flex: 1 1 auto;
+    min-width: 0;
     height: 48px;
-    padding: 0 var(--rr-s4);
+    padding: 0 var(--rr-s4) 0 var(--rr-s2);
     background: none;
     border: 0;
-    border-bottom: 1px solid var(--rr-line);
     border-radius: 0;
     color: var(--rr-text-strong);
     font: var(--rr-fs-lg) / 1 var(--rr-font);
     outline: none;
     box-sizing: border-box;
 }
+/* Where a query is aimed, at the head of the field that carries it:
+   which board, and how deep (palette.js, buildPaletteScope). The rule
+   under the strip is the strip's now, so the field draws nothing at
+   all — see the focus note below for why it has to say so twice. */
+.rr-palette__bar {
+    position: relative;
+    flex: none;
+    display: flex;
+    align-items: center;
+    padding-left: var(--rr-s3);
+    border-bottom: 1px solid var(--rr-line);
+}
+/* Room names run long — "Temporarily Restricted Topics" — and this
+   trigger sits in front of the field rather than at the end of a bar,
+   so it is given a little more of the width than the one in the bar. */
+html[data-rr] button.rr-palette__scope { max-width: 170px; height: 28px; }
+.rr-palette__pop {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: var(--rr-s3);
+    z-index: 950;
+    min-width: 320px;
+    max-width: min(420px, calc(100vw - 64px));
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--rr-s2);
+    background: var(--rr-surface);
+    border: 1px solid var(--rr-line-strong);
+    border-radius: var(--rr-radius);
+    box-shadow: var(--rr-shadow-pop);
+    cursor: default;
+    color: var(--rr-text);
+}
+.rr-palette__pop[hidden] { display: none; }
 /* The board's field rules colour a focused border accent, and four
    :not()s make that rule specific enough to win here. The palette's
    field is focused from the moment it opens, so the divider under it
-   read as a red rule across the panel rather than as a divider. */
-html[data-rr] input.rr-palette__input:focus { border-bottom-color: var(--rr-line); }
-.rr-palette__list { overflow-y: auto; padding: var(--rr-s1); margin: 0; list-style: none; }
+   read as a red rule across the panel rather than as a divider. The
+   divider belongs to the strip now and the field has no border of its
+   own, which is exactly what this has to keep saying under :focus. */
+html[data-rr] input.rr-palette__input:focus { border: 0; }
+.rr-palette__list {
+    overflow-y: auto;
+    padding: var(--rr-s1);
+    margin: 0;
+    list-style: none;
+    border-radius: 0 0 var(--rr-radius-lg) var(--rr-radius-lg);
+}
 .rr-palette__group {
     padding: var(--rr-s2) var(--rr-s3) var(--rr-s1);
     font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
@@ -17851,12 +17901,23 @@ const SEARCH_DEPTH = {
  * disagree about where a search goes.
  */
 function paletteSearchPlace() {
+    const kept = searchPrefs().where;
+    /* A board picked from the palette's own chooser, which offers the
+       whole cached list rather than the two or three rooms the page
+       you are on happens to sit in. It is named `f:<id>` so the box in
+       the bar, which only knows "here", "up" and "board", falls back
+       to its own default instead of trying to honour a room it has no
+       segment for. */
+    if (kept && kept.slice(0, 2) === "f:") {
+        const id = kept.slice(2);
+        const name = knownForumName(id);
+        return name ? { id: id, name: name } : null;
+    }
     if (!(PAGE.isForum || PAGE.isTopic)) return null;
     const trail = forumTrail();
     if (!trail.length) return null;
     const here = trail[trail.length - 1];
     const up = parentForum(trail);
-    const kept = searchPrefs().where;
     if (kept === "board") return null;
     if (kept === "here") return here;
     if (kept === "up") return up || here;
@@ -17875,6 +17936,116 @@ function boardSearchUrl(query) {
     url.searchParams.set("sr", "topics");
     if (place) url.searchParams.set("fid[]", place.id);
     return url.toString();
+}
+
+/* ---- The chooser at the head of the palette's field -----------------
+
+   The palette hands its query to the board, and it did that with
+   whatever the box in the bar had last been set to — chosen on another
+   page, invisible from here. The row said where the search was going
+   and there was no way to send it anywhere else without closing the
+   palette and finding a search box.
+
+   So the two choices that box offers are offered here as well, in the
+   same shapes, from one control at the head of the field: which room,
+   and how deep. Which room is the longer of the two lists — the
+   palette is opened from the index at least as often as from a forum,
+   and from the index there is no room to be in — so it names every
+   board the index cached (cacheForumList), not just the two or three
+   on the breadcrumb. */
+function paletteScopePlaces() {
+    const places = [{ value: "board", label: t("Whole board") }];
+    const trail = forumTrail();
+    const here = trail.length ? trail[trail.length - 1] : null;
+    const up = parentForum(trail);
+
+    // The room you are in reaches the list twice — once off the
+    // breadcrumb, once out of the cache — and it is one room.
+    const add = (entry) => {
+        if (!places.some((seen) => seen.forum === entry.forum)) places.push(entry);
+    };
+    if (here) add({ value: "here", forum: String(here.id), label: shortForumName(here.name), full: here.name });
+    if (up) add({ value: "up", forum: String(up.id), label: shortForumName(up.name), full: up.name });
+    for (const forum of store.get("forums", [])) {
+        add({ value: "f:" + forum.id, forum: String(forum.id), label: shortForumName(forum.title), full: forum.title });
+    }
+    return places;
+}
+
+/**
+ * The control, its popover, and the pressed states kept in line with
+ * what is stored.
+ *
+ * `onPick` redraws the palette behind it: the row that hands the query
+ * to the board names the room and says how deep it will look, so a
+ * choice that did not redraw would leave the answer to the question
+ * the reader just asked sitting one line under the control.
+ */
+function buildPaletteScope(onPick) {
+    const whereSeg = el("div.rr-seg", { role: "group", "aria-label": t("Where to search") });
+    const inSeg = el("div.rr-seg", { role: "group", "aria-label": t("What to search") });
+    const where = el("span.rr-search__where");
+    const button = labelled(
+        el("button.rr-search__opts.rr-palette__scope", { type: "button", "aria-expanded": "false" }, [icon("sliders", 13), where]),
+        t("Search options"));
+    const pop = el("div.rr-palette__pop", { role: "group", "aria-label": t("Search options"), hidden: true }, [
+        el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Where")]), whereSeg]),
+        el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Look in")]), inSeg]),
+    ]);
+
+    /* Matched on the forum id rather than on the stored word: the same
+       room is "here" from inside it and `f:10` from the cached list,
+       and both have to light the same segment. */
+    const sync = () => {
+        const place = paletteSearchPlace();
+        const id = place ? String(place.id) : null;
+        const depth = searchDepthChoice();
+        where.textContent = place ? shortForumName(place.name) : t("Whole board");
+        // The room is printed on the chip, so the accent is kept for
+        // the half that is not — how deep the search will look — the
+        // same way the box in the bar spends it.
+        button.toggleAttribute("data-rr-active", depth !== "titleonly");
+        for (const node of whereSeg.children) {
+            node.setAttribute("aria-pressed", (node.dataset.forum || null) === id ? "true" : "false");
+        }
+        for (const node of inSeg.children) {
+            node.setAttribute("aria-pressed", node.dataset.value === depth ? "true" : "false");
+        }
+    };
+
+    for (const place of paletteScopePlaces()) {
+        const node = el("button", { type: "button", title: place.full || null }, [place.label]);
+        node.dataset.value = place.value;
+        if (place.forum) node.dataset.forum = place.forum;
+        node.addEventListener("click", () => { setSearchPref("where", place.value); sync(); onPick(); });
+        whereSeg.append(node);
+    }
+    for (const option of SEARCH_IN) {
+        const node = el("button", { type: "button" }, [t(option.label)]);
+        node.dataset.value = option.value;
+        node.addEventListener("click", () => { setSearchPref("sf", option.value); sync(); onPick(); });
+        inSeg.append(node);
+    }
+
+    const close = () => {
+        pop.hidden = true;
+        button.setAttribute("aria-expanded", "false");
+    };
+    const open = () => {
+        pop.hidden = false;
+        button.setAttribute("aria-expanded", "true");
+        // Somewhere to arrow from, and the answer to "where is it set"
+        // under the cursor.
+        const first = whereSeg.querySelector('button[aria-pressed="true"]') || whereSeg.firstElementChild;
+        if (first) first.focus();
+    };
+    button.addEventListener("click", () => {
+        if (pop.hidden) open();
+        else { close(); button.focus(); }
+    });
+
+    sync();
+    return { button: button, pop: pop, sync: sync, close: close, isOpen: () => !pop.hidden };
 }
 
 function cacheForumList() {
@@ -18019,7 +18190,11 @@ function openPalette() {
     // aria-activedescendant a screen reader reads the box and never
     // says what pressing Enter would do.
     const list = el("ul.rr-palette__list", { role: "listbox", id: "rr-palette-list" });
-    const panel = el("div.rr-palette", { role: "dialog", "aria-modal": "true", "aria-label": "Command palette" }, [input, list]);
+    // The field and the control that says where its query goes are one
+    // strip; the popover hangs off it, so the strip is what it is
+    // positioned against.
+    const bar = el("div.rr-palette__bar", {}, [input]);
+    const panel = el("div.rr-palette", { role: "dialog", "aria-modal": "true", "aria-label": "Command palette" }, [bar, list]);
     const overlay = el("div.rr-overlay", {}, [panel]);
 
     let flat = [];
@@ -18139,6 +18314,10 @@ function openPalette() {
         onCursor();
     };
 
+    const scope = buildPaletteScope(() => { render(input.value); });
+    bar.prepend(scope.button);
+    bar.append(scope.pop);
+
     const previous = document.activeElement;
     let release = () => {};
     const close = () => {
@@ -18149,6 +18328,19 @@ function openPalette() {
     };
 
     const onKey = (event) => {
+        /* This listener is on the document and captures, so with the
+           choices open it would still be the one answering: Enter would
+           run the highlighted row rather than press the button under
+           the cursor, and Escape would take the whole palette down
+           when the reader only meant to put the choices away. */
+        if (scope.isOpen()) {
+            if (event.key !== "Escape") return;
+            event.preventDefault();
+            event.stopPropagation();
+            scope.close();
+            scope.button.focus();
+            return;
+        }
         if (event.key === "Escape") { event.preventDefault(); close(); }
         else if (event.key === "ArrowDown") { event.preventDefault(); cursor = Math.min(cursor + 1, flat.length - 1); highlight(); }
         else if (event.key === "ArrowUp") { event.preventDefault(); cursor = Math.max(cursor - 1, 0); highlight(); }
@@ -18169,6 +18361,11 @@ function openPalette() {
 
     input.addEventListener("input", debounce(() => render(input.value), 60));
     overlay.addEventListener("mousedown", (event) => { if (event.target === overlay) close(); });
+    // Anywhere else in the palette puts the choices away, the way
+    // clicking off any other popover does.
+    panel.addEventListener("mousedown", (event) => {
+        if (scope.isOpen() && !scope.pop.contains(event.target) && !scope.button.contains(event.target)) scope.close();
+    });
     document.addEventListener("keydown", onKey, true);
 
     document.body.append(overlay);
