@@ -1,12 +1,5 @@
-/* ------------------------------------------------------------------
-   The top bar.
+// Top bar: links are lifted from the masthead rather than hardcoded, so a board-side menu change carries over.
 
-   Replaces a 340px masthead with 48px. Links are lifted out of the
-   original header rather than hardcoded, so a board-side change to the
-   menu carries over instead of leaving a dead URL behind.
-   ------------------------------------------------------------------ */
-
-/** Find a link in the original masthead by what its href contains. */
 function findHeaderLink(...needles) {
     const links = Array.from(document.querySelectorAll("#wrapheader a, #menubar a"));
     for (const needle of needles) {
@@ -28,9 +21,7 @@ function buildCrumbs() {
         });
     }
 
-    // On a topic page the breadcrumb stops at the forum, so the topic
-    // title is appended: it is the one thing worth keeping on screen
-    // while scrolling a 19 page thread.
+    // Breadcrumb stops at the forum; append the topic title so it stays visible while scrolling a long thread.
     const heading = document.querySelector("#pageheader h2 a.titles, #pageheader h2");
     if (heading && PAGE.isTopic) {
         if (wrap.children.length) wrap.append(el("span.rr-nav__sep", {}, ["/"]));
@@ -39,11 +30,7 @@ function buildCrumbs() {
         return wrap;
     }
 
-    /* The control panel, the member list, a profile: the board's
-       breadcrumb on those is "Board index" and nothing else, but the
-       window title knows where you are — "CS RIN • User Control Panel
-       • View messages". The parts after the board's name are the rest
-       of the trail. */
+    // On pages where the breadcrumb is just "Board index" (UCP, member list, profile), parse the window title instead.
     if (wrap.querySelectorAll("a").length <= 1 && !PAGE.isIndex && !PAGE.isForum) {
         const parts = document.title.split(/\s+[•·]\s+/).slice(1)
             .map((part) => part.trim())
@@ -58,25 +45,13 @@ function buildCrumbs() {
     return wrap;
 }
 
-/** Where the template put the masthead art, whatever it is called. */
 function findLogo() {
     return document.querySelector(
         '#logodesc img[src*="site_logo"], #wrapheader img[src*="site_logo"], #wrapheader img[src*="logo"]'
     );
 }
 
-/* The board's wordmark, traced off its own art into one path.
-
-   Not an <img>, and not a CSS mask either: the board sends `img-src
-   'self'`, so a data: URI is refused in both — checked on the live
-   board, where the masked version drew a filled grey rectangle where
-   the name should be. An inline <svg> is DOM rather than a fetched
-   image and is not governed by that directive, which is what the icon
-   set already relies on.
-
-   Filled with currentColor, so the mark is the bar's own ink on every
-   theme rather than the light grey the file is painted in, and there
-   is no plate behind it. */
+// Board's wordmark as an inline <svg> path, not an <img>/CSS mask: the board's `img-src 'self'` CSP blocks data: URIs for both (confirmed live). Filled with currentColor so it inks per theme.
 const BRAND_MARK = "M26 0h13v1h-13zM99 0h4v1h-4zM113 0h3v1h-3zM2 0h14v2h-14zM62 0h14v2h-14zM86 0h3v2h-3zM26 1h14v1h-14zM137 0h15v3h-15zM99 1h5v2h-5zM1 2h15v1h-15zM25 2h15v1h-15zM61 2h16v1h-16zM1 3h4v1h-4zM12 3h4v1h-4zM25 3h4v1h-4zM36 3h4v1h-4zM61 3h5v1h-5zM72 3h5v1h-5zM99 3h6v1h-6zM112 1h4v4h-4zM137 3h4v2h-4zM37 4h2v1h-2zM73 4h3v1h-3zM99 4h7v1h-7zM161 0h4v6h-4zM1 4h3v2h-3zM13 4h3v2h-3zM25 4h3v2h-3zM99 5h8v1h-8zM173 0h4v7h-4zM148 3h4v4h-4zM61 4h4v3h-4zM72 5h4v2h-4zM137 5h3v2h-3zM25 6h13v1h-13zM99 6h9v1h-9zM85 2h4v6h-4zM112 5h3v3h-3zM161 6h3v2h-3zM103 7h6v1h-6zM136 7h16v1h-16zM25 7h14v2h-14zM61 7h15v2h-15zM98 7h4v2h-4zM104 8h5v1h-5zM111 8h4v1h-4zM85 8h3v2h-3zM136 8h15v2h-15zM26 9h13v1h-13zM61 9h14v1h-14zM105 9h10v1h-10zM12 10h3v1h-3zM66 10h6v1h-6zM106 10h9v1h-9zM142 10h7v1h-7zM136 10h4v2h-4zM24 11h3v1h-3zM67 11h5v1h-5zM107 11h7v1h-7zM123 11h4v1h-4zM143 11h5v1h-5zM0 6h4v7h-4zM172 7h4v6h-4zM160 8h4v5h-4zM98 9h3v4h-3zM36 10h3v3h-3zM11 11h4v2h-4zM23 12h4v1h-4zM68 12h5v1h-5zM144 12h5v1h-5zM60 10h4v4h-4zM47 11h4v3h-4zM108 12h6v2h-6zM136 12h3v2h-3zM23 13h16v1h-16zM145 13h4v1h-4zM84 10h4v5h-4zM0 13h15v2h-15zM69 13h5v2h-5zM160 13h15v2h-15zM23 14h15v1h-15zM109 14h5v1h-5zM145 14h5v1h-5zM122 12h5v4h-5zM97 13h4v3h-4zM46 14h5v2h-5zM135 14h4v2h-4zM0 15h14v1h-14zM24 15h14v1h-14zM70 15h5v1h-5zM110 15h4v1h-4zM146 15h5v1h-5zM160 15h14v1h-14zM60 14h3v3h-3zM84 15h3v2h-3zM1 16h11v1h-11zM25 16h11v1h-11zM47 16h3v1h-3zM71 16h4v1h-4zM98 16h2v1h-2zM123 16h3v1h-3zM136 16h2v1h-2zM147 16h3v1h-3zM162 16h11v1h-11z";
 
 function buildBrand() {
@@ -102,15 +77,7 @@ function buildBrand() {
 
 /* ---- One search shape ---------------------------------------------- */
 
-/* The board's own search form, given the frame the palette trigger
-   has: one field with the search glyph at its head and whatever it
-   submits with tucked inside its right edge. Two boxes doing the same
-   job in two visual languages was the thing to fix; the rule the rest
-   of the interface follows is that a control has the button radius and
-   a pill is a label.
-
-   The form is the board's own, moved, so its action, its hidden inputs
-   and its tokens are untouched. */
+// Wraps the board's own search form (moved, not rebuilt, so action/hidden inputs/session tokens survive) in the palette-trigger frame.
 function adoptBoardSearch(form) {
     if (!form || form.closest(".rr-search")) return form;
 
@@ -118,13 +85,7 @@ function adoptBoardSearch(form) {
     const submit = form.querySelector('input[type="submit"], button[type="submit"]');
 
     if (field) {
-        /* The board fakes a placeholder: the prompt is the value, and
-           two inline handlers clear it on click and put it back on
-           blur. Anyone reaching the box with Tab therefore submits the
-           words "Search this topic" as a query, and the box always
-           looks filled in. A real placeholder does the same job
-           correctly, so the value becomes one and the handlers that
-           existed only to manage it go. */
+        // Board fakes a placeholder via value + onclick/onblur; Tab-focus users submit that literal text. Use a real placeholder instead.
         const prompt = (field.getAttribute("value") || "").trim();
         const inline = (field.getAttribute("onclick") || "") + (field.getAttribute("onblur") || "");
         if (prompt && inline.includes(prompt.slice(0, 8))) {
@@ -151,21 +112,7 @@ function adoptBoardSearch(form) {
 
 /* ---- Where a search looks ------------------------------------------ */
 
-/* The board's own boxes are fixed: "Search this forum" searches titles
-   in this forum, "Search this topic" searches the text of this topic,
-   and anything else is the full search form on another page. The
-   choice people actually make — this forum or the whole board, titles
-   or every post — is two hidden inputs away, so it is offered here, in
-   the same box, behind one small control. The form that is submitted
-   is still the board's own; only what its hidden fields say changes.
-
-   The choice is kept in this browser, so a reader who always wants to
-   search every post sets it once. */
-/* The four the full search form offers, in the board's own order of
-   reach. "Message text" is the one that finds a phrase somebody typed
-   inside a thread whose title says nothing about it, which is most of
-   what this board is; it was missing here because the board's own
-   boxes never offer it. */
+// Board's own boxes only offer a fixed search; these hidden-field combos let a click choose depth/scope instead. Preference persists in this browser.
 const SEARCH_IN = [
     { value: "titleonly", label: "Titles" },
     { value: "firstpost", label: "First post" },
@@ -173,9 +120,7 @@ const SEARCH_IN = [
     { value: "all", label: "All posts" },
 ];
 
-/* Two more from the full form, kept with the rest so the box and the
-   palette cannot disagree about them either: every word or any word,
-   and whether the answer is a list of threads or a list of posts. */
+// Rest of the full form's options, kept in sync so the box and the palette can't disagree.
 const SEARCH_TERMS = [
     { value: "all", label: "All words" },
     { value: "any", label: "Any word" },
@@ -186,16 +131,7 @@ const SEARCH_SHOW = [
     { value: "posts", label: "Posts" },
 ];
 
-/* ---- Which forum you are actually in -------------------------------
-
-   The breadcrumb is the only thing on the page that knows. Half the
-   links on this board are written `viewtopic.php?t=105454` with no
-   forum id at all, so PAGE.forumId is null on any topic reached from
-   a listing — and every search made from one went to the whole board
-   while saying it was searching this one.
-
-   The trail comes back outermost first: English Forums, Main Forum,
-   Temporarily Restricted Topics. */
+// PAGE.forumId is null on a topic reached from a listing (viewtopic.php?t=… carries no forum id) — read the forum from the breadcrumb trail instead. Trail comes back outermost first.
 function forumTrail() {
     const out = [];
     const source = document.querySelector("p.breadcrumbs") || document.querySelector(".rr-nav__crumbs");
@@ -208,22 +144,11 @@ function forumTrail() {
     return out;
 }
 
-/* The forum above the one you are in, when there is one worth having.
-
-   This board moves topics: a cracked game lives in Main Forum »
-   Temporarily Restricted Topics, and searching Temporarily Restricted
-   Topics finds the handful of topics that happen to be in that state
-   today rather than the 61,000 the reader meant. The room above is
-   the one people mean by "this forum".
-
-   The first crumb after Board index is a category — English Forums —
-   which holds no topics of its own, so a trail only two deep has
-   nothing above it to offer. */
+// Board moves topics into transient subforums (e.g. Temporarily Restricted); the parent forum is what "this forum" actually means. Needs depth >= 3 since the first crumb is a topic-less category.
 function parentForum(trail) {
     return trail.length >= 3 ? trail[trail.length - 2] : null;
 }
 
-/** A forum name that fits on a chip, with the whole of it on hover. */
 function shortForumName(name) {
     const said = String(name || "").trim();
     return said.length > 24 ? said.slice(0, 23).trimEnd() + "\u2026" : said;
@@ -231,17 +156,13 @@ function shortForumName(name) {
 
 const SEARCH_PREFS_KEY = "searchPrefs";
 
-/* `where` starts as null rather than "here" on purpose: it has to be
-   possible to tell "nobody has chosen" from "somebody chose this
-   forum", because the two get different defaults. Only a click writes
-   it. */
+// `where` starts null (not "here") so "nobody chose" is distinguishable from "chose this forum" — each gets a different default.
 function searchPrefs() {
     const kept = store.get(SEARCH_PREFS_KEY, null);
     return Object.assign({ sf: "titleonly", where: null, terms: "all", sr: "topics" },
         kept && typeof kept === "object" ? kept : {});
 }
 
-/** One of a list of {value,label}, or the first of them. */
 function searchChoice(key, options) {
     const kept = searchPrefs()[key];
     return options.some((option) => option.value === kept) ? kept : options[0].value;
@@ -253,7 +174,6 @@ function setSearchPref(key, value) {
     store.set(SEARCH_PREFS_KEY, next);
 }
 
-/** The depth the palette's own search asks for. */
 function searchDepthChoice() {
     const sf = searchPrefs().sf;
     return SEARCH_IN.some((option) => option.value === sf) ? sf : "titleonly";
@@ -261,15 +181,7 @@ function searchDepthChoice() {
 
 /* ---- The popover both search boxes share ---------------------------
 
-   Where to look and how deep, drawn once. What a choice *means* is the
-   caller's: on a forum or a topic it rewrites the form's hidden fields
-   and the reader presses Search, and on a results page there is
-   nothing left to submit — the query has already run — so choosing
-   runs it again.
-
-   `onChange(place, depth, first)` is called on every choice and once
-   at the start with `first` true, which is how the results page tells
-   "this is where the search went" from "take it somewhere else". */
+   onChange(place, depth, first) fires on every choice and once at start with first=true — on a forum/topic it rewrites hidden fields for Search; on a results page (query already ran) it re-runs the search instead. */
 function buildSearchPopover(frame, field, submit, config) {
     const places = config.places;
     let where = config.where;
@@ -279,10 +191,7 @@ function buildSearchPopover(frame, field, submit, config) {
     const inSeg = el("div.rr-seg", { role: "group", "aria-label": t("What to search") });
     const inRow = el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Look in")]), inSeg]);
 
-    /* The trigger carries the answer. A box that searches somewhere
-       other than the room named above it is the sort of thing you find
-       out about from the results; the room is printed on the control
-       that changes it, visible without opening anything. */
+    // Current room is printed on the trigger itself, visible without opening the popover.
     const whereNow = el("span.rr-search__where", { "aria-hidden": "true" });
     const opts = labelled(
         el("button.rr-search__opts", { type: "button", "aria-expanded": "false" }, [icon("sliders", 13), whereNow]),
@@ -301,8 +210,7 @@ function buildSearchPopover(frame, field, submit, config) {
         }
         whereNow.textContent = place.label;
         labelled(opts, t("Search options — looking in {where}", { where: place.full || place.label }));
-        /* The room is printed on the control now, so the accent is kept
-           for the half that is not: how deep it looks. */
+        // Room name is on the trigger now; the active-dot marks only the other axis (search depth).
         opts.toggleAttribute("data-rr-active", place.value !== "topic" && depth !== "titleonly");
         config.onChange(place, depth, Boolean(first));
     };
@@ -342,11 +250,7 @@ function buildSearchPopover(frame, field, submit, config) {
     };
     opts.addEventListener("click", () => { if (pop.hidden) open(); else close(); });
 
-    /* Reachable from the field, mid-query, without leaving the
-       keyboard: the down arrow opens the choices the way it opens a
-       combobox everywhere else, and the current one takes focus.
-       Typing a query and finding out afterwards that it went to the
-       wrong room is the whole complaint this control answers. */
+    // ArrowDown opens the popover like a combobox, without leaving the keyboard mid-query.
     if (field) {
         field.addEventListener("keydown", (event) => {
             if (event.key !== "ArrowDown" || event.altKey || event.ctrlKey || event.metaKey) return;
@@ -376,8 +280,7 @@ function addSearchOptions(frame, form, field, submit) {
         || (here && here.id)
         || (PAGE.forumId ? String(PAGE.forumId) : null);
 
-    // A results page refines rather than searches a place; its box gets
-    // the control below instead.
+    // A results page refines rather than starts a new search; hand it to addResultOptions instead.
     if (PAGE.isSearch) return addResultOptions(frame, field, submit);
     if (!topicId && !forumId) return;
 
@@ -388,10 +291,7 @@ function addSearchOptions(frame, form, field, submit) {
         input.value = value;
     };
 
-    /* The rooms are named rather than described. "This forum" is a
-       word longer than "Main Forum" and says less: on a board that
-       moves topics between rooms, which room you are in is exactly the
-       thing worth printing. */
+    // Named rather than described ("Main Forum", not "This forum") — which room you're in matters on a board that moves topics.
     const places = [];
     if (topicId) places.push({ value: "topic", label: t("This topic") });
     if (here) places.push({ value: "here", label: shortForumName(here.name), full: here.name, forum: here.id });
@@ -404,17 +304,7 @@ function addSearchOptions(frame, form, field, submit) {
     const prefs = searchPrefs();
     const offered = new Set(places.map((place) => place.value));
 
-    /* Where it starts when nobody has said.
-     *
-     * From a topic, the forum above the one it sits in — see
-     * parentForum(). The board's own box starts on the topic, which
-     * answers "where in this thread did somebody say that" rather than
-     * "what else is there like this", and the second is what people
-     * open the box for. Both are one click apart and the choice
-     * sticks.
-     *
-     * From a listing, the listing: you are already in the room you
-     * meant. */
+    // Default: from a topic, the parent forum (people open this to find "what else is like this", not search within the thread); from a listing, the listing itself.
     const fallback = topicId && offered.has("up") ? "up" : (offered.has("here") ? "here" : "board");
 
     buildSearchPopover(frame, field, submit, {
@@ -431,9 +321,7 @@ function addSearchOptions(frame, form, field, submit) {
                 setHidden("t", null);
                 setHidden("fid[]", place.forum || null);
                 setHidden("sf", depth);
-                // The palette offers these two and remembers them;
-                // the box submits the same search, so it sends what
-                // was chosen rather than its own idea of it.
+                // Send the sr/terms the palette remembers, not the board box's own defaults.
                 setHidden("sr", searchChoice("sr", SEARCH_SHOW));
                 setHidden("terms", searchChoice("terms", SEARCH_TERMS));
             }
@@ -447,10 +335,7 @@ function addSearchOptions(frame, form, field, submit) {
                     : place.value === "board" ? t("Search the whole board")
                     : t("Search {forum}", { forum: place.full || place.label }));
                 field.setAttribute("aria-label", field.getAttribute("placeholder"));
-                /* The prompt in the field says the room too, so the
-                   control stops repeating it until a query covers the
-                   prompt up. The results page has no such prompt and
-                   is not marked. */
+                // Field's placeholder already names the room, so the trigger stops repeating it (data-rr-echo) until typed text covers it.
                 frame.setAttribute("data-rr-echo", "");
             }
         },
@@ -459,21 +344,11 @@ function addSearchOptions(frame, form, field, submit) {
 
 /* ---- Re-aiming a search you are already looking at ------------------
 
-   The results page has one box and it refines: it adds words to the
-   query that already ran. What it cannot do is move it. A search of
-   titles in one forum that found nothing has to be retyped into the
-   full search form to become a search of every post on the board,
-   which is the second thing anybody wants after the first search
-   misses — and until you have retyped it, nothing on the page says
-   where the first one looked.
-
-   phpBB keeps the whole query in the URL, so it can simply be run
-   again with one field changed. */
+   Results page can only refine, not move, a search — phpBB keeps the whole query in the URL, so re-run it with one field (scope/depth) changed. */
 function searchQuery() {
     const here = new URLSearchParams(location.search);
     if (here.get("keywords")) return here;
-    // A search submitted as a POST lands on a page whose own form
-    // action carries the query instead.
+    // A POST search has the query in the form's action instead of the URL.
     const form = document.querySelector('#search-box form[action*="keywords="], form[action*="keywords="]');
     const action = form ? form.getAttribute("action") || "" : "";
     const at = action.indexOf("?");
@@ -481,13 +356,10 @@ function searchQuery() {
     return fallback.get("keywords") ? fallback : here;
 }
 
-/** A forum's name from the list the palette cached off the index. */
 function knownForumName(id) {
     const hit = store.get("forums", []).find((entry) => String(entry.id) === String(id));
     if (hit) return hit.title;
-    // The index knows the boards it lists; the tree knows the
-    // subforums under them, which is where a search picked from the
-    // palette's chooser is most likely aimed (palette.js, forumTree).
+    // Index only lists top boards; subforums live in the tree cached by palette.js (forumTree) — check there too.
     const room = forumTree().find((entry) => String(entry.id) === String(id));
     return room ? room.title : null;
 }
@@ -495,8 +367,7 @@ function knownForumName(id) {
 function addResultOptions(frame, field, submit) {
     const query = searchQuery();
     const keywords = query.get("keywords");
-    // "View active topics" and the unanswered list are searches with no
-    // words in them; there is nothing to re-aim.
+    // "Active topics"/"unanswered" are keyword-less searches — nothing to re-aim.
     if (!keywords) return;
 
     const forumId = query.get("fid[]");
@@ -532,8 +403,7 @@ function addResultOptions(frame, field, submit) {
 }
 
 
-/** Frame one of the board's own search boxes where it stands, rather
-    than at the end of whatever cell it was in. */
+/** Frames a board search box in place, rather than moving it to the end of its cell. */
 function frameBoardSearch(form) {
     if (!form || form.closest(".rr-search")) return null;
     const parent = form.parentElement;
@@ -545,16 +415,8 @@ function frameBoardSearch(form) {
 }
 
 /**
- * The board writes `#topic-search` three times on a topic page: into
- * the breadcrumb strip at each end, and into the sort strip under the
- * posts. The first goes to the topic bar and the last is hidden as a
- * duplicate; the one in the sort strip is left where it is, and it was
- * the only search box on the board still wearing the template's shape
- * — a bare field beside a bordered button, beside three select menus
- * that have been redrawn.
- *
- * Runs after every module, so a box another one has already moved is
- * left alone.
+ * Board writes #topic-search three times (breadcrumb x2 + sort strip); the sort-strip copy is the only one left in the template's own shape.
+ * Runs after other modules so an already-moved box is skipped.
  */
 function frameStraySearch() {
     for (const form of document.querySelectorAll(
@@ -566,12 +428,7 @@ function frameStraySearch() {
 
 /* ---- Board bar ---------------------------------------------------- */
 
-/* The masthead is the board's only route to its rules, its FAQ, the
-   chat, the donation page, registration and the English/Russian
-   switch. rr-nav lifts the search box, the inbox and the account link
-   out of it and the stylesheet then hides the rest, which takes those
-   six links with it. They come back here, as one slim row at the top of
-   the content, in the order the masthead used. */
+// Masthead's remaining links (rules, FAQ, chat, donate, register, lang) get hidden with it by the stylesheet; rebuilt here as one row, in masthead order.
 
 /* Destinations the navbar already offers as an icon of its own.
 
@@ -584,24 +441,13 @@ function frameStraySearch() {
    short. What the bar actually took is not something to infer. */
 const NAV_TOOK = new Set();
 
-/** The same href written twice — with a session id, without — is one
-    destination. */
+/** Same href with/without a session id (?sid=) is one destination. */
 function linkKey(href) {
     return String(href || "").replace(/[?&]sid=[a-f0-9]+/, "").replace(/[?&]$/, "");
 }
 
-/**
- * One entry in the board bar.
- *
- * The original anchor is moved rather than copied, so the session id in
- * its href, and anything another userscript has attached to it, both
- * survive.
- */
-/* The board runs on donations. The link to that page used to get an
-   outline and a heart, which made it the one loud thing in a row of
-   quiet ones; it is an ordinary link in the row now, named so the
-   narrow layout can still keep it in view, and the palette still
-   offers it from anywhere. */
+/** Board-bar link: the original anchor is moved (not copied), so its session id and any other userscript's attachments survive. */
+// Donate link gets no special styling now, just a title naming its purpose — the palette still offers it from anywhere.
 const DONATE_RE = /donat/i;
 
 function isDonateLink(link) {
@@ -615,17 +461,14 @@ function boardBarLink(link) {
 
     link.classList.add("rr-boardbar__link");
 
-    // The language switch is two flags with no text beside them: there
-    // the image is the label, and it is the one the board's Russian
-    // half looks for.
+    // Language switch links have no text; the flag image is treated as the label.
     if (!label && image) {
         image.classList.add("rr-boardbar__flag");
         image.style.display = "";
         return link;
     }
 
-    // Everything else pairs a 12px GIF with a label that says the same
-    // thing, so the label alone is enough.
+    // Everything else pairs an icon with a redundant label; keep just the label.
     link.textContent = label;
     if (isDonateLink(link)) {
         link.classList.add("rr-boardbar__donate");
@@ -634,25 +477,7 @@ function boardBarLink(link) {
     return link;
 }
 
-/* Twelve links in the order the masthead printed them is a list, not a
-   menu. They are three kinds of thing:
-
-     views    — ways of looking at threads (unanswered, active, unread)
-     board    — what the board is (rules, FAQ, chat, members, search)
-     account  — you (register, log in, log out, profile)
-
-   The first two lead the row and the third ends it, hard against the
-   language switch — which is where the board itself put them. Its
-   masthead is two rows of two cells: the board on the left, you on the
-   right, `Logout [ name ]` the last thing before the flags. That split
-   is the one thing about those rows worth keeping, and the version
-   that ran everything together on the left lost it. Grouping is also
-   what stops `Logout [ name ]` wrapping alone onto a second line.
-
-   Classified by destination, not by label: the labels are translated
-   and the hrefs are not. A view is a saved search — `search.php`
-   carrying a `search_id`; plain `search.php` is the board's search
-   form, which is a tool like the FAQ rather than a way of reading. */
+/* Groups links as views/board/account, with account hard right beside the language switch (mirrors the masthead's own two-row split). Classified by href pattern, not label, since labels are translated: a "view" is a saved search (search_id=), not the search form itself. */
 const BOARD_BAR_GROUPS = [
     { id: "views", label: "Threads", re: /search\.php\?[^#]*search_id=/ },
     { id: "board", label: "Board", re: null },      // whatever is neither of the others
@@ -660,17 +485,7 @@ const BOARD_BAR_GROUPS = [
         re: /ucp\.php|mode=(?:login|logout|register)|viewprofile|profile\.php/ },
 ];
 
-/* The board opens every one of its view links with the same word:
-   "View unanswered posts", "View active topics", "View unread posts",
-   "View new posts", "View your posts". Five chips in a row, each
-   starting with a word that says nothing about where it goes — and
-   signed in, on a 1100px window, the row ran off the side of the page.
-
-   The shared opening goes rather than being translated away: these
-   words are the board's, and its Russian half writes its own. Whatever
-   the links happen to start with, if they all start with it and each
-   has something left afterwards, it is dropped; the board's full
-   wording stays as the link's name for anyone hovering or listening. */
+/* Board's view links all start with "View" ("View unanswered posts", etc.) — dead weight that overflows a narrow window. Shared leading words are dropped from the visible label but kept in title/aria-label. */
 function trimSharedPrefix(links) {
     if (links.length < 2) return;
     const words = links.map((link) => link.textContent.trim().split(/\s+/));
@@ -692,17 +507,7 @@ function boardBarGroup(href) {
         || BOARD_BAR_GROUPS.find((group) => !group.re);
 }
 
-/* The board is bilingual and its own switch is two 16px flags with no
-   text, no label and no indication of which one you are on — the one
-   piece of the masthead that was carried over unchanged because it
-   already had no words to carry. Read as a control it says nothing:
-   two small pictures, one of which is already true.
-
-   So the same two links become a segmented control with the language
-   codes beside the flags and the current one marked, which is what the
-   rest of this interface uses for a two-way choice. The anchors are the
-   board's own, moved rather than rebuilt, so the hrefs and any session
-   id in them survive. */
+// Board's language switch is two unlabelled flags with no indication of the current one — rebuilt as a segmented control with codes, using the board's own anchors so hrefs/session ids survive.
 function currentLanguage() {
     const lang = (document.documentElement.getAttribute("lang") || "").toLowerCase();
     return lang.startsWith("ru") ? "ru" : lang.startsWith("en") ? "en" : null;
@@ -732,9 +537,7 @@ function buildLanguageSwitch(links) {
         link.setAttribute("title", name);
         link.setAttribute("aria-label", name);
         if (here && short === here) {
-            // Still a link — the board sets the cookie from it, and
-            // clicking the language you are already on is harmless —
-            // but marked as where you are.
+            // Still a real link (clicking it is harmless) but marked as current.
             link.setAttribute("aria-current", "true");
         }
         group.append(link);
@@ -742,19 +545,12 @@ function buildLanguageSwitch(links) {
     return group;
 }
 
-/* The board's two language links are `index.php?lang=en` and
-   `index.php?lang=ru`, each with a flag. But a guest who has switched
-   to Russian gets `lang=ru` stamped on *every* navigation link, and
-   reading the parameter alone turned Rules, FAQ, Register and Search
-   into a row of pills that all said "RU" while the bar behind them
-   emptied. A language link carries a flag, or a language for a name,
-   or nothing in its query but the language. */
+/* A guest browsing in Russian gets lang=ru appended to *every* nav link, not just the language switch — so lang= alone misidentifies Rules/FAQ/Register as language pills. Require a flag image, a language-named label, or a bare index.php?lang=. */
 function isLanguageLink(link, href) {
     if (!/[?&]lang=/.test(href)) return false;
     if (link.querySelector('img[src*="uk.png"], img[src*="ru.png"], img[src*="/flags/"], img[src*="lang_"]')) return true;
     if (/^\s*(?:english|русский|en|ru)\s*$/i.test(link.textContent)) return true;
-    // Only the index takes a bare lang=: search.php?lang=ru&sid=… is the
-    // search page, in Russian.
+    // Bare lang= only identifies the index — search.php?lang=ru is just the search page in Russian.
     const path = href.replace(/[?#].*$/, "");
     if (!/(?:^|\/)index\.php$|^\.?\/?$/.test(path)) return false;
     const query = href.replace(/^[^?]*\??/, "").replace(/&?sid=[a-f0-9]+/, "");
@@ -782,9 +578,7 @@ function buildBoardBar() {
         group.append(boardBarLink(link));
     };
 
-    // "View unanswered posts | View active topics" is the board's own
-    // strip. It currently floats above the listing with nothing around
-    // it; here it leads the row.
+    // Board's own "unanswered/active" strip floats with nothing around it; folded in to lead the row.
     for (const strip of document.querySelectorAll("#wrapcentre p.searchbar")) {
         for (const link of Array.from(strip.querySelectorAll("a[href]"))) take(link);
         if (!strip.querySelector("a[href], form")) strip.remove();
@@ -798,10 +592,7 @@ function buildBoardBar() {
     const views = groups.get("views");
     if (views) trimSharedPrefix(Array.from(views.querySelectorAll(".rr-boardbar__link")));
 
-    // In the order declared, not the order the masthead happened to
-    // print them: a group that is empty on this page simply is not
-    // drawn, and the one marked `end` goes to the right of the row
-    // rather than the left, in front of the language switch.
+    // Groups render in declared order (empty ones skipped); `end`-marked groups go right, before the language switch.
     const main = el("div.rr-boardbar__main");
     const end = el("div.rr-boardbar__end");
     for (const group of BOARD_BAR_GROUPS) {
@@ -815,11 +606,7 @@ function buildBoardBar() {
 
     if (!main.children.length && !end.children.length) return null;
 
-    // On a phone eight links and two flags wrap to three lines and take
-    // 90px before any content. The two entry points people actually
-    // start from stay put — every guide to this board says to bookmark
-    // "View unanswered posts" — and the rest folds behind one control.
-    // The stylesheet decides at what width; this is only the switch.
+    // On phone the full row wraps to 3 lines; "unanswered/active" (the links every guide tells people to bookmark) stay visible, the rest folds behind More.
     const more = el("button.rr-boardbar__more", {
         type: "button",
         "aria-expanded": "false",
@@ -838,14 +625,7 @@ function buildBoardBar() {
 }
 
 /**
- * Give a control a name, said three ways.
- *
- * These are glyphs with nothing beside them. `aria-label` is what a
- * screen reader announces; `data-rr-tip` is what the stylesheet draws
- * on hover and on focus, straight away. Both say the same words, from
- * one argument, so they cannot drift apart. There is deliberately no
- * `title`: the browser's own tooltip arrived a second after the drawn
- * one and sat on top of it, the same words twice.
+ * Names an icon-only control via aria-label + data-rr-tip (drawn on hover/focus). No `title`: the browser's native tooltip used to appear a beat after the drawn one, showing the same text twice.
  */
 function labelled(node, text) {
     node.removeAttribute("title");
@@ -856,10 +636,7 @@ function labelled(node, text) {
 
 function buildNavbar() {
     const bar = el("header.rr-nav", { role: "banner" });
-    /* The bar runs edge to edge; its contents keep to the content
-       column, so the brand and the icons line up with the board bar and
-       the listing under them on a wide monitor instead of sitting at
-       the screen's edges half a metre from either. */
+    // Bar spans edge-to-edge but its contents track the content column, so they line up with the board bar/listing below.
     const inner = el("div.rr-nav__inner");
     bar.append(inner);
     inner.append(buildBrand());
@@ -903,14 +680,7 @@ function buildNavbar() {
         actions.append(labelled(el("a.rr-icon-btn", { href: ucpHref }, [icon("user")]), label));
     }
 
-    /* The board's controls end here and this script's begins.
-
-       Three unlabelled glyphs in a row read as three of the same
-       thing, and two of them belong to the forum while the third opens
-       a panel the forum knows nothing about. A hairline is the whole
-       distinction: enough that the cog is not read as a fourth board
-       feature, not so much that it becomes a second toolbar. The
-       tooltip says the rest — it names the script. */
+    // Hairline divider: distinguishes the script's settings icon from the board's own icons beside it, without becoming a second toolbar.
     actions.append(el("span.rr-nav__divide", { "aria-hidden": "true" }));
 
     const settingsButton = labelled(
@@ -926,16 +696,7 @@ function buildNavbar() {
 /* ---- The board's own masthead ------------------------------------- */
 
 /**
- * The board's face, kept.
- *
- * The 340px masthead is traded for a 48px bar on every page of a
- * thread, but the art in it is not chrome — the crosshair over a Steam
- * valve is what the board looks like. So it comes back once, on the
- * index, at the size the board draws it.
- *
- * A new <img> at the same file rather than the original moved out of
- * #wrapheader: that block is hidden rather than removed precisely
- * because other userscripts read it.
+ * Masthead art survives on the index at full size — it's the board's identity, not chrome. Rebuilt as a new <img> rather than moving the original, which stays hidden (not removed) since other userscripts read #wrapheader.
  */
 function buildMasthead() {
     const source = findLogo();
@@ -957,25 +718,13 @@ function buildMasthead() {
         }, [art]),
     ]);
 
-    // A file that will not load leaves a broken image where the board's
-    // name should be, which is worse than not showing it.
+    // A broken image is worse than no banner at all.
     art.addEventListener("error", () => banner.remove(), { once: true });
     return banner;
 }
 
 /**
- * The board's name and the line under it.
- *
- * The masthead is three things, not one: the art, the name centred
- * beside it, and the links underneath. With the top bar carrying the
- * name everywhere, the art alone was the whole of what was worth
- * keeping — without a bar it is a picture with a row of chips beside
- * it and nothing saying which board this is, which is the one thing
- * the board's own header never leaves out.
- *
- * Read out of the template rather than moved: #wrapheader is hidden and
- * kept because other userscripts read it, the same reason the art is a
- * new <img> rather than the original.
+ * Board name + strapline, read (not moved) from #wrapheader, which stays hidden for other userscripts reading it. Needed once the top bar already carries the name elsewhere, so a bar-less page isn't just art with no label.
  */
 function buildBoardName() {
     const heading = document.querySelector("#logodesc h1, #wrapheader h1");
@@ -986,7 +735,6 @@ function buildBoardName() {
 
     const block = el("div.rr-boardname", {}, [el("h1.rr-boardname__title", {}, [name])]);
 
-    // "cs.rin.ru | csrin.org | The password is usually one of these."
     const strapline = heading.parentElement
         && heading.parentElement.querySelector("span.gen, span.gensmall");
     const line = strapline ? strapline.textContent.replace(/\s+/g, " ").trim() : "";
@@ -996,15 +744,7 @@ function buildBoardName() {
 }
 
 /**
- * A skip link, as the first thing Tab reaches.
- *
- * The board has none, and the top bar this script adds puts a brand, a
- * breadcrumb, a search box and four buttons in front of the content on
- * every single page. Without a way past them, reaching the first topic
- * from the keyboard is eight tabs, every time.
- *
- * The target needs to be focusable or the browser moves the scroll
- * position and leaves focus behind, so it is given tabindex="-1".
+ * Skip-to-content link — the board has none, and the top bar puts several tab stops before the first topic. Target needs tabindex="-1" or the browser scrolls without moving focus.
  */
 function addSkipLink() {
     const main = document.querySelector("#wrapcentre");
@@ -1022,14 +762,7 @@ function addSkipLink() {
     document.body.prepend(skip);
 }
 
-/**
- * The script's own controls, for a page with no top bar to hold them.
- *
- * Search, the palette and the settings panel live on the bar and
- * nowhere else, so switching the bar off switched off the only way into
- * any of them. They are not the board's controls, so they end the board
- * links row past a hairline, exactly the way they end the bar.
- */
+/** Script's own controls (search/settings) for pages with no top bar — otherwise switching the bar off removes the only way to reach them. */
 function buildHeaderTools() {
     const tools = el("div.rr-headertools");
 
@@ -1057,33 +790,13 @@ function initNavbar() {
 
     const centre = document.querySelector("#wrapcentre");
     const board = settings.get("boardLinks") ? buildBoardBar() : null;
-    /* On the index with the bar, and on every page without one. The
-       masthead is the board's face and the bar is what carries it
-       elsewhere; with no bar, nothing else on the page says which board
-       this is, which is why the board itself prints it on every page. */
+    // Masthead shows on the index (bar carries identity elsewhere) or on any page when there's no bar at all.
     const banner = settings.get("masthead") && (PAGE.isIndex || !bar) ? buildMasthead() : null;
     const name = banner && !bar ? buildBoardName() : null;
 
     if (board && !bar) (board.querySelector(".rr-boardbar__end") || board).append(buildHeaderTools());
 
-    /* The board's own art and the row of links it used to sit above,
-       as one header block.
-
-       They were two blocks stacked: 380px of picture with a thousand
-       pixels of nothing beside it, and the links on their own line
-       underneath. Beside each other they compose — the art anchors the
-       left, the links fill the space it was leaving empty, and the
-       page you land on gets its first listing row a hundred pixels
-       higher. The stylesheet drops back to stacking them below the
-       width where that stops fitting.
-
-       Only the index has a masthead; everywhere else this is the
-       board bar on its own, exactly as before. */
-    /* Beside each other with the bar, stacked without it: no bar means
-       this block *is* the board's header, and the board's own is a
-       picture with its name centred beside it and the links on a line
-       of their own underneath. `data-rr-stack` is what the stylesheet
-       reads to lay it out that way. */
+    // Masthead art + name + board-bar combine into one header block: side by side when there's a top bar, stacked (data-rr-stack) when there isn't.
     const parts = [banner, name, board].filter(Boolean);
     if (centre && parts.length > 1) {
         centre.prepend(el("div.rr-header", { "data-rr-stack": bar ? null : "" }, parts));
@@ -1091,33 +804,17 @@ function initNavbar() {
         centre.prepend(parts[0]);
     }
 
-    /* The board's own 340px masthead is worth uncovering only where
-       nothing here replaced it — with the bar off and the board links
-       off, the reader has asked for the board's own header and should
-       get it. The attribute is set optimistically at document-start
-       (theme.js) so the original never flashes; this is the correction
-       for the page where neither was built. */
+    // Reveal the board's own masthead only when nothing here replaced it; set optimistically in theme.js at document-start to avoid a flash, corrected here.
     document.documentElement.setAttribute("data-rr-header", bar || board || banner ? "rr" : "board");
 
     if (!bar) return;
-    // The forum anchors "back to top" at <a name="top">, which now sits
-    // under the sticky bar; offset it so jumps land in the right place.
-    // The same padding is what lands a post under the bar rather than
-    // behind it when a link to one is followed (see settleFragment).
+    // #top now sits under the sticky bar; offset scroll so both "back to top" and post-link jumps (settleFragment) land below it, not behind it.
     document.documentElement.style.scrollPaddingTop = "calc(var(--rr-nav-h, 48px) + 14px)";
 }
 
 /**
- * <br> the template used as spacing, left stranded beside a block this
- * script injected.
- *
- * subsilver2 separates its strips with bare <br> rather than margins.
- * Where a strip has been folded into one of the script's own bars the
- * <br> stays behind as a 19px band: that is what sat between the action
- * bar and the filter bar, and what stopped the two being drawn as one
- * card, since a sibling combinator still sees a hidden element.
- *
- * Runs after every module, so a bar inserted late is covered too.
+ * subsilver2 spaces strips with bare <br> rather than margins; once a strip is folded into one of this script's bars, the <br> is left stranded as an empty band (a sibling combinator still sees a hidden element).
+ * Runs after every module so late-inserted bars are covered too.
  */
 function dropStrayBreaks() {
     const bars = ".rr-header, .rr-topicbar, .rr-toolbar, .rr-boardbar, .rr-releases, .rr-quickreply";
@@ -1135,27 +832,12 @@ function dropStrayBreaks() {
 
 /* ---- Separators the template left behind --------------------------- */
 
-/* subsilver2 types the bars between its link strips into the template
-   beside each link rather than generating them between the links that
-   survive, and the links are conditional. So a reader who cannot see
-   one gets its separator anyway — "Unsubscribe topic | Bookmark topic
-   | | E-mail friend", or a lone `|` at the end of a cell that is still
-   100% wide. Neither is visible logged out, which is why they survived
-   this long.
-
-   Same job dropStrayBreaks() does for the template's <br> spacing: a
-   separator only belongs between two things that are there. */
-/* A text node made of nothing but spacing and bars, holding at least
-   one bar. It has to allow several: `</a>&nbsp;|&nbsp; &nbsp;|&nbsp;
-   <a>` is a *single* text node in the DOM, so a rule written for one
-   bar per node sees the doubled separator as ordinary text and leaves
-   it exactly where it is. */
+/* subsilver2 hardcodes `|` separators beside conditional links rather than generating them between survivors, leaving orphaned or doubled bars when links are hidden (e.g. logged out). Same job as dropStrayBreaks() but for `|` instead of <br>.
+   Matches a text node of nothing but spacing/bars, allowing several — a doubled separator is one text node in the DOM, so a single-bar-per-node rule would miss it. */
 const SEPARATOR_TEXT = /^[\s |·•]*[|·•][\s |·•]*$/;
-/* What one that earns its place is rewritten to. The board's own
-   spacing, so a strip cannot break across lines at its punctuation. */
+// Board's own spacing, so a strip doesn't line-break at the punctuation.
 const SEPARATOR_KEPT = " | ";
 
-/** Does this node take up room on the page? */
 function occupies(node) {
     if (node.nodeType === 3) return Boolean(node.textContent.replace(/[\s ]/g, ""));
     if (node.nodeType !== 1) return false;
@@ -1164,21 +846,10 @@ function occupies(node) {
 }
 
 /**
- * Drop the separators in one strip that separate nothing.
- *
- * Walks the strip's own child nodes in order. A separator is dropped
- * when there is no visible content before it, none after it, or the
- * thing before it was also a separator. Everything else is left
- * exactly as the board wrote it — this removes punctuation, never
- * content.
- *
- * Returns true if the strip has nothing visible left in it at all.
+ * Drops `|` separators with no visible content before, none after, or preceded by another separator — never touches real content. Returns true if the strip ends up with nothing visible.
  */
 function tidySeparators(strip) {
-    /* Inside a strip that is not rendered at all, nothing "occupies"
-       anything, so every separator would read as orphaned and the
-       punctuation of a cell that may yet be shown again would be
-       thrown away. A hidden strip is left exactly as it is. */
+    // A hidden strip is skipped entirely — nothing "occupies" it, so every separator would look orphaned and get stripped even though the cell may reappear.
     if (!strip.getClientRects().length) return false;
 
     const nodes = Array.from(strip.childNodes);
@@ -1188,16 +859,13 @@ function tidySeparators(strip) {
 
     for (const node of nodes) {
         if (node.nodeType === 3 && SEPARATOR_TEXT.test(node.textContent)) {
-            // Held rather than kept: whether it belongs depends on
-            // whether anything follows it.
+            // Held, not removed yet — whether it belongs depends on what follows.
             if (!seenContent) node.remove();
             else pendingSeparators.push(node);
             continue;
         }
         if (!occupies(node)) continue;
-        // Something real: the first held separator earns its place —
-        // normalised, in case it was carrying two — and any others
-        // after it are duplicates.
+        // First held separator earns its place (normalised, in case it carried two); any further ones were duplicates.
         for (const [i, held] of pendingSeparators.entries()) {
             if (i) held.remove();
             else held.textContent = SEPARATOR_KEPT;
@@ -1211,19 +879,11 @@ function tidySeparators(strip) {
     return content === 0;
 }
 
-/* Where the board writes those strips. Anything the script has already
-   taken links out of is included: emptying a cell is exactly what
-   leaves its punctuation stranded. */
+// Includes cells the script already emptied of links — that's exactly what strands their punctuation.
 const SEPARATOR_STRIPS = "#wrapcentre td.gensmall, #wrapcentre td.nav, #wrapcentre td.cat,"
     + " #wrapcentre p.searchbar, #wrapcentre span.gensmall, #wrapcentre .postbody + .gensmall";
 
-/* A cell that is one column of a data table.
-
-   Hiding such a cell does not blank the column, it removes it: every
-   cell after it in that row slides one place left, out from under its
-   own header. The Team page, where the board leaves the e-mail cell of
-   a member with no address holding one &nbsp;, drew four values under
-   five headings because of it. */
+// Hiding a cell in a data-table row (not blanking it) shifts every later cell left, out from under its header — hit on the Team page's empty e-mail column.
 function isGridCell(cell) {
     if (cell.tagName !== "TD") return false;
     const row = cell.parentElement;
@@ -1233,12 +893,7 @@ function isGridCell(cell) {
 }
 
 /**
- * Runs after every module, for the same reason dropStrayBreaks() does:
- * a strip is only stranded once something has been moved out of it.
- *
- * A cell left with nothing but punctuation is hidden rather than
- * emptied, so the row it is in stops reserving a column for it — that
- * acre of nothing was a `td` at width 100% holding one character.
+ * Runs after every module (see dropStrayBreaks). A cell left with only punctuation is hidden, not emptied, so its column stops being reserved — was a `td` at 100% width holding one character.
  */
 function dropStraySeparators() {
     for (const strip of document.querySelectorAll(SEPARATOR_STRIPS)) {
@@ -1251,12 +906,7 @@ function dropStraySeparators() {
 }
 
 /**
- * The breadcrumb strip is a full-width table of its own. Once the top
- * bar carries the breadcrumb and the toolbars have taken the search
- * box, what is left is an empty 18px band.
- *
- * Runs after the other modules, so it can tell whether anything still
- * needs that strip.
+ * Breadcrumb strip is its own full-width table; once the bar carries the breadcrumb and toolbars take the search box, it's an empty 18px band. Runs after the other modules so it can tell if anything still needs it.
  */
 function tidyCrumbStrip() {
     if (document.documentElement.getAttribute("data-rr-header") !== "rr") return;
@@ -1264,32 +914,16 @@ function tidyCrumbStrip() {
     for (const crumbs of document.querySelectorAll("#wrapcentre p.breadcrumbs")) {
         const strip = crumbs.closest("table.tablebg");
         if (!strip) continue;
-        /* Without the bar the breadcrumb is not duplicated anywhere —
-           it is the only one on the page — so the strip has earned its
-           place whatever else is in it. */
+        // No bar means this breadcrumb isn't duplicated elsewhere, so the strip earns its place regardless of what else is in it.
         if (crumbs.getClientRects().length) {
             strip.setAttribute("data-rr-crumbstrip", "");
             frameBoardSearch(strip.querySelector("#search-box form, form#forum-search, form#topic-search"));
             continue;
         }
-        // A control that is still in the strip but no longer drawn does
-        // not earn it a place: the board writes its search box into the
-        // strip at the top of the page and the one at the bottom, and
-        // the second copy is hidden by then (see dedupeSearchBoxes).
-        // Measured rather than assumed, so a control hidden by any
-        // route counts the same.
+        // A control still present but not drawn (see dedupeSearchBoxes for the hidden duplicate) doesn't count — measured via getClientRects, not assumed.
         const controls = Array.from(strip.querySelectorAll("form, input, select, textarea"));
         if (!controls.some((node) => node.getClientRects().length)) { strip.style.display = "none"; continue; }
-        /* It survives for its search box alone — on a profile, the
-           member list, the control panel, where there is no listing
-           toolbar to move that box into. Drawn as a card it is a
-           full-width grey band holding one field at its right-hand
-           end; named here, the stylesheet draws it as a plain row.
-
-           And the box itself gets the frame every other search box on
-           this board now has, rather than staying the template's field
-           beside a bordered button — which is the shape everything
-           else was moved away from. */
+        // Survives for its search box alone (profile, member list, UCP — no listing toolbar to move it into); styled as a plain row rather than a card, and the box gets the same frame as every other search box.
         strip.setAttribute("data-rr-crumbstrip", "");
         frameBoardSearch(strip.querySelector("#search-box form, form#forum-search, form#topic-search"));
     }

@@ -1,12 +1,6 @@
-/* ------------------------------------------------------------------
-   DOM helpers and the icon set.
-
-   Nothing in this script parses markup. Post content is only ever
-   moved, cloned or read as textContent, and the icon set — the last
-   place that did — is built with createElementNS. That keeps the
-   interface working under a Trusted Types policy, where innerHTML and
-   DOMParser both throw.
-   ------------------------------------------------------------------ */
+// DOM helpers and the icon set. Post content is only ever moved, cloned or
+// read as textContent — never parsed as markup — so this keeps working
+// under a Trusted Types policy, where innerHTML/DOMParser throw.
 
 /**
  * Build an element.
@@ -41,13 +35,7 @@ function on(target, type, handler, options) {
     return () => target.removeEventListener(type, handler, options);
 }
 
-/**
- * Run fn once <html> exists.
- *
- * At document-start the script can be running before the parser has
- * produced anything at all, so documentElement is not a given. Every
- * theme attribute and the stylesheet depend on it.
- */
+// At document-start the parser may not have produced documentElement yet.
 function whenRoot(fn) {
     if (document.documentElement) { fn(); return; }
     const observer = new MutationObserver(() => {
@@ -56,13 +44,8 @@ function whenRoot(fn) {
     observer.observe(document, { childList: true });
 }
 
-/**
- * Run fn once <body> exists.
- *
- * Observes `document` rather than documentElement, which is not
- * guaranteed to exist yet at document-start and is not a valid observe
- * target when it does not.
- */
+// Observes `document`, not documentElement — the latter isn't guaranteed to
+// exist yet at document-start and isn't a valid observe target when absent.
 function whenBody(fn) {
     if (document.body) { fn(); return; }
     const observer = new MutationObserver(() => {
@@ -76,14 +59,9 @@ function whenReady(fn) {
     else fn();
 }
 
-/**
- * Keep Tab inside a dialog while it is open.
- *
- * Every overlay in this script draws a scrim over the page, which says
- * "nothing behind this is reachable" to anyone using a mouse and says
- * nothing at all to anyone using a keyboard: Tab walks straight out of
- * the dialog and into a page they cannot see. Returns a teardown.
- */
+// The scrim tells a mouse user nothing behind it is reachable; without this,
+// Tab would still walk a keyboard user straight out into a page they can't
+// see. Returns a teardown.
 function trapFocus(container, restoreTo) {
     const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), ' +
         'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -122,18 +100,9 @@ function debounce(fn, wait) {
 
 function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
 
-/**
- * May the interface animate?
- *
- * The stylesheet already answers this for transitions, twice: a media
- * query for the system setting and an attribute for the one in the
- * panel. Scrolling does not go through the stylesheet — a `behavior`
- * option passed to scrollTo or scrollIntoView beats the CSS
- * `scroll-behavior` property by design — so every one of the seven
- * places this script scrolls was gliding the page regardless of what
- * either setting said. Reading it back here is what makes the switch
- * mean what it says.
- */
+// The stylesheet already handles CSS transitions via media query + panel
+// attribute, but a `behavior` option passed to scrollTo/scrollIntoView
+// overrides CSS scroll-behavior — so scrolling needs this check separately.
 function motionAllowed() {
     if (settings.get("reduceMotion")) return false;
     return !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -142,29 +111,19 @@ function motionAllowed() {
 /** "smooth" or "auto", for a scroll option. */
 function scrollBehaviour() { return motionAllowed() ? "smooth" : "auto"; }
 
-/* ---- Parsing a page this script fetched --------------------------- */
-
-/* Two features fetch a page of the board and read it — the quick
-   reply, and the releases walk — and DOMParser is the only way to turn
-   HTML into a document.
-
-   Under `require-trusted-types-for 'script'` parseFromString throws,
-   verified rather than assumed. cs.rin.ru does not send that header
-   today; the video players a game thread embeds do, and a board can
-   add one any day. The escape hatch is a policy, which works unless
-   the CSP also names an allow-list that excludes it — and where even
-   that is refused this returns null and the caller says so, rather
-   than throwing inside a click handler. */
+// The quick reply and the releases walk both fetch and parse a page via
+// DOMParser, which throws under a Trusted Types policy (not sent by the
+// board today, but a video embed's player might trigger one). A policy is
+// the escape hatch; where even that's refused, this returns null instead
+// of throwing inside a click handler.
 let htmlPolicy;
 
 function trustedHtml(html) {
     if (typeof window.trustedTypes !== "object" || !window.trustedTypes) return html;
     if (htmlPolicy === undefined) {
         try {
-            // The content is a page of the board this script is already
-            // running on, fetched same-origin, and it is only ever read
-            // — never inserted. There is nothing here to sanitise that
-            // the document it came from had not already accepted.
+            // Fetched same-origin and only ever read, never inserted —
+            // nothing here needs sanitising beyond what the board already accepted.
             htmlPolicy = window.trustedTypes.createPolicy("rin-reforged-page", { createHTML: (input) => input });
         } catch (err) {
             console.warn("[RIN Reforged] no Trusted Types policy available:", err);
@@ -185,26 +144,15 @@ function parseDocument(html) {
     }
 }
 
-/* ---- Colour ------------------------------------------------------- */
-
-/* The board paints usernames from their group, as an inline style on
-   the link, and several of those are #BF0000 or darker on a near-black
-   page — 2.5:1, against the 4.5 that 13px text is held to.
-
-   Those colours are how the board tells you who is talking, so what
-   follows keeps the hue and the saturation and moves only the
-   lightness, by the smallest step that makes the name readable on
-   whatever is actually behind it. A red name stays a red name. */
-
+// The board paints usernames by group as an inline style, some as dark as
+// 2.5:1 on a near-black page — below the 4.5 that 13px text needs. What
+// follows keeps hue and saturation and moves only lightness, the smallest
+// step that clears contrast: a red name stays a red name.
 function parseColour(text) {
     const raw = String(text).trim();
 
-    /* Hex, because a custom property read off the root comes back as
-       whatever was typed into the stylesheet rather than as a resolved
-       rgb(). Reading #f6f6f6 by pulling the digits out of it gives
-       rgb(6, 6, 6) — which is not near-white, it is near-black, and a
-       colour lifted toward it goes the wrong way on every theme whose
-       text colour happens to contain a digit. */
+    // A custom property comes back as the literal stylesheet value, not a
+    // resolved rgb() — #f6f6f6 read digit-by-digit would give rgb(6,6,6).
     const hex = raw.match(/^#([0-9a-f]{3,8})$/i);
     if (hex) {
         const digits = hex[1].length <= 4
@@ -217,25 +165,17 @@ function parseColour(text) {
         };
     }
 
-    /* Signed, and with exponents: oklab's a and b are routinely
-       negative and Chrome writes very small ones as 5.126e-6. The
-       plain [\d.]+ this used to be dropped the minus and cut the
-       exponent off, which turns a green into a magenta. */
+    // Signed and with exponents: oklab's a/b are routinely negative, and
+    // Chrome writes tiny ones as 5.126e-6 — dropping either turns a green
+    // into a magenta.
     const parts = (raw.match(/[+-]?\d*\.?\d+(?:e[+-]?\d+)?/gi) || []).map(Number);
     if (parts.length < 3) return null;
     const alpha = parts.length > 3 ? parts[3] : 1;
 
-    /* What color-mix() actually computes to.
-
-       The comment here used to say color(srgb r g b / a) and the code
-       scaled by 255 on that basis. Chrome resolves these to *oklab*,
-       and oklab's three numbers are a lightness of 0-1 and two axes
-       either side of zero — read as sRGB bytes they come out
-       near-black whatever the real colour is. Every element sitting on
-       one of this stylesheet's 29 color-mix backgrounds was therefore
-       measured against black: on the light theme that says pale text
-       on a pale ground is fine, and the pass that exists to lift the
-       board's own colours never fired on any of them. */
+    // Chrome resolves color-mix() to *oklab*, not color(srgb ...) — reading
+    // its 0-1 lightness and signed axes as sRGB bytes reads near-black
+    // regardless of the real colour, which silently broke contrast fixes
+    // on every color-mix background in the stylesheet.
     if (/^oklab\(/i.test(raw)) return { ...oklabToRgb(parts[0], parts[1], parts[2]), a: alpha };
     if (/^oklch\(/i.test(raw)) {
         const hue = (parts[2] || 0) * Math.PI / 180;
@@ -252,14 +192,8 @@ function parseColour(text) {
     };
 }
 
-/**
- * oklab to sRGB bytes.
- *
- * The standard two steps: oklab to linear-light sRGB through the LMS
- * cone responses, then the sRGB transfer function. Clamped, because a
- * colour that is in oklab's gamut need not be in sRGB's and a channel
- * outside 0-255 makes nonsense of a contrast ratio.
- */
+// oklab to sRGB bytes via LMS cone responses then the sRGB transfer function;
+// clamped since oklab's gamut exceeds sRGB's.
 function oklabToRgb(L, a, b) {
     const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
     const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
@@ -293,21 +227,11 @@ function contrastRatio(one, two) {
 
 const INK_STEPS = 40;
 
-/**
- * The same colour, made readable against `behind`, by mixing it toward
- * `toward` — the theme's own strong text colour — a fortieth at a time
- * until it reaches `target`. Returns null when it already reads, and
- * when nothing on the way there does.
- *
- * Mixing rather than raising the lightness, and this is the second
- * attempt. Climbing the lightness axis keeps the saturation, so the
- * board's #BF0000 came out at pure rgb(255, 38, 38) — readable and
- * neon, on a board whose author has already said in as many words that
- * the red was too loud. Mixing toward the text colour desaturates as
- * it lightens and lands somewhere near the softened red this script
- * already chose for its links: the same colour, quieter and legible,
- * rather than the same colour turned up.
- */
+// Mixes `colour` toward `toward` (the theme's text colour) a step at a time
+// until it clears `target` contrast against `behind`, or returns null if it
+// already clears or never does. Mixing rather than raising lightness alone:
+// the latter kept saturation and turned the board's #BF0000 into a neon
+// rgb(255,38,38) instead of a quieter, legible red.
 function readableInk(colour, behind, target, toward) {
     if (!colour || !behind) return null;
     if (contrastRatio(colour, behind) >= target) return null;
@@ -316,9 +240,8 @@ function readableInk(colour, behind, target, toward) {
         ? { r: 0, g: 0, b: 0, a: 1 }
         : { r: 255, g: 255, b: 255, a: 1 };
     const lifted = mixToward(colour, behind, target, toward || auto);
-    /* The theme's text colour is light, and a light box inside a dark
-       post — a code block the board paints #ccc — cannot be reached
-       that way. The other direction can. */
+    // Mixing toward a light theme text colour can't reach a light box on a
+    // dark background (e.g. a code block); try the other direction.
     if (!lifted && toward) return mixToward(colour, behind, target, auto);
     return lifted;
 }
@@ -333,11 +256,9 @@ function mixToward(colour, behind, target, end) {
             a: 1,
         };
         if (contrastRatio(blend, behind) < target) continue;
-        /* One step past the first that clears it: the same name appears
-           on a plain row and on a striped one, and those are different
-           backgrounds. A fortieth is not a visible difference in the
-           colour and it is the difference between passing everywhere
-           and passing where it was measured. */
+        // One step past the minimum: the same name also appears on a
+        // differently-shaded striped row, so a small margin keeps it
+        // passing there too.
         const over = Math.min(step + 1, INK_STEPS) / INK_STEPS;
         return {
             r: colour.r + (end.r - colour.r) * over,
@@ -359,14 +280,9 @@ function overColour(top, bottom) {
     };
 }
 
-/**
- * What is actually painted behind a node.
- *
- * Composited rather than "the first ancestor that is opaque enough":
- * a tag, a chip and a hovered row are all a tint over something else,
- * and stopping at the first one that happens to be solid measures the
- * wrong colour by however much the tints above it were worth.
- */
+// Composites the full ancestor chain rather than stopping at the first
+// opaque one — a tag/chip/hovered row is a tint over something else, and
+// stopping early would measure the wrong colour.
 function backdropOf(node) {
     const chain = [];
     for (let at = node.parentElement; at; at = at.parentElement) {
@@ -382,33 +298,19 @@ function backdropOf(node) {
     return stack;
 }
 
-/* ---- Numbers ------------------------------------------------------ */
-
-/* This board counts in the millions and prints the counts as one run of
-   digits: 3097072 posts, 168938 views, 61469 topics. At that length a
-   number stops being read and becomes a length — nobody reads 3097072,
-   they see "long". Grouped, it is three million at a glance.
-
-   The separator is a narrow no-break space (U+202F) and not a comma: a
-   comma is the decimal separator for half this board's readers, to
-   whom 3,097,072 has two decimal points in it. No-break, so it cannot
-   leave a lone digit at the end of a wrapped line.
-
-   Regrouped, never rounded: "3.1M" is a different fact. And only
-   quantities — a build id, an AppID or a post number is a name spelled
-   in digits — so nothing here sweeps a page; every caller names what
-   it is handing in. */
+// A run like 3097072 reads as "long", not three million; this groups it.
+// Separator is a narrow no-break space, not a comma — a comma is the decimal
+// separator for half this board's readers, and no-break avoids stranding a
+// digit at a line wrap. Regrouped, never rounded (a build id/AppID/post
+// number is a name, so callers opt in rather than this sweeping a page).
 const DIGIT_GROUP = "\u202f";
 
-/* Where the grouping starts. Four digits where the caller knows the
-   number is a count; five where it only knows it probably is, because
-   2026 is a year and a year is a name — grouping one is an error the
-   reader has to undo. */
+// 4 digits when the caller knows it's a count; 5 when it's only probably one
+// (a 4-digit year is a name, not a quantity — grouping it would be wrong).
 const GROUP_FROM_COUNT = 4;
 const GROUP_FROM_GUESS = 5;
 
-/** 3097072 -> "3 097 072". Anything that is not a plain run of digits,
-    or is short enough to read as it is, comes back untouched. */
+// 3097072 -> "3 097 072". Anything else, or short enough, is untouched.
 function groupDigits(text, from) {
     const raw = String(text).trim();
     if (!/^\d+$/.test(raw)) return raw;
@@ -416,12 +318,8 @@ function groupDigits(text, from) {
     return raw.replace(/\B(?=(\d{3})+(?!\d))/g, DIGIT_GROUP);
 }
 
-/**
- * Regroup every long run of digits inside a node, once.
- *
- * The board's own text stays on the title attribute, so the run of
- * digits it printed can still be read off and copied.
- */
+// The board's original text is kept on the title attribute, so the
+// unrounded digits can still be read off and copied.
 function groupNumbersIn(node, from) {
     if (!node || node.hasAttribute("data-rr-grouped")) return;
 
@@ -442,21 +340,14 @@ function groupNumbersIn(node, from) {
     if (!node.getAttribute("title")) node.setAttribute("title", before);
 }
 
-/**
- * The same, for anything whose *whole* text is one number.
- *
- * Used where the surrounding markup is the board's rather than this
- * script's — the statistics line, a profile's counters — and where a
- * run of digits could as easily be somebody's username.
- */
+// For board markup (statistics line, profile counters) where a run of
+// digits could as easily be a username, so only a whole-text match counts.
 function groupCountElements(selector, root) {
     for (const node of (root || document).querySelectorAll(selector)) {
         if (!/^\s*\d{5,}\s*$/.test(node.textContent)) continue;
         groupNumbersIn(node, GROUP_FROM_GUESS);
     }
 }
-
-/* ---- Icons ------------------------------------------------------- */
 
 const ICON_PATHS = {
     search:    '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
@@ -487,21 +378,15 @@ const ICON_PATHS = {
     heart:     '<path d="M12 20.3 4.6 13a4.7 4.7 0 0 1 0-6.7 4.7 4.7 0 0 1 6.7 0l.7.7.7-.7a4.7 4.7 0 0 1 6.7 0 4.7 4.7 0 0 1 0 6.7z"/>',
     sliders:   '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h10M18 18h2"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="16" cy="18" r="2"/>',
     fold:      '<path d="m7 9 5 5 5-5"/><path d="M4 5h16"/><path d="M4 19h16"/>',
-    /* A topic in the palette: a sheet with lines on it. Boards are
-       layers and bookmarks are stars; this is the third thing in that
-       list and had been borrowing one of the other two. */
+    // A topic: a sheet with lines, since boards already use layers and
+    // bookmarks already use stars.
     topic:     '<path d="M5 4h9l5 5v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M14 4v5h5"/><path d="M8 13h7M8 17h5"/>',
-    // The board's own emblem, redrawn: the masthead is a crosshair over
-    // a Steam valve, and the crosshair is the half that survives being
-    // shrunk to 20px.
+    // The board's emblem redrawn: crosshair over a Steam valve, keeping just
+    // the half that survives shrinking to 20px.
     crosshair: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2"/><path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5"/>',
     clip:      '<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
 
-    /* The writing toolbar. Each of these has to read at 13px against a
-       word, so they are the plainest shape that says the thing: two
-       angle brackets for code, bullets and rules for the two kinds of
-       list, a frame with a sun in it for an image, a play triangle for
-       the video embed, a struck-through eye for the spoiler. */
+    // Writing toolbar: plainest shape per action so it reads at 13px.
     code:      '<path d="M9 7 4 12l5 5M15 7l5 5-5 5"/>',
     list:      '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/>',
     listnum:   '<path d="M10 6h10M10 12h10M10 18h10M4 5.5 5.5 5v4M3.6 15.2a1.4 1.4 0 1 1 2.5.9L3.6 19h3"/>',
@@ -510,15 +395,9 @@ const ICON_PATHS = {
     hide:      '<path d="M2.5 12S6.4 5.8 12 5.8 21.5 12 21.5 12 17.6 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.7"/><path d="M4 20 20 4"/>',
 };
 
-/* Each icon's shapes, built once as real nodes and cloned after.
-
-   The definitions above are written as markup because that is how they
-   are read and edited, but neither svg.innerHTML nor DOMParser
-   survives a require-trusted-types-for policy — and a throw inside
-   icon() takes the whole calling module with it, top bar included. The
-   vocabulary is three self-closing tags with plain attributes, all
-   written in this file, so two expressions and createElementNS read it
-   back exactly and leave no markup sink to be gated. */
+// The markup above is easiest to read/edit as-is, but svg.innerHTML and
+// DOMParser both throw under Trusted Types. Parsed here with two regexes and
+// built with createElementNS instead, so no markup sink needs gating.
 const SHAPE_RE = /<([a-z]+)\s+([^>]*?)\s*\/>/gi;
 const ATTR_RE = /([\w-]+)="([^"]*)"/g;
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -563,13 +442,11 @@ function icon(name, size) {
     return svg;
 }
 
-/* ---- Feedback ---------------------------------------------------- */
-
 let toastHost = null;
 
 function toast(message) {
     if (!toastHost) {
-        /* A live region, so "Link copied" is said as well as shown. */
+        // A live region so "Link copied" is said as well as shown.
         toastHost = el("div.rr-toasts", { role: "status", "aria-live": "polite" });
         document.body.append(toastHost);
     }
@@ -602,10 +479,8 @@ async function copyText(text, okMessage) {
     }
 }
 
-/* ---- Matching what somebody typed ---------------------------------- */
-
-/* Case, accents and apostrophes folded away, so "dragons" finds
-   "Dragon's" and "denuvo" finds "DENUVO". */
+// Case, accents and apostrophes folded away, so "dragons" finds "Dragon's"
+// and "denuvo" finds "DENUVO".
 function foldText(text) {
     return String(text || "")
         .toLowerCase()
@@ -615,15 +490,8 @@ function foldText(text) {
         .replace(/['\u2019\u02bc]/g, "");
 }
 
-/**
- * Does `text` contain every word of `query`, in any order?
- *
- * The filter box and the command palette used to look for the whole
- * query as one run of characters, so "cracks hypervisor" found nothing
- * in "Hypervisor cracks support" and a second word typed after the first
- * narrowed the list to nothing instead of narrowing it further. A
- * query is words; each one has to be somewhere in the title.
- */
+// Does text contain every word of query, in any order? A whole-string match
+// used to make "cracks hypervisor" miss "Hypervisor cracks support".
 function matchesWords(text, query) {
     const words = foldText(query).split(/\s+/).filter(Boolean);
     if (!words.length) return true;

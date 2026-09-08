@@ -1,93 +1,56 @@
-/* ------------------------------------------------------------------
-   Releases: one panel, two scopes.
+// "This page" reads the DOM for free; "All N pages" walks the topic once per
+// click and remembers what it found (never a page load, never twice in a
+// row — Escape stops it). finder.js decides what a post is; this shows it,
+// with quoted text excluded there so a reply quoting a release isn't one.
 
-   **This page** is read straight out of the DOM and costs nothing.
-   **All N pages** walks the topic once, on a click, and remembers what
-   it found — a nineteen page topic is nineteen requests to a board
-   that runs on donations, so it is never a page load and never twice
-   in a row. Escape stops it.
-
-   finder.js decides what a post is; this file shows it. Quoted text is
-   excluded there, because a reply quoting a release is not a release.
-   ------------------------------------------------------------------ */
-
-/* What the board's uploaders actually post, in the words they use.
-
-   Every match is kept, because "Repack, Update, DLC" is three true
-   things about one post and picking one of them would be throwing two
-   away.
-
-   The Russian terms are here because the board is bilingual, and they
-   are the one part of this list that is not grounded in reading the
-   board: its Russian forums are closed to guests, so 115 post bodies
-   sampled across them came back as a single "you are not authorised to
-   read this forum". They are therefore limited to terms that cannot
-   mean anything else in a release post — таблетка and лекарство are
-   idioms for a crack, русификатор is a translation pack — rather than
-   to anything that would guess. A word that is ordinary Russian as
-   well as jargon is not in here. */
+// Every matching word is kept ("Repack, Update, DLC" are three true things).
+// Russian forums are closed to guests, so these terms aren't grounded in
+// reading the board like the English ones — only unambiguous jargon
+// (таблетка/лекарство = crack, русификатор = translation) made the list,
+// nothing that's also ordinary Russian.
 const RELEASE_KINDS = [
     { id: "steamfiles", label: "Clean Steam files", re: /\b(?:clean\s+steam\s+files?|steam\s+files?|scs\b)|чистые\s+файлы/i },
     { id: "repack", label: "Repack", re: /\brepack(?:ed|s)?\b|\bfitgirl\b|\bdodi\b|\belamigos\b|репак/i },
+    // A build you unzip and run, not a repack (nothing recompressed) — its
+    // own kind, named in title lines like "HITMAN 3 [PORTABLE]".
+    { id: "preinstalled", label: "Pre-installed", re: /\bpre[\s-]?installed\b|\bportable\b|предустановленн|портатив/i },
     { id: "crack", label: "Crack", re: /\bcrack(?:ed|fix|s)?\b|\bcodex\b|\bempress\b|\bskidrow\b|\bplaza\b|\btenoke\b|\brune\b|\brazor\s?1911\b|кряк|таблетк|лекарств/i },
-    /* A crack that runs the game under a hypervisor rather than
-       patching it. On this board that is a release of its own kind: it
-       has its own how-to threads, its own requirements and its own
-       thing to know before downloading sixty gigabytes, and the posts
-       say so in the title line — "Black Flag Resynced HYPERVISOR", and
-       "Learn more here on HV releases" underneath. Two letters is a
-       short word to match on, so it has to stand alone; nothing else on
-       this board is spelled HV. */
+    // Its own kind here: its own how-to threads, own requirements, and the
+    // posts say so ("Black Flag Resynced HYPERVISOR"). Must stand alone —
+    // "hv" is short, but nothing else on this board is spelled that way.
     { id: "hypervisor", label: "Hypervisor", re: /\bhyper[\s-]?visor\b|\bhv\b|гипервизор/i },
-    /* An online fix restores multiplayer. It is not every Steam
-       emulator ever posted, which is what this pattern used to say:
-       `goldberg`, `steam emu` and a bare `emulator` were all in here,
-       so "Goldberg emulator used for patching" — a pre-installed
-       single-player release with the Steam stub swapped out — came
-       back tagged Online fix, and so did every post in a topic that
-       mentioned an emulator at all. Which emulator a post means, and
-       what it wanted out of it, is decided below. */
+    // Not every Steam emulator mention — that used to include bare
+    // "emulator"/"goldberg", tagging a pre-installed single-player release
+    // with a swapped Steam stub as Online fix. See STEAM_EMU_RE below.
     { id: "online", label: "Online fix", re: /\bonline[\s-]?fix(?:\.me)?\b|\bmultiplayer\s+fix\b|\bco-?op\s+fix\b|\blan\s+fix\b|онлайн[\s-]*фикс/i },
     { id: "dlc", label: "DLC", re: /\bdlcs?\b|\bunlocker\b|\bcream\s?api\b|\bsmart\s?steam\b|длс|разблокировщик/i },
-    /* "Updated" in a release name is a build stamp, not an update.
-       FLiNG names its trainers
-       `…Plus.30.Trainer.Updated.2026.09.02-FLiNG`, and every one of
-       them came back tagged both Trainer and Update — the second one
-       saying something about the game that the post never said. A
-       date immediately after the word is what tells them apart. */
+    // "Updated" in a release name (FLiNG trainers: "...Updated.2026.09.02")
+    // is a build stamp, not an update — a date right after excludes it.
     { id: "update", label: "Update", re: /\bupdate[ds]?\b(?!\.\d{4}\b)|\bpatch(?:ed|es)?\b|\bhotfix\b|\bupgrade\b|обновлени|обнова|патч/i },
-    /* "Mirror" twice over: the word people write above a second
-       download link, and the word for having uploaded something
-       again. Only the second is a Reupload, and the first is how the
-       board labels links — "DataNodes Mirror:", "Mirror 1", "Mirror
-       #2" — so a mirror followed by a colon, a hash or a number is
-       read as the label it is. Link labels being read as prose, one
-       layer down. */
+    // "Mirror" also labels a second download link ("Mirror 1", "Mirror #2")
+    // rather than meaning reupload — followed by a colon/hash/number, it's
+    // excluded as a link label, not prose.
     { id: "reupload", label: "Reupload", re: /\bre-?upload(?:ed|s|ing)?\b|\bmirrors?\b(?!\s*[:#=]|\s*\d)|\breup\b|перезалив|зеркало/i },
-    { id: "trainer", label: "Trainer", re: /\btrainer\b|\bcheat\s+(?:tables?|engines?)\b|\bsave\s?game\b|трейнер|сохранени/i },
+    { id: "trainer", label: "Trainer", re: /\btrainer\b|\bcheat\s+(?:tables?|engines?)\b|трейнер/i },
+    // Its own word, not Trainer: a save hands over finished progress rather
+    // than unlocking the game as you play.
+    { id: "save", label: "Savegame", re: /\bsave\s?(?:game|file|data)s?\b|\bstarter\s+saves?\b|сохранени/i },
     { id: "language", label: "Language", re: /\blanguage\s+(?:pack|files?)\b|\blocali[sz]ation\b|\btranslation\b|русификатор|локализаци/i },
     { id: "tool", label: "Tool", re: /\btool(?:s|kit)?\b|\bmod\s+manager\b|\binstaller\b|активатор|установщик/i },
     { id: "denuvo", label: "Denuvo", re: /\bdenuvo\b|денуво/i },
 ];
 
-/* Every kind belongs to a family, and the families are what the
-   stylesheet paints, so the same word is the same colour wherever it
-   appears. A test fails if a kind is ever added without one.
-
-     game    what you install          Clean Steam files, Repack
-     run     what makes it start       Crack, Online fix
-     change  what it does to a copy    Update, Reupload
-     extra   what it adds              DLC, Language
-     beside  what sits next to it      Trainer, Tool
-     block   what stops it             Denuvo
-
-   The six have to stay six on every theme: the first mapping put
-   `run` and `block` on two tokens that are the same red on the
-   board's own palette, and a Crack looked like a warning. A check
-   compares all six per theme. */
+// The stylesheet paints by family so the same word is always the same
+// colour; a test fails if a kind is added without one.
+//   game what you install (Clean Steam files, Repack)   run what starts it
+//   change what it does to a copy   extra what it adds   beside what sits
+//   next to it   block what stops it
+// Kept distinct per theme — the first mapping put `run` and `block` on the
+// same red, so a Crack looked like a warning.
 const RELEASE_FAMILY = {
     steamfiles: "game",
     repack: "game",
+    preinstalled: "game",
     crack: "run",
     hypervisor: "run",
     online: "run",
@@ -96,11 +59,11 @@ const RELEASE_FAMILY = {
     dlc: "extra",
     language: "extra",
     trainer: "beside",
+    save: "beside",
     tool: "beside",
     denuvo: "block",
 };
 
-/** The family a kind belongs to, or the neutral one. */
 function releaseFamily(kind) {
     return RELEASE_FAMILY[kind] || "other";
 }
@@ -108,115 +71,78 @@ function releaseFamily(kind) {
 const RELEASE_CACHE_KEY = "topicIndex";
 const RELEASE_CACHE_TOPICS = 8;
 
-/* How many pages one click reads.
+// Used to be a hard cap (80 pages, oldest dropped forever); now a pass, so a
+// click reads the newest unread pages and another click reads the next lot
+// — the far end of a long topic stays reachable instead of impossible.
+// 30 comes from measuring the board's own burst budget live: it answers
+// ~30 requests fast (120-170ms each) then drops to one page per 1.8s
+// regardless of concurrency — a pass this size is the whole fast part and
+// none of the slow crawl. makePace() handles a walk that starts queueing
+// mid-pass; this only decides how much to take on.
+const RELEASE_PASS_PAGES = 30;
 
-   This used to be a cap: 80 pages, and a topic longer than that had
-   its oldest pages dropped and never offered again. On the 429 page
-   HITMAN topic that read 81 pages, said so in small text, and left
-   the other 348 unreachable.
-
-   It is a pass instead. The newest 60 unread pages are read on the
-   first click, the panel says how many are left, and another click
-   reads the next 60 — so the far end of a very long topic is a few
-   clicks away rather than impossible, and no single click commits
-   anyone to a quarter of an hour. */
-const RELEASE_PASS_PAGES = 60;
-
-/* Which end of the topic a walk starts from, kept in this browser for
-   every topic like the fold state is. "newest" reads the last page
-   first and works backwards, which answers "what is it on now";
-   "oldest" reads from page one forwards, which answers "what was
-   posted here, in order". Both the walk and the list follow it. */
+// "newest" reads backward from the last page (what's it on now); "oldest"
+// reads forward from page one (what was posted, in order). Persisted per
+// browser like the fold state.
 const RELEASE_ORDER_KEY = "releaseOrder";
 
 function releaseOrder() {
     return store.get(RELEASE_ORDER_KEY, "newest") === "oldest" ? "oldest" : "newest";
 }
 
-/** Rows in the reading direction: last page first, or page one first. */
 function inReadingOrder(rows, order) {
     const back = order === "oldest" ? -1 : 1;
     return rows.slice().sort((a, b) =>
         back * ((b.page - a.page) || (Number(b.id) - Number(a.id))));
 }
 
-/* ---- How the walk asks the board for pages -------------------------
-
-   The board runs on donations, so the walk is bounded three ways: at
-   most three requests in flight, no two started closer together than
-   RELEASE_START_GAP, and a 429 or 503 stops it where it is rather
-   than retrying into it.
-
-   The fourth bound is this board in particular. It never answers 429;
-   it queues, and six requests sent together come back at two, four,
-   six, eight, ten and twelve seconds — one slot at a time. So the
-   walk times its own answers: the first few set what prompt means
-   today, and once one is several times slower than that it drops to a
-   single request with a much wider gap and stays there.
-
-   No conditional-request path exists to take: viewtopic.php sends no
-   ETag and no Last-Modified. The saving has to come from not asking
-   at all, which is what the page cache below is for. */
+// Bounded three ways: 3 requests in flight max, never two started closer
+// than RELEASE_START_GAP, and a 429/503 stops the walk rather than retrying.
+// The board never actually answers 429 though — it queues silently, so the
+// walk also times its own answers and drops to one slow request once
+// they're several times its own best. No conditional-request path exists
+// (no ETag/Last-Modified), so the only saving is the page cache below.
 const RELEASE_IN_FLIGHT = 3;
 const RELEASE_START_GAP = 160;        /* between request starts, ms   */
-/* Where it goes when the board starts queueing.
-
-   Not to one request at a time with three quarters of a second
-   between them, which is where this used to go. The board queues
-   rather than refusing: measured, it hands out one slot roughly every
-   two seconds however many requests are waiting. A gap on top of that
-   is time spent waiting for a server that is already making you wait,
-   and it made a long topic crawl. Two in flight with a short gap
-   holds the same place in the same queue and gets a page every two
-   seconds instead of every two and three quarters. */
+// Measured: the board hands out one slot roughly every 2s regardless of
+// load, so a wider single-request gap just adds wait on top of the queue's
+// own. 2 in flight with a short gap holds the same queue position instead.
 const RELEASE_EASY_IN_FLIGHT = 2;
 const RELEASE_EASY_GAP = 300;
-/* How many prompt answers in a row mean the queue has drained. A walk
-   that eased on page four of four hundred crawled the rest of the way
-   because nothing ever put it back. */
+// Consecutive fast answers needed to call the queue drained — recovering
+// too eagerly (e.g. after 1) let a walk crawl the rest of a long topic
+// without ever un-easing.
 const RELEASE_RECOVER_AFTER = 4;
-/* How much slower than its own best an answer has to be before that
-   counts as the board asking for room, and the floor below which it is
-   never read as one — a page that took 900 ms after one that took 200
-   is a slow page, not a queue. */
+// How much slower than its own best counts as the board asking for room,
+// and the floor below which nothing counts as a queue at all.
 const RELEASE_SLOW_FACTOR = 3;
 const RELEASE_SLOW_FLOOR = 1500;      /* ms                            */
-/* Statuses that mean "stop", not "try again". */
 const RELEASE_BACK_OFF = [429, 503];
 
-/**
- * How hard the walk is currently pushing.
- *
- * One of these per walk. It starts at three in flight and gives that
- * up the first time the board answers several times slower than its
- * own best — which is what a queue looks like from the outside on a
- * server that never says 429.
- */
+// One of these per walk. Starts at 3 in flight, gives that up the first
+// time an answer is several times slower than its own best.
 function makePace() {
     return {
         inFlight: RELEASE_IN_FLIGHT,
         gap: RELEASE_START_GAP,
         best: Infinity,
         eased: false,
-        // Whether it ever eased, which is what the panel reports: a
-        // walk that eased and recovered still went slowly for a while
-        // and the reader watched it happen.
+        // Whether it ever eased — reported even after recovering, since the
+        // reader still watched it go slowly for a while.
         everEased: false,
         quick: 0,
         slowest: 0,
     };
 }
 
-/** Feed one answer's round trip back into the pace. */
 function notePace(pace, ms) {
     if (!Number.isFinite(ms) || ms <= 0) return;
     pace.slowest = Math.max(pace.slowest, ms);
     if (ms < pace.best) pace.best = ms;
 
     if (pace.eased) {
-        // Back up again once the queue has drained. Held to a lower
-        // bar than the one that eased it, so a walk cannot oscillate
-        // on one borderline page.
+        // Recovery bar is lower than the one that eased it, so a walk
+        // can't oscillate on one borderline page.
         if (ms < Math.max(pace.best * 2, RELEASE_SLOW_FLOOR)) pace.quick += 1;
         else pace.quick = 0;
         if (pace.quick >= RELEASE_RECOVER_AFTER) {
@@ -237,110 +163,84 @@ function notePace(pace, ms) {
     pace.gap = RELEASE_EASY_GAP;
 }
 
-/**
- * What the post *says*, with its links taken out.
- *
- * Not the same text as the one that counts links. People label a link
- * "Mirror 1", "Mirror 2", and reading those as prose tagged every
- * single upload in a topic as a reupload — including the first one,
- * which is by definition not. The words that say what a thing is are
- * the ones around the links, not the ones on them.
- */
+// Not the link-counting text: people label links "Mirror 1", "Mirror 2",
+// and reading those as prose tagged every upload as a reupload — including
+// the first, which by definition isn't one.
 function releaseProse(body) {
-    const copy = ownContent(body);
-    for (const node of copy.querySelectorAll("a[href], .link_removed, " + CODE_BLOCKS)) node.remove();
-    return copy.textContent.replace(/\s+/g, " ").trim();
+    return proseContent(ownContent(body)).replace(/\s+/g, " ").trim();
 }
 
-/* Goldberg is a Steam emulator, and a Steam emulator is two
-   different releases depending on what the post wanted out of it.
-
-   Half this board uses Goldberg as the crack: a pre-installed build
-   with the Steam stub swapped for an emulator so it starts without
-   Steam. The other half uses the same file to put multiplayer back,
-   which is an online fix. The word alone cannot tell them apart, so
-   what the post says around it decides — online, multiplayer, co-op,
-   LAN, servers means the second, and nothing means the first.
-
-   "Goldberg emulator used for patching. Thanks MR_Goldberg for the
-   emulator." is a crack, and used to be tagged Online fix. */
+// Goldberg is used both ways: half the board swaps it in as the crack
+// (offline), the other half uses it to restore multiplayer (online fix).
+// The word alone can't tell them apart — surrounding context decides.
 const STEAM_EMU_RE = /\bgoldberg\b|\bsteam[\s_-]?emu(?:lator)?\b|\bsmart\s?steam\s?emu\b|голдберг|эмулятор\s+steam/i;
-/* Tight on purpose. A post that says "online fix" in so many words
-   is matched by the kind above and never reaches here; this only has
-   to answer "does this Goldberg mention mean multiplayer", and the
-   default when it cannot tell is a crack.
-
-   Bare `online` and bare `server` were in here and both were wrong
-   off the live board: "click on the All Links and download from other
-   download servers", under a pre-installed single-player release,
-   came back tagged Online fix. */
+// Tight on purpose (a post saying "online fix" outright is already matched
+// above): bare `online`/`server` used to be in here and mistagged
+// "download from other download servers" under a single-player release.
 const ONLINE_INTENT_RE = /\bmultiplayer\b|\bco-?op\b|\bcoop\b|\bmatchmaking\b|\blobb(?:y|ies)\b|\blan\s+(?:play|party|game)\b|\bplay(?:ing)?\s+(?:online|with\s+friends)\b|\bonline\s+(?:play|works?|working|mode|multiplayer|co-?op)\b|мультиплеер|кооп|по\s+сети/i;
 
-/** Which kinds a post's own words match. */
+// Release names run together (EpicCrack, ACBlackFlagFix) with no `\b` in the
+// middle, so a modded EpicCrack post matched no kind at all. Split only on
+// the copy kinds are matched against — the row still shows the name as
+// written.
+function splitRunTogether(text) {
+    return text.replace(/([a-z])([A-Z])/g, "$1 $2");
+}
+
 function releaseKinds(text) {
-    const emulated = STEAM_EMU_RE.test(text)
-        ? (ONLINE_INTENT_RE.test(text) ? "online" : "crack")
+    const said = text + " " + splitRunTogether(text);
+    const emulated = STEAM_EMU_RE.test(said)
+        ? (ONLINE_INTENT_RE.test(said) ? "online" : "crack")
         : null;
     const found = [];
     for (const kind of RELEASE_KINDS) {
-        if (kind.re.test(text) || kind.id === emulated) found.push(kind);
+        if (kind.re.test(said) || kind.id === emulated) found.push(kind);
     }
     return found;
 }
 
-/** One row, or null if this post is not one. */
 function describeRelease(post, page) {
     const scored = describePost(post);
     const text = releaseProse(post.body);
     const kinds = releaseKinds(text);
 
-    /* Nothing was posted here.
-
-       A release is a thing you can get: a file host, a login-walled
-       link, a magnet, a torrent, an attachment. Every rule under this
-       one is about telling apart two posts that offer something; this
-       one is about the rest of the topic, which is most of it.
-
-       It replaces three rules that each tried to reach the same
-       answer from a different direction — a score, then "links alone
-       are not enough", then "words alone are not enough" — and that
-       between them still let through every question with a version
-       number in it. On the 429 page HITMAN topic that was two rows in
-       three: "Is there any way to upgrade from v3.140 to v3.170.1?"
-       has a version, two release words and no file behind it.
-
-       A store page, a video and an image host are not offers;
-       hostName() already refuses those, so a post linking a trailer
-       carries nothing. */
+    // A release is a thing you can get (file host, login-walled link,
+    // magnet, torrent, attachment). Replaces three rules that each tried a
+    // different angle and still let through every question with a version
+    // in it — "Is there any way to upgrade from v3.140 to v3.170.1?" has a
+    // version and two release words but no file behind it.
     if (!scored.offers) return null;
 
-    /* Asked, or reported. Neither is offered.
+    // A question or a failure report with a link/version/words still isn't
+    // offered — unless the post also hands something over (attachment,
+    // password, size, label, name), which a release is allowed to do while
+    // opening with a question or a "doesn't work" note. A reply is held to
+    // more: naming a file or size while answering somebody ("@Cybah: you
+    // mentioned the TGBLR mod...") isn't itself an offer unless it carries
+    // the thing or says it's the one publishing.
+    if ((scored.asking || scored.failed) && !scored.password && !scored.handing) return null;
+    if (scored.replying && !scored.password && !scored.attached && !scored.publishing) return null;
 
-       A question with a link in it clears the rule above — "does this
-       work with 3.170.1? [screenshot]" — and is still a question. So
-       is a post that says the thing did not work: on the two topics
-       this was read against, both shapes carried a version, a release
-       word and one link to wherever the thing came from, and both
-       were listed as releases.
+    // The commonest shape on a busy thread that the rule above misses:
+    // someone explaining at length and linking to where the thing already
+    // lives (an official tool, an older mirror, a Nexus mod). See
+    // soundsLikeAdvice(). Exemptions are narrower here — `handing` doesn't
+    // count, since half these posts name a file/size while explaining —
+    // only a password, an attachment, or saying it's the one publishing.
+    if (scored.advising && !scored.publishing && !scored.password && !scored.attached) return null;
 
-       A post handing something over is exempt whatever its first
-       sentence looks like: an attachment, an archive password, a
-       size, a download label, a release name. A release post is
-       allowed to open with a question and allowed to say what to do
-       when it does not work. */
-    if ((scored.asking || scored.failed || scored.replying) && !scored.password && !scored.handing) return null;
-
-    /* What kind of thing it is, or a number on it.
-
-       An offer with neither is a link nobody said anything about, and
-       across thirty topics eight of nine of those were conversation:
-       a Reddit thread, a hosting recommendation, a thank-you. The
-       narrow bar underneath is the older, score-shaped version of the
-       same question, kept for the posts that use none of the words:
-       one recognised kind is enough on its own, because a language
-       pack and a trainer carry no version and none of them. */
+    // An offer naming neither a kind nor a version is, in practice, mostly
+    // conversation (a hosting tip, a thank-you). The score check below is
+    // the older fallback for posts using none of the release words.
     if (!kinds.length && !scored.version && !scored.build) return null;
     if (scored.score < 4 && !kinds.length) return null;
+
+    // A version alone still isn't enough when nothing says what kind of
+    // thing it is — that's also the shape of an aside confirming a hash
+    // ("they match SteamDB's file hashes for Hitman v3.270.1"). Without a
+    // kind, the post must otherwise say it's handing something over.
+    if (!kinds.length && !scored.handing && !scored.attached
+        && !scored.password && !scored.publishing) return null;
 
     return {
         id: post.id,
@@ -360,14 +260,9 @@ function describeRelease(post, page) {
     };
 }
 
-/**
- * Drop rows offering the same thing as one already kept.
- *
- * Excluding quotes stops a reply inheriting a release it only quoted;
- * this catches the rest — the same person posting a mirror of their own
- * upload three times in a row, which reads as one release to a person
- * and as three identical lines to a list.
- */
+// Catches the same person reposting a mirror of their own upload several
+// times, which reads as one release to a person but three identical lines
+// to a list (quote-exclusion already stops a reply inheriting one).
 function dedupeReleases(rows) {
     const seen = new Set();
     return rows.filter((row) => {
@@ -378,8 +273,7 @@ function dedupeReleases(rows) {
     });
 }
 
-/** The highest post id anywhere in a set of posts. phpBB hands them
-    out in order, so it is the newest thing that was there. */
+// phpBB hands out post ids in order, so the highest one is the newest.
 function newestPostId(list) {
     let best = 0;
     for (const post of list) {
@@ -389,7 +283,6 @@ function newestPostId(list) {
     return best;
 }
 
-/** Rows for the posts on screen, in thread order, newest first. */
 function releasesOnThisPage(page) {
     return dedupeReleases(
         posts()
@@ -398,16 +291,9 @@ function releasesOnThisPage(page) {
             .reverse());
 }
 
-/* ---- Walking the topic -------------------------------------------- */
-
-/**
- * Fetch one page of this topic and read the posts out of it.
- *
- * The parsed copy is only ever read, never inserted. parseDocument()
- * is what makes that survive a Trusted Types policy; where even it
- * cannot, this throws and the walk reports the page it lost rather
- * than dying inside a click handler.
- */
+// The parsed copy is only ever read, never inserted — parseDocument()
+// survives Trusted Types on that basis; where even it can't, this throws
+// and the walk reports the lost page instead of dying inside a click handler.
 async function fetchTopicPage(href, page) {
     const response = await fetch(href, { credentials: "same-origin" });
     if (!response.ok) {
@@ -416,73 +302,40 @@ async function fetchTopicPage(href, page) {
         throw err;
     }
 
-    /* The whole page is parsed rather than a fragment cut out of it,
-       and that is a measurement rather than an oversight. On the live
-       board one page of a thirty-four page topic is 89 KB and 417 ms
-       to arrive; parsing all of it takes 2.4 ms, and parsing only the
-       posts block takes 1.5. Slicing the markup first would save nine
-       tenths of a millisecond a page — 29 ms across the whole topic,
-       against fourteen seconds of network — in exchange for a cut that
-       has to land in the right place on every page the board serves.
-       Not a trade worth making. */
+    // The whole page is parsed rather than a slice cut out of it: measured
+    // at 2.4ms full vs 1.5ms for just the posts block, against 417ms of
+    // network per page — not a trade worth the fragility of a markup cut.
     const doc = parseDocument(await response.text());
     if (!doc) throw new Error("page " + page + " could not be parsed");
     return readTopicPage(posts(doc), page);
 }
 
-/** One page's posts, as the walk keeps them. */
 function readTopicPage(found, page) {
     const ids = found.map((post) => Number(post.id)).filter(Number.isFinite);
     return {
         page,
         rows: found.map((post) => describeRelease(post, page)).filter(Boolean),
-        // Every post on the page, not only the releases: what makes a
-        // kept index stale is any new reply, and a topic whose last
-        // twenty posts are chatter has still moved on.
+        // Every post, not just releases — a page of pure chatter still
+        // means the topic moved on.
         newest: ids.length ? Math.max.apply(null, ids) : 0,
-        // The post this page opens with, which is how a later visit
-        // tells "the topic gained replies" from "posts were deleted and
-        // everything after them shifted a page".
+        // Tells "gained replies" from "posts deleted, everything shifted a
+        // page" on a later visit.
         first: ids.length ? Math.min.apply(null, ids) : 0,
         count: found.length,
     };
 }
 
-/* ---- Pages this browser has already read --------------------------- */
-
-/* phpBB paginates by post index, so a reply lands on the last page and
-   leaves every page before it byte-for-byte the same — which makes
-   reading a topic twice nearly free. A *deleted* post breaks that: it
-   shifts every page after it back by one.
-
-   So each page is kept with the id of the post it opens with, and a
-   rescan re-reads two: the last, where new replies are, and the
-   highest page below it as a canary. If the canary still opens with
-   the post it did, nothing between them has moved; if it does not, the
-   topic's cache is dropped and it is read again from the start.
-
-   Kept for fewer topics than the row index: this holds every page of a
-   topic rather than the answer. */
-/* How many topics keep their pages.
- *
- * Four, and a reader who looks at five game threads in an evening has
- * paid for the first one twice. Raised to eight after measuring what a
- * page actually costs on this board, which is the only thing that
- * makes a walk slow.
- *
- * The board does not answer 429; it queues. Timed live: three requests
- * in flight and it answers in 165 ms a page, four or five and it is
- * briefly faster — until a burst budget runs out, and from then on it
- * hands out one page every 1.8 seconds however many are asked for. At
- * eight in flight the same ten pages took 5.9 seconds instead of 0.9.
- * So there is no concurrency to win: the pace below is already at the
- * knee, and the only way to be faster is to ask for less. That is
- * this cache, and it is worth spending a little more of the browser's
- * storage on.
- *
- * A whole topic's pages are a few tens of kilobytes — the rows plus
- * one opening post id per page — so eight of them sit well inside what
- * either backing store will hold. */
+// phpBB paginates by post index, so a reply only changes the last page —
+// reading a topic twice is nearly free, except a *deleted* post shifts
+// every page after it. So each page is kept with the id it opens on; a
+// rescan re-reads the last page (new replies) and the highest page below it
+// as a canary — if its opening post hasn't changed, nothing moved.
+// 4 topics kept was leaving a reader who checks five threads paying for the
+// first one twice; raised to 8 after measuring the board's real cost: it
+// queues rather than 429s, answering ~165ms/page at 3 in flight but only
+// ~1.8s/page once its burst budget runs out regardless of concurrency — so
+// there's no concurrency to win, only fewer requests, hence this cache. A
+// whole topic's pages are a few tens of KB, well within either backing store.
 const RELEASE_PAGES_KEY = "topicPages";
 const RELEASE_PAGES_TOPICS = 8;
 
@@ -504,12 +357,8 @@ function rememberPages(topicId, pages, total) {
     store.set(RELEASE_PAGES_KEY, all);
 }
 
-/**
- * Which pages have to be asked for, and which are already known.
- *
- * Returns the pages to fetch in reading order, plus the canary whose
- * answer decides whether the kept pages may be believed at all.
- */
+// Returns the pages to fetch in reading order, plus the canary whose answer
+// decides whether the kept pages may still be believed.
 function planWalk(topicId, info, total, depth, order) {
     const current = info.current || 1;
     const kept = PAGE.topicId ? pageCache(topicId) : null;
@@ -530,31 +379,16 @@ function planWalk(topicId, info, total, depth, order) {
         else want.push(page);
     }
 
-    /* The canary: the highest page being reused. A post deleted
-       anywhere in the topic shifts every page after it, so the page
-       furthest down the topic is the one that shows it. */
+    // The furthest-down reused page shows a deleted post's shift soonest.
     const canary = reuse.length ? reuse[reuse.length - 1] : null;
     if (canary !== null && !want.includes(canary)) want.push(canary);
 
-    /* Which end to start from.
-
-       Newest first by default, because the question the panel exists
-       to answer is "which version is this thread on now" and the
-       answer is at the end of the topic. Read in page order it
-       arrives last — on a 429 page topic, a quarter of an hour after
-       the first row appears. Read backwards it is the first thing on
-       screen, and the rest is detail the reader can watch fill in or
-       stop with Escape.
-
-       Oldest first is the other real question — what was posted here
-       first, and in what order — so it is a choice rather than a
-       rule, and the panel carries the control.
-
-       Either way page 1 goes first. On this board the opening post of
-       a game topic is the index: whoever owns the thread keeps the
-       current links in it, so it is the single most useful page there
-       is and it costs one request to have it. Reading backwards that
-       has to be said; reading forwards it is where you start anyway. */
+    // Newest first by default — "which version is it on now" is answered at
+    // the end of the topic, and reading forward would arrive there last (a
+    // quarter hour late on a 429-page topic). Oldest first is the other real
+    // question and a user choice, not a rule. Either way page 1 goes first:
+    // it's the thread's index (current links live there) and costs one
+    // request either way.
     want.sort(order === "oldest" ? (a, b) => a - b : (a, b) => b - a);
     const first = want.indexOf(1);
     if (first > 0) {
@@ -562,8 +396,8 @@ function planWalk(topicId, info, total, depth, order) {
         want.unshift(1);
     }
 
-    /* One pass, not the whole topic. What is left over is offered
-       rather than dropped — see RELEASE_PASS_PAGES. */
+    // One pass, not the whole topic — leftovers are offered, see
+    // RELEASE_PASS_PAGES.
     let deferred = 0;
     if (want.length > depth) {
         const keep = want.slice(0, depth);
@@ -575,16 +409,9 @@ function planWalk(topicId, info, total, depth, order) {
     return { reuse: reuse, fetch: want, known: known, canary: canary, deferred: deferred };
 }
 
-/* ---- Asking, a few at a time -------------------------------------- */
-
-/**
- * Run one job per item, at most RELEASE_IN_FLIGHT at once and never
- * two started closer together than RELEASE_START_GAP.
- *
- * The spacing is reserved before the wait rather than measured after
- * it, so three workers cannot each decide independently that it is
- * their turn.
- */
+// At most pace.inFlight at once, never two started closer than pace.gap.
+// The next slot is reserved before waiting, not measured after, so workers
+// can't each independently decide it's their turn.
 async function pacedPool(items, worker, state, pace) {
     const results = new Array(items.length);
     let next = 0;
@@ -593,8 +420,8 @@ async function pacedPool(items, worker, state, pace) {
 
     const run = async () => {
         while (next < items.length && !state.cancelled && !state.stopped) {
-            /* Backing off mid-walk means the workers already started
-               have to stand down, not just the ones not started yet. */
+            // A mid-walk back-off has to stand down already-running workers
+            // too, not just ones not yet started.
             if (running > pace.inFlight) return;
             const index = next;
             next += 1;
@@ -615,13 +442,10 @@ async function pacedPool(items, worker, state, pace) {
         }
     };
 
-    /* A back-off leaves items unclaimed, because the workers that
-       stood down were the ones that would have taken them; so does a
-       recovery, which raises the ceiling above the number of workers
-       there are. Either way, whatever is left is picked up at
-       whatever the pace is by then. Each turn of this loop claims at
-       least one item, because nothing stands down while none is
-       running. */
+    // A back-off or a recovery (raising the ceiling) both leave items
+    // unclaimed; each loop turn re-launches workers at whatever the pace is
+    // by then and claims at least one item, since nothing stands down while
+    // none is running.
     while (next < items.length && !state.cancelled && !state.stopped) {
         const workers = Math.min(pace.inFlight, items.length - next);
         await Promise.all(Array.from({ length: workers }, run));
@@ -629,7 +453,6 @@ async function pacedPool(items, worker, state, pace) {
     return results;
 }
 
-/** Every release across a set of pages, newest page first, deduped. */
 function rowsFromPages(pages, total) {
     const found = [];
     const seen = new Set();
@@ -646,20 +469,10 @@ function rowsFromPages(pages, total) {
     return dedupeReleases(found);
 }
 
-/**
- * Read as much of the topic as this pass covers, and report as it goes.
- *
- * The page in front of you is never fetched; pages this browser has
- * already read are not fetched either unless the canary says they may
- * have moved. What is left goes to the pool above, a few at a time,
- * newest page first.
- *
- * `onRows` is called with the whole list every time a page lands. A
- * walk over a long topic is minutes of work, and a panel that shows
- * nothing until the last page is a panel that looks broken for all of
- * them; the first row now appears on the first answer, and it is the
- * newest one because that is the page the walk starts at.
- */
+// The current page is never fetched, nor is anything already cached unless
+// the canary says it moved. `onRows` fires on every page landed, not just at
+// the end — a walk is minutes of work, and starting from the newest page
+// means the first row appears on the first answer.
 async function walkTopic(info, state, onProgress, onRows) {
     const total = info.total || 1;
     const current = info.current || 1;
@@ -670,8 +483,7 @@ async function walkTopic(info, state, onProgress, onRows) {
     const read = new Map();
     read.set(current, readTopicPage(posts(), current));
 
-    /* Everything held right now — read this time, believed from last
-       time — as one set of pages. */
+    // Everything held right now: read this time, or believed from last.
     const gather = () => {
         const pages = {};
         for (let page = 1; page <= total; page += 1) {
@@ -698,8 +510,7 @@ async function walkTopic(info, state, onProgress, onRows) {
             read.set(page, result);
             return result;
         } catch (err) {
-            // A board saying "not so fast" is answered by stopping, not
-            // by asking again.
+            // Stop rather than retry into a "not so fast" from the board.
             if (RELEASE_BACK_OFF.includes(err.status)) state.stopped = err.status;
             console.warn("[RIN Reforged] topic index:", err);
             return null;
@@ -712,15 +523,9 @@ async function walkTopic(info, state, onProgress, onRows) {
 
     await pacedPool(plan.fetch, fetchOne, state, pace);
 
-    /* Did the pages held from last time move?
-
-       The canary was fetched along with everything else, so this costs
-       nothing extra — it is only read here. If its opening post is not
-       the one it opened with when it was kept, posts have been removed
-       somewhere above it and every page in between is a page number
-       out. The cache is dropped and the topic is read again from
-       scratch, which is the one case where a second scan costs more
-       than a first. */
+    // The canary was already fetched with everything else; if its opening
+    // post changed, something above it was deleted and every page between
+    // is off by one — drop the cache and read the topic again from scratch.
     let shifted = false;
     if (plan.canary !== null && !state.cancelled && !state.stopped) {
         const fresh = read.get(plan.canary);
@@ -746,40 +551,26 @@ async function walkTopic(info, state, onProgress, onRows) {
     const pending = Math.max(0, total - scanned);
     const complete = !state.cancelled && !state.stopped && pending === 0;
 
-    /* Kept whether or not the pass finished.
-     *
-     * This used to be written only on a complete walk, so a topic
-     * read to page thirty and then stopped — by Escape, by a 503, by
-     * a pass ending — kept nothing and started again from nothing the
-     * next time. What makes a partial set safe to keep is the canary
-     * above: a page that was never read is simply absent, and one
-     * that has moved throws the whole set away.
-     *
-     * `scanned > 1` because the page in front of the reader is always
-     * in the set and is not worth a write on its own. */
+    // Kept even on a partial walk — used to only save on completion, so a
+    // walk stopped by Escape/503/pass-end kept nothing. Safe because the
+    // canary already guards against a stale set; `scanned > 1` excludes
+    // the always-present current page from counting as a save-worthy read.
     if (PAGE.topicId && scanned > 1) rememberPages(PAGE.topicId, pages, total);
 
     return {
         rows: rowsFromPages(pages, total),
         done: complete,
         scanned: scanned,
-        // Pages of this topic still unread: the rest of a long topic
-        // that this pass did not reach, plus anything that failed.
-        // The panel offers them rather than dropping them.
         pending: pending,
         newest: newest,
-        // How much of this answer came out of this browser rather than
-        // off the board, which is the whole point of keeping it.
+        // How much of this answer came from the cache rather than the
+        // board — the whole point of keeping it.
         fetched: plan.fetch.length,
         reused: plan.reuse.length,
         refused: state.stopped || null,
-        // Whether the board asked for room, so the panel can say the
-        // walk went slowly on purpose rather than looking stuck.
         eased: pace.everEased,
     };
 }
-
-/* ---- Keeping the answer ------------------------------------------- */
 
 function releaseCache() { return store.get(RELEASE_CACHE_KEY, {}); }
 
@@ -800,7 +591,6 @@ function rememberIndex(topicId, payload) {
     store.set(RELEASE_CACHE_KEY, all);
 }
 
-/** "3 minutes ago", roughly, for the line under the heading. */
 function agoText(at) {
     const seconds = Math.max(0, Math.round((Date.now() - at) / 1000));
     if (seconds < 90) return t("just now");
@@ -811,27 +601,16 @@ function agoText(at) {
     return t("{n} days ago", { n: Math.round(hours / 24) });
 }
 
-/** "12 pages read", in the page's language and number. */
 function pagesReadText(n) {
     return n === 1 ? t("1 page read") : t("{n} pages read", { n });
 }
 
-/* ---- Versions ------------------------------------------------------ */
-
-/* Versions compare as numbers per part, so 1.10 is after 1.9.
-
-   And a part written with a leading zero is not one number, it is two.
-   This board writes the same release both ways — 1.0.6 in one post and
-   1.06 in the next, for the same Title Update — and read as two parts
-   1.06 is one-point-six, which beats 1.0.7 on the second digit. That
-   is how the thirty-three page Black Flag topic came to announce a
-   game on 1.06 whose newest release was 1.0.7.
-
-   Only an exactly two-digit part with a leading zero is split, which
-   is the shape people mean as "point oh six". 1.10 has no leading zero
-   and stays ten, so it stays after 1.9 and after 1.3.
-
-   Comparison only: the row still shows what the poster wrote. */
+// Compared as numbers per part (1.10 after 1.9), except a 2-digit part with
+// a leading zero (1.06) is split into two — the board writes the same
+// release as both "1.0.6" and "1.06", and reading "1.06" as one number beat
+// 1.0.7 on the second digit, announcing 1.06 as newest when 1.0.7 existed.
+// 1.10 has no leading zero and stays ten. Comparison only — the row still
+// shows what was written.
 function versionRank(version) {
     if (!version) return null;
     const parts = [];
@@ -855,72 +634,35 @@ function versionNewer(a, b) {
     return false;
 }
 
-/* Which rows may answer "what version is the game on".
-
-   Not every version in a topic is the game's: a post recommending
-   "v1.6.0 or later lightweight AchievementOverlay" beats 1.0.7 on the
-   second digit, and that is how the headline once announced a game as
-   being on 1.6.0. A trainer, a cheat table and an overlay all carry
-   their own numbers; a crack, a repack, an update, clean Steam files
-   and a DLC pack are versioned against the game.
-
-   So a row sets the headline only if its kind is about the game rather
-   than beside it. Everything still appears in the list; this decides
-   one line. */
+// Not every version in a topic is the game's — "v1.6.0 or later
+// AchievementOverlay" once beat 1.0.7 on the second digit and got announced
+// as the game's version. Only rows whose kind is about the game (not
+// beside it, like a trainer/cheat table/overlay) can set the headline.
 const VERSION_EVIDENCE = new Set(["game", "run", "change", "extra", "block"]);
 
 function saysGameVersion(row) {
     return row.kinds.some((kind) => VERSION_EVIDENCE.has(releaseFamily(kind)));
 }
 
-/** The highest version anybody posted *of the game* — the question the
-    thread was opened with. Build ids are excluded: "build 24127279" is
-    eight digits and beats every real version it is compared against. */
-/* One reply's slip is not the topic's version.
- *
- * Off the live board, one post in a 429 page thread reads "I had some
- * trouble getting V270.1 to work with Peacock" — the poster dropped
- * the 3. off 3.270.1 — and 270 beats every real version in the topic
- * on the first digit. The headline announced the game as being on
- * v270.1.
- *
- * What tells that apart from a release is company: every other
- * version in that topic shares a first part with several others, and
- * that one shared it with nothing. So a first part that exactly one
- * row uses is not allowed to set the headline while another first
- * part is used by more than one.
- *
- * The company has to be real company. In a topic with three releases
- * in it, one first part having two rows and another having one says
- * nothing, and the first release of a genuinely new major version is
- * alone on its first part by definition. So the rule only applies
- * where some first part has three rows or more — an established
- * thread — and even there it can hold a brand new major back until
- * the second post about it, which is the conservative half of a
- * trade whose other half was announcing a game as being on v270.
- */
+// Build ids are excluded (an 8-digit "build 24127279" beats every real
+// version). VERSION_CROWD guards against one typo setting the headline: off
+// the live board, "V270.1" (a dropped "3." from 3.270.1) beat everything on
+// the first digit. Told apart from a real release by company — a first
+// part used by only one row can't set the headline while another is used
+// by several — but only once some first part has 3+ rows (an established
+// thread), so a genuinely new major version isn't held back forever.
 const VERSION_CROWD = 3;
 
-/* The line a version is on: its first part, and its first two.
- *
- * A game topic runs on one line and everything else in it runs on
- * another. Black Flag's releases are 1.0.2, 1.0.4, 1.0.5, 1.0.6,
- * 1.0.7 — seventeen rows on the line 1.0 — and one reply recommending
- * "v1.6.0 or later" of an achievement overlay is alone on 1.6 and
- * beats every one of them on the second digit. The first part alone
- * cannot see that: all eighteen are on 1.
- *
- * So the crowd is counted twice: once on the first part, which throws
- * out Peacock's 6.x and 8.x in a topic about a game on 3.x, and once
- * on the first two, which throws out 1.6 in a topic on 1.0. Both are
- * held to VERSION_CROWD, so a small topic and the first release of a
- * genuinely new line are left alone.
- */
+// Black Flag's 1.0.x releases (17 rows) share a first part with a stray
+// "v1.6.0" overlay recommendation that beats them on the second digit —
+// invisible if only the first part is compared. So the crowd check runs
+// twice: on the first part (throws out Peacock's 6.x/8.x in a 3.x topic)
+// and the first two (throws out 1.6 in a 1.0 topic), both held to
+// VERSION_CROWD so a small topic or a new major line is left alone.
 function versionLine(version, parts) {
     return versionRank(version).slice(0, parts).join(".");
 }
 
-/** The value used by the most rows, or null if nothing leads. */
 function commonest(counts) {
     let best = null;
     let most = 0;
@@ -939,25 +681,22 @@ function countLines(rows, parts) {
     return counts;
 }
 
-/* How many of the newest rows have to agree before a line nobody else
-   is on becomes the answer. A game moving from 1.x to 2.0 is alone on
-   its line by definition, and holding the headline back for ever
-   would be worse than the noise this exists to stop; three release
-   posts about it is a thread that has moved. */
+// How many of the newest rows must agree before a line nobody else is on
+// becomes the answer — a move from 1.x to 2.0 is alone on its line by
+// definition, so holding it back forever would be worse than the noise
+// this guards against.
 const VERSION_RECENT = 3;
 
 function latestVersion(rows) {
     const candidates = rows.filter((row) =>
-        // A bare number read off the prose is shown on its row and is
-        // not evidence about the game; see versionsIn(). Nor is a
-        // number a companion product was named right before.
+        // A bare/companion-product number is shown on its row but isn't
+        // evidence about the game; see versionsIn().
         row.version && row.versionNamed !== false && !row.versionTheirs && saysGameVersion(row));
     if (!candidates.length) return null;
 
-    /* The thread's own line, and the line its newest posts are on. The
-       second wins where enough of them agree, which is what lets a new
-       major version through without waiting for it to outnumber the
-       old one. */
+    // The thread's overall line, or the newest posts' line if enough agree
+    // — letting a new major version through without waiting to outnumber
+    // the old one.
     const newest = candidates.slice()
         .sort((a, b) => Number(b.id) - Number(a.id))
         .slice(0, VERSION_RECENT);
@@ -972,17 +711,11 @@ function latestVersion(rows) {
         ? candidates
         : candidates.filter((row) => versionLine(row.version, 1) === line);
 
-    /* Same question one digit down, among what is left — but only
-       where there is an answer to it.
-
-       A minor line has to hold most of the rows on its major before a
-       line with one row is read as an outlier. Black Flag's twenty-two
-       releases are all on 1.0 and the odd one out is on 1.6, which is
-       an outlier; HITMAN 3 moves its minor every release — 3.11, 3.20,
-       3.40, 3.120, 3.130, 3.150, 3.190, 3.260 — and every one of those
-       is alone on its line. Without the majority test the second topic
-       lost every version above 3.120 to a rule written for the
-       first. */
+    // Same question one digit down, but only when the minor line holds most
+    // of the rows on its major — Black Flag's 22 releases are all on 1.0
+    // with one outlier on 1.6, but HITMAN 3 moves its minor every release
+    // (3.11, 3.20, ... 3.260) and each is alone on its line; without the
+    // majority test that second shape lost every version past 3.120.
     const minors = countLines(online, 2);
     const minor = commonest(minors);
     const kept = minor.count >= VERSION_CROWD && minor.count * 2 > online.length
@@ -996,19 +729,11 @@ function latestVersion(rows) {
     return best;
 }
 
-/* ---- The panel ------------------------------------------------------ */
-
-/* A version, a Steam build id and nothing at all are three different
-   answers to "which one is this", and they read as three variations on
-   the same one: v3.10.5, then a bare em dash with no legend, then
-   #24833802, all in the same weight in the same column.
-
-   Now each says what it is. A version keeps the v and the weight
-   because it is the answer the thread was opened with. A build id is
-   labelled `build`, because it is one — it is not a version and must
-   never be read as a bigger one. And nothing at all is drawn as an
-   empty state rather than as punctuation: dimmer than either, and with
-   the reason on it. */
+// A version, a build id and nothing at all used to read as three variations
+// of the same thing (v3.10.5, an unlabelled em dash, #24833802, same
+// weight, same column). Now each says what it is: a build is labelled
+// `build` so it's never mistaken for a bigger version, and nothing is an
+// empty state rather than bare punctuation.
 function releaseVersion(row, latest) {
     if (row.version) {
         const node = el("span.rr-releases__version", { "data-rr-kind": "version" }, ["v" + row.version]);
@@ -1051,13 +776,6 @@ function releaseRow(row, latest) {
         ]));
     }
 
-    /* The same date treatment the rest of the interface got: the
-       weekday goes, the whole thing stays on hover. A panel that
-       prints "Wednesday, 02 Sep 2026, 09:49" on every row while the
-       listing two clicks away prints "02 Sep 2026" is two answers to
-       one question. */
-    /* Which host it is on is half the decision a reader makes about a
-       release, and until now it took opening the post to find out. */
     const hosts = el("span.rr-releases__hosts");
     for (const name of (row.hosts || []).slice(0, 3)) {
         hosts.append(el("span.rr-releases__host", {}, [name]));
@@ -1078,9 +796,8 @@ function releaseRow(row, latest) {
         el("span.rr-releases__page", {}, [t("p.") + row.page]),
     ]);
 
-    // A row for a post on the page you are already on scrolls to it and
-    // flashes it. One on another page is an ordinary link and behaves
-    // like one, middle click and all.
+    // On the current page, scrolls and flashes the post; otherwise it's an
+    // ordinary link, middle-click and all.
     link.addEventListener("click", (event) => {
         if (event.ctrlKey || event.metaKey || event.shiftKey || event.button) return;
         const anchor = document.querySelector('a[name="p' + row.id + '"]');
@@ -1093,19 +810,10 @@ function releaseRow(row, latest) {
     return el("li.rr-releases__row", { "data-kinds": row.kinds.join(" "), "data-links": String(row.links || 0) }, [link]);
 }
 
-/**
- * Chips that narrow the list to one kind of thing.
- *
- * Only kinds actually present: a row of eleven filters where nine
- * match nothing is a worse list than no filters at all.
- *
- * And only kinds that narrow something. Counting the kinds rather than
- * what they select drew four chips over a single release carrying
- * Crack, Hypervisor, DLC and Update — a row of filters, in the list's
- * own colours, directly above the one row they all match. A kind on
- * every row selects the whole list, which is the list; a list of one
- * cannot be narrowed at all. Neither earns a band of the panel.
- */
+// Only kinds actually present (not 11 chips where 9 match nothing) and only
+// ones that narrow something — a single release tagged Crack/Hypervisor/
+// DLC/Update once drew four chips above the one row they all matched, since
+// a kind on every row (or a list of one) selects nothing.
 function releaseFilters(rows, list, onCount) {
     const present = new Map();
     const matching = new Map();
@@ -1140,11 +848,9 @@ function releaseFilters(rows, list, onCount) {
     };
 
     for (const [id, label] of Array.from(present.entries()).sort((a, b) => a[1].localeCompare(b[1]))) {
-        /* The chip is the same word as the tag in the rows below it, so
-           it is the same colour: a row of grey chips over a list of
-           coloured tags reads as two vocabularies rather than one
-           filter. Unpressed it is the family colour held back; pressed
-           it fills in. */
+        // Same colour as the matching tag below — grey chips over coloured
+        // tags would read as two vocabularies. Held back unpressed, filled
+        // in pressed.
         const chip = el("button.rr-releases__chip", {
             type: "button",
             "data-kind": id,
@@ -1163,8 +869,6 @@ function releaseFilters(rows, list, onCount) {
     return bar;
 }
 
-/* ---- Entry point ---------------------------------------------------- */
-
 function initReleases() {
     if (!PAGE.isTopic || !settings.get("finder")) return;
 
@@ -1180,53 +884,34 @@ function initReleases() {
     const multi = total > 1;
     const kept = canWalk && PAGE.topicId ? cachedIndex(PAGE.topicId) : null;
 
-    /* When there is nothing to show.
-
-       A one page topic with no release on it gets no panel: "nothing
-       here reads as a release" is the whole answer and a card saying so
-       is noise. A topic with more pages is different — the panel is the
-       only way to read the rest of it, and the page in front of you
-       being chatter says nothing about page three. That is exactly the
-       shape a request thread has when the request gets answered, and
-       four of them in a row on the live board had no panel at all. */
+    // No panel at all for a one-page topic with nothing to show — a card
+    // saying "nothing here reads as a release" is noise. A multi-page topic
+    // is different: the panel is the only way to read the rest of it, and
+    // chatter on this page says nothing about page three.
     if (!pageRows.length && !kept && !(canWalk && multi)) return;
 
-    /* Has the topic moved on since the index was taken?
-     *
-     * The page count changing is the obvious signal and it was the only
-     * one: a topic that gained four replies without gaining a page was
-     * offered a stale index with no hint that it was one. phpBB hands
-     * post ids out in order, so a post in front of us with an id past
-     * the highest one the walk saw is proof there are newer ones, and
-     * how many of those are on this page is a floor on how many there
-     * are. It is a floor, not a count — hence "at least".
-     */
+    // Page count changing used to be the only staleness signal, so a topic
+    // that gained replies without gaining a page showed a stale index with
+    // no hint. phpBB hands out post ids in order, so any post here past the
+    // walk's highest seen id proves there are newer ones — a floor, not an
+    // exact count, hence "at least".
     const hereNewest = newestPostId(all);
     const staleBy = kept && kept.newest
         ? all.filter((post) => Number(post.id) > kept.newest).length
         : 0;
 
-    /* The list is rebuilt when the scope changes rather than kept in
-       two copies: the rows, the filters and the counts all differ, and
-       a hidden second list is a second thing to keep in step. */
+    // Rebuilt on scope change rather than kept as two copies — a hidden
+    // second list with its own rows/filters/counts is a second thing to
+    // keep in step.
     const panel = el("section.rr-releases", { "aria-label": t("Releases in this topic") });
     const state = { cancelled: false, stopped: null, scope: "page", topic: kept, order: releaseOrder() };
 
     const count = el("span.rr-releases__count");
     const scope = el("div.rr-releases__scope", { role: "tablist", "aria-label": t("How much to look at") });
 
-    /* Both options, always.
-     *
-     * On a topic with one page only "This page" was drawn, and one
-     * segment of a segmented control on its own does not read as a
-     * control at all — it reads as a label that happens to have a box
-     * around it. On a topic with several the second segment appeared
-     * and the whole thing suddenly made sense. Same panel, two
-     * meanings, decided by something about the topic rather than about
-     * the interface.
-     *
-     * So the second option is always drawn, and on a one page topic it
-     * is disabled and says why. */
+    // Both tabs always drawn — a single segment of a segmented control
+    // reads as a label with a box around it, not a control. On a one-page
+    // topic the second is disabled and says why, rather than not existing.
     const pageTab = el("button.rr-releases__tab", { type: "button", role: "tab" }, [t("This page")]);
     const topicLabel = t(total === 1 ? "All {n} page" : "All {n} pages", { n: total });
     const topicTab = el("button.rr-releases__tab", { type: "button", role: "tab" }, [topicLabel]);
@@ -1239,12 +924,9 @@ function initReleases() {
     }
     scope.append(pageTab, topicTab);
 
-    /* Which end of the topic to read from.
-
-       Beside the scope control because it qualifies it: "All 429
-       pages, newest first" is one sentence. Only drawn where it
-       decides something — a one page topic, or the whole-topic walk
-       switched off, and there is no direction to choose. */
+    // Beside the scope control since it qualifies it ("All 429 pages,
+    // newest first" is one sentence). Only drawn where it decides
+    // something — not on a one-page topic or with the walk switched off.
     const orderSeg = el("div.rr-seg.rr-releases__order", {
         role: "group", "aria-label": t("Which end to read from"),
     });
@@ -1270,15 +952,11 @@ function initReleases() {
     }
     syncOrder();
 
-    /* The board's own "only show me the drops" filter. It was in a
-       strip along the bottom of the panel while the scope control was
-       in the head, so the two things that decide what the panel is
-       showing sat at opposite ends of it. They are one group now. */
+    // Used to sit in a strip at the bottom while the scope control was in
+    // the head — the two things that decide what's shown are one group now.
     const linkFilter = buildLinkFilter(all, pageRows);
     linkFilter.classList.add("rr-releases__only");
 
-    /* What the panel says, as text. Passing "the current version is X,
-       posted by Y on page Z" to somebody else meant retyping it. */
     const copyList = labelled(
         el("button.rr-icon-btn.rr-releases__copy", { type: "button" }, [icon("copy", 14)]),
         t("Copy this list"));
@@ -1303,11 +981,10 @@ function initReleases() {
 
     const body = el("div.rr-releases__body");
 
-    /* The panel folds. On a topic read for the conversation rather
-       than the files it is a card between the bar and the first post
-       that says nothing the reader came for; folded it is one line
-       that says how many releases there are, and opens on a click.
-       Remembered in this browser, for every topic. */
+    // Folded, the panel is one line saying how many releases there are —
+    // for a topic read for the conversation, the unfolded card between the
+    // bar and the first post says nothing the reader came for. Remembered
+    // per browser, for every topic.
     let open = store.get("releasesOpen", true) !== false;
     const fold = el("button.rr-releases__toggle", { type: "button" }, [
         icon("chevronD", 14),
@@ -1342,16 +1019,10 @@ function initReleases() {
             : t(rows.length === 1 ? "{n} release" : "{n} releases", { n: rows.length }) + (scoped ? "" : t(" on this page"));
     };
 
-    /* A walk over a long topic is minutes of work, so what it has
-       found is drawn as it finds it rather than at the end. The list
-       is repainted at most three times a second: sixty pages arriving
-       is sixty repaints of a list that grows by a row or two, and the
-       rows carry click handlers.
-
-       A full render() is what repaints, filter chips and all. A chip
-       pressed while the walk is running comes back unpressed on the
-       next page, which is a fair trade for not keeping two ways of
-       drawing the same list in step. */
+    // Repainted as pages land, throttled to 3/sec so 60 pages isn't 60 full
+    // repaints. A full render() redraws filter chips too, so a chip pressed
+    // mid-walk comes back unpressed on the next page — a fair trade for not
+    // keeping two list-drawing paths in sync.
     let painted = 0;
     const paint = (rows, force) => {
         state.topic = Object.assign(state.topic || {}, { rows: rows, total: total });
@@ -1367,8 +1038,8 @@ function initReleases() {
         state.stopped = null;
         topicTab.disabled = true;
         topicTab.setAttribute("aria-busy", "true");
-        // The pass has its direction now; changing it mid-walk would
-        // only change the list, which reads as the walk turning round.
+        // Direction is locked mid-walk — changing it would only affect the
+        // list, which would read as the walk turning round.
         for (const button of orderSeg.children) button.disabled = true;
         state.topic = {
             at: Date.now(), rows: (state.topic && state.topic.rows) || [],
@@ -1414,8 +1085,8 @@ function initReleases() {
         topicTab.setAttribute("aria-selected", state.scope === "topic" ? "true" : "false");
 
         const scoped = state.scope === "topic";
-        // Both scopes read in the direction the panel is set to, so
-        // the control means one thing rather than two.
+        // Both scopes read in the panel's chosen direction, so the control
+        // means one thing, not two.
         const rows = inReadingOrder(scoped ? (state.topic ? state.topic.rows : []) : pageRows, state.order);
         const latest = scoped ? latestVersion(rows) : null;
 
@@ -1428,10 +1099,8 @@ function initReleases() {
             ]);
             again.addEventListener("click", walk);
 
-            /* The rest of a long topic, offered rather than dropped.
-               The panel used to read the newest eighty pages of a 429
-               page thread, say "the oldest 348 were not read" in small
-               text, and that was the end of it. */
+            // Offered rather than dropped — used to just say "the oldest
+            // 348 pages were not read" in small text and stop there.
             const more = pending && !live
                 ? el("button.rr-btn", { type: "button", "data-variant": "quiet" }, [
                     icon("arrowDown", 12),
@@ -1443,10 +1112,8 @@ function initReleases() {
                     t("Keep going back through the topic, {n} pages at a time", { n: RELEASE_PASS_PAGES }));
                 more.addEventListener("click", walk);
             }
-            /* One sentence, not three spans run together. Read by eye
-               the gaps between them are the punctuation; read aloud
-               they are nothing, and the line came out as
-               "Latest posted: v1.10.05 pages read". */
+            // One sentence, not three spans run together — read aloud those
+            // came out as "Latest posted: v1.10.05 pages read".
             const said = [
                 latest ? t("Latest posted: version {v}", { v: latest }) : null,
                 pagesReadText(state.topic.scanned || 0),
@@ -1458,10 +1125,8 @@ function initReleases() {
                 staleBy ? t("{n} new since", { n: staleBy }) : null,
             ].filter(Boolean).join(". ");
 
-            /* When it was read, whether it has moved on, and the
-               control that acts on both — one group, at one end. They
-               were at opposite ends of the card: the fact on the left,
-               the button that changes it 900px away on the right. */
+            // One group now — used to be opposite ends of the card, the
+            // fact on the left and the button that changes it 900px away.
             body.append(el("div.rr-releases__note", { role: "status", "aria-label": said }, [
                 latest ? el("span.rr-releases__latest", { "aria-hidden": "true" }, [t("Latest posted: v{v}", { v: latest })]) : null,
                 el("span.rr-spacer"),
@@ -1473,10 +1138,7 @@ function initReleases() {
                         live || pending || state.topic.done ? "" : " · " + t("stopped early"),
                         live ? "" : " · " + agoText(state.topic.at || Date.now()),
                     ].join("")),
-                    /* Why it took as long as it did. A walk that halves
-                       its pace because the board is queueing looks
-                       exactly like a walk that has hung, and the
-                       difference matters to whoever is watching it. */
+                    // Distinguishes an eased-off walk from one that hung.
                     state.topic.eased
                         ? el("span.rr-releases__eased", {
                             "aria-hidden": "true",
@@ -1520,8 +1182,7 @@ function initReleases() {
         });
     }
 
-    // Escape stops a walk in progress: eighteen more requests are not
-    // something to leave running because somebody changed their mind.
+    // Stops a walk in progress rather than leaving it running.
     on(document, "keydown", (event) => {
         if (event.key === "Escape" && topicTab.disabled && topicTab.hasAttribute("aria-busy")) {
             state.cancelled = true;
@@ -1529,10 +1190,8 @@ function initReleases() {
         }
     });
 
-    // An index taken earlier opens on the whole topic, because that is
-    // what the reader last asked for and it costs nothing to show. A
-    // topic that has since gained pages is not the same topic, so that
-    // one is dropped rather than shown as if it were current.
+    // An earlier index reopens on the whole topic (what was last asked
+    // for); one from before the topic gained pages is dropped instead.
     if (kept && kept.total === total) state.scope = "topic";
     else if (kept) state.topic = null;
     render();

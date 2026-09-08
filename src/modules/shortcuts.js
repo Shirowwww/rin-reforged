@@ -1,9 +1,4 @@
-/* ------------------------------------------------------------------
-   Keyboard navigation.
-
-   Single-key bindings only fire when nothing is focused that would
-   swallow them, so typing "j" in the reply box still types a j.
-   ------------------------------------------------------------------ */
+// Single-key bindings only fire when nothing is focused that would swallow them, so typing "j" in the reply box still types a j.
 
 const SHORTCUTS = [
     { keys: "Ctrl K", what: "Search or jump to anything" },
@@ -33,7 +28,6 @@ function scrollToPost(direction) {
     if (!anchors.length) return;
 
     const top = window.scrollY + 70;
-    // Each anchor's position is read once and kept with it.
     const placed = anchors.map((node) => ({ node, at: node.getBoundingClientRect().top + window.scrollY }));
     let target = null;
     if (direction > 0) {
@@ -47,12 +41,7 @@ function scrollToPost(direction) {
     window.scrollTo({ top: target.at - 60, behavior: scrollBehaviour() });
 }
 
-/**
- * j and k on a listing: the cursor walks the rows the way it walks the
- * posts of a topic, and Enter opens the one it is on, because the row's
- * title link is what gets the focus. Returns false where there is no
- * listing, so the caller falls back to posts.
- */
+// j/k walk listing rows the way they walk topic posts; Enter opens the focused row's link. Returns false with no listing, so the caller falls back to posts.
 function moveListCursor(direction) {
     const pick = 'td[data-rr-col="title"] a.topictitle, td[data-rr-col="title"] a.forumlink';
     const rows = Array.from(document.querySelectorAll("table[data-rr-list] tr"))
@@ -81,8 +70,7 @@ function goPage(direction) {
 let shortcutSheet = null;
 
 function openShortcutSheet() {
-    // Pressing ? twice used to stack a second copy over the first, and
-    // Escape only ever closed the top one.
+    // Pressing ? twice used to stack a second copy over the first.
     if (shortcutSheet) { shortcutSheet(); return; }
 
     const sheet = el("div.rr-sheet", {
@@ -141,7 +129,6 @@ function initShortcuts() {
     document.addEventListener("keydown", (event) => {
         if (event.ctrlKey || event.metaKey || event.altKey) return;
         if (typingInField(event.target)) return;
-        // Any of the script's own dialogs owns the keyboard while open.
         if (document.querySelector(".rr-palette, .rr-sheet, .rr-panel, .rr-lightbox")) return;
 
         const key = event.key;
@@ -157,9 +144,7 @@ function initShortcuts() {
             }
             if (key === "t") { window.scrollTo({ top: 0, behavior: scrollBehaviour() }); return; }
             if (key === "b") { window.scrollTo({ top: document.body.scrollHeight, behavior: scrollBehaviour() }); return; }
-            // Anything else was not a g-prefixed jump. Falling through
-            // rather than returning means "g" then "j" still moves a
-            // post, instead of being swallowed as a mistyped chord.
+            // Falls through rather than returning, so "g" then "j" still moves a post instead of being swallowed.
         }
 
         switch (key) {
@@ -172,9 +157,7 @@ function initShortcuts() {
             case "n": goPage(1); break;
             case "p": goPage(-1); break;
             case "r": {
-                /* The quick reply first, when there is one: "r" used to
-                   leave for the full posting page past the form that was
-                   already on this one. */
+                // The quick reply first: "r" used to leave for the full posting page past the form already on this one.
                 const quick = document.querySelector(".rr-reply textarea, .rr-reply > button.rr-btn");
                 if (quick) {
                     event.preventDefault();

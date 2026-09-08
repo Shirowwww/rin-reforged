@@ -1,39 +1,26 @@
-/* ------------------------------------------------------------------
-   People.
+/* Local foe list: phpBB's own is four clicks deep and needs a reload.
+   Hidden posts collapse to one line rather than vanish, so a thread
+   doesn't silently lose replies people are answering. Entries key on
+   the profile link's member id, not the display name, because this
+   board renames and an earlier version lost entries when that happened;
+   the name is kept alongside for a readable export and for posts with
+   no profile link (deleted accounts, guests). */
 
-   phpBB's foe list is four clicks deep in the control panel and only
-   takes effect on the next page load. This is the local version: a
-   per-post control, applied immediately, kept in this browser.
-
-   Hidden posts collapse to one line rather than going, so a thread
-   does not silently lose replies people are answering.
-
-   Entries key on the member id in the profile link rather than on the
-   display name, because this board renames and the first version lost
-   the entry the day somebody did. The name is kept alongside so an
-   export stays readable, and so a post with no profile link — a
-   deleted account, a guest — can still be matched on what it has.
-   ------------------------------------------------------------------ */
-
-/**
- * Entries are { id, name }. Anything an older version stored is a bare
- * string, read here as a name-only entry rather than migrated on read:
- * it upgrades itself the next time that person is hidden, and until
- * then it goes on working exactly as it did.
- */
+/* Entries are { id, name }; an older version stored a bare string, read
+ * here as a name-only entry rather than migrated, since it self-upgrades
+ * the next time that person is hidden. */
 function hiddenPeople() {
     return store.get("hiddenUsers", []).map((entry) =>
         (typeof entry === "string" ? { id: null, name: entry } : entry));
 }
 
-/** The member id in a profile link, which survives a rename. */
+// Survives a rename, unlike the display name.
 function personId(post) {
     const link = post.table && post.table.querySelector('a[href*="mode=viewprofile"]');
     const match = link && (link.getAttribute("href") || "").match(/[?&]u=(\d+)/);
     return match ? match[1] : null;
 }
 
-/** Who this post is by, as far as anything here is concerned. */
 function personOf(post) {
     const name = post.author ? post.author.textContent.trim() : null;
     return name ? { id: personId(post), name } : null;
@@ -54,7 +41,6 @@ function setHidden(person, hidden) {
     store.set("hiddenUsers", list);
 }
 
-/** Collapse a post to a single line that says whose it is. */
 function applyHidden(post, name) {
     if (post.table.querySelector(".rr-hidden-note")) return;
 
@@ -67,9 +53,7 @@ function applyHidden(post, name) {
         restore,
     ]);
 
-    // Remember what was already hidden before this ran — a folded Steam
-    // description, a collapsed signature — so bringing the post back
-    // does not also unfold everything the reader had folded.
+    // Remembers what was already folded (a Steam description, a signature) so revealing the post doesn't unfold it too.
     const covered = Array.from(cell.children).filter((child) => !child.hidden);
     for (const child of covered) child.hidden = true;
     cell.prepend(note);
@@ -78,18 +62,15 @@ function applyHidden(post, name) {
         for (const child of covered) child.hidden = false;
         note.remove();
         delete post.table.rrReveal;
-        /* The control that was focused is gone with the note; the
-           keyboard lands on the post it revealed, not on the page. */
+        // The focused control is gone with the note; land the keyboard on the revealed post instead.
         cell.setAttribute("tabindex", "-1");
         cell.focus({ preventScroll: true });
     };
     restore.addEventListener("click", reveal);
-    // Kept on the node rather than in a map: the post objects are
-    // rebuilt by every caller's own posts() pass, the DOM is not.
+    // Kept on the node, not a map: post objects are rebuilt each posts() pass, the DOM is not.
     post.table.rrReveal = reveal;
 }
 
-/** Every post on this page by the same person. */
 function postsBy(person) {
     return posts().filter((post) => {
         const other = personOf(post);
@@ -98,7 +79,6 @@ function postsBy(person) {
     });
 }
 
-/** Put every post by this person back, without a page load. */
 function revealPerson(person) {
     for (const post of postsBy(person)) {
         if (typeof post.table.rrReveal === "function") post.table.rrReveal();
@@ -127,15 +107,11 @@ function addHideControl(post) {
         if (next) {
             for (const other of postsBy(person)) applyHidden(other, person.name);
         } else {
-            // Reversed in place. Reloading was the old answer and it
-            // threw away the reader's position in a nineteen page
-            // thread, and any reply they had half written, to undo a
-            // click they had just made by mistake.
+            // Reversed in place: reloading used to lose the reader's scroll position and any half-written reply.
             revealPerson(person);
         }
 
-        // Every post by this person carries one of these; they all say
-        // the same thing, so they all have to be told.
+        // Every post by this person carries one of these buttons; keep them all in sync.
         for (const other of document.querySelectorAll('.rr-posttools [data-rr-hide="' + CSS.escape(person.name) + '"]')) {
             other.setAttribute("aria-pressed", next ? "true" : "false");
             other.setAttribute("title", label(next));
@@ -144,10 +120,7 @@ function addHideControl(post) {
     });
     button.setAttribute("data-rr-hide", person.name);
 
-    // Per-post actions are a separate setting, and they build the strip
-    // this control used to be appended to. With them off the control
-    // silently never appeared, though its own switch said it was on —
-    // so a strip is made here when there is not one already.
+    // Per-post actions (a separate setting) normally build this strip; make one if that setting is off.
     const holder = post.head || post.headCell;
     let tools = holder.querySelector(".rr-posttools");
     if (!tools) {
@@ -159,15 +132,10 @@ function addHideControl(post) {
     button.setAttribute("data-rr-tip-side", "above");
 }
 
-/* ---- First unread --------------------------------------------------- */
-
-/**
- * phpBB can jump to the first unread post, but only from a link in the
- * topic list. Inside a topic there is no way back to it.
- */
+// phpBB links the first unread post only from the topic list; nothing gets back to it from inside the topic.
 function addUnreadJump(bar) {
     if (!bar || !PAGE.topicId) return;
-    // The board printed one for this member and the bar already took it.
+    // The board already printed one for this member.
     if (bar.querySelector('a[href*="view=unread"]')) return;
 
     const url = new URL("./viewtopic.php", location.href);
@@ -181,8 +149,7 @@ function addUnreadJump(bar) {
         title: t("Jump to the first post you have not read"),
     }, [icon("arrowDown", 13), t("First unread")]);
 
-    // The first row is what you do to the topic in front of you, which
-    // is what this is. Without the row it falls back to the bar.
+    // Belongs on the first row (actions on the topic itself); falls back to the bar if there is no row.
     const row = bar.querySelector('.rr-topicbar__row[data-rr-row="here"]') || bar;
     const spacer = row.querySelector(".rr-topicbar__spacer");
     if (spacer) row.insertBefore(link, spacer);

@@ -1,34 +1,13 @@
-/* ------------------------------------------------------------------
-   Settings panel.
-
-   Generated entirely from the schema, so a new feature is a new entry
-   in schema.js and nothing else. Changes apply live: there is no Save
-   button because there is nothing to save at the end. The exception is
-   the handful of fields the schema marks `reload` — see applyField.
-
-   The panel is a rail of categories beside the controls rather than
-   one scroll of sixty rows. Picking a category shows that category;
-   typing in the search box searches all of them at once and the rail
-   then says how many each one holds, so a setting whose name you half
-   remember is one glance rather than nine.
-   ------------------------------------------------------------------ */
+/* Settings panel, generated entirely from schema.js — a new feature is just a
+   new schema entry. Changes apply live (no Save button); fields marked
+   `reload` in the schema are the exception, see applyField. A rail of
+   categories beside the controls, searchable across all of them at once. */
 
 let panelHost = null;
 
-/**
- * Store a field's value, and reload where that is the only way to apply
- * it.
- *
- * Nearly everything here is a class or a custom property and lands the
- * moment it is set. The header is not: the top bar, the board links row
- * and the masthead are built once at load out of the board's own
- * markup, and the stylesheet uncovers the board's own 340px masthead
- * the moment the bar is switched off. Toggled live, that put the two on
- * top of each other — the board's header showing through, the script's
- * bar floating over it, the page under both with no room reserved for
- * either. A field that cannot be undone in place says so in the schema
- * and gets a reload; the rest still apply as you click them.
- */
+// Store a field's value; reload if the schema marks it `reload` (e.g. the
+// top bar, built once from the board's own header markup at load, can't be
+// un-toggled live without the board's header and the bar overlapping).
 function applyField(field, value) {
     settings.set(field.id, value);
     if (!field.reload) return;
@@ -36,10 +15,8 @@ function applyField(field, value) {
     setTimeout(() => location.reload(), 600);
 }
 
-/* Every control below exposes a sync() so the panel can be brought back
-   in line with a setting that changed somewhere else — the palette's
-   "Switch theme" action, or an import. Without it the panel goes on
-   showing the value it had when it opened. */
+// Every control exposes sync() to reflect a setting changed elsewhere (palette
+// theme switch, import) rather than only what was true when the panel opened.
 
 function buildToggle(field) {
     const button = el("button.rr-switch", {
@@ -99,12 +76,8 @@ function buildRange(field) {
     return wrap;
 }
 
-/* Six unlabelled squares of colour, one of them with a ring round it,
-   was the whole control: which was which took hovering each in turn,
-   and the ring on the chosen one was easy to miss beside five others
-   the same size. Each is a named chip now — the colour as a dot, its
-   name under it, a tick on the one in use — and the chip lights up
-   under the pointer, so the choice reads as a choice. */
+// Named chips (dot + label + tick), not unlabelled colour squares — those
+// required hovering each one to tell which was which.
 function buildSwatches(field) {
     const group = el("div.rr-swatches", { role: "radiogroup", "aria-label": field.label });
     const sync = () => {
@@ -116,8 +89,7 @@ function buildSwatches(field) {
     };
     for (const option of field.options) {
         const dot = el("span.rr-swatch__dot", {}, [icon("check", 13)]);
-        // A custom property has to go through setProperty; Object.assign
-        // on style, which el() uses, silently drops it.
+        // el()'s Object.assign onto style silently drops custom properties; setProperty is required.
         dot.style.setProperty("--rr-swatch", option.color);
         const button = el("button.rr-swatch", {
             type: "button",
@@ -151,22 +123,18 @@ function buildField(field) {
         ]),
         el("div.rr-field__control", {}, [buildControl(field)]),
     ]);
-    // Searched on the words a reader would use, not the id: nobody
-    // looks for "linkifyBare". The id is in there anyway, for whoever
-    // read it in an export.
+    // Searchable by label/desc, not just the id (which nobody types but an export shows).
     row.dataset.search = (field.label + " " + (field.desc || "") + " " + field.id).toLowerCase();
     if (field.when) row.setAttribute("data-rr-dep", field.when);
     return row;
 }
 
-/** A field is only shown when the field it depends on is on. */
 function syncDependencies(body) {
     for (const row of body.querySelectorAll("[data-rr-dep]")) {
         row.toggleAttribute("data-rr-dep-off", !settings.get(row.getAttribute("data-rr-dep")));
     }
 }
 
-/** Bring every control in the panel back in line with what is stored. */
 function syncControls(body) {
     for (const control of body.querySelectorAll(".rr-field__control > *")) {
         if (typeof control.sync === "function") control.sync();
@@ -179,21 +147,14 @@ function exportSettings() {
         version: RR_VERSION,
         exported: new Date().toISOString(),
         settings: settings.all(),
-        // Bookmarks, history, hidden members — what a move to another
-        // browser wants. Not the drafts: an unsent reply is not settings
-        // and has no business on a clipboard.
+        // Everything but drafts: an unsent reply has no business on a clipboard.
         data: Object.fromEntries(Object.entries(store.all()).filter(([key]) => key !== "drafts")),
     };
     copyText(JSON.stringify(payload, null, 2), "Settings and data copied as JSON");
 }
 
-/* Bookmarks, history, hidden members, the Releases cache, the titles
-   the palette remembers: the data the script keeps for itself, gone in
-   one step. The settings stay.
-
-   The last of those sits on a key of its own rather than in rr:data
-   (store.js, buckets), so replacing rr:data does not reach it — it is
-   dropped by name, by the module that owns the name. */
+// Wipes rr:data plus the topic-title index bucket by name (see forgetTopicIndex),
+// since that one lives outside rr:data and store.replace({}) wouldn't reach it.
 function clearData() {
     if (!window.confirm("Forget bookmarks, reading history, hidden members, remembered topic titles and the Releases cache? Your settings stay.")) return;
     store.replace({});
@@ -221,16 +182,8 @@ async function importSettings() {
     }
 }
 
-/* ---- The panel ---------------------------------------------------- */
-
-/**
- * Which rows a category still shows, and which category is open.
- *
- * Two states rather than one, because they mean different things: a
- * row hidden because its parent setting is off must stay hidden while
- * searching, and a category with no matches must be sayable as "no
- * matches" rather than silently empty.
- */
+// Tracks two independent hidden-states per row: dependency-off (stays hidden
+// while searching) and search-no-match (so a category can say "no matches").
 function buildPanelBody() {
     const rail = el("nav.rr-panel__rail", { "aria-label": "Settings categories" });
     const pages = el("div.rr-panel__pages");
@@ -270,7 +223,6 @@ function buildPanelBody() {
         entry.tab.addEventListener("click", () => select(entry.group.id));
     }
 
-    // Left and right walk the rail, which is what a tab list does.
     rail.addEventListener("keydown", (event) => {
         const index = groups.findIndex((entry) => entry.group.id === current);
         let next = null;
@@ -283,10 +235,7 @@ function buildPanelBody() {
         target.tab.focus();
     });
 
-    /* Searching cuts across the categories: the rail keeps a count per
-       category and the pages show every match at once, because a
-       reader who types "quote" does not know which of nine boxes it
-       was filed under. */
+    // Search shows every match across all categories at once, with a count per rail tab.
     const search = (needle) => {
         const query = needle.trim().toLowerCase();
         let total = 0;
@@ -306,8 +255,6 @@ function buildPanelBody() {
 
         if (!query) { select(current); return total; }
 
-        // Every category with a hit is on screen at once while
-        // searching, so the answer is never behind a tab.
         for (const entry of groups) {
             entry.section.toggleAttribute("data-rr-off", entry.tab.hasAttribute("data-rr-empty"));
         }
@@ -368,8 +315,7 @@ function openSettings() {
         ]),
         body,
         el("div.rr-panel__foot", {}, [
-            /* "Export" copied to the clipboard and took bookmarks and
-               history with it, and said neither. */
+            // Renamed from "Export": it copies to the clipboard and includes bookmarks/history, unstated before.
             el("button.rr-btn", {
                 type: "button", onclick: exportSettings,
                 title: "Copies every setting, plus bookmarks, history and hidden members, as JSON. Unsent drafts stay here.",
@@ -395,8 +341,7 @@ function openSettings() {
         ]),
     ]);
 
-    // A light scrim rather than the palette's full dim: the panel is
-    // for adjusting the page you can still see behind it.
+    // Light scrim, not the palette's full dim — the page stays visible behind the panel.
     const overlay = el("div.rr-overlay", { style: { background: "rgba(6, 8, 11, .25)", zIndex: "2050" } });
     overlay.addEventListener("mousedown", close);
 

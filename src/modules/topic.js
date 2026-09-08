@@ -1,20 +1,10 @@
-/* ------------------------------------------------------------------
-   Reading a topic.
-
-   A game thread opens with a Steam dump: header art, details, the full
-   store description, system requirements and screenshots. That is
-   thousands of words before the first reply that anyone came for.
-
-   The card below keeps the details, folds the marketing copy, and puts
-   the lookups people actually leave for (SteamDB, PCGamingWiki) one
-   click away instead of one search away.
-   ------------------------------------------------------------------ */
+/* A game thread opens with a Steam dump, thousands of words before the
+   first reply. The card below keeps the details, folds the marketing
+   copy, and puts SteamDB/PCGamingWiki one click away. */
 
 const REPLY_LINK = 'a[href*="mode=reply"], a[href*="mode=post"]';
 
-/* How many opened topics the palette's Recent list keeps. It was a
-   setting; nobody needs to tune it. */
-const HISTORY_LIMIT = 100;
+const HISTORY_LIMIT = 100; // palette's Recent list; was a setting, nobody tunes it
 
 const EXTERNAL_LOOKUPS = [
     { id: "steamdb", label: "SteamDB", url: (appId) => "https://steamdb.info/app/" + appId + "/" },
@@ -74,8 +64,7 @@ function buildGameCard(info, body) {
         bodyCol.append(links);
     }
 
-    // The store link is the one thing guests cannot see; say so rather
-    // than showing an empty row.
+    // Guests cannot see the store link; say so rather than an empty row.
     const store = info.fields["Store Page"];
     if (store && /please login/i.test(store) && !info.appId) {
         bodyCol.append(el("p.rr-field__desc", {}, ["Log in to see the store link in the post below."]));
@@ -84,11 +73,8 @@ function buildGameCard(info, body) {
     card.append(bodyCol);
     body.before(card);
 
-    // The header art is now in the card; leaving the original in the
-    // post shows the same image twice, one above the other. Hidden
-    // rather than removed — it is a node somebody else's post put
-    // there, another script may be looking for it, and nothing here
-    // needs it gone, only out of the way.
+    // Already shown in the card; hide the duplicate rather than remove it
+    // (another script may still be looking for that node).
     if (info.header) {
         for (const img of body.querySelectorAll("img")) {
             if (img.getAttribute("src") === info.header) {
@@ -102,10 +88,8 @@ function buildGameCard(info, body) {
     return card;
 }
 
-/**
- * Rewrite the topic heading the way listing rows are rewritten, so the
- * prefix reads as the same tag in both places.
- */
+// Rewrite the topic heading the way listing rows are, so the prefix
+// reads as the same tag in both places.
 function decorateHeading() {
     const heading = document.querySelector("#pageheader h2");
     if (!heading || heading.querySelector(".rr-tag")) return;
@@ -119,8 +103,7 @@ function decorateHeading() {
     if (rest && at > 0) stripLeading(link, at);
     else link.textContent = rest;
     heading.prepend(el("span.rr-tag", { "data-tag": kind, style: { cursor: "default" } }, [prefix]));
-    // Kept for anything that needs the bare title afterwards: reading it
-    // back off the heading would pick the tag up again.
+    // Kept: reading the title back off the heading would pick the tag up again.
     heading.dataset.rrTitle = rest;
 }
 
@@ -133,33 +116,18 @@ function topicTitle() {
     return splitPrefix((link || heading).textContent.trim()).rest;
 }
 
-/* One action bar for the topic, out of the four strips the template
-   scatters: the search box in a full-width table of its own, the reply
-   image button, "Page 1 of 19", and the numbered page links.
-
-   Two rows, and which one a control lands in is fixed rather than left
-   to what fits — so the bar is the same shape on a one page thread and
-   a thirty-three page one:
-
-     Row 1 - this topic. Reply, what you can do to what is on screen,
-             and where in the topic you are.
-     Row 2 - everywhere else. The topic before and after, the print
-             view, and the box that searches inside it.
-
-   A row nothing landed in is not drawn, but nothing moves between rows
-   to make that happen. */
+/* One action bar, replacing the four strips the template scatters. Row
+   assignment is fixed, not fit-based, so the bar is the same shape on a
+   1-page and a 33-page thread: row 1 is this topic (reply, on-screen
+   actions, where you are); row 2 is everywhere else (prev/next, print,
+   search). A row nothing landed in is not drawn. */
 function topicBarRow(name) {
     return el("div.rr-topicbar__row", { "data-rr-row": name });
 }
 
-/* Every child of a cluster is named, once it is filled.
-
-   The stylesheet draws the hairlines between them and rounds the two
-   ends, and the obvious way to write that is `.rr-cluster > * + *` —
-   a selector whose rightmost part is the universal one, which the
-   engine then tests against every element on the page. On a listing
-   that is four thousand elements and it measured 30ms of style work.
-   A class costs nothing to match. */
+// `.rr-cluster > * + *` for the hairlines would end in a universal
+// selector the engine tests against every element (measured 30ms on a
+// big listing); a class costs nothing to match, so children get one.
 function sealCluster(node) {
     for (const child of node.children) child.classList.add("rr-cluster__item");
     return node;
@@ -183,13 +151,10 @@ function buildTopicBar() {
             t(/mode=post/.test(reply.getAttribute("href")) ? "New topic" : "Reply"),
         ]);
         here.append(button);
-        /* The *cell* the reply button is in, not the table it is in.
-           subsilver2 puts the reply button, "Page 16 of 16", the post
-           count and the member's own topic actions in one row of one
-           table, so hiding the table to get rid of the duplicated
-           button took Unsubscribe topic, Bookmark topic and E-mail
-           friend with it — silently, and only for members, which is
-           why nothing here had noticed. */
+        // Hide the *cell*, not the table: subsilver2 packs the reply
+        // button, the pager and the member's topic actions into one row
+        // of one table, so hiding the table silently ate Unsubscribe/
+        // Bookmark/E-mail too (members-only, which is why it went unnoticed).
         const cell = reply.closest("td");
         if (cell) cell.style.display = "none";
         else {
@@ -198,19 +163,14 @@ function buildTopicBar() {
         }
     }
 
-    /* Secondary, and drawn as secondary. "Open all N spoilers" was an
-       outlined button of exactly the same size and weight as Reply,
-       which is the loudest thing this bar can say about a control that
-       reveals text the page has already loaded. */
+    // Drawn as secondary — "Open all N spoilers" is not as loud as Reply.
     if (settings.get("spoilerAll")) {
         const inputs = spoilerInputs();
         if (inputs.length >= 2) {
-            /* It stays, and closes them again on the second press. It
-               used to remove itself once pressed, which took the focus
-               with it and left a reader with thirty open spoilers and
-               no way back. The state is read off the page rather than
-               assumed: with spoilers opened at load, this starts as
-               the control that closes them. */
+            // Toggles rather than removing itself on press (that used to
+            // take focus with it, leaving 30 open spoilers stuck open).
+            // State is read off the page: if spoilers opened at load, it
+            // starts as "close".
             const count = inputs.length;
             let open = spoilerInputs("hide").length === count;
             const control = el("button.rr-btn.rr-fold", { type: "button", "data-variant": "quiet" });
@@ -229,20 +189,11 @@ function buildTopicBar() {
         }
     }
 
-    /* The board's own "First unread post", printed for members in the
-       strip that also holds the reply button. It is the same journey
-       people.js builds a link for when the board prints none, so it is
-       taken as it is — the board's href carries the #unread anchor —
-       and people.js leaves the bar alone when it finds one here.
-
-       Descendant, not child: icons.js wraps every link in one of these
-       strips in a `span.rr-linkrow` before this runs, so `td.nav > a`
-       matched on the fixtures and never once on the live board. What a
-       member actually got was the strip left standing with a single
-       link in it — a full-width empty card saying "First unread post"
-       between the releases panel and the first post — and a second
-       copy of the same journey in the bar, built by people.js because
-       it could not find this one either. */
+    // The board's own "First unread post" (members only); people.js
+    // builds its own version only when this one isn't found, so this
+    // must be found. Descendant selector, not child: icons.js wraps the
+    // link in a span.rr-linkrow first, so `td.nav > a` matched fixtures
+    // but never the live board, leaving an empty strip and a duplicate.
     const unread = document.querySelector('#wrapcentre td.nav a[href*="view=unread"]');
     if (unread) {
         const cell = unread.closest("td");
@@ -258,20 +209,15 @@ function buildTopicBar() {
     // people.js drops "First unread" in here, in front of this.
     here.append(el("span.rr-topicbar__spacer"));
 
-    /* Where in the topic you are. On a topic with one page that is not
-       a fact worth a control, a label, or the space either takes:
-       "Page 1 of 1" answered a question nobody with the whole thing in
-       front of them was asking. */
+    // Not drawn on a 1-page topic: "Page 1 of 1" answers nothing.
     if (info.total && info.total > 1) {
         here.append(settings.get("quickPager")
             ? buildPagerGroup(info)
             : el("span.rr-topicbar__count", {}, [t("Page {a} of {b}", { a: info.current, b: info.total })]));
     }
 
-    /* Two clusters, not six loose words: where to go next, and what a
-       member can do to this topic. Each is one light box with a
-       hairline between its items, so the row reads as two things
-       rather than a list of everything. */
+    // Two clusters (where to go next / what a member can do here), not
+    // six loose words, so the row reads as two things.
     const nav = el("div.rr-cluster.rr-topicbar__cluster");
     adoptTopicNav(nav);
     const member = el("div.rr-cluster.rr-topicbar__cluster");
@@ -300,14 +246,10 @@ function buildTopicBar() {
     tidyBoardPagerStrip(bar, here);
 }
 
-/* The board's numbered "Go to page 1, 2, 3 … 19" strip, where it sits
-   above the posts: the bar's own pager says the same thing two lines
-   higher. The copy under the posts stays — that is where a reader who
-   has reached the end of the page wants it — and so does everything,
-   here or there, when the bar draws no pager of its own.
-
-   Two shapes carry it: a p.gensmall under the title, and the
-   right-hand cell of the board's own strip. */
+// Hides the board's "Go to page…" strip above the posts (the bar's own
+// pager already says it); the copy under the posts stays for a reader
+// who scrolled to the end. Two shapes carry it: a p.gensmall under the
+// title, and the board strip's right-hand cell.
 function dropPagerAbovePosts() {
     if (!settings.get("quickPager")) return;
     const first = posts()[0];
@@ -320,21 +262,12 @@ function dropPagerAbovePosts() {
     }
 }
 
-/* What the board says about where you are, once this bar says it too.
-
-   phpBB draws a strip above and below the posts carrying "Page 16 of
-   16" and "[ 239 posts ]". The action bar now carries the first as a
-   pager you can type into, so the board's copies are a band of the
-   screen each, twice per page, saying something already on screen —
-   and on a topic that fits on one page, "Page 1 of 1" twice.
-
-   Cell by cell rather than strip by strip, because the member's own
-   topic actions share that row and they are not a duplicate of
-   anything. The post count is worth keeping, so the first one found
-   moves into the bar; the rest go with the page counters. */
+// phpBB repeats "Page 16 of 16" and "[ 239 posts ]" above and below the
+// posts; the bar's pager already covers the first. Cell by cell, not
+// strip by strip, because the member's own topic actions share that row.
+// The post count is worth keeping — the first one found moves into the bar.
 const PAGE_OF_RE = /^\s*(?:Page\s+\d+\s+of\s+\d+|Страница\s+\d+\s+из\s+\d+)\s*$/;
-/* "[ 239 posts ]" — or, on the Russian interface, "[ Сообщений: 239 ]"
-   and "[ Тем: 61487 ]", the word first. */
+// Russian interface: "[ Сообщений: 239 ]" / "[ Тем: 61487 ]", word first.
 const POST_COUNT_RE = /^\s*\[\s*(?:([\d\s]+)\s+(posts?|topics?)|(Сообщений|Тем):\s*([\d\s]+))\s*\]\s*$/i;
 
 function postCount(text) {
@@ -346,10 +279,8 @@ function postCount(text) {
 }
 
 function tidyBoardPagerStrip(bar, row) {
-    // The listing bar lifts its own "[ N topics ]" before calling this,
-    // and the board prints the strip twice, above and below the table.
-    // Starting from "not yet counted" put a second count in the bar on
-    // every forum listing — "841 topics  841 topics".
+    // Start "already counted" if the listing bar lifted its own count
+    // first — else the strip's second copy doubles it: "841 topics 841 topics".
     let counted = Boolean(bar.querySelector(".rr-topicbar__count"));
 
     for (const cell of document.querySelectorAll("#wrapcentre td.nav, #wrapcentre td.gensmall")) {
@@ -370,9 +301,7 @@ function tidyBoardPagerStrip(bar, row) {
     hideEmptyBoardStrips(bar);
 }
 
-/* Is anything between `node` and `root` hidden inline? The strips are
-   emptied cell by cell, and a cell inside a hidden cell is as gone as
-   its parent. */
+// A cell inside a cell hidden by the emptying above is as gone as its parent.
 function hiddenWithin(node, root) {
     for (let n = node; n && n !== root; n = n.parentElement) {
         if (n.style && n.style.display === "none") return true;
@@ -380,17 +309,13 @@ function hiddenWithin(node, root) {
     return false;
 }
 
-/* A row of a board strip with every cell hidden is still a row: a 20px
-   band with a border and nothing in it, between the Releases panel and
-   the first post. textContent sees through display:none — the hidden
-   cells' "|" separators and the reply link they still hold counted as
-   life — so only what is not hidden counts. */
+// A row with every cell hidden is still a 20px band with a border.
+// textContent sees through display:none (a hidden "|" separator counted
+// as life), so only the not-hidden text counts.
 function boardStrips() {
     const out = new Set(document.querySelectorAll("#wrapcentre table.tablebg"));
-    /* The strip holding "First unread post" is a bare `<table
-       width="100%">` with no class at all, so a scan for table.tablebg
-       walked straight past it and left the card standing. It is a
-       board strip by what it holds, not by what it is called. */
+    // The "First unread post" strip is a classless bare table, missed by
+    // table.tablebg — a board strip by what it holds, not what it's called.
     for (const cell of document.querySelectorAll("#wrapcentre td.nav")) {
         const table = cell.closest("table");
         if (table && !table.querySelector(".postbody")) out.add(table);
@@ -417,27 +342,19 @@ function hideEmptyBoardStrips(bar) {
     }
 }
 
-/* "Previous topic", "Subscribe topic", "E-mail friend": on a phone the
-   second row of the bar is three lines of these. The noun is the same
-   on every one and the row says it already, so it is marked optional
-   and the narrow layout drops it — "Previous · Next · Subscribe". */
+// "Previous topic"/"Subscribe topic"/"E-mail friend" repeat their noun;
+// mark it optional so narrow layout can drop it to "Previous · Next · Subscribe".
 function labelWithOptionalTail(link, label) {
     const m = label.match(/^(.*\S)(\s+(?:topic|friend|тема|другу))$/i);
     link.textContent = "";
-    // The noun keeps its own space and the stylesheet takes the flex
-    // gap off it: a word space, not a 6px slot.
+    // A word space, not a 6px flex gap — the noun keeps its own space.
     if (m) link.append(document.createTextNode(m[1]), el("span.rr-opt", {}, [m[2]]));
     else link.append(document.createTextNode(label));
 }
 
-/**
- * Print view, Previous topic and Next topic.
- *
- * The template gives those three links a full-width bar of their own,
- * 40px tall and empty but for a word at each end. They are ordinary
- * topic actions, so they join the other ones; the strip they came from
- * is then empty and goes.
- */
+// Print view, Previous topic, Next topic: pulled out of the template's
+// own 40px-tall bar and joined with the other topic actions; that strip
+// then goes if left empty.
 function adoptTopicNav(bar) {
     const strip = Array.from(document.querySelectorAll("#wrapcentre table.tablebg"))
         .find((table) => table.querySelector('td.cat a[href*="view=print"], td.cat a[href*="view=next"]'));
@@ -446,8 +363,7 @@ function adoptTopicNav(bar) {
     const wanted = [
         { match: /view=previous/, label: "Previous topic" },
         { match: /view=next/, label: "Next topic" },
-        // The one of the three that really does leave the page.
-        { match: /view=print/, label: "Print view", glyph: "external" },
+        { match: /view=print/, label: "Print view", glyph: "external" }, // the one that really leaves the page
     ];
 
     for (const { match, label, glyph } of wanted) {
@@ -466,24 +382,14 @@ function adoptTopicNav(bar) {
     if (!strip.querySelector("a[href], form, input")) strip.style.display = "none";
 }
 
-/**
- * Subscribe topic, Bookmark topic and E-mail friend.
- *
- * The three things a member can do to a topic besides answering it.
- * subsilver2 prints them for members only, in a `td.nav` of the same
- * strip as the reply button — which buildTopicBar hides cell by cell
- * precisely so these survive — and a second time under the posts. Left
- * where they were they made a grey band of their own between the bar
- * and the first post, with a "First unread post" at the far end that
- * the bar already carries. They are topic actions; they join the
- * others, once, with the words the board gave them ("Unsubscribe
- * topic" when you already are).
- */
+// Subscribe/Bookmark/E-mail friend: members-only, printed twice by
+// subsilver2 (the reply strip and again under the posts — buildTopicBar
+// hides that strip's cells precisely so these survive). Joined once here
+// with the board's own wording ("Unsubscribe topic" when already watching).
 const MEMBER_ACTION = 'a[href*="watch=topic"], a[href*="bookmark="], a[href*="mode=email"]';
 
 function adoptMemberActions(bar) {
-    // td.nav on the live board; a td.gensmall in the strip's other
-    // shape. Either way it is the cell holding the three links.
+    // td.nav on the live board, td.gensmall in the strip's other shape.
     const cells = Array.from(document.querySelectorAll("#wrapcentre td.nav, #wrapcentre td.gensmall"))
         .filter((cell) => cell.querySelector(MEMBER_ACTION) && !cell.closest(".rr-topicbar"));
     if (!cells.length) return;
@@ -517,19 +423,11 @@ function buildPagerGroup(info) {
     jump.addEventListener("keydown", (event) => { if (event.key === "Enter") { event.preventDefault(); go(); } });
     jump.addEventListener("change", go);
 
-    /* "Next" and "Last" sat three controls away from "Next topic" and
-       "Previous topic" in the same weight and the same colour: two
-       different journeys wearing one costume. Two things separate them
-       now and either would do on its own — they are in different rows
-       of the bar, and these say what they move. A page.
-
-       The four steps and the page box are one boxed control, with a
-       hairline between its parts. The two ends are the arrows alone,
-       and their names are drawn the instant they are pointed at, so
-       "⇥" is never a guess: it says "Last page". */
-    /* `word` is what is drawn; `label` is the whole name, on the title
-       and for a screen reader. The ends draw the arrow alone and say
-       their name on hover. */
+    // "Next"/"Last" used to look identical to "Next topic"/"Previous
+    // topic" — different rows now, plus these say what they move (a page).
+    // The four steps + page box are one boxed control; the end arrows draw
+    // unlabelled and name themselves on hover so "⇥" is never a guess.
+    // `word` is what's drawn, `label` is the full name (title/aria).
     const step = (href, label, glyph, word) => {
         const link = el("a.rr-pager__step", { href }, glyph === "pageFirst" || glyph === "chevronL"
             ? [icon(glyph, 13), word || null]
@@ -555,22 +453,13 @@ function buildPagerGroup(info) {
 
 /* ---- What a rank line says, and in which language ------------------ */
 
-/* This board prints both halves of a user's rank on every page,
-   whichever language the page is in: "Super flooder Почетный
-   графоман", "I live here Три раза сломал клаву :)", and — for anyone
-   who has never been given one — "Beginner Без звания", which is
-   Russian for "no rank". So an English forum shows a Russian phrase
-   under a name, and for most posters the phrase means the field is
-   empty.
-
-   Where a rank carries both languages, the page's own language decides
-   which half to show. Where it carries only one it is left alone: a
-   rank that is Latin-only is not a translation of anything, and
-   dropping it because the page is Russian would empty the line under
-   every administrator on the board.
-
-   The original stays on the title attribute, so nothing is actually
-   taken away. */
+// The board prints both language halves of a rank on every page — "I
+// live here Три раза сломал клаву :)", "Beginner Без звания" (Russian
+// for "no rank") — so an English forum shows Russian under most names.
+// Page language decides which half to keep; a Latin-only rank is left
+// alone (not a translation of anything, and dropping it on the Russian
+// interface would blank every administrator's rank). Original text
+// stays on the title attribute.
 const CYRILLIC_RE = /[\u0400-\u04FF]/;
 
 function localiseRank(text) {
@@ -578,64 +467,41 @@ function localiseRank(text) {
     const lang = currentLanguage();
     if (!CYRILLIC_RE.test(clean) || !lang) return clean;
 
-    /* On the English interface the Russian words go; on the Russian
-       one the Latin ones do — "I live here Три раза сломал клаву :)"
-       reads "Три раза сломал клаву :)" there. A word with no letters
-       of either kind (":)", "<3") sides with whichever half stays. */
+    // On English the Russian words go, on Russian the Latin ones do. A
+    // word with no letters of either kind (":)", "<3") sides with
+    // whichever half stays.
     const LATIN_RE = /[A-Za-z]/;
     const kept = lang === "en"
         ? clean.split(" ").filter((word) => !CYRILLIC_RE.test(word))
         : clean.split(" ").filter((word) => !LATIN_RE.test(word) || CYRILLIC_RE.test(word));
-    /* Punctuation that belonged to the half that just went. "I live
-       here Три раза сломал клаву :)" is one rank in two languages with
-       the smiley on the end of the Russian half, and dropping the
-       Russian words alone leaves "I live here :)" — the tail of a
-       sentence that is no longer there. A trailing run with no letters
-       in it goes with them. A rank that is *only* punctuation, like
-       "Super-Donor <3", never reaches this: it has no Cyrillic in it
-       and was returned untouched three lines ago. */
+    // Trailing punctuation belonging to the half just dropped (e.g. a
+    // smiley on the end of the Russian half) goes with it. A rank that
+    // is only punctuation never reaches here — no Cyrillic, returned above.
     while (kept.length && !/[A-Za-z0-9\u0400-\u04FF]/.test(kept[kept.length - 1])) kept.pop();
     return kept.join(" ").replace(/[\s|·,;:/–—-]+$/, "").trim();
 }
 
-/* "Joined: Thursday, 13 Feb 2020, 13:07 · Posts: 2180" does not fit
-   the line it is on, and clipping it landed the ellipsis inside the
-   time — "13 Feb 2020, 13:…" — which reads as a broken value rather
-   than as a shortened sentence.
-
-   The rest of the interface already shortens dates the same way: the
-   weekday goes, the full thing stays on hover. A join *date* has no
-   use for a clock either. Shortened, the line fits, so nothing is
-   clipped at all — and the width cap that did the clipping is gone
-   with it. */
+// "Joined: Thursday, 13 Feb 2020, 13:07 · Posts: 2180" doesn't fit its
+// line; clipping put the ellipsis inside the time ("13 Feb 2020, 13:…").
+// A join date has no use for a clock, so drop it — the line then fits
+// without clipping at all.
 const JOIN_TIME_RE = /(\d{4}),\s*\d{1,2}:\d{2}(?::\d{2})?/g;
 
 function shortenPostMeta(text) {
     return text
         .replace(/(?:\b(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day|Понедельник|Вторник|Среда|Четверг|Пятница|Суббота|Воскресенье),\s*/gi, "")
         .replace(JOIN_TIME_RE, "$1")
-        /* The post count, and only the post count. This line is
-           "Joined: 15 Nov 2005 · Posts: 12575", and a sweep over it
-           that grouped from four digits would turn the year into
-           "2 005". The count is named right there in the text; the
-           year is not. */
+        // Group only the post count, not the year: a blind 4-digit group
+        // would turn "2005" into "2 005".
         .replace(/((?:Posts|Сообщения):\s*)(\d+)/i, (all, label, count) => label + groupDigits(count))
         .replace(/\s+/g, " ")
         .trim();
 }
 
-/**
- * Rebuild a post as a header strip over a full-width message.
- *
- * The template puts the author in a 150px column beside the message,
- * so a two-line reply still occupies the height of an avatar, a rank,
- * a join date and a post count. Moving that into one line above the
- * message recovers the space and reads the way every forum written
- * this century reads.
- *
- * Nothing is deleted: the original cell is hidden, and the nodes are
- * moved rather than copied, so links and handlers survive.
- */
+// Rebuilds a post as a header strip over a full-width message, instead
+// of the template's 150px author column that makes a two-line reply as
+// tall as an avatar. Nodes are moved, not copied, so handlers survive;
+// the original cell is hidden, not deleted.
 function modernisePost(post) {
     const cell = post.table.querySelector("td.profile");
     if (!cell || cell.classList.contains("rr-profile")) return;
@@ -684,9 +550,8 @@ function modernisePost(post) {
     head.append(identity);
 
     if (meta.length) {
-        // The template runs "Joined: ...Posts: 2180Location: here"
-        // together in one block often enough that the separators have
-        // to be put back — before every label, not only Posts.
+        // The template runs "Joined:...Posts: 2180Location: here"
+        // together often enough to need separators put back before every label.
         const summary = meta
             .map((node) => node.textContent.replace(/\s+/g, " ").trim())
             .join(" · ")
@@ -715,20 +580,15 @@ function modernisePost(post) {
     post.body.before(head);
     post.head = head;
 
-    // The template's own header row held the author name, the subject
-    // and the date. All three are in the new header now, so the row is
-    // an empty band with 12px of padding.
+    // The old header row (author, subject, date) is now empty padding.
     const originalRow = post.anchor.closest("tr");
     if (originalRow && !originalRow.querySelector(".postbody")) originalRow.style.display = "none";
 
     hideEmptyPostRows(post.table);
 }
 
-/**
- * subsilver2 leaves a row for the edit / delete controls and another
- * for the "Top" link under every post. For a reader without those
- * permissions they are 90px of nothing.
- */
+// subsilver2's edit/delete and "Top" rows are 90px of nothing for a
+// reader without those permissions.
 function hideEmptyPostRows(table) {
     for (const row of table.querySelectorAll("tr")) {
         if (row.querySelector(".postbody, .rr-posthead")) continue;
@@ -754,12 +614,9 @@ function foldSteamBlurb(body, fromTitle) {
     const holder = el("div");
     for (const node of folded) holder.append(node);
 
-    /* The original post is shown by default: the card above it is a
-       summary, and the post is what was actually written — the
-       download notes, the links, the caveats. The fold stays as a
-       control, and a reader who closes it is remembered. The Steam
-       description alone (no card to summarise it) still starts
-       folded. */
+    // The original post starts open (it's what was actually written —
+    // download notes, links, caveats); closing it is remembered. The
+    // Steam description alone, with no card summarising it, starts folded.
     const label = t(fromTitle ? "the original post" : "the full Steam description");
     let open = fromTitle ? store.get("originalPostOpen", true) !== false : false;
     const toggle = el("button.rr-btn.rr-fold", { type: "button", "data-variant": "quiet" }, [
@@ -789,13 +646,9 @@ function postUrl(postId) {
         "viewtopic.php?p=" + postId + "#p" + postId;
 }
 
-/* What the board's per-post controls are, read off where they go.
-
-   icons.js names each one from its image's alt text, which works until
-   the board ships an image without one — and then the control is a
-   bare 12px silhouette on the end of a row of labelled buttons, which
-   is what was reported. The destination is the one thing that is
-   always there, so it is what the fallback reads. */
+// Fallback names for per-post controls, read off their href: icons.js
+// names each from its image's alt text, which fails silently into a bare
+// silhouette when the board ships an image without one.
 const POST_CONTROL_NAMES = [
     { re: /mode=viewprofile/, label: "Profile" },
     { re: /[?&]i=pm|mode=post&[^"]*u=/, label: "Send private message" },
@@ -822,8 +675,7 @@ function nameControl(control) {
     return control;
 }
 
-/** Everything in a post's control row, named the way the top bar's
-    icons are: instantly, rather than after a second of hovering. */
+// Named instantly, like the top bar's icons, rather than after hovering.
 function labelPostTools(tools) {
     for (const control of tools.children) {
         if (control.classList.contains("rr-postnum")) continue;
@@ -849,16 +701,10 @@ function addPostTools(post, index) {
 
     const tools = el("div.rr-posttools");
 
-    /* One control per destination.
-
-       The board draws its own "Reply with quote" under every post and
-       this row added another, as an icon, pointing at the same URL:
-       two controls, one address, side by side, one of them labelled
-       and one of them not. Whichever arrives second is the one that
-       goes.
-
-       Compared by destination with the session id taken out, because
-       phpBB stamps a different one into every link on the page. */
+    // One control per destination: the board's own "Reply with quote"
+    // and this row's icon used to both point at the same URL. Compared
+    // with the session id stripped, since phpBB stamps a fresh one into
+    // every link.
     const destinations = new Set();
     const wanted = (node) => {
         const href = (node.getAttribute("href") || "").replace(/[?&]sid=[a-f0-9]+/, "");
@@ -868,17 +714,10 @@ function addPostTools(post, index) {
         return true;
     };
 
-    /* The board's own permalink to this post is a 12px target icon in
-       an anchor, which icons.js labels from its alt text — and its alt
-       text is the single word "Post". Sat in a row of controls it
-       reads as "post something", it is the only text button among the
-       icons at the head of the row, and it goes to precisely where the
-       copy-link button beside it copies. One address, two controls,
-       one of them named after a verb it does not do.
-
-       So the two become one: the post number, which was a decorative
-       span, becomes the link, and the board's control is left in place
-       and hidden. */
+    // The board's own permalink icon labels itself "Post" (its alt
+    // text) and goes exactly where the copy-link button beside it
+    // copies — so the post number becomes the link instead, and the
+    // board's control is hidden.
     const permalink = Array.from(post.table.querySelectorAll("a.rr-ctl")).find((control) => {
         const href = control.getAttribute("href") || "";
         return /[?&]p=\d+/.test(href) && /#p\d+$/.test(href);
@@ -898,9 +737,8 @@ function addPostTools(post, index) {
     linkButton.addEventListener("click", () => copyText(postUrl(post.id), "Post link copied"));
     tools.append(linkButton);
 
-    /* Every mirror in this post, one to a line. A release post carries
-       three to six of them and queueing them in a download manager
-       meant opening each in turn. */
+    // Every mirror in this post, one per line — a release post carries
+    // 3-6 and queueing them meant opening each in turn.
     const own = ownContent(post.body);
     const mirrors = Array.from(own.querySelectorAll("a[href]"))
         .map((a) => a.getAttribute("href"))
@@ -949,10 +787,8 @@ function addPostTools(post, index) {
         if (wanted(reply)) tools.append(reply);
     }
 
-    // Controls the board drew as a bare GIF, relabelled by icons.js.
-    // They sit in a footer strip of their own under every post; here
-    // they join the other per-post actions, which is one place to look
-    // instead of two and one row less per post.
+    // Controls the board drew as a bare GIF (relabelled by icons.js),
+    // moved from their own footer strip into the other per-post actions.
     for (const control of post.table.querySelectorAll("a.rr-ctl")) {
         if (control === permalink) continue;
         const row = control.closest("tr");
@@ -963,10 +799,8 @@ function addPostTools(post, index) {
         }
     }
 
-    // Anything else the board drew as a bare image in this post's
-    // control rows and icons.js could not name from its alt text. A
-    // silhouette with nothing beside it is not a control anybody can
-    // use, and one of them was sitting on the end of every post.
+    // A bare-image control icons.js couldn't name from alt text — an
+    // unnamed silhouette sat on the end of every post.
     for (const orphan of post.table.querySelectorAll("a > img.rr-legacy-img")) {
         const link = orphan.closest("a");
         if (!link || link.closest(".postbody") || link.closest(".rr-posttools")) continue;
@@ -987,17 +821,13 @@ function addPostTools(post, index) {
 
 /* ---- Where you stopped reading ------------------------------------ */
 
-/* phpBB tracks unread posts for members and for nobody else, and even
-   for a member it says so with a bold row in a listing rather than a
-   line in the thread. This browser knows which post was the newest
-   here the last time this topic was open; the first one after it gets
-   the divider a mail client would draw. */
+// phpBB marks unread only in listings, never inline in a thread. This
+// draws the mail-client-style divider from what was newest last visit.
 function markNewSince(all, seen) {
     if (!seen || !seen.lastPost || !seen.at) return;
     const fresh = all.find((post) => (Number(post.id) || 0) > seen.lastPost);
     if (!fresh || fresh === all[0]) return;
-    /* The board's language, not the browser's: "New since 4 sept." in
-       an English interface is one word in the wrong tongue. */
+    // The board's language, not the browser's.
     const locale = /^ru/i.test(document.documentElement.lang || "") ? "ru-RU" : "en-GB";
     const when = new Date(seen.at);
     const label = Number.isFinite(when.getTime())
@@ -1032,11 +862,9 @@ function offerResume(seen) {
 
 /* ---- Signatures --------------------------------------------------- */
 
-/* The board draws a signature's divider as a run of underscores in the
-   message body. collapseSignature drops it on a post, where the
-   signature is a node of its own; a private message has no such node
-   and kept the underscores. Anywhere one is left, it becomes the rule
-   the rest of the script draws. */
+// A private message keeps the board's underscore-run signature divider
+// (collapseSignature drops it on posts, where the signature is its own
+// node); turn any leftover run into the script's own rule.
 function replaceUnderscoreRules(root) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const found = [];
@@ -1060,19 +888,16 @@ function replaceUnderscoreRules(root) {
 function collapseSignature(post) {
     if (!post.signature) return;
 
-    // Every signature is set apart the same way — the small muted face,
-    // a rule instead of the board's row of underscores. A short one
-    // used to keep the underscores and the post's own type, so two
-    // posts in a row ended in two different ways.
+    // Every signature is styled the same (muted, a rule not underscores);
+    // a short one used to be left untouched, so two posts in a row differed.
     post.signature.classList.add("rr-signature");
     for (const node of Array.from(post.signature.childNodes).slice(0, 3)) {
         if (node.nodeType === 3 && /^\s*_{5,}\s*$/.test(node.textContent)) node.remove();
         else if (node.nodeType === 1 && node.tagName === "BR" && !post.signature.textContent.trim()) node.remove();
     }
 
-    // Signatures are one text node broken by <br>, so counting newlines
-    // finds nothing; the line breaks and the length are the signal.
-    // Only a long one is folded.
+    // One text node broken by <br>, so <br> count + length is the
+    // length signal, not newlines. Only a long one is folded.
     const breaks = post.signature.querySelectorAll("br").length;
     const length = post.signature.textContent.trim().length;
     if (breaks <= 4 && length <= 220) return;
@@ -1090,10 +915,8 @@ function collapseSignature(post) {
 
 /* ---- Spoilers ----------------------------------------------------- */
 
-/** The board wraps spoilers in div.spoiler with an inline-onclick Show
-    button, so the toggles are found by clicking their own buttons.
-    With no state asked for, every spoiler button; with "show" or
-    "hide", the ones currently saying that. */
+// Spoilers toggle via the board's own inline-onclick Show/Hide button,
+// so this clicks that button rather than reimplementing the toggle.
 function spoilerInputs(saying) {
     const all = Array.from(document.querySelectorAll('.spoiler input[type="button"]'))
         .filter((input) => /^(?:show|hide)$/i.test((input.value || "").trim()));
@@ -1101,25 +924,16 @@ function spoilerInputs(saying) {
     return all.filter((input) => (input.value || "").trim().toLowerCase() === saying);
 }
 
-/* Spoilers open at load.
-
-   On this board a spoiler is where the links are: a release post
-   hides its mirrors, its password and its notes behind five of them,
-   and reading the post means clicking every one. Opened at load the
-   post reads top to bottom, and the "Close all" control in the bar
-   puts them back. The board's own handler does the opening, so the
-   button still says Hide and still works. */
+// A release post hides mirrors, password and notes behind several
+// spoilers; open them all at load via the board's own handler (so
+// buttons still say Hide and still work) — the bar's "Close all" undoes it.
 function openSpoilersAtLoad() {
     for (const input of spoilerInputs("show")) input.click();
 }
 
-/* The board draws every spoiler's Show button with `font-size: 10px`
-   typed into the tag, under the 11px floor everything else on the page
-   is held to — and it stayed there through four sweeps, because a sweep
-   that asks about small text asks td, p, span and a, and this is an
-   input. The board also injects a <style> for these controls, so a
-   stylesheet rule loses; an inline style from here is the one thing
-   that reliably wins (see csrin-css-cascade). */
+// The board's spoiler buttons carry an inline `font-size: 10px`, missed
+// by sweeps that check td/p/span/a but not input, and the board's own
+// injected <style> beats a stylesheet rule — only an inline style here wins.
 function liftSpoilerButtons() {
     for (const input of document.querySelectorAll('.spoiler input[type="button"]')) {
         input.style.fontSize = "var(--rr-fs-xs)";
@@ -1141,14 +955,10 @@ function initLightbox() {
         event.preventDefault();
         event.stopPropagation();
 
-        /* A dialog, not a backdrop with an image on it: a control that
-           closes it, the keyboard kept inside while it is open, and the
-           focus given back to the image's post when it goes. */
         const previous = document.activeElement;
 
-        /* The other pictures in the same post: a repack's screenshots
-           and a proof-it-works set are posted in a row, and opening
-           them one at a time meant closing the box between each. */
+        // Other pictures in the same post join the gallery — a repack's
+        // screenshots used to mean closing the box between each.
         const holder = img.closest(".postbody, .rr-game") || document;
         const gallery = Array.from(holder.querySelectorAll("img")).filter((node) => {
             if (node.closest("a")) return false;
@@ -1217,9 +1027,8 @@ function markExternalLinks() {
         try { host = new URL(link.href).hostname; } catch { continue; }
         if (host === here || host.endsWith(".rin.ru")) continue;
         if (link.querySelector(".rr-host")) continue;
-        /* The setting that existed and did nothing: with it on, an
-           off-site link asks first and shows the whole address, which
-           a shortened or a disguised link otherwise never does. */
+        // With this setting on, an off-site link asks first and shows
+        // the whole address, which a disguised link otherwise never does.
         if (confirmFirst && !link.rrConfirms) {
             link.rrConfirms = true;
             link.addEventListener("click", (event) => {
@@ -1238,22 +1047,11 @@ function markExternalLinks() {
 
 /* ---- Landing on a post ---------------------------------------------- */
 
-/* Every link to a post — the Releases panel, "View the latest post",
-   a permalink somebody pasted, the board's own first-unread jump —
-   ends in #p123456, and the board's anchor for that is an <a name>
-   in the author cell beside the post. The modern layout hides that
-   cell, and a browser cannot scroll to something that is not drawn:
-   the page loaded, nothing moved, and a second click on the same link
-   did nothing either. So every post's own table carries the id, which
-   is what a fragment looks for first, and it is always on screen.
-
-   That fixes where the anchor is. Where the page is by the time the
-   browser looks for it is the other half: the fragment is honoured
-   during parsing, before the top bar, the topic bar, the releases
-   panel and the game card have been put above the posts, so the post
-   the reader asked for ended up a screen below where the browser
-   left them. Once everything is in place the page is walked to the
-   fragment again, and the post is flashed so it is unmistakable. */
+// #p123456 anchors to an <a name> in the author cell, which the modern
+// layout hides — a browser can't scroll to an undrawn node, so the post's
+// own table also carries the id. That fixes *where* the anchor is; the
+// fragment is also honoured during parsing, before the bars/card are
+// inserted above the posts, so scrolling is redone once they've landed.
 function fragmentTarget(hash) {
     let name;
     try { name = decodeURIComponent((hash || "").replace(/^#/, "")); } catch { return null; }
@@ -1357,9 +1155,7 @@ function initTopic() {
         }
     }
 
-    // Named, so the stylesheet can tell a post's table from a listing's
-    // and a strip's: it is the one that must not clip what floats
-    // over its edge (the tooltips on its controls).
+    // Marks the table that must not clip its controls' tooltips.
     for (const post of all) post.table.setAttribute("data-rr-post", "");
 
     const modern = settings.get("postLayout") === "modern";
@@ -1377,10 +1173,7 @@ function initTopic() {
     if (settings.get("gameCard") && !coexisting && all.length && PAGE.start === 0) {
         const info = parseGameInfo(all[0].body);
         if (info && (info.appId || Object.keys(info.fields).length >= 3)) {
-            // Written down whether or not the preview is switched on:
-            // it costs one key and it is what makes the preview
-            // instant, and free, for a topic that has been opened
-            // once. See steam.js.
+            // Remembered regardless of whether the preview is on — see steam.js.
             if (info.appId && PAGE.topicId) steamRememberApp(PAGE.topicId, info.appId);
             buildGameCard(info, all[0].body);
             // The card already carries the title and the detail rows,

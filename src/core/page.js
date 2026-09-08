@@ -1,18 +1,12 @@
-/* ------------------------------------------------------------------
-   Reading the page.
-
-   Everything that knows about phpBB markup lives here, so when the
-   forum template changes there is one file to fix rather than ten.
-
-   Structure this relies on (subsilver2 / rinDark, verified against the
-   live board):
-     - one <table class="tablebg"> per post
-     - post anchor  a[name="p123456"]
-     - author       b.postauthor
-     - body         div.postbody   (a second one is the signature,
-                                    it starts with the ____ rule)
-     - topic rows   a.topictitle inside td.row1
-   ------------------------------------------------------------------ */
+/* Every phpBB/subsilver2 selector this script relies on lives in this
+   file — the one place to fix if the forum template changes:
+     - post table    table.tablebg (one per post)
+     - post anchor   a[name="p123456"]
+     - author        b.postauthor
+     - body          div.postbody (a second one is the signature,
+                                   starting with the ____ rule)
+     - topic rows    a.topictitle inside td.row1
+     - forum rows    a.forumlink */
 
 const PAGE = (() => {
     const path = location.pathname.split("/").pop() || "index.php";
@@ -38,13 +32,11 @@ const PAGE = (() => {
     };
 })();
 
-/** phpBB hides links behind a placeholder for guests; several features
-    only make sense once the reader is logged in. */
+/** phpBB replaces the logout link with a placeholder for guests. */
 function isLoggedIn() {
     return Boolean(document.querySelector('a[href*="mode=logout"]'));
 }
 
-/** Unread private messages, read off the UCP link phpBB renders. */
 function unreadMessages() {
     const link = Array.from(document.querySelectorAll('a[href*="ucp.php"]'))
         .find((a) => /new message/i.test(a.textContent));
@@ -53,12 +45,7 @@ function unreadMessages() {
     return match ? parseInt(match[1], 10) : 0;
 }
 
-/* ---- Topic rows -------------------------------------------------- */
-
-/**
- * Every topic row in a forum listing, with the pieces the list module
- * needs. Rows the template uses for spacing are skipped.
- */
+// Skips template spacer rows via the final filter(Boolean).
 function topicRows() {
     return Array.from(document.querySelectorAll("a.topictitle"))
         .map((link) => {
@@ -78,7 +65,6 @@ function topicRows() {
         .filter(Boolean);
 }
 
-/** Forum rows on the index page. */
 function forumRows() {
     return Array.from(document.querySelectorAll("a.forumlink"))
         .map((link) => {
@@ -90,22 +76,13 @@ function forumRows() {
         .filter(Boolean);
 }
 
-/* ---- Posts ------------------------------------------------------- */
-
 /**
- * Posts on the current topic page, in document order.
- * Returns { table, id, anchor, author, head, headCell, body, signature }.
- *
- * `root` is the document to read, which is this one unless something
- * has fetched another page of the same topic and wants the posts out
- * of it — see releases.js. Nothing in here touches the document it is
- * given, so a detached parse is as valid a subject as the live page.
- *
- * `head` is read back off the page rather than only set when topic.js
- * builds it: every caller runs its own posts() pass, and one running
- * afterwards would otherwise fall through to the template's header
- * row, which the modern layout hides. That is how the "hide posts by
- * someone" control ended up on a row nobody could see.
+ * Posts in document order: { table, id, anchor, author, head, headCell,
+ * body, signature }. `root` defaults to this document but releases.js
+ * passes a detached page fetched separately — nothing here mutates it.
+ * `head` is read back live rather than cached, since topic.js may not
+ * have built it yet for a given caller; skipping that once put a
+ * "hide posts by" control on a row the modern layout hides.
  */
 function posts(root = document) {
     const out = [];
@@ -116,8 +93,7 @@ function posts(root = document) {
         if (!table) continue;
         const bodies = Array.from(table.querySelectorAll("div.postbody"));
         if (!bodies.length) continue;
-        // A trailing postbody that opens with the ____ rule is the
-        // signature, not part of the message.
+        // A trailing postbody starting with the ____ rule is the signature.
         let signature = null;
         if (bodies.length > 1) {
             const last = bodies[bodies.length - 1];
@@ -137,18 +113,10 @@ function posts(root = document) {
     return out;
 }
 
-/* ---- Steam metadata ---------------------------------------------- */
-
 const STEAM_APP_RE = /(?:store_item_assets\/steam|steam(?:community)?cdn[^/]*)?\/apps?\/(\d{3,8})\//i;
 
-/**
- * Pull the game details out of a first post written with the forum's
- * SteamInfo BBCode generator.
- *
- * The AppID is taken from the header image URL rather than the store
- * link, because the store link is replaced by a placeholder for guests
- * while the image URL stays intact.
- */
+// Reads the AppID from the header image, not the store link: the store
+// link is replaced by a guest placeholder but the image URL stays intact.
 function parseGameInfo(body) {
     if (!body) return null;
 
@@ -169,7 +137,7 @@ function parseGameInfo(body) {
         if (match) info.appId = match[1];
     }
 
-    // The generator emits "<b>Label:</b> value" pairs on one line each.
+    // The SteamInfo BBCode generator emits "<b>Label:</b> value" per line.
     const wanted = /^(Store Page|Genre\(s\)|Developer|Publisher|Release Date|Language\(s\)|Operating system\(s\)|Version|Steam AppID)\s*:?$/i;
     for (const node of body.querySelectorAll('span[style*="bold"], b, strong')) {
         const label = node.textContent.replace(/:\s*$/, "").trim();
@@ -190,10 +158,7 @@ function parseGameInfo(body) {
     return info.appId || Object.keys(info.fields).length ? info : null;
 }
 
-/**
- * Where the Steam boilerplate starts in a first post, so it can be
- * folded away. Returns the node to fold from, or null.
- */
+// Node to fold the Steam boilerplate from, or null.
 function steamBlurbStart(body) {
     for (const node of body.querySelectorAll('span[style*="bold"], b, strong')) {
         if (/^(About The Game|System Requirements|Screenshots)$/i.test(node.textContent.trim())) {
@@ -202,8 +167,6 @@ function steamBlurbStart(body) {
     }
     return null;
 }
-
-/* ---- Topic prefixes ---------------------------------------------- */
 
 const PREFIX_KINDS = {
     info: "info",
@@ -222,19 +185,9 @@ const PREFIX_KINDS = {
     discussion: "neutral",
 };
 
-/**
- * Take the first `count` characters off an element, node by node.
- *
- * The alternative is `link.textContent = rest`, which is one line and
- * throws away every child the link had. On this board that happens to
- * be safe — 330 titles across four boards carry exactly one thing
- * inside them, the coloured spans the template wraps the prefix in,
- * and those are the characters being removed anyway. It is safe by
- * coincidence rather than by construction, and the day somebody's
- * title carries an image or a link, one line would silently eat it.
- *
- * This removes the prefix and nothing else.
- */
+// Removes the first `count` characters node by node, preserving any
+// child elements — unlike `link.textContent = rest`, which would
+// silently eat an image or link if a title ever carried one.
 function stripLeading(node, count) {
     let left = count;
     for (const child of Array.from(node.childNodes)) {
@@ -247,11 +200,8 @@ function stripLeading(node, count) {
     }
 }
 
-/**
- * Split "[Info] Dragon's Dogma 2" into its prefix and the real
- * title. Topics often carry two, as in "[Release] [Userscript] ...",
- * so every leading bracket group is taken.
- */
+// Splits "[Info] Dragon's Dogma 2" into prefixes and title; topics often
+// stack two, as in "[Release] [Userscript] ...".
 function splitPrefix(title) {
     const prefixes = [];
     let rest = title.trim();
@@ -265,8 +215,7 @@ function splitPrefix(title) {
 
     if (!prefixes.length) return { prefix: null, prefixes: [], kind: null, rest };
 
-    // The first recognised prefix decides the colour; an unknown one
-    // stays neutral rather than borrowing a meaning it does not have.
+    // First recognised prefix decides the colour; unknown stays neutral.
     const kind = prefixes
         .map((name) => PREFIX_KINDS[name.toLowerCase()])
         .find(Boolean) || "neutral";

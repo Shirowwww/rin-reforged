@@ -1,16 +1,6 @@
-/* ------------------------------------------------------------------
-   Styles for what v0.4 added: folded quotes, folded chatter, the Steam
-   preview card, and the donation link.
-
-   The two folds share one idea and it is worth saying once. Neither of
-   them hides anything: `display: none` and `visibility: hidden` take a
-   node out of the layout, out of the accessibility tree and out of the
-   browser's own find-in-page, which is exactly what the previous
-   attempt at folding quotes did wrong. What is below is `max-height`
-   and a mask — the content is still laid out, still read aloud, still
-   found by Ctrl+F, still visible to the finder. Only the box drawn
-   around it is smaller.
-   ------------------------------------------------------------------ */
+/* Folding here means max-height + a mask, never display:none or
+   visibility:hidden — the content stays laid out, read aloud, and found
+   by Ctrl+F; only the box around it shrinks. */
 
 /* ---- Folded quotes ------------------------------------------------ */
 
@@ -18,8 +8,7 @@ html[data-rr] .postbody [data-rr-quote="folded"] {
     max-height: var(--rr-quote-max, 7em);
     overflow: hidden;
     cursor: zoom-in;
-    /* The fade is the affordance: a clipped block with a hard bottom
-       edge reads as a short quote, one that fades reads as more. */
+    /* Fade signals more content than a hard clip does. */
     -webkit-mask-image: linear-gradient(to bottom, #000 55%, rgba(0, 0, 0, .12) 100%);
             mask-image: linear-gradient(to bottom, #000 55%, rgba(0, 0, 0, .12) 100%);
 }
@@ -48,9 +37,8 @@ html[data-rr] .postbody [data-rr-quote="folded"]:hover {
 
 /* ---- Folded chatter ----------------------------------------------- */
 
-/* One dim line where a "thanks!" used to be a full post box. The
-   original post is untouched underneath: the message is clipped to a
-   single line of its own text, not replaced by a summary of it. */
+/* Original post is untouched — only clipped to one line, not replaced
+   by a summary of it. */
 html[data-rr] table.tablebg[data-rr-quiet] { opacity: .72; }
 html[data-rr] table.tablebg[data-rr-quiet]:hover { opacity: 1; }
 
@@ -74,32 +62,17 @@ html[data-rr] table.tablebg[data-rr-quiet] .rr-sig-toggle { display: none; }
 html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead__name { font-size: var(--rr-fs-xs); font-weight: 600; }
 html[data-rr] table.tablebg[data-rr-quiet] .rr-posthead__date { display: none; }
 
-/* The author, the control and the message on one line.
+/* `display: inline` on the message quietly undid the fold — overflow
+   and max-height don't apply to a non-replaced inline box, so a short
+   reply just laid out in full. A flex row makes the message a
+   clippable flex item instead.
 
-   The message used to be `display: inline` so it would flow beside the
-   name, and that quietly undid the fold: `overflow` and `max-height`
-   do not apply to a non-replaced inline box at all, so a short reply
-   looked folded only because it was short. A 300-character "thank you
-   so much for taking the time" — well inside what this folds — laid
-   itself out in full and nothing clipped it.
-
-   A flex row on the cell puts the three on one line properly, and the
-   message is then a flex item, which is a box that can be clipped. */
-/* Blocks, not a table. The message is one nowrap line, and a table
-   sizes itself to its content: on a desktop the folded post grew to
-   2044px and pushed the whole page sideways. As blocks the row is the
-   width it is given and the message is clipped inside it. */
-/* The whole chain down to the message, not only the outermost rows:
-   one table-cell left anywhere along it is enough. subsilver2 wraps a
-   post in one more `<table cellspacing="5">` on the live board — the
-   fixtures do not — and that table and the `td` holding it went on
-   shrink-wrapping the nowrap line inside them: 2756px of it, 1401px of
-   page pushed sideways, which is the same failure this rule was
-   written for, two levels further in.
- *
- * Only cells on that chain. `td` on its own outranks the modern
- * layout's `td.profile { display: none }` and puts the author column
- * — rank, joined date, post count — back above every folded reply. */
+   Blocks, not a table: a table sizes to its content and this grew to
+   2044px sideways. The whole chain matters, not just the outer rows —
+   subsilver2 wraps a post in an extra `<table cellspacing="5">` live
+   (absent from the fixtures) that repeated the bug at 2756px. Bare
+   `td` (not scoped further) also beats `td.profile{display:none}`,
+   which otherwise puts the author column back on every folded reply. */
 html[data-rr] table.tablebg[data-rr-quiet],
 html[data-rr] table.tablebg[data-rr-quiet] table,
 html[data-rr] table.tablebg[data-rr-quiet] tbody,
@@ -115,9 +88,7 @@ html[data-rr] table.tablebg[data-rr-quiet] .postbody {
     min-width: 0;
     max-width: 100%;
     overflow: hidden;
-    /* One line, ending in an ellipsis rather than a hard edge. The
-       text is all still there and still found by find-in-page; it is
-       the box around it that stops. */
+    /* Ellipsis, not a hard clip — the text stays intact for find-in-page. */
     white-space: nowrap;
     text-overflow: ellipsis;
     font-size: var(--rr-fs-sm);
@@ -127,21 +98,15 @@ html[data-rr] table.tablebg[data-rr-quiet] .postbody {
 }
 html[data-rr] table.tablebg[data-rr-quiet] .postbody br { display: none; }
 
-/* Everything the template leaves after the message: the two <br> it
-   uses as spacing and the empty strip that held the per-post controls.
-   Folding the message and leaving 45px of that behind saves half of
-   what the fold is for. A signature is a second .postbody, so it is
-   covered by the same rule — a folded reply is one line, all in. */
+/* Also hides the template's trailing <br>s, the empty control strip,
+   and any signature (a second .postbody) — a folded reply is one line,
+   all in. */
 html[data-rr] table.tablebg[data-rr-quiet] .postbody ~ * { display: none; }
 html[data-rr] table.tablebg[data-rr-quiet] .postbody ~ .rr-quiet-chip { display: inline-flex; }
 
-/* And the rows around it. A post is four table rows, and folding the
-   message alone left three of them standing: 77px for a reply that now
-   says "thx". The row holding the message is the only one a folded
-   reply has anything to show in — the header row is already hidden by
-   the modern layout, and the footer row is what is left of the Top and
-   Profile controls after they moved into the post's own action strip.
-   The template's cellspacing="5" is the last of it. */
+/* Hides the other three rows of the post too — the header row is
+   already gone in the modern layout, the footer is leftover Top/Profile
+   chrome — otherwise a folded reply still cost 77px. */
 html[data-rr] table.tablebg[data-rr-quiet] > tbody > tr:not(:has(.postbody)):not(:has(.rr-posthead)) {
     display: none;
 }
@@ -158,41 +123,32 @@ html[data-rr] table.tablebg[data-rr-quiet] > tbody > tr > td { padding: 2px 4px;
     border: 1px solid var(--rr-line);
     border-radius: var(--rr-radius-pill);
     color: var(--rr-faint);
-    /* 1.5 made the pill 24px against a 20px line of text, so it stood
-       proud of the row whatever it was aligned to. Tight enough now to
-       be the same height as the line it sits in. */
+    /* line-height 1.25, not 1.5 — 1.5 made the pill 24px against a
+       20px line of text. */
     font: 600 var(--rr-fs-xs) / 1.25 var(--rr-font);
     cursor: pointer;
     vertical-align: middle;
 }
-/* The row aligns on the baseline, which is right for the name and the
-   message and wrong for the chip: a bordered pill's baseline is the
-   text inside it, so its box hung two pixels above the line it sits
-   on. Centred in the line instead, the way a chip beside running text
-   is set everywhere else. */
+/* Centred, not baseline-aligned — a bordered pill's baseline sits
+   inside it, so baseline alignment hung it 2px above the line. */
 .rr-quiet-chip { align-self: center; }
 .rr-quiet-chip:hover { color: var(--rr-text); border-color: var(--rr-line-strong); }
 .rr-quiet-chip svg { width: 11px; height: 11px; }
-/* Once opened, the post is an ordinary post again and the chip is the
-   only thing left saying otherwise. */
+/* Once opened, the only remaining sign the post was folded. */
 html[data-rr] table.tablebg:not([data-rr-quiet]) .rr-quiet-chip { opacity: .4; }
 html[data-rr] table.tablebg:not([data-rr-quiet]) .rr-quiet-chip:hover { opacity: 1; }
 
 /* ---- The donation link -------------------------------------------- */
 
-/* One of the board's links, in the board's row, at the row's own
-   weight. It used to carry an outline and a heart; the palette still
-   offers it from anywhere. */
+/* Kept to the board's own link weight — it used to carry an outline
+   and a heart; the palette still offers it from anywhere. */
 html[data-rr] .rr-boardbar__donate { font-weight: 600; }
 
 @media (max-width: 380px) {
-    /* Both entry points and the More control come to 340px, so on a
-       390px phone — the common one — they now fit the row, which they
-       did not while every link opened with the word "View": only one
-       used to survive here. Under 380px they stop fitting.
-       "Unanswered posts" is the one every guide to this board tells
-       people to bookmark, so it is the one that stays; the rest are
-       one tap away behind More. */
+    /* At 390px (the common phone width) the entries fit only once every
+       link lost the word "View". Below 380px only "Unanswered posts" —
+       the one link every guide tells people to bookmark — stays; the
+       rest move behind More. */
     html[data-rr] .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :first-child > :nth-child(n+2) {
         display: none;
     }
@@ -240,9 +196,8 @@ html[data-rr] .rr-boardbar__donate { font-weight: 600; }
     background: var(--rr-surface-3);
     color: var(--rr-muted);
 }
-/* The text is the status colour lifted toward the strong text, not
-   the raw token: on the dark themes the raw red read at under 4:1 on
-   its own wash. */
+/* Text lifted toward strong text, not the raw token — the raw red read
+   under 4:1 on dark themes. */
 .rr-steam__score[data-band="good"]  { background: color-mix(in srgb, var(--rr-ok) 20%, transparent);     color: color-mix(in srgb, var(--rr-ok) 70%, var(--rr-text-strong)); }
 .rr-steam__score[data-band="mixed"] { background: color-mix(in srgb, var(--rr-warn) 20%, transparent);   color: color-mix(in srgb, var(--rr-warn) 70%, var(--rr-text-strong)); }
 .rr-steam__score[data-band="poor"]  { background: color-mix(in srgb, var(--rr-danger) 20%, transparent); color: var(--rr-danger); }
@@ -265,46 +220,38 @@ html[data-rr] .rr-boardbar__donate { font-weight: 600; }
     font-size: var(--rr-fs-sm);
     line-height: 1.55;
     color: var(--rr-text);
-    /* Three lines is the length at which a store blurb still says what
-       the game is and does not become the page. */
+    /* Three lines: enough to say what the game is without becoming
+       the page. */
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
-/* When the topic opened, which the store cannot say and the board's
-   own tooltip used to — drawn over this card until steam.js took the
-   attribute away. It belongs with the bookkeeping at the foot, above
-   the two lookups, hairlined off the blurb so it does not read as the
-   last line of it. */
+/* Sits with the bookkeeping, hairlined off the blurb — this is what
+   the board's own tooltip drew over the card until steam.js removed
+   the attribute. */
 .rr-steam__posted {
     padding-top: var(--rr-s2);
     border-top: 1px solid var(--rr-line);
     font: var(--rr-fs-xs) / var(--rr-lh-meta) var(--rr-font);
     color: var(--rr-faint);
 }
-/* On the placeholder there is nothing above it to be separated from. */
+/* Placeholder has nothing above to separate from. */
 .rr-steam--quiet .rr-steam__posted { padding-top: 0; border-top: 0; }
 .rr-steam__links { display: flex; gap: 6px; }
 .rr-steam__links .rr-btn { padding: 4px 8px; font-size: var(--rr-fs-xs); }
 
-/* A row whose title now opens at the first unread post. The board
-   already marks the row unread with its dot; this is only here so the
-   retarget is visible to a test and to anyone reading the DOM. */
+/* Only here so the retarget-to-first-unread is visible to a test and
+   in the DOM — the board's own dot already marks the row unread. */
 html[data-rr] tr[data-rr-unread] a.topictitle { text-underline-offset: 3px; }
 
 
 /* ---- Category collapse ------------------------------------------- */
 
-/* The board draws this as a background image on an <input type=button>
-   sized 12x12. Two selectors, not one: `html[data-rr] input[type=button]`
-   in forum.css is one element more specific than a bare class would be,
-   so a class-only rule loses the padding and the border to the generic
-   button styling and the control comes out as a 34px slab.
-
-   The arrow is the input's own `value`, written by boardindex.js. It
-   cannot be a pseudo-element: an <input> is a replaced element and
-   generates none. */
+/* Two selectors: a bare class alone loses padding/border to the more
+   specific `html[data-rr] input[type=button]` in forum.css, rendering
+   a 34px slab. The arrow is boardindex.js's own `value` — it can't be
+   a pseudo-element since <input> is a replaced element. */
 html[data-rr] input.ccclose,
 html[data-rr] input.ccopen,
 html[data-rr] .ccclose,
@@ -339,16 +286,13 @@ html[data-rr] .ccopen:hover {
 
 /* ---- Light theme, seen by eye ------------------------------------ */
 
-/* The prefix filters rest at half opacity so a row of bright chips
-   does not compete with the listing behind them. Against a dark
-   surface half of a mid-tone still reads; against white it is most of
-   the way to gone, and Info and Tutorial in particular stopped being
-   legible as words. They rest higher on Paper and land in the same
-   place visually. */
+/* Rest state at .78 opacity: on white a mid-tone chip nearly vanishes
+   (Info/Tutorial stopped reading as words) while on dark surfaces it
+   still reads; .78 lands both at the same visual weight on paper. */
 html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag,
 html[data-rr][data-rr-theme="paper"] .rr-toolbar__quick .rr-tag { opacity: .78; }
-/* The chip that is on is on in every theme: this outranks the rest
-   state above, which it did not before. */
+/* An active chip stays full opacity in every theme, overriding the
+   rest state above. */
 html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag:hover,
 html[data-rr][data-rr-theme="paper"] .rr-toolbar__tags .rr-tag[aria-pressed="true"],
 html[data-rr][data-rr-theme="paper"] .rr-toolbar__quick .rr-tag[aria-pressed="true"] { opacity: 1; }
@@ -356,21 +300,15 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__quick .rr-tag[aria-pressed="tr
 
 /* ---- The board's masthead ---------------------------------------- */
 
-/* Shown at the size the board draws it, on the one page where the
-   board's name is the point. The plate the art sits on is part of the
-   art — it is a dark rectangle with the emblem knocked out of it — so
-   it keeps its own background on every theme rather than being tinted
-   to match one. */
+/* Shown at the board's own size; the plate the art sits on is part of
+   the image, so it keeps its own background on every theme rather than
+   being tinted to match one. */
 .rr-masthead {
     margin: 0 0 var(--rr-s4);
 }
 
-/* The masthead and the board links, side by side where there is room.
-
-   The art is left at the size the board draws it — 380x109, its own
-   file, not redrawn and not scaled — and the links take the width it
-   was leaving empty. Below 900px they stack again, which is what they
-   did everywhere before. */
+/* Art stays at its native 380x109 (own file, not scaled); the links
+   take the width it leaves empty. Stacks again below 900px. */
 .rr-header { display: block; }
 
 @media (min-width: 900px) {
@@ -387,18 +325,15 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__quick .rr-tag[aria-pressed="tr
         margin: 0;
         padding-bottom: 0;
         border-bottom: 0;
-        /* Beside a 109px block the links read as a line hanging in the
-           middle of it; on the art's own baseline they read as a
-           caption to it. */
+        /* Aligned to the art's own baseline so the links read as a
+           caption to it, not a line hanging mid-image. */
         align-content: flex-end;
         align-items: flex-end;
     }
 }
-/* No top bar: this block stands in for the board's own header, so it
-   is laid out the way the board lays that one out — the art on the
-   left, the name centred in what is left of the line, the links across
-   the full width underneath. Higher specificity than the two-column
-   rules above, so it wins wherever both apply. */
+/* Stands in for the board's own header when there's no top bar (art
+   left, name centred, links full-width below); higher specificity
+   than the two-column rules above wins wherever both apply. */
 .rr-header[data-rr-stack] {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -408,12 +343,12 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__quick .rr-tag[aria-pressed="tr
 }
 .rr-header[data-rr-stack] > .rr-masthead { grid-column: 1; margin: 0; }
 .rr-header[data-rr-stack] > .rr-boardname { grid-column: 2; }
-/* Full width, and its own hairline is what separates the header from
-   the page — so the margin goes and the border stays. */
+/* Full width; its own hairline, not a margin, separates the header
+   from the page. */
 .rr-header[data-rr-stack] > .rr-boardbar { grid-column: 1 / -1; margin: 0; }
 
-/* Under the width where a 380px picture and a centred name share a
-   line, the three stack and the name centres over the art. */
+/* Below the width where the art and a centred name still share a
+   line, all three stack and the name centres over the art. */
 @media (max-width: 760px) {
     .rr-header[data-rr-stack] { grid-template-columns: minmax(0, 1fr); justify-items: center; }
     .rr-header[data-rr-stack] > .rr-masthead,
@@ -428,10 +363,8 @@ html[data-rr][data-rr-theme="paper"] .rr-toolbar__quick .rr-tag[aria-pressed="tr
     line-height: var(--rr-lh-title);
     color: var(--rr-text-strong);
 }
-/* Carrying html[data-rr] for the reason csrin-css-cascade lists: the
-   reset styles `html[data-rr] p` at (0,1,1) and a bare class loses to
-   it, which left this line at full text weight instead of under the
-   name it belongs to. */
+/* html[data-rr] needed: the reset's `html[data-rr] p` outranks a bare
+   class (see csrin-css-cascade), which left this at full text weight. */
 html[data-rr] p.rr-boardname__strap {
     margin: 3px 0 0;
     font-size: var(--rr-fs-sm);
@@ -456,8 +389,8 @@ html[data-rr] p.rr-boardname__strap {
 }
 
 @media (max-width: 560px) {
-    /* Two thirds the size, which keeps the wordmark legible and the
-       emblem recognisable without taking a third of the screen. */
+    /* 260px: keeps the wordmark legible and the emblem recognisable
+       without eating a third of the screen. */
     .rr-masthead__art { width: 260px; }
     .rr-masthead { margin-bottom: var(--rr-s3); }
 }
@@ -465,9 +398,8 @@ html[data-rr] p.rr-boardname__strap {
 
 /* ---- An unsent reply --------------------------------------------- */
 
-/* The quick reply with something kept in it. A dot rather than a
-   sentence: the button beside it already says "Finish your reply", and
-   this is only there so the block reads as waiting for you from across
+/* A dot, not a sentence — the button beside it already says "Finish
+   your reply"; this only needs to read as waiting for you from across
    the page. */
 .rr-reply[data-rr-draft] {
     border-color: color-mix(in srgb, var(--rr-accent) 40%, var(--rr-line));
@@ -485,10 +417,9 @@ html[data-rr] p.rr-boardname__strap {
 
 /* ---- Releases ---------------------------------------------------- */
 
-/* A table without a <table>: five columns on one line per row, with
-   the two that carry meaning — the version and what kind of thing it
-   is — leading, and the bookkeeping trailing off to the right where it
-   can be ignored. */
+/* A table without a <table>: five columns on one line, the two that
+   carry meaning (version, kind) leading, bookkeeping trailing where
+   it can be ignored. */
 .rr-releases {
     margin: 0 0 var(--rr-post-gap);
     background: var(--rr-surface);
@@ -505,10 +436,8 @@ html[data-rr] p.rr-boardname__strap {
     border-bottom: 1px solid var(--rr-line);
 }
 /* `html[data-rr] h3` outranks `.rr-releases__head h3` and kept its
-   bottom margin, which centred the box 6px above the icon, the count
-   and the controls beside it. */
+   bottom margin, offsetting the title from the icon/count beside it. */
 html[data-rr] .rr-releases__head h3 { margin: 0; font-size: var(--rr-fs); line-height: 1.2; }
-/* The title is the control that folds the panel. */
 html[data-rr] button.rr-releases__toggle {
     display: inline-flex;
     align-items: center;
@@ -529,10 +458,8 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
 .rr-releases[data-rr-folded] .rr-releases__controls { display: none; }
 .rr-releases[data-rr-folded] .rr-releases__head { border-bottom: 0; }
 .rr-releases__body[hidden] { display: none; }
-/* What the panel is showing: how much of the topic, and whether the
-   topic itself is filtered down to it. Two controls answering the same
-   question, so they sit together rather than at opposite ends of the
-   card. */
+/* Two controls answering the same question (how much of the topic is
+   shown) sit together rather than at opposite ends of the card. */
 .rr-releases__controls {
     display: flex;
     align-items: center;
@@ -544,8 +471,8 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
 .rr-releases__toggle > svg:nth-child(2) { color: var(--rr-accent); flex: none; }
 .rr-releases__count { color: var(--rr-faint); font-size: var(--rr-fs-xs); }
 
-/* This page / all N pages. The same segmented control the settings
-   panel uses, because it is the same kind of choice. */
+/* This page / all N pages — the same segmented control the settings
+   panel uses, for the same kind of choice. */
 .rr-releases__scope {
     display: inline-flex;
     padding: 2px;
@@ -568,9 +495,9 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
 .rr-releases__tab[aria-selected="true"] { background: var(--rr-surface-3); color: var(--rr-text-strong); }
 .rr-releases__tab[aria-busy] { color: var(--rr-accent); cursor: progress; }
 .rr-releases__tab:disabled { cursor: progress; }
-/* Disabled because there is nothing for it to do on this topic, not
-   because it is busy. Still drawn as one of two options, so the
-   control reads as a control on a one page topic too. */
+/* Disabled because there's nothing to page to, not because it's busy —
+   still drawn as one of two options so it reads as a control even on
+   a single-page topic. */
 .rr-releases__tab[data-rr-why] {
     cursor: default;
     color: var(--rr-faint);
@@ -590,8 +517,6 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
     color: var(--rr-faint);
 }
 .rr-releases__note .rr-spacer { flex: 1; }
-/* When it was read, whether it has moved on, and the button that reads
-   it again: one fact and the action on it, side by side. */
 .rr-releases__read {
     display: flex;
     align-items: center;
@@ -608,8 +533,8 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
     font-weight: 700;
 }
 
-/* The board was queueing, so the walk stood down. Said quietly: it is
-   an explanation of the wait, not a problem with the answer. */
+/* Board was queueing, so the walk paused — phrased as an explanation
+   of the wait, not a problem with the answer. */
 .rr-releases__eased {
     padding: 2px 8px;
     border-radius: var(--rr-radius-pill);
@@ -627,15 +552,10 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
     font-weight: 700;
 }
 
-/* The chips filter the list; the tags in the rows below name what a
-   release is. They are deliberately the same words in the same
-   colours, which left them reading as a first row of the list with its
-   version column missing — the strip sat flush on the first row, same
-   ground, same chips, no edge between them.
-
-   So the strip takes the head's ground rather than the list's, and a
-   full hairline under it. Three bands: what the panel is, how it is
-   filtered, what it found. */
+/* Chips (filter) and tags (rows) intentionally share words and colours
+   — a flush strip with no edge made the filter row read as the list's
+   own first entry, minus its version column. It now takes the head's
+   ground and a full hairline instead. */
 .rr-releases__filters {
     display: flex;
     flex-wrap: wrap;
@@ -648,8 +568,8 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
 .rr-releases__chip {
     padding: 2px 9px;
     border-radius: var(--rr-radius-pill);
-    /* Transparent on the strip's own ground. A filled chip on a tinted
-       strip is a third surface for a control that is off. */
+    /* Transparent on the strip's own ground — filled would be a third
+       surface for a control that's off. */
     background: transparent;
     border: 1px solid var(--rr-line);
     color: var(--rr-muted);
@@ -657,11 +577,9 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
     cursor: pointer;
     transition: background var(--rr-speed) ease, color var(--rr-speed) ease;
 }
-/* The chips were grey to a kind while the same word in the rows below
-   was coloured: one filter, two vocabularies. They take the family
-   colour too — held back while off, filled in while on, which is also
-   what the row of chips was missing: any visible sign of which one is
-   active. */
+/* Chips now take the family colour too (held back off, filled on) —
+   they used to be grey while the same word in the rows was coloured,
+   with no visible sign of which filter was active. */
 .rr-releases__chip[data-family="game"]   { --rr-family: var(--rr-tag-release); }
 .rr-releases__chip[data-family="run"]    { --rr-family: var(--rr-warn); }
 .rr-releases__chip[data-family="change"] { --rr-family: var(--rr-tag-info); }
@@ -699,8 +617,7 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
 .rr-releases__link:hover { background: var(--rr-surface-2); text-decoration: none; }
 
 /* Three different answers to "which one is this", drawn as three
-   different things rather than as three variations on a version
-   number. */
+   different things rather than variants on a version number. */
 .rr-releases__version {
     flex: none;
     display: inline-flex;
@@ -713,13 +630,12 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
 }
 .rr-releases__version[data-rr-latest] { color: var(--rr-accent); }
 
-/* A build id is not a version and must never be read as a bigger one:
-   it is labelled, unbolded and set back. */
+/* A build id is not a version and must never read as a bigger one: it
+   is labelled, unbolded, and set back. */
 .rr-releases__version[data-rr-kind="build"] { color: var(--rr-faint); font-weight: 400; }
 .rr-releases__vkind {
-    /* --rr-fs-xs, not 9px: 11px is the floor everything else on the
-       page is held to, and a label that says "this is not a version"
-       is not the place to go under it. */
+    /* --rr-fs-xs, not 9px: 11px is this page's floor everywhere else,
+       and a label saying "this is not a version" shouldn't go under it. */
     font: 600 var(--rr-fs-xs) / 1 var(--rr-font);
     letter-spacing: .04em;
     text-transform: uppercase;
@@ -727,8 +643,7 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
     opacity: .8;
 }
 
-/* And nothing at all is an empty state, not a piece of punctuation
-   somebody left in the column. */
+/* Nothing at all is an empty state, not stray punctuation. */
 .rr-releases__version[data-rr-kind="none"] { color: var(--rr-faint); font-weight: 400; }
 .rr-releases__vnone { opacity: .45; }
 
@@ -742,12 +657,10 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
     font: 600 var(--rr-fs-xs) / 1.7 var(--rr-font);
     white-space: nowrap;
 }
-/* Six families, covering all eleven kinds the finder knows, painted
-   once here and used by both the tags in the rows and the chips that
-   filter them. releases.js decides which family a kind belongs to and
-   a test fails if a kind is ever added without one — five of them used
-   to be coloured and six grey, which looked like a taxonomy and was
-   really a list of the ones somebody had got round to. */
+/* Six families cover all eleven kinds finder.js knows; releases.js
+   assigns the family and a test enforces every kind has one — five
+   used to be coloured and six grey, which read as an incomplete
+   taxonomy rather than a deliberate one. */
 .rr-releases__tag[data-family="game"]   { --rr-family: var(--rr-tag-release); }
 .rr-releases__tag[data-family="run"]    { --rr-family: var(--rr-warn); }
 .rr-releases__tag[data-family="change"] { --rr-family: var(--rr-tag-info); }
@@ -756,9 +669,8 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
 .rr-releases__tag[data-family="block"]  { --rr-family: var(--rr-danger); }
 
 .rr-releases__tag[data-family]:not([data-family="other"]) {
-    /* The ink lifted toward the theme's own extreme, exactly as the
-       topic prefix tags do it, and for the same reason: the hue on a
-       14% tint of itself is under 4.5:1 at 12px. */
+    /* Ink lifted toward the theme's own extreme, like the topic prefix
+       tags — the hue alone on a 14% tint is under 4.5:1 at 12px. */
     color: color-mix(in srgb, var(--rr-family) 84%, var(--rr-text-strong));
     background: color-mix(in srgb, var(--rr-family) 14%, transparent);
     border-color: color-mix(in srgb, var(--rr-family) 32%, transparent);
@@ -776,18 +688,16 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
 .rr-releases__empty { margin: 0; padding: var(--rr-s3) var(--rr-card-pad); color: var(--rr-faint); font-size: var(--rr-fs-sm); }
 
 @media (max-width: 720px) {
-    /* Two lines: what it is, then who and where. The five-column line
-       is 620px of content and there is no honest way to fit it. */
+    /* Two lines: what it is, then who and where — the five-column row
+       is 620px wide with no honest way to fit it. */
     .rr-releases__link { flex-wrap: wrap; row-gap: 4px; }
     .rr-releases__tags { flex-basis: 100%; order: 3; }
     .rr-releases__who { order: 4; }
     .rr-releases__when { order: 5; }
     .rr-releases__page { order: 6; margin-left: auto; }
     .rr-releases__controls { margin-left: 0; flex-basis: 100%; }
-    /* Both segmented controls take a row of their own and all of it.
-       Side by side, "Newest first" wraps onto two lines inside a
-       segment and the row goes ragged; a control per row reads as a
-       stack of choices, which is what it is. */
+    /* Each segmented control gets its own full row — side by side,
+       "Newest first" wrapped onto two lines and the row went ragged. */
     .rr-releases__scope,
     .rr-releases__order { flex: 1 1 100%; }
     .rr-releases__tab,
@@ -800,8 +710,8 @@ html[data-rr] .rr-releases__toggle > svg:first-child { color: var(--rr-faint); f
 
 /* ---- The archive password ----------------------------------------- */
 
-/* Read off the post by finder.js and offered where the post's other
-   controls are, because that is where a reader is already looking. */
+/* Read off the post by finder.js, offered where the post's other
+   controls are — where a reader is already looking. */
 html[data-rr] button.rr-pass {
     display: inline-flex;
     align-items: center;
@@ -821,7 +731,7 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
 
 /* ---- New since your last visit ------------------------------------ */
 
-/* The divider a mail client draws, in a thread that has none: this
+/* The divider a mail client draws, in a thread that has none — this
    browser knows which post was newest here last time. */
 .rr-since {
     display: flex;
@@ -856,27 +766,20 @@ html[data-rr] button.rr-pass:hover { border-color: var(--rr-accent); }
 
 /* ---- Looking inside a topic from the palette ---------------------- */
 
-/* The pane lives in the overlay rather than in the panel — the panel
-   clips its own corners, and a sibling in the overlay's centred row
-   would push the list sideways the moment one opened. Anchored to the
-   centre line and the palette's own 640px instead, so the list stays
-   exactly where it was (preview.js, attachTopicPreview).
-
-   The top matches .rr-palette's margin-top and the height its ceiling,
-   so the two read as one object with a gap in it rather than as two
-   boxes that happen to be near each other. */
+/* Lives in the overlay, not the panel — the panel clips its own
+   corners, and a sibling there would push the list sideways the
+   moment one opened. Anchored off the palette's own centre line and
+   640px width; its top matches .rr-palette's margin-top so the two
+   read as one object with a gap in it. */
 html[data-rr] .rr-overlay > .rr-preview {
     position: absolute;
     top: 12vh;
     left: 50%;
     margin-left: calc(320px + var(--rr-s3));
-    /* What is left of the half-window once the palette's own 320px and
-       the gap are out of it, and never more than the 340px the pane
-       wants. Written out rather than fixed at 340: the pane hangs off
-       the centre line, so a fixed width ran 150px off the right edge
-       of a 1040px window — wide enough to pass the check that opened
-       it, too narrow to hold it. 344 rather than 332 because vw counts
-       the scrollbar and the overlay's own 50% does not. */
+    /* Can't be a fixed 340px: anchored off the centre line, a fixed
+       width ran 150px past a 1040px window's edge. min() instead;
+       344 not 332 because vw counts the scrollbar and the overlay's
+       own 50% does not. */
     width: min(340px, calc(50vw - 344px));
     max-height: min(60vh, 520px);
     overflow-y: auto;
@@ -890,12 +793,9 @@ html[data-rr] .rr-overlay > .rr-preview {
     font-size: var(--rr-fs-sm);
     line-height: var(--rr-lh);
 }
-/* 1200px is where the formula above bottoms out at 256px — a column
-   that still holds a title and four lines of a post, which is the
-   whole of what the pane is for — and below it there is not enough
-   left of the half-window to be worth drawing. preview.js checks the
-   same number before it fetches anything; this is what catches a
-   window narrowed after the palette was opened. */
+/* Below 1200px the formula above bottoms out under a usable column
+   (~256px, still a title and four lines of a post), so the pane is
+   hidden instead — preview.js checks the same width before fetching. */
 @media (max-width: 1199px) {
     html[data-rr] .rr-overlay > .rr-preview { display: none; }
 }
@@ -933,6 +833,5 @@ html[data-rr] .rr-preview__foot {
     color: var(--rr-faint);
     font-size: var(--rr-fs-xs);
 }
-/* The one line the pane shows while the page is on its way, and the
-   one it shows if the page never arrives. */
+/* Shown both while the page loads and if it never arrives. */
 html[data-rr] .rr-preview__wait { color: var(--rr-faint); font-size: var(--rr-fs-xs); }

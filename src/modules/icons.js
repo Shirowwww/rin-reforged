@@ -1,30 +1,17 @@
-/* ------------------------------------------------------------------
-   Legacy imagery.
-
-   The board draws its interface with GIFs from 2003: beveled
-   checkboxes for read state, image buttons for "Post reply", arrows
-   for "view latest post". Hiding them in CSS leaves their alt text
-   behind, which is worse than the image. They are replaced here.
-
-   Each replacement keeps the original title so hover help survives,
-   and the original node is kept (display:none) rather than removed,
-   because other userscripts look for it.
-   ------------------------------------------------------------------ */
+/* The board draws its interface with GIFs from 2003 (beveled checkboxes,
+   image buttons, arrows). Hiding them in CSS would leave their alt text
+   behind, so they're replaced here instead: original title kept for hover
+   help, original node kept as display:none since other userscripts look for it. */
 
 const STATUS_RE = /(global|announce|sticky|topic|forum)_(un)?read|topic_moved/;
 
-/* Images that sit beside a label saying the same thing, or that draw
-   nothing at all: the 12px menu bullets, the page-jump target, the
-   1px spacers subsilver2 uses for table corners. */
+// Pure decoration: menu bullets, the page-jump target, subsilver2's table-corner spacers.
 const DECORATION_RE = /icon_mini_|icon_donate|spacer\.gif|icon_post_target|\/arrow_|subforum_|whosonline/;
 
 function statusDot(img) {
     const src = img.getAttribute("src") || "";
     const unread = /_unread/.test(src);
     const locked = /locked/.test(src);
-    /* The one GIF the first pass left behind: a moved topic's shadow
-       row, which kept the template's beveled arrow beside rows that had
-       all been redrawn. */
     const moved = /topic_moved/.test(src);
 
     const dot = el("span.rr-dot", {
@@ -46,34 +33,21 @@ function latestPostArrow(img) {
     img.style.display = "none";
 }
 
-/**
- * "This topic has an attachment" — a beveled paperclip GIF the template
- * draws ahead of the title, in front of the [Release] tag rather than
- * beside the fact it is closest to. A muted vector glyph replaces it
- * after the title link instead, the way the latest-post arrow follows
- * rather than leads.
- */
+// "This topic has an attachment": the template draws its paperclip GIF ahead
+// of the title and the [Release] tag; the glyph replaces it in the same spot
+// because placing it after the title wraps to its own line on a full-width phone card.
 function attachmentGlyph(img) {
     const label = img.getAttribute("title") || img.getAttribute("alt") || "Attachment(s)";
     const glyph = icon("clip", 12);
     glyph.classList.add("rr-attach");
     glyph.setAttribute("title", label);
-    // Where the board put it, ahead of the tag and the title. Placed
-    // after the title it wrapped to a line of its own on a phone the
-    // moment the title filled the card's width.
     img.after(glyph);
     img.style.display = "none";
 }
 
-/**
- * A control the board draws as an image inside a link and nothing else:
- * "Reply with quote", "Profile", the post permalink.
- *
- * Hiding the image leaves a link with no content: the control is still
- * in the page and still clickable, but nothing marks where it is. Every
- * one of them gets the alt text as a real label instead, which is why
- * this runs before the catch-all below rather than after it.
- */
+// A link whose only content is an image ("Reply with quote", "Profile",
+// permalink): hiding the image would leave it with nothing marking it, so
+// the alt text becomes a real label. Must run before the catch-all below.
 function controlLink(img) {
     const link = img.closest("a");
     if (!link || link.textContent.trim()) return false;
@@ -90,20 +64,14 @@ function controlLink(img) {
     return true;
 }
 
-/**
- * The little arrow beside an unread topic's title, "View first unread
- * post". As a labelled control it was a 146px button in front of every
- * title on "View new posts" — a hundred of them on the page, each
- * louder than the title it belonged to. It is an arrow; it stays one,
- * after the title, and the row that already sends its title to the
- * first unread post (the unreadFromList setting) hides it.
- */
+// "View first unread post" arrow: kept as a small arrow after the title rather
+// than a labelled button, since as a button it was a loud 146px control repeated
+// on every row of "View new posts". Hidden when unreadFromList already covers it.
 function unreadJump(link, img, label) {
     if (!/view=unread/.test(link.getAttribute("href") || "")) return false;
     const row = link.closest("tr");
-    // The control panel's watched-topics list names its titles with no
-    // class at all; the topic link in the same row is the one that is
-    // not this arrow and not a page number.
+    // Watched-topics rows have no class on the title link, so pick whichever link
+    // in the row isn't this arrow and isn't a page number.
     const title = row && (row.querySelector("a.topictitle, .topictitle a")
         || Array.from(row.querySelectorAll('a[href*="viewtopic.php"]'))
             .find((a) => a !== link && !/view=unread|[?&]p=\d|start=\d/.test(a.getAttribute("href") || "") && a.textContent.trim().length > 2));
@@ -118,10 +86,6 @@ function unreadJump(link, img, label) {
     return true;
 }
 
-/**
- * Turn an image button ("Post reply", "New topic") into a real button.
- * The label comes from the image alt, which the template fills in.
- */
 function imageButton(img) {
     const link = img.closest("a");
     if (!link) return;
@@ -141,11 +105,8 @@ function initIcons() {
     for (const img of document.querySelectorAll('img[src*="/imageset/"], img[src*="/theme/images/"]')) {
         const src = img.getAttribute("src") || "";
 
-        /* The board's face, not one of its controls. It is an <img>
-           alone inside a link to the index, which is the shape
-           controlLink() is for — so the masthead came out as a chip
-           reading "Logo", its own alt text. Invisible while the top bar
-           covered the header; the whole header, with the bar off. */
+        // Skip the masthead logo: it's an <img>-only link like controlLink() targets,
+        // which would otherwise turn it into a chip reading "Logo".
         if (/site_logo|imageset\/logo/i.test(src)) continue;
 
         if (STATUS_RE.test(src)) { statusDot(img); continue; }
@@ -154,17 +115,13 @@ function initIcons() {
         if (/\/button_/.test(src)) { imageButton(img); continue; }
         if (controlLink(img)) continue;
 
-        // Only what is known to be decoration is hidden. The catch-all
-        // that used to sit here hid every image the loop did not
-        // recognise, which is how a control ends up invisible the day
-        // the board adds one — the SCS status tags this board draws
-        // inside topic titles are exactly that shape.
+        // Only known decoration is hidden; a catch-all here previously hid unrecognised
+        // images too, which silently swallowed the SCS status tags in topic titles.
         if (DECORATION_RE.test(src)) { img.style.display = "none"; continue; }
         img.classList.add("rr-legacy-img");
     }
 
-    // The template writes "Go to page:" next to a target icon; with the
-    // icon gone the stray colon reads better as a label.
+    // Marked for CSS: with its icon gone, "Go to page:" is left with a stray colon.
     for (const strip of document.querySelectorAll("p.gensmall")) {
         if (/Go to page/.test(strip.textContent)) strip.classList.add("rr-pagejump");
     }
@@ -172,11 +129,8 @@ function initIcons() {
     hideEmptyRows();
 }
 
-/**
- * subsilver2 uses rows holding a single &nbsp; to draw the rounded
- * corners of a table. Without those corner images they are 30px of
- * nothing between every block.
- */
+// subsilver2 draws table-corner rounding with rows holding a single &nbsp;;
+// with those corner images gone they're just 30px of empty space.
 function hideEmptyRows() {
     for (const row of document.querySelectorAll("table.tablebg > tbody > tr")) {
         if (row.querySelector("img, input, a, form, h4")) continue;

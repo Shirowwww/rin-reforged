@@ -1,11 +1,5 @@
-/* ------------------------------------------------------------------
-   The board index.
-
-   Two things dominate it: a list of every one of the 500-odd people
-   currently online, and a login form. Both are folded down to what a
-   reader actually wants at a glance, with the full version one click
-   away.
-   ------------------------------------------------------------------ */
+/* The board index: an online list of 500-odd names and a login form,
+   both folded to a glance with the full version one click away. */
 
 /** "In total there are 513 users online :: 326 registered, ..." */
 function onlineSummary(text, names) {
@@ -23,35 +17,25 @@ function onlineSummary(text, names) {
     return parts.join(" · ");
 }
 
-/**
- * The cell holding the list of everyone online.
- *
- * Found by what it contains rather than by the heading above it. The
- * heading used to be the anchor — a cell whose text is exactly "Who is
- * online" — and this board is bilingual: on its Russian half that
- * heading is "Кто сейчас на конференции" and the whole feature silently
- * did nothing. A cell holding several hundred links to member profiles
- * is the same cell in either language.
- */
+/** Found by content (30+ profile links), not the "Who is online" heading —
+ *  that text differs on the Russian half and silently broke this before. */
 function whoIsOnlineCell() {
     let best = null;
     let most = 0;
     for (const cell of document.querySelectorAll("#wrapcentre td.row1, #wrapcentre td.row2")) {
-        // Not the forum listing: a row there has one or two profile
-        // links in it, never thirty.
+        // Skip the forum listing: a row there has at most a couple of profile links.
         if (cell.querySelector("a.forumlink, a.topictitle")) continue;
         const count = cell.querySelectorAll("a[href*='viewprofile']").length;
         if (count > most) { most = count; best = cell; }
     }
-    return most >= 30 ? best : null;      // a short list is fine as it is
+    return most >= 30 ? best : null;
 }
 
 function collapseWhoIsOnline(body) {
     const names = body.querySelectorAll("a[href*='viewprofile']");
     const summary = onlineSummary(body.textContent, names.length);
 
-    // Moved, not rebuilt: every name keeps its link, its role colour
-    // and anything another script attached to it.
+    // Moved, not rebuilt, so each name keeps its link, colour and listeners.
     const holder = el("div");
     while (body.firstChild) holder.append(body.firstChild);
 
@@ -83,11 +67,8 @@ function collapseWhoIsOnline(body) {
     );
 }
 
-/**
- * The index prints the same search box twice, above and below the forum
- * list, each in a full-width strip of its own. With search in the top
- * bar both are redundant; without it, the first one stays.
- */
+/** The index has this search box twice; with the top bar's search both are
+ *  redundant, without it the first one stays. */
 function dropDuplicateSearch() {
     const boxes = Array.from(document.querySelectorAll("#wrapcentre #search-box"));
     const keepFirst = !settings.get("navbar");
@@ -99,33 +80,16 @@ function dropDuplicateSearch() {
     });
 }
 
-/* ---- Category collapse ------------------------------------------- */
-
-/**
- * The board's own "collapse this category" control: an `<input
- * type="button">` carrying `value=" "`, drawn by a 12x12 background
- * image from a <style> block, alone at the right end of a cell that
- * spans three columns — a thousand pixels from the heading it belongs
- * to, with no accessible name, on a row that gives no other sign it
- * opens at all.
- *
- * Redrawing it where it stood was a losing fight: an <input> is a
- * replaced element, so `::before` generates nothing on it, and between
- * the board's own <style> and the generic input[type=button] rules a
- * class selector kept losing the size and the font — which is how the
- * control came to be a bare text triangle. So it is hidden and kept
- * for its handler, which is the part that matters: `flipf()` reads its
- * class, flips it, and shows or hides the category. A chevron beside
- * the heading clicks it, and the heading cell folds on a click of its
- * own, the way a listing's section heading already does.
- */
+/** The board's native toggle is an unlabeled 12x12 background-image button
+ *  far from its heading and can't be restyled (replaced element, its own
+ *  <style> wins) — so it's hidden and driven via its ccopen/ccclose class,
+ *  with a chevron by the heading and the whole cell clickable instead. */
 function tidyCategoryToggles() {
     for (const native of document.querySelectorAll("#wrapcentre .ccclose, #wrapcentre .ccopen")) {
         if (native.hasAttribute("data-rr-cc")) continue;
         native.setAttribute("data-rr-cc", "");
 
-        // The heading is in a sibling cell — the control gets a cell to
-        // itself — so the row is what has to be walked to reach it.
+        // The heading lives in a sibling cell, so walk up to the row to reach it.
         const row = native.closest("tr");
         const cell = row && row.querySelector("td.cat");
         if (!cell) continue;
@@ -142,17 +106,14 @@ function tidyCategoryToggles() {
             fold.setAttribute("title", name);
             fold.setAttribute("aria-label", name);
         };
-        // The board's handler swaps the class rather than telling
-        // anyone, so the state is read back off it afterwards.
+        // The board's handler swaps the class but fires no event, so re-read it after.
         const flip = () => {
             native.click();
             setTimeout(sync, 0);
         };
 
         fold.addEventListener("click", flip);
-        // The heading itself is a link to the category's own page, so a
-        // click on the words still goes there; the rest of the cell
-        // folds.
+        // The heading text is still a link to its own page; only the rest of the cell folds.
         cell.addEventListener("click", (event) => {
             if (event.target instanceof Element && event.target.closest("a, input, select, button")) return;
             flip();
@@ -165,9 +126,7 @@ function tidyCategoryToggles() {
 }
 
 function initBoardIndex() {
-    // The list of who is online ends every forum and every topic too —
-    // 272 names and 360px under the last post — and the fold is the
-    // same fold: it finds the cell by what is in it, not by page.
+    // The same online-users list ends every forum and topic page too.
     const online = whoIsOnlineCell();
     if (online && settings.get("foldWhoIsOnline")) collapseWhoIsOnline(online);
     if (!PAGE.isIndex) return;

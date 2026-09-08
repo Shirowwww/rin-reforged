@@ -1,40 +1,24 @@
-/* ------------------------------------------------------------------
-   Design tokens.
-
-   Every colour the redesign uses is declared here, once, on :root.
-   Themes are attribute switches on <html>; nothing below this file
-   ever writes a raw hex value.
-   ------------------------------------------------------------------ */
+/* Every colour the redesign uses is declared here, once, on :root; themes
+   are attribute switches on <html>. Nothing below writes a raw hex value. */
 
 html[data-rr] {
-    /* Slate & Brass - the default. A blue-leaning slate rather than
-       pure black: on OLED panels pure black behind light text causes
-       halation, and this forum is read for hours at a time. */
+    /* Slate & Brass, the default: blue-leaning rather than pure black,
+       which halates behind light text on OLED over hours of reading. */
     --rr-bg:            #0e1013;
     --rr-bg-sunken:     #08090b;
     --rr-surface:       #15181d;
     --rr-surface-2:     #1c2026;
     --rr-surface-3:     #252a31;
-    /* The board draws its grid with a 1px gap showing the table's own
-       light background through, which is most of what makes a listing
-       readable at a glance. A hairline too faint to see turns the same
-       listing into one undifferentiated block, so these are pitched to
-       stay visible against --rr-surface rather than to disappear. */
+    /* Pitched to stay visible against --rr-surface, not to disappear —
+       a hairline too faint reads as one undifferentiated block. */
     --rr-line:          #2f353e;
     --rr-line-strong:   #454e5a;
 
     --rr-text:          #dfe4ea;
     --rr-text-strong:   #f2f5f8;
     --rr-muted:         #8b95a3;
-    /* Supporting detail: the rank under a name, the page label in the
-       pager, the date on a release row, "108 on this page". Quiet, and
-       quiet has a floor — every one of those measured between 3.1 and
-       4.0 against the surface it sits on, and 12px text is held to
-       4.5. The value on each theme is the smallest lift of the same
-       hue that clears 4.6 against --rr-surface, --rr-surface-2 and
-       --rr-bg-sunken, which is the field the palette trigger sits in.
-       test/contrast.js measures all four and fails the run if one
-       slips back. */
+    /* Quiet has a floor: smallest lift that clears 4.6 against
+       --rr-surface/-2 and --rr-bg-sunken; test/contrast.js enforces it. */
     --rr-faint:         #7f8997;
 
     /* One accent, spent on actions and active state only. */
@@ -44,8 +28,7 @@ html[data-rr] {
     --rr-link:          #7fb4de;
     --rr-link-visited:  #9d93cf;
 
-    /* Taxonomy. These map to the forum's own topic prefixes, so the
-       colour carries information rather than decoration. */
+    /* Maps to the forum's own topic prefixes — colour carries information. */
     --rr-tag-info:      #6ea8d8;
     --rr-tag-release:   #6bbd85;
     --rr-tag-problem:   #d97a6c;
@@ -68,21 +51,17 @@ html[data-rr] {
                Menlo, Consolas, "DejaVu Sans Mono", monospace;
 
     --rr-fs:            15px;   /* overridden by the font-size setting */
-    /* Derived sizes have a floor: at the smallest setting the -2/-3
-       steps would land on 10 and 9px, which is where the original
-       stylesheet already was. */
+    /* Floored so the -2/-3 steps don't drop below 10/9px at the smallest
+       setting. */
     --rr-fs-sm:         max(12px, calc(var(--rr-fs) - 2px));
     --rr-fs-xs:         max(11px, calc(var(--rr-fs) - 3px));
     --rr-fs-lg:         calc(var(--rr-fs) + 3px);
     --rr-lh:            1.7;
-    /* Leading for supporting detail — the author line under a topic
-       title, the joined last-post line, the pagination strip. It was
-       1.4 everywhere, written in eight places, which at 13px is 18.2px
-       of box around a 13px line: a stack of text rather than two
-       facts. */
+    /* Supporting detail (author line, last-post line, pagination). 1.4 read
+       as a stacked block at 13px. */
     --rr-lh-meta:       1.55;
-    /* And the title itself. 1.35 is fine on one line and tight on the
-       two-line titles this board is full of. */
+    /* The title itself: 1.35 is tight on this board's frequent 2-line
+       titles. */
     --rr-lh-title:      1.45;
     --rr-measure:       78ch;
 
@@ -94,91 +73,46 @@ html[data-rr] {
     --rr-s5: 24px;
     --rr-s6: 32px;
 
-    /* The sticky top bar's height, so anything that has to sit on its
-       edge does not carry its own copy of the number. */
+    /* So anything sitting on the top bar's edge doesn't duplicate its height. */
     --rr-nav-h: 48px;
 
-    /* Two radii, one for a control and one for a card, both a shade
-       tighter than they were: 12px corners on every card down a page
-       of cards is most of what made the page read as a template. */
+    /* Tighter than the original 12px, which made every card read as a
+       template down a page of cards. */
     --rr-radius:      6px;
     --rr-radius-lg:   9px;
     --rr-radius-pill: 999px;
 
-    /* Only genuinely floating things cast a shadow. Surfaces separate
-       by value and a hairline instead. */
+    /* Only genuinely floating things get a shadow; surfaces separate by
+       value and a hairline instead. */
     --rr-shadow-pop: 0 8px 24px -6px rgba(0, 0, 0, .55), 0 2px 6px rgba(0, 0, 0, .35);
 
-    /* Vertical padding on a listing cell.
-
-       Two passes of tightening took this to 6px and then to 5, each of
-       them defensible on its own and both of them measured against how
-       many rows fit on a screen rather than against how the page reads.
-       Together they made a listing a wall. 9px is where a row has a top
-       and a bottom again; the original board fits a topic row in 34px
-       and this one now fits it in about 60, which is the trade being
-       made deliberately rather than drifted into.
-
-       Compact is still the old number, for anyone who wants it. */
+    /* Tightened past 6px made a listing a wall; 9px is where a row has a
+       top and bottom again (a topic row now fits ~60px vs the board's
+       34px, a deliberate trade). Compact keeps the old number. */
     --rr-row-pad:     9px;
     --rr-post-gap:    var(--rr-s5);
 
-    /* How wide the page frame gets. Fluid with a ceiling, because a
-       fixed column is right for prose and wrong for a frame that also
-       holds a six-column listing, a pager and the releases panel.
-
-       Two tokens, two jobs: this sizes the frame, --rr-measure caps
-       the line length of anything read as prose, so widening one does
-       not lengthen the other. */
+    /* Fluid with a ceiling — a fixed column suits prose, not a frame that
+       also holds a 6-column listing. Separate from --rr-measure (prose
+       line length) so widening one doesn't lengthen the other. */
     --rr-content-max: min(1560px, 95vw);
 
-    /* The inside edge of a card the script draws. Two passes of
-       tightening landed on 8px, which against a 10px corner radius
-       reads as content pressed into the corner; the action bar and the
-       filter row it now contains were both at 8, so their shared edge
-       was the tightest place on the page. */
+    /* 8px against a 10px radius read as content pressed into the corner. */
     --rr-card-pad:    14px;
 
     --rr-speed: 140ms;
 }
 
-/* Native - the board's own colours.
-
-   Everything else here is a redesign that could be any forum, and put
-   side by side with cs.rin.ru that is exactly what it looks like. The
-   board is not a blue-leaning slate with blue links: it is near-black
-   (#070707), grey text (#CCCCCC), and red — `a:link { color: red }` is
-   in its stylesheet, its usernames are #BF0000, its [Important] tags
-   are red, and that is most of what makes a screenshot of it
-   recognisable at a glance.
-
-   So this theme is the board's own palette on the redesign's layout:
-   its colours, its contrast and its links, with the spacing, the type
-   scale and the structure of everything else in this script. The red
-   is pulled off pure #FF0000, which vibrates against black at any
-   length, and no further — it has to still read as the board's red.
-
-   It is the default. Slate and Carbon stay for anyone who wants the
-   quieter version. */
+/* The board's own palette (near-black #070707, grey text, red links/tags —
+   most of what makes a screenshot recognisable) on the redesign's layout
+   and spacing. Red pulled slightly off pure #FF0000, which vibrates
+   against black, but no further. Default theme; Slate/Carbon stay quieter. */
 html[data-rr][data-rr-theme="native"] {
-    /* A shade off the board's own #070707 rather than on it. The
-       reasoning at the top of this file has not changed — pure black
-       behind light text halates on an OLED panel and this forum is
-       read for hours — and the identity is not in the last three
-       percent of the black anyway. It is in the neutral (no blue cast,
-       unlike Slate), the grey text, and the red. */
-    /* The ladder, spread.
-     *
-     * bg and surface were seven points apart, which on a page that is
-     * a column of cards means the cards do not lift off it: the only
-     * thing saying where one ends was a hairline barely lighter than
-     * either. The ground goes down rather than the cards going up —
-     * the cards are where the reading happens and their value is
-     * measured (see --rr-faint) — which also lands this theme nearer
-     * the board's own #070707 than it was, at no cost to the
-     * anti-halation reasoning at the top of this file: #0b0b0b is
-     * still off pure black, and nothing on this theme paints text
-     * straight onto it. The hairlines come up to match. */
+    /* Off the board's #070707 for the same anti-halation reason as Slate —
+       identity is in the neutral cast, grey text and red, not the last 3%
+       of black. bg/surface spread further apart than a flat ladder would
+       give, so cards lift off the ground instead of the hairline alone
+       marking where one ends. */
     --rr-bg:            #0b0b0b;
     --rr-bg-sunken:     #060606;
     --rr-surface:       #171717;
@@ -192,17 +126,13 @@ html[data-rr][data-rr-theme="native"] {
     --rr-muted:         #aaaaaa;
     --rr-faint:         #878787;
 
-    /* The board sets `a:link { color: red }`, and every link on the
-       page takes its colour from this one token — the breadcrumb, the
-       board links, the finder, the lookup buttons. At the board's own
-       saturation that is a page shouting in red rather than a page
-       with red links in it. Same hue, conversational volume. */
+    /* At the board's own saturation, `a:link { color: red }` reads as a
+       page shouting; same hue, conversational volume. */
     --rr-link:          #d1786b;
     --rr-link-visited:  #a8807c;
 
-    /* The board's own taxonomy colours, where it has one: [Important]
-       is red on the real board and amber here, which is the single
-       most visible place the redesign stopped looking like it. */
+    /* [Important] is red on the real board and amber here — the single
+       most visible place the redesign departs from it. */
     --rr-tag-important: #cf6152;
     --rr-tag-problem:   #cf6152;
     --rr-tag-release:   #4faa60;
@@ -229,10 +159,8 @@ html[data-rr][data-rr-theme="carbon"] {
     --rr-muted:       #949494;
     --rr-faint:       #8a8a8a;
     --rr-selection:   #3d3d3d;
-    /* "No blue cast" has to include the links, which stayed Slate's
-       blue: a warm, desaturated tone for them. The tags keep their
-       hues — Info is blue on every theme, and that is what makes it
-       readable as Info. */
+    /* "No blue cast" includes links, which stayed Slate's blue; tags keep
+       their hues (Info is blue on every theme, which is what reads as Info). */
     --rr-link:          #d6b98a;
     --rr-link-visited:  #b3a48c;
 }
@@ -252,11 +180,8 @@ html[data-rr][data-rr-theme="paper"] {
     --rr-faint:         #626972;
     --rr-accent:        #a5701a;
     --rr-accent-soft:   #f5e6c8;
-    /* The board writes its forum-rules notice in #FFCC00, typed into
-       the tag. On the dark themes that is 10:1 and exactly the
-       emphasis it was meant to carry, so they leave it alone; on this
-       one it is 1.4:1. Same hue, dark enough to read on --rr-surface-2
-       (forum.css, the forum-rules notice). */
+    /* The board's inline #FFCC00 is 10:1 on dark themes (left alone) but
+       1.4:1 here — same hue, dark enough to read on --rr-surface-2. */
     --rr-notice-ink:    #6b5000;
     --rr-accent-text:   #ffffff;
     --rr-link:          #1f5f96;
@@ -276,8 +201,8 @@ html[data-rr][data-rr-theme="paper"] {
     --rr-shadow-pop: 0 8px 24px -8px rgba(20, 26, 34, .22), 0 2px 6px rgba(20, 26, 34, .10);
 }
 
-/* Density. Compact keeps the old forum's information-per-screen,
-   Roomy is for long reading sessions. */
+/* Compact keeps the old forum's information-per-screen; Roomy is for long
+   reading sessions. */
 html[data-rr][data-rr-density="compact"] {
     --rr-lh: 1.5;
     --rr-lh-meta: 1.4;
@@ -297,28 +222,24 @@ html[data-rr][data-rr-density="roomy"] {
     --rr-post-gap: var(--rr-s6);
 }
 
-/* Wide keeps the same slope and lifts the ceiling; Full drops both.
-   Reading is the fluid default above. */
+/* Wide keeps the same slope and lifts the ceiling; Full drops both. */
 html[data-rr][data-rr-width="wide"]  { --rr-content-max: min(1980px, 97vw); --rr-measure: 92ch; }
-/* Full lifts the frame's ceiling — a listing wants the whole window —
-   but a post is still prose: 120ch is half again Wide's measure, and
-   short of the 300-character lines `none` gave a 2560px screen. */
+/* A listing wants the whole window, but a post is still prose — 120ch
+   avoids the 300-char lines `none` gave a 2560px screen. */
 html[data-rr][data-rr-width="full"]  { --rr-content-max: none;              --rr-measure: 120ch; }
 
-/* Reading, on a topic page: the frame closes in on the text. At 1560px
-   a post card was 1180px wide around 730px of prose, a two-fifths dead
-   strip beside every post on a 1920 or 2560 monitor. 1440 is the
-   narrowest the board bar's two groups of links still share one line.
-   A listing keeps the full frame; it has columns to fill it with. */
+/* On a topic page the frame closes in on the text (1560px left a
+   two-fifths dead strip beside a post on a wide monitor); 1440 is the
+   narrowest the board bar's two link groups still share a line. A listing
+   keeps the full frame since it has columns to fill it. */
 html[data-rr][data-rr-width="reading"][data-rr-page="topic"] { --rr-content-max: min(1440px, 95vw); }
 
-/* No bar, no edge to sit on. */
 html[data-rr][data-rr-nav="off"] { --rr-nav-h: 0px; }
 
 @media (prefers-reduced-motion: reduce) {
     html[data-rr] { --rr-speed: 0ms; }
 }
-/* And the same, asked for explicitly rather than read off the system. */
+/* Same, asked for explicitly rather than read off the system. */
 html[data-rr][data-rr-still] { --rr-speed: 0ms; scroll-behavior: auto; }
 html[data-rr][data-rr-still] *,
 html[data-rr][data-rr-still] *::before,
@@ -329,11 +250,9 @@ html[data-rr][data-rr-still] *::after {
     scroll-behavior: auto !important;
 }
 
-/* A page short enough to need no scrollbar is 15px wider, and
-   everything centred in it moves 8px between one page and the next.
-   The gutter is reserved either way — on a desktop. The narrow layout
-   is fluid and centres nothing, and a classic scrollbar's 15px is a
-   quarter of a topic bar's spare room at 390px. */
+/* Reserved either way, so a scrollbar-less page doesn't shift centred
+   content 15px against the next one. Desktop only — the narrow layout is
+   fluid and centres nothing. */
 @media (min-width: 861px) {
     html[data-rr] { scrollbar-gutter: stable; }
 }

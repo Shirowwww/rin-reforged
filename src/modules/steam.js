@@ -1,16 +1,7 @@
-/* ------------------------------------------------------------------
-   Steam preview on hover.
-
-   The cheap half is free: the game card already reads an AppID out of
-   the first post of every game topic, and it is written down against
-   the topic id, so a topic you have opened previews from this browser
-   with nothing asked of anyone.
-
-   The expensive half — asking Steam about a game this browser has not
-   seen — is the one thing in the script that leaves the page you are
-   on, so it is off by default, has its own switch on top, and is
-   refused outright on the Tor mirror whatever the setting says.
-   ------------------------------------------------------------------ */
+/* Steam preview on hover. The cheap half reads an AppID already found
+   on the game card and is free. The expensive half asks Steam about a
+   game this browser hasn't seen; it leaves the page, so it's off by
+   default and refused outright on the Tor mirror. */
 
 const STEAM_APPS_KEY = "steamApps";       /* topic id -> AppID          */
 const STEAM_DATA_KEY = "steamData";       /* AppID    -> { at, game }   */
@@ -19,29 +10,17 @@ const STEAM_MISS_KEY = "steamMisses";     /* title    -> { at, id }     */
 const STEAM_HOVER_DELAY = 320;
 const STEAM_HIDE_DELAY = 180;
 
-/**
- * Why a lookup will not happen, or null if it can.
- *
- * Four different situations used to arrive at the card as the same
- * sentence — "Steam has nothing under that name" — including the one
- * where nothing was ever asked. Running this against the live board
- * for the first time is what showed it: the board's CSP is
- * `connect-src 'self'`, so without GM_xmlhttpRequest the request is
- * refused by the browser before it leaves, the promise rejects, and a
- * reader is told the game does not exist. Every game. Forever. With
- * nothing anywhere saying which of the four it was.
- */
+/** Why a lookup will not happen, or null if it can. Distinguishing the
+ * reasons matters: without GM_xmlhttpRequest the CSP (connect-src
+ * 'self') silently rejected every request, so every game read as
+ * "Steam has nothing under that name" with no way to tell which case. */
 function steamBlockedBecause() {
     if (!settings.get("steamLookup")) return "off";
     if (/\.onion$/i.test(location.hostname)) return "tor";
-    // The board sends connect-src 'self'. GM_xmlhttpRequest is the
-    // manager making the request instead of the page, and is not
-    // subject to it; fetch is, everywhere except the test harness.
+    // connect-src 'self' exempts GM_xmlhttpRequest but not fetch (except in the test harness).
     if (typeof GM_xmlhttpRequest !== "function") return "nogrant";
     return null;
 }
-
-/* ---- The cache ---------------------------------------------------- */
 
 function steamRememberApp(topicId, appId) {
     if (!topicId || !appId) return;
@@ -55,8 +34,7 @@ function steamAppForTopic(topicId) {
     return store.get(STEAM_APPS_KEY, {})[String(topicId)] || null;
 }
 
-/* A month. It was a setting; a looked-up game's tags and score do not
-   change at a rate anybody needs to tune for. */
+/* A month: a game's tags and score don't change at a rate worth tuning for. */
 const STEAM_CACHE_DAYS = 30;
 
 function steamCacheMs() {
@@ -73,9 +51,7 @@ function steamCached(appId) {
 function steamRemember(appId, game) {
     const all = store.get(STEAM_DATA_KEY, {});
     all[String(appId)] = { at: Date.now(), game };
-    // Bounded, oldest first: this is a convenience cache, not an
-    // archive, and a reader who hovers a lot should not fill their
-    // extension storage with store copy.
+    // Bounded, oldest first: a convenience cache, not an archive.
     const keys = Object.keys(all);
     if (keys.length > 300) {
         keys.sort((a, b) => (all[a].at || 0) - (all[b].at || 0));
@@ -84,18 +60,9 @@ function steamRemember(appId, game) {
     store.set(STEAM_DATA_KEY, all);
 }
 
-/* ---- Talking to Steam --------------------------------------------- */
-
-/* The board's CSP sets connect-src 'self', so fetch() and XHR from the
-   page are refused before they leave — silently, from the page's point
-   of view, as a rejected promise indistinguishable from "no such
-   game". GM_xmlhttpRequest is the manager making the request instead
-   of the page and is not subject to that, so it is the only route that
-   works here; steamBlockedBecause() refuses to start a lookup without
-   it rather than letting one fail in a way nobody can read.
-
-   fetch stays underneath for a manager that hands the grant over some
-   other way, and for anywhere this runs without a CSP. */
+/* CSP blocks fetch/XHR from the page (connect-src 'self'); GM_xmlhttpRequest
+   is exempt, so it's the primary route here. fetch stays as a fallback for
+   a manager that grants access another way, or a CSP-free context. */
 function steamGet(url) {
     if (typeof GM_xmlhttpRequest === "function") {
         return new Promise((resolve, reject) => {
@@ -118,17 +85,10 @@ function steamGet(url) {
         .then((res) => { if (!res.ok) throw new Error("HTTP " + res.status); return res.json(); });
 }
 
-/* One request at a time, spaced out. A listing has 108 titles on it
-   and a reader dragging the pointer down the page must not turn into a
-   hundred requests.
-
-   The queue holds one *request*, deliberately, and not the operation
-   around it. Looking a game up by name is two requests — find the id,
-   then fetch the details — and an earlier version put that whole pair
-   in the queue as one job. The second request then joined the queue
-   behind a job that could not finish until the second request had
-   finished: a lookup by name never came back, and the card sat on
-   "Looking this one up" forever. Queue the leaves, compose above them. */
+/* One request at a time, spaced out, so dragging the pointer down a
+   108-row listing doesn't fire a hundred requests. The queue holds one
+   *request*, not a whole two-request lookup: queuing the pair as one job
+   deadlocked it against itself. Queue the leaves, compose above them. */
 let steamChain = Promise.resolve();
 const steamInFlight = new Map();
 
@@ -143,7 +103,6 @@ function steamFetch(key, url) {
     return tracked;
 }
 
-/** What the store returns, cut down to what the card shows. */
 function steamShape(appId, data) {
     return {
         appId: String(appId),
@@ -160,8 +119,7 @@ function steamShape(appId, data) {
     };
 }
 
-/* Every lookup answers { game, why }: the game when there is one, and
-   otherwise which of the four reasons there is not. */
+/* Every lookup resolves { game, why }: the game, or which of the four reasons it's missing. */
 const steamNone = (why) => ({ game: null, why });
 
 function steamDetails(appId) {
@@ -186,13 +144,8 @@ function steamDetails(appId) {
         });
 }
 
-/**
- * A topic title, reduced to something the store can be asked about.
- *
- * Titles here read "[Release] Elden Ring (v1.16 + 5 DLCs + Multiplayer)
- * [Repack]". The prefix, the bracketed tails and the version are the
- * board's own bookkeeping, not the game's name.
- */
+/** Reduces a title like "[Release] Elden Ring (v1.16 + 5 DLCs) [Repack]"
+ * to a search term by stripping the board's own bookkeeping. */
 function steamSearchTerm(title) {
     let name = splitPrefix(title).rest;
     name = name.replace(/[[(][^\])]*[\])]/g, " ");
@@ -219,9 +172,7 @@ function steamResolveByName(title) {
         "https://store.steampowered.com/api/storesearch/?term=" + encodeURIComponent(term) + "&l=english&cc=us")
         .then((payload) => {
             const hit = payload && Array.isArray(payload.items) ? payload.items[0] : null;
-            // A miss is written down as firmly as a hit. Without that,
-            // every hover over a topic Steam has never heard of — every
-            // pinned announcement on the board — is another request.
+            // A miss is cached as firmly as a hit, or every pinned topic Steam has never heard of becomes a repeat request.
             const all = store.get(STEAM_MISS_KEY, {});
             all[term.toLowerCase()] = { at: Date.now(), id: hit ? String(hit.id) : null };
             store.set(STEAM_MISS_KEY, all);
@@ -233,7 +184,6 @@ function steamResolveByName(title) {
         });
 }
 
-/** Everything the card needs for one topic row, cache first. */
 function steamLookForTopic(topicId, title) {
     const known = topicId && steamAppForTopic(topicId);
     if (known) return steamDetails(known);
@@ -243,7 +193,6 @@ function steamLookForTopic(topicId, title) {
     });
 }
 
-/** What to put on the card when there is no game to put on it. */
 const STEAM_EXCUSES = {
     off: "Not in this browser's cache. Turn on Steam lookups in settings, or open the topic once.",
     tor: "Not looked up over Tor. Open the topic once and it will be cached.",
@@ -252,20 +201,10 @@ const STEAM_EXCUSES = {
     miss: "Steam has nothing under that name.",
 };
 
-/* ---- The card ----------------------------------------------------- */
-
-/* The board's own tooltip on a topic title.
- *
- * Every `a.topictitle` on this board carries `title="Posted: Wednesday,
- * 15 May 2013, 16:42"`, so resting on one with the preview switched on
- * drew two things at once: the browser's tooltip and this card, side by
- * side, saying different things about the same topic. The date is worth
- * keeping — it is the one fact the store cannot supply — so it moves on
- * to the card and the attribute goes.
- *
- * The weekday goes with it. "Wednesday" is four times the width of the
- * date it qualifies and nobody reads a 2013 thread by the day of the
- * week it opened on. */
+/* Every a.topictitle carries title="Posted: Wednesday, 15 May 2013,
+ * 16:42", which drew the browser's own tooltip alongside this card. The
+ * date moves onto the card instead and the attribute is removed; the
+ * weekday is dropped too since nobody reads a thread by its day. */
 const POSTED_RE = /^\s*(?:Posted|Добавлено)\s*:\s*/i;
 
 function postedOn(link) {
@@ -275,8 +214,7 @@ function postedOn(link) {
 }
 
 function steamCard(game, term, posted) {
-    /* Not role=tooltip: a tooltip is text, and this holds the Store and
-       SteamDB links. A group named after the game says what it is. */
+    // Not role=tooltip: it holds interactive links, not just text.
     const card = el("div.rr-steam", { role: "group", "aria-label": game.name || "Steam" });
 
     if (game.header) {
@@ -289,8 +227,7 @@ function steamCard(game, term, posted) {
         el("span.rr-steam__name", {}, [game.name || term]),
     ]);
     if (game.score) {
-        // Sorted into three bands rather than shown as a bare number,
-        // which is the only part of a Metacritic score anyone reads.
+        // Banded rather than shown as a bare number, since the band is what anyone reads.
         const band = Number(game.score) >= 75 ? "good" : Number(game.score) >= 50 ? "mixed" : "poor";
         head.append(el("span.rr-steam__score", { "data-band": band, title: "Metacritic" }, [game.score]));
     }
@@ -334,8 +271,6 @@ function steamPlaceholder(text, posted) {
     ]);
 }
 
-/* ---- The hover behaviour ------------------------------------------ */
-
 let steamPopover = null;
 let steamShowTimer = 0;
 let steamHideTimer = 0;
@@ -348,8 +283,6 @@ function steamHide() {
     steamAnchor = null;
 }
 
-/** Put the card beside its link, flipped away from whichever edge it
-    would otherwise run off. */
 function steamPlace(node, link) {
     const box = link.getBoundingClientRect();
     const width = node.offsetWidth;
@@ -383,8 +316,7 @@ function steamShow(link, entry) {
     steamPopover = shell;
     steamPlace(shell, link);
 
-    // A card the pointer can reach, so its Store and SteamDB links are
-    // clickable rather than vanishing on the way there.
+    // Reachable by the pointer so its links don't vanish en route to them.
     shell.addEventListener("mouseenter", () => clearTimeout(steamHideTimer));
     shell.addEventListener("mouseleave", () => { steamHideTimer = setTimeout(steamHide, STEAM_HIDE_DELAY); });
 
@@ -397,21 +329,14 @@ function steamShow(link, entry) {
     });
 }
 
-/**
- * One listener on the listing rather than one per row.
- *
- * A forum page carries 108 topic titles, and pointerover on the table
- * costs one handler instead of 216.
- */
+/** One delegated listener instead of one per row: 108 titles would otherwise be 216 handlers. */
 function initSteamPreview() {
     if (!settings.get("steamPreview")) return;
     if (!PAGE.isForum && !PAGE.isIndex && !PAGE.isSearch) return;
 
     const byLink = new Map();
     for (const entry of topicRows()) {
-        /* Only where a card will actually be drawn, and only once the
-           preview is on: with it off the board's tooltip is the only
-           thing saying when a topic opened, and it stays. */
+        // Only when the preview is on; off, the board's own tooltip is what shows when a topic opened.
         entry.posted = postedOn(entry.link);
         if (entry.posted) entry.link.removeAttribute("title");
         byLink.set(entry.link, entry);
@@ -441,8 +366,7 @@ function initSteamPreview() {
         steamHideTimer = setTimeout(steamHide, STEAM_HIDE_DELAY);
     });
 
-    // The same thing from the keyboard: a title reached by Tab shows
-    // its card, and Escape puts it away.
+    // Keyboard parity: Tab focus shows the card, Escape hides it.
     document.addEventListener("focusin", (event) => {
         const hit = armed(event);
         if (!hit) { if (steamPopover && !steamPopover.contains(event.target)) steamHide(); return; }

@@ -1,12 +1,4 @@
-/* ------------------------------------------------------------------
-   Forum and topic listings.
-
-   Three jobs:
-     - label the columns so the mobile stylesheet can restack them
-     - turn [Info] / [Release] / [Problem] prefixes into a real,
-       clickable taxonomy
-     - filter 61,000 topics without a round trip
-   ------------------------------------------------------------------ */
+// Forum and topic listings: column labels for mobile, prefix tags, and a client-side filter.
 
 const COLUMN_NAMES = {
     forum: "title",
@@ -16,11 +8,7 @@ const COLUMN_NAMES = {
     replies: "replies",
     author: "author",
     views: "views",
-    /* The member list, the private message folders and the control
-       panel's own tables. Named so the same treatment reaches them —
-       a "Joined" or "Sent" column carries the same weekday date as a
-       listing's Last post column, and the "Rank" column carries the
-       same two-language rank as a post's profile. */
+    // Member list, PM folders, control panel — same date/rank shapes as a listing.
     "#": "num",
     username: "author",
     joined: "date",
@@ -32,9 +20,7 @@ const COLUMN_NAMES = {
     message: "action",
     "e-mail": "action",
     website: "action",
-    /* The Russian interface. Half the board reads it, and with the
-       headers unread nothing below them was: counts ungrouped, dates
-       with their weekday, the last-post column on two lines. */
+    // Russian UI headers — half the board reads them; unmapped, nothing below got treated.
     "форум": "title",
     "темы": "topics",
     "сообщения": "posts",
@@ -52,22 +38,15 @@ const COLUMN_NAMES = {
     "сайт": "action",
 };
 
-/**
- * Tag every cell with data-rr-col, derived from the <th> row so the
- * mapping survives a template that adds or drops a column.
- */
+// Tags cells with data-rr-col from the <th> row, so it survives a template that adds or drops a column.
 function labelColumns(table) {
     const headRow = table.querySelector("tr:has(th)") || table.querySelector("th")?.parentElement;
     if (!headRow) return;
-    /* Named, because it is not always the table's first row: a forum
-       listing opens with the "Mark forums read" strip above it. */
+    // Not always the first row — a forum listing has a "Mark forums read" strip above it.
     headRow.setAttribute("data-rr-head", "");
 
-    /* Only a listing reads a spanning header as the title column. A
-       profile's "User statistics" spans its label and value cells, and
-       read that way made the "Joined:" label an icon column and its
-       date a title. A message folder's title is a span with the link
-       inside, so that shape counts too. */
+    // Only a listing reads a spanning header as the title column — on a profile that
+    // misread "Joined:" as an icon column and its date as a title.
     const listing = Boolean(table.querySelector("a.topictitle, a.forumlink, .topictitle a"));
 
     const columns = [];
@@ -76,26 +55,15 @@ function labelColumns(table) {
         const span = parseInt(th.getAttribute("colspan") || "1", 10);
         const text = th.textContent.trim().toLowerCase();
 
-        /* A header with no words in it heads the read/unread marker. A
-           search results page gives that column a header of its own,
-           where a forum listing spans it together with the title. */
+        // Empty header = read/unread marker column; search results give it its own header.
         if (!text) {
             columns.push("icon");
             for (let i = 1; i < span; i += 1) columns.push(null);
             return;
         }
 
-        /* A header spanning more than one column heads the title,
-           whatever the template calls it — "Forum" on the index,
-           "Topics" in a listing. Read off the span rather than the
-           word, because "Topics" is also the name of a counting column
-           on the index: taking it at its word on a search results page
-           labelled the topic titles a count, which took the marker
-           gutter and the full-width title column off that page and put
-           the number grouping through the titles.
-
-           The columns before the last are the marker and the spacer
-           the template keeps beside it. */
+        // Spanning header = title column, read by span not by word: "Topics" is also
+        // a counting column, so word-matching on search results mislabeled titles as counts.
         if (span > 1) {
             if (!listing) {
                 for (let i = 0; i < span; i += 1) columns.push(null);
@@ -106,8 +74,7 @@ function labelColumns(table) {
             return;
         }
 
-        // The member list is the one roster whose date column is a
-        // joining date; the phone card says so in front of it.
+        // Member list's date column is a joining date — flagged for the phone card.
         if (text === "joined" || text === "зарегистрирован") table.setAttribute("data-rr-joined", "");
         columns.push(COLUMN_NAMES[text] || null);
     });
@@ -121,54 +88,35 @@ function labelColumns(table) {
         }
     }
 
-    /* The headings, by the same names as the cells under them.
-
-       Without this a heading's alignment and its column's alignment
-       were two decisions written in two places, and they disagreed:
-       Author sat left in the heading and centred in every row of it. A
-       column is one column. */
+    // Headings get the same names as their cells, or heading and column alignment
+    // disagree (Author sat left in the heading, centred in every row).
     let at = 0;
     for (const th of heads) {
         const span = parseInt(th.getAttribute("colspan") || "1", 10);
-        // A heading that spans the status icon and the title labels the
-        // title, which is the half of it with words in.
+        // A heading spanning icon+title labels the title — the half with words in it.
         const name = columns[span > 1 ? at + span - 1 : at];
         if (name) th.setAttribute("data-rr-col", name);
         at += span;
     }
 }
 
-/* The columns that hold a count rather than a word. */
 const COUNT_COLUMNS = ["topics", "posts", "replies", "views"];
 
-/** Regroup the digits in every counting column of one listing. */
 function groupListingNumbers(table) {
     const selector = COUNT_COLUMNS.map((name) => 'td[data-rr-col="' + name + '"]').join(", ");
     for (const cell of table.querySelectorAll(selector)) groupNumbersIn(cell);
 }
 
-/* Where else on this board a long number is a quantity.
-
-   Everything here is either a cell this script built and knows the
-   contents of, or an element whose whole text is one number — never a
-   sweep over the page, because an AppID, a post number and a Steam
-   build id are all names that happen to be spelled in digits. */
+// Only cells this script built, or elements whose whole text is one number — never a
+// page sweep, since AppIDs/post numbers/build ids are also just digits.
 function groupBoardNumbers() {
-    /* Cells this script built and knows the contents of. The post
-       header line is not here: it carries a join year beside its post
-       count, and it groups the count itself where it is written. */
+    // Post header line excluded — it mixes a join year with the count and groups itself.
     for (const node of document.querySelectorAll(".rr-topicbar__count, .rr-online__summary")) {
         groupNumbersIn(node);
     }
-    /* "Statistics :: Total posts 3097072 | Total topics 112579", and
-       the activity line under it. The board wraps each figure in its
-       own <strong>, which is exactly the shape this wants.
-
-       A profile's own counters would suit it too, and they are not
-       here: every profile and the member list are behind a login on
-       this board, so nothing in the harness or on the open board can
-       reach one. A selector no page can exercise is a selector nobody
-       finds out about until it is wrong. */
+    // "Total posts N | Total topics N" — each figure is already wrapped in its own
+    // <strong>. Profile counters would fit too but are skipped: they're all behind
+    // login, so no page here can reach one to test it.
     groupCountElements("#wrapcentre p.gensmall strong");
 }
 
@@ -178,11 +126,9 @@ function decorateTitle(entry, onTagClick) {
     const { prefix, kind, rest } = splitPrefix(entry.title);
     if (!prefix) return null;
 
-    // The template renders the prefix as coloured spans inside the
-    // link; drop them and rebuild it as a tag beside the link. With no
-    // filter behind it — a listing too short to be worth filtering —
-    // the same tag is drawn as a label rather than a button, because a
-    // control that answers a click with nothing is worse than a word.
+    // Template renders the prefix as coloured spans in the link; rebuilt as a tag
+    // beside it. With no filter behind it (a short listing) it's a label, not a
+    // control that answers a click with nothing.
     const tag = onTagClick
         ? el("button.rr-tag", { type: "button", "data-tag": kind, title: t("Show only {x}", { x: prefix }) }, [prefix])
         : el("span.rr-tag", { "data-tag": kind }, [prefix]);
@@ -193,8 +139,7 @@ function decorateTitle(entry, onTagClick) {
         });
     }
 
-    // The prefix, and only the prefix: whatever else the title holds
-    // stays where it is. See stripLeading().
+    // Only the prefix moves; the rest of the title stays put (see stripLeading()).
     const raw = entry.link.textContent;
     const at = raw.indexOf(rest);
     if (rest && at > 0) stripLeading(entry.link, at);
@@ -253,14 +198,8 @@ function addBookmarkStar(entry) {
         toast(now ? "Bookmarked" : "Bookmark removed");
     });
 
-    // In the marker gutter rather than after the title.
-    //
-    // After the title it is one more inline box on the end of a line
-    // that already wraps, so on a long topic name the star dropped to a
-    // line of its own and took 20px of row with it. Beside the
-    // read/unread dot it can never wrap, it lines up down the page, and
-    // the two things it sits with are the other two facts about the row
-    // rather than part of its name.
+    // In the marker gutter rather than after the title, which on a long topic name
+    // pushed the star to a line of its own; the gutter never wraps.
     const gutter = entry.row.querySelector('td[data-rr-col="icon"]');
     if (gutter) gutter.append(star);
     else entry.link.after(star);
@@ -273,14 +212,7 @@ function addBookmarkStar(entry) {
 
 /* ---- First unread --------------------------------------------- */
 
-/**
- * Does this row have posts the reader has not seen?
- *
- * The board says so twice: the status image is one of the _unread set,
- * and its alt text reads "Unread posts". Either is enough, and both
- * survive the icon pass, which hides the image but keeps the node —
- * so this works whether or not the legacy imagery was replaced.
- */
+/** Unread = status image in the _unread set, or alt "Unread posts" — either survives the icon pass. */
 function rowIsUnread(row) {
     if (row.querySelector('.rr-dot[data-state="unread"]')) return true;
     for (const img of row.querySelectorAll("img")) {
@@ -291,17 +223,9 @@ function rowIsUnread(row) {
 }
 
 /**
- * Point a topic title at the first post the reader has not read.
- *
- * The board can already do this — it is what the little arrow beside
- * the row does — but the title, which is the thing anyone actually
- * clicks, drops you on page one of a thread you are on page nineteen
- * of. phpBB answers `view=unread` on viewtopic.php, so this is the
- * board's own route, moved on to the control people use.
- *
- * Only for rows that have unread posts, and only with an account:
- * unread state is per-account, and for a guest `view=unread` is a
- * redirect to the last post, which is not what the title should do.
+ * Points the title (not just the little arrow) at view=unread — phpBB's own route,
+ * moved onto the control people actually click. Logged-in only: for a guest,
+ * view=unread redirects to the last post instead.
  */
 function retargetToUnread(entry) {
     if (!entry.id || !rowIsUnread(entry.row)) return false;
@@ -323,26 +247,15 @@ function retargetToUnread(entry) {
 
 /* ---- Filter bar --------------------------------------------------- */
 
-/* Under this many rows the filter is furniture: a box that searches a
-   list you can already see all of, a count that says "1 on this page"
-   and a chip that filters one row down to one row. The board's own
-   refine box still gets its place in the bar — that one is a round
-   trip and works whatever the page holds. */
+// Below this row count the filter is furniture (searches a list you can already see
+// all of). The board's own refine box — a round trip — still gets a place regardless.
 const FILTER_MIN_ROWS = 5;
 
 /**
- * The board draws its refine box more than once.
- *
- * `#search-box` is written into the breadcrumb strip at the top of the
- * page *and* the one at the bottom — the same id, the same form, twice
- * — and a search results page adds a third copy of its own in the
- * results header, labelled "Search these results:" with a Go button
- * rather than a Search button. Three boxes, one job, two different
- * button captions.
- *
- * One survives. The duplicates are hidden rather than removed, because
- * the first `#search-box` is the one CS.RIN.RU Enhanced looks for and
- * that is the copy kept.
+ * The board prints #search-box twice (top and bottom breadcrumb strips) plus a third
+ * copy of its own on a search results page. Duplicates are hidden, not removed:
+ * another script (CS.RIN.RU Enhanced) looks for the first #search-box, so that copy
+ * is the one kept.
  */
 function dedupeSearchBoxes() {
     const boxes = Array.from(document.querySelectorAll('[id="search-box"]'));
@@ -351,10 +264,8 @@ function dedupeSearchBoxes() {
         box.style.display = "none";
     }
 
-    // The results header's own copy, which is a bare cell rather than a
-    // named block. Only dropped when one of the boxes above is left to
-    // take its place; the cell beside it carries "Search term used:"
-    // and stays either way.
+    // Results header's own copy is a bare cell rather than a named block; dropped
+    // only if a #search-box remains to take its place.
     if (!boxes.length) return;
     for (const field of document.querySelectorAll('input[name="add_keywords"]')) {
         if (field.closest('[id="search-box"]')) continue;
@@ -365,16 +276,7 @@ function dedupeSearchBoxes() {
     }
 }
 
-/**
- * Open and close the prefix menu.
- *
- * The same manners as the search box's own options popover: outside
- * click and Escape close it, Escape puts focus back on the trigger,
- * and the down arrow opens it from the field without leaving the
- * keyboard. Choosing a prefix closes it — unlike the search options,
- * where a choice is a setting rather than an answer, one prefix is the
- * whole question the menu asks.
- */
+/** Opens/closes the prefix menu with the same manners as the search box's options popover. */
 function wireTagMenu(frame, trigger, field) {
     const pop = frame.querySelector(".rr-toolbar__tagpop");
 
@@ -407,11 +309,8 @@ function wireTagMenu(frame, trigger, field) {
     }
 }
 
-/**
- * `rich` builds the whole bar: filter box, prefix chips, count. Without
- * it the bar is only a home for the board's own refine box — see
- * FILTER_MIN_ROWS.
- */
+/** `rich` builds the whole bar (filter box, prefix chips, count); otherwise it only
+ *  hosts the board's own refine box — see FILTER_MIN_ROWS. */
 function buildToolbar(entries, prefixes, rich) {
     const state = { text: "", tag: null, unread: false };
 
@@ -432,11 +331,8 @@ function buildToolbar(entries, prefixes, rich) {
             : t("{a} of {b} on this page", { a: shown, b: entries.length });
     };
 
-    /* Classed, and the class matters: the board's own text fields get a
-       22em floor so a size="25" from 2003 is not cramped on a fluid
-       frame, and that rule reaches any field without an `rr-` class.
-       This one is the script's own and sizes itself — unclassed it
-       refused to shrink, and pushed the prefix trigger off a phone. */
+    // Needs the rr- class: unclassed inputs inherit a 22em floor meant for a
+    // size="25" field from 2003, refused to shrink, and pushed the prefix trigger off a phone.
     const input = el("input.rr-toolbar__input", {
         type: "search",
         placeholder: t("Filter this page by title"),
@@ -447,12 +343,8 @@ function buildToolbar(entries, prefixes, rich) {
         if (event.key === "Escape") { input.value = ""; state.text = ""; apply(); }
     });
 
-    /* Nine coloured chips side by side made the densest line on the
-       page out of the least important thing on it, and put a small
-       rainbow above a listing whose own colours are the point. The
-       prefixes move behind one trigger in the filter box; it carries
-       the name of the one that is on, so nothing is hidden that was
-       being read. */
+    // Nine chips side by side out-coloured the listing itself; collapsed behind one
+    // trigger that shows the active prefix's name.
     const tagRow = el("div.rr-toolbar__tags");
     const tagName = el("span.rr-toolbar__tagname", { "aria-hidden": "true" });
     const tagBtn = el("button.rr-toolbar__tagbtn", { type: "button", "aria-expanded": "false" },
@@ -481,11 +373,8 @@ function buildToolbar(entries, prefixes, rich) {
         syncTags();
         apply();
     };
-    /* Everything on this page with something new in it. The board says
-       so with a dot beside the row and gives no way to ask for only
-       those. The one filter worth a permanent chip: it is the question
-       most readers arrive with, and it is on or off rather than one of
-       nine. */
+    // "Unread" gets a permanent chip (unlike prefixes): it's the question most
+    // readers arrive with, and binary rather than one-of-nine.
     const quick = el("div.rr-toolbar__quick");
     const unreadCount = entries.filter((entry) => entry.unread).length;
     if (unreadCount && unreadCount < entries.length) {
@@ -517,8 +406,7 @@ function buildToolbar(entries, prefixes, rich) {
     const bar = el("div.rr-toolbar", { role: "search" });
     if (rich) {
         const frame = el("div.rr-toolbar__filter", {}, [icon("filter"), input]);
-        // One chip filters every row down to every row. Chips are worth
-        // their trigger only once there is a choice to make between them.
+        // Only worth a trigger once there's more than one chip to choose between.
         if (tagRow.children.length > 1) {
             frame.append(tagBtn, el("div.rr-toolbar__tagpop", {
                 role: "group", "aria-label": t("Show only one kind of topic"), hidden: true,
@@ -531,23 +419,15 @@ function buildToolbar(entries, prefixes, rich) {
         bar.append(count);
     }
 
-    /* The board's own "Search this forum" box sat here, beside the
-       filter, because the strip it came in cost a band of its own. The
-       palette now aims a search at this forum without leaving the
-       keyboard and says so on its trigger, which left three search
-       boxes on one screen answering the same question. This one is the
-       one that goes — except with the palette turned off, when it is
-       the only one left, and on a results page, where the same box is
-       not a third way to search a room but the only way to narrow a
-       set of results the palette knows nothing about. */
+    // Board's own search box moves here to save a band of its own. Hidden when the
+    // palette can search this forum instead — except with the palette off, or on a
+    // results page, where it narrows results the palette can't reach.
     const boardSearch = document.querySelector("#search-box form, #topic-search");
     if (boardSearch) {
         const strip = boardSearch.closest("td.row5") || boardSearch.closest("table");
         const spare = settings.get("palette") && !PAGE.isSearch;
-        // Moved out of the strip so the band can go, and parked on the
-        // body rather than removed: CS.RIN.RU Enhanced looks for this
-        // form, and a bar with nothing to draw is never placed, so the
-        // bar is not a safe place to park it.
+        // Parked on <body> rather than removed — CS.RIN.RU Enhanced looks for this
+        // form, and an empty bar is never placed so isn't safe to park it in.
         if (spare) {
             boardSearch.setAttribute("data-rr-dupe", "");
             boardSearch.style.display = "none";
@@ -567,11 +447,8 @@ function buildToolbar(entries, prefixes, rich) {
 
 /* ---- Forum action bar --------------------------------------------- */
 
-/**
- * The listing header is four separate strips: a "Post new topic" image
- * button, "Page 1 of 615", "[ 61469 topics ]" and the numbered links.
- * They become one bar, matching the topic view.
- */
+/** Merges four separate header strips — a "Post new topic" button, "Page 1 of 615",
+ *  "[ 61469 topics ]" and the numbered links — into one bar, matching the topic view. */
 function buildForumBar() {
     const heading = document.querySelector("#wrapcentre > h2, #pageheader h2");
     if (!heading || document.querySelector(".rr-topicbar")) return null;
@@ -591,31 +468,22 @@ function buildForumBar() {
     }
 
     heading.after(bar);
-    /* "Page 1 of 615" and "[ 61469 topics ]", which the bar now
-       carries: the same pass the topic page uses, so the count is
-       lifted here in whichever language the board printed it. */
+    // Lifts "Page X of Y" / "[ N topics ]" into the bar, same pass as the topic page.
     tidyBoardPagerStrip(bar, bar);
 
-    // Subscribe forum and Mark topics read, which the board gives a
-    // band of their own. Only ever drawn for a member, so on a logged
-    // out page this finds nothing and the bar is what it was.
+    // Subscribe/Mark-read links; members only, so a no-op on a logged-out page.
     adoptForumActions(bar);
 
-    /* "Go to page 1, 2, 3, 4, 5 … 137  Next", right-aligned above the
-       table: the same journey as the pager in the bar, in a row of its
-       own. The topic page hides its copy above the posts and keeps the
-       one below; the listing does the same. */
+    // Duplicate "Go to page" strip above the table — hidden here as the topic page
+    // hides its own copy, keeping only the one below.
     if (settings.get("quickPager")) {
         const strip = Array.from(document.querySelectorAll("#wrapcentre td.gensmall"))
             .find((cell) => /^\s*(?:Go to page|На страницу)/.test(cell.textContent) && cell.querySelector('a[onclick*="jumpto"]'));
         if (strip) hideWithEmptyRow(strip);
     }
 
-    // The forum name led a line of its own directly above this bar,
-    // repeating what the breadcrumb says two lines further up and
-    // costing a band of the screen to do it. Inside the bar it labels
-    // the controls that act on it, and the band is gone. The node is
-    // moved, so its heading level and any link inside it survive.
+    // Forum name moved into the bar (was its own line above it, duplicating the
+    // breadcrumb) — moved rather than rebuilt so its heading level and link survive.
     heading.classList.add("rr-topicbar__title");
     bar.prepend(heading);
 
@@ -623,26 +491,14 @@ function buildForumBar() {
 }
 
 /**
- * Subscribe forum and Mark topics read.
- *
- * The two things a member can do to a forum rather than to a topic in
- * it. subsilver2 prints them for members only, in cells of their own
- * above the listing and again below it — which is a whole band of the
- * screen, between the bar and the first topic, for two links pressed
- * once each. They are forum actions; they join the others in the bar
- * that already carries the forum's name, in the words the board gave
- * them ("Unsubscribe forum" when you already are).
- *
- * The same move the topic page makes with Subscribe, Bookmark and
- * E-mail friend, so the two pages answer the same way.
+ * Subscribe-forum / Mark-topics-read: subsilver2 prints these members-only links
+ * twice (above and below the listing) in a band of their own. Folded into the bar
+ * here, the same move the topic page makes for its own actions.
  */
 const FORUM_ACTION = 'a[href*="watch=forum"], a[href*="mark=topics"]';
 
-/* Where the board puts them: a `tr.nav` of two cells — one link at each
-   end — nested inside the `td.cat` that caps the listing table, plus
-   the same row again under it. The cells themselves carry no class, so
-   the row is what identifies them; `td.nav` and `td.gensmall` are the
-   shapes the strip takes elsewhere on the board. */
+// tr.nav (two cells, no class of their own) inside the listing's td.cat, top and
+// bottom; td.nav / td.gensmall are the shapes the strip takes elsewhere on the board.
 const FORUM_ACTION_CELLS = "#wrapcentre tr.nav > td, #wrapcentre td.nav, #wrapcentre td.gensmall";
 
 function adoptForumActions(bar) {
@@ -672,12 +528,8 @@ function adoptForumActions(bar) {
     bar.append(el("span.rr-topicbar__spacer"));
     for (const link of actions) bar.append(link);
 
-    /* The cells go, and so does what held them. The band is a `td.cat`
-       wrapping a table of two cells, and markShapes reads that table
-       as a strip of controls and gives the row a surface of its own —
-       so emptying the cells is not enough: with the links gone the
-       whole row has to go, or the band stays exactly where it was with
-       nothing in it. */
+    // Emptying the cells isn't enough — markShapes gives the wrapping td.cat's row a
+    // surface of its own, so the row must be hidden too or the empty band remains.
     for (const cell of cells) {
         hideWithEmptyRow(cell);
         const cat = cell.closest("td.cat");
@@ -689,20 +541,17 @@ function adoptForumActions(bar) {
 
 /* ---- Last post ----------------------------------------------------- */
 
-/* "Tuesday, 01 Sep 2026, 18:10" — the weekday is four words of a date
-   nobody reads a weekday off. Kept on the title, dropped from the line
-   so the date and the poster fit beside each other. */
+// Weekday ("Tuesday, ") dropped from the line (kept on the title) so the date and
+// poster fit beside each other.
 const WEEKDAY_RE = /^(\s*)(?:(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day|Понедельник|Вторник|Среда|Четверг|Пятница|Суббота|Воскресенье),\s*/i;
 
-/** Drop the weekday from the text nodes directly under `node`. Returns
- *  whether anything changed, so the caller can keep the full date on
- *  the title. */
+/** Drops the weekday from text nodes under `node`; returns whether it changed anything,
+ *  so the caller can keep the full date on the title. */
 function dropWeekday(node, depth = 0) {
     let changed = false;
     for (const child of node.childNodes) {
         if (child.nodeType === 3 && WEEKDAY_RE.test(child.textContent)) {
-            // "$1" keeps the space the weekday followed: "Posted: Friday, 24 Jul"
-            // is "Posted: 24 Jul", not "Posted:24 Jul".
+            // "$1" keeps the space after the weekday: "Posted: 24 Jul", not "Posted:24 Jul".
             child.textContent = child.textContent.replace(WEEKDAY_RE, "$1");
             changed = true;
         } else if (child.nodeType === 1 && depth < 3 && /^(B|STRONG|SPAN|EM|DIV|P)$/.test(child.tagName)) {
@@ -714,7 +563,6 @@ function dropWeekday(node, depth = 0) {
     return changed;
 }
 
-/* Hide a cell, and the row and table it leaves empty. */
 function hideWithEmptyRow(cell) {
     cell.style.display = "none";
     const row = cell.parentElement;
@@ -729,29 +577,22 @@ function hideWithEmptyRow(cell) {
     }
 }
 
-/* A date on its own in a cell — "Joined" on the member list, "Sent" in
-   a message folder, the announcement dates in the control panel. Same
-   weekday, same treatment as the Last post column; the cell is 144px
-   wide on the message list and the full date wrapped onto two lines
-   in every row. */
+// Lone date cells (Joined/Sent/announcement dates) get the same weekday-drop as
+// Last post — on the message list a 144px cell wrapped the full date to two lines.
 function tightenDateCells() {
-    /* td.gen / td.genmed: "Joined:" in the control panel and on a
-       profile puts its label in one cell and the date in the next, so
-       the date cell's text starts with the weekday. A post's own date
-       cell never does — it starts with "Posted:" or is the topic
-       module's — and the anchor on the regex keeps them apart. */
-    /* td.gensmall: "Posted: Friday, 24 Jul 2026" over a search result.
-       Not on a topic page, where that cell is the post's own date and
-       the topic module reads it, weekday and all, for the header. */
+    // td.gen/genmed: profile/control-panel date cells start with the weekday itself
+    // (the label is in the previous cell); a post's date cell never does — the regex
+    // anchor tells them apart.
+    // td.gensmall: a search-result date, but not on a topic page, where that same
+    // cell is the post's own date and the topic module reads it for its header.
     const cells = document.querySelectorAll(
         '#wrapcentre td[data-rr-col="date"], #wrapcentre p.topicdetails, #wrapcentre td.gen, #wrapcentre td.genmed, #wrapcentre b.gen, #wrapcentre b.genmed'
         + (PAGE.isTopic ? "" : ", #wrapcentre td.gensmall"),
     );
     for (const cell of cells) {
         if (cell.hasAttribute("data-rr-date")) continue;
-        // Read before the change, so the title can carry the whole date.
-        // The weekday may follow a label — "Posted: Friday, …" on a
-        // search result — so each text node is asked, not the cell.
+        // Read before stripping, so the title can carry the whole date. The weekday
+        // may follow a label ("Posted: Friday, …"), so each text node is checked, not the cell.
         const full = cell.textContent.replace(/\s+/g, " ").trim();
         if (!dropWeekday(cell)) continue;
         cell.setAttribute("data-rr-date", "");
@@ -759,10 +600,8 @@ function tightenDateCells() {
     }
 }
 
-/* "Page 1 of 1" over a message folder or a subscriptions list: a page
-   counter for one page, on pages with no action bar to fold it into.
-   Nothing to navigate, nothing to say. Counters on other pages stay —
-   beside them is the only "Go to page" strip those pages have. */
+// "Page 1 of 1" says nothing on a single-page folder or subscriptions list — dropped,
+// unlike other pages where it's the only "Go to page" strip they have.
 const LONE_PAGE_RE = /^\s*(?:Page\s+1\s+of\s+1|Страница\s+1\s+из\s+1)\s*$/;
 const LEADING_LONE_PAGE_RE = /^\s*(?:Page\s+1\s+of\s+1|Страница\s+1\s+из\s+1)\s+/;
 
@@ -774,10 +613,8 @@ function dropLonePageCounters() {
         const text = cell.textContent.replace(/\s+/g, " ");
         if (LONE_PAGE_RE.test(text)) { cell.style.display = "none"; continue; }
 
-        /* "Page 1 of 1 [ Search found 1 match ]" — the counter shares
-           its cell with a fact worth keeping. The counter is the run
-           of nodes up to the second number; that run goes, the rest
-           stays. */
+        // Counter may share a cell with "[ Search found N match ]" — only the run of
+        // nodes up to the second number is removed.
         if (!LEADING_LONE_PAGE_RE.test(text)) continue;
         let seen = "";
         for (const node of Array.from(cell.childNodes)) {
@@ -790,13 +627,9 @@ function dropLonePageCounters() {
     }
 }
 
-/* A private message folder marks replied, marked, friend and foe
-   messages with a 10px spacer gif floated in front of the subject.
-   Invisible here — the board's colours never arrive — but still 10px
-   and a space wide, so the subjects on the rows that had one started
-   8px to the right of the others. The marker is drawn as a coloured
-   square with its meaning on the title, and the rows without one get
-   an empty one of the same size. */
+// PM folder marks messages with a 10px spacer gif (invisible here, the board's
+// colours never load) that still shifted subjects 8px right on rows that had one.
+// Redrawn as a coloured square; rows without one get an empty placeholder the same size.
 const PM_MARK = 'span[class^="pm_"][class$="_colour"]';
 
 function alignMessageMarkers() {
@@ -812,16 +645,13 @@ function alignMessageMarkers() {
             if (kind) mark.setAttribute("title", kind[0].toUpperCase() + kind.slice(1) + " message");
             continue;
         }
-        // The board writes "&nbsp; " after its marker; the rows without one
-        // begin with whitespace the cell swallows, and a space here joins
-        // it rather than adding to it.
+        // Board writes "&nbsp; " after its marker — matched here so unmarked rows align.
         cell.prepend(el("span.rr-pm-mark", { "aria-hidden": "true" }), "\u00a0 ");
     }
 }
 
-/* "Advanced forumer Завсегдатай" in the member list's Rank column: the
-   same bilingual rank a post's profile shows, on a page the post
-   module never looks at. The Russian half went on to the title. */
+// Member list's Rank column is the same bilingual rank as a post's profile, but on a
+// page the post module never reaches — Russian half moved to the title here.
 function localiseRankCells() {
     // td.postdetails[align=center]: the rank under the name on a profile.
     const cells = document.querySelectorAll('td[data-rr-col="rank"], #wrapcentre td.postdetails[align="center"]');
@@ -839,17 +669,9 @@ function localiseRankCells() {
 }
 
 /**
- * Fold the Last post cell's two lines into one.
- *
- * The template prints the date in one <p> and the poster in another,
- * and that stack is the tallest thing in a listing row: it set the
- * height of all 108 rows on a page. Joined with a separator the same
- * two facts take one line, and the row loses a third of its height.
- *
- * Nodes are moved rather than rewritten, so the poster's link, its role
- * colour and the jump-to-post arrow all come across intact. If the pair
- * is too wide for the column it simply wraps back to two lines, which
- * is where it started.
+ * Folds the Last-post cell's two <p> lines (date, poster) into one — that stack was
+ * the tallest thing in a listing row, setting the height of all 108 on a page. Nodes
+ * are moved, not rewritten, so the poster's link, colour and jump-arrow survive intact.
  */
 function tightenLastPost(cell) {
     const lines = Array.from(cell.children).filter((node) => node.tagName === "P");
@@ -873,15 +695,10 @@ function tightenLastPost(cell) {
 
 /* ---- Sections of a listing ---------------------------------------- */
 
-/* "Global Announcements", "Announcements", "Topics": the template's own
-   section rows, which head a run of topic rows and do nothing else.
-   Each folds its run on a click now, and the fold is remembered by the
-   section's name — fold the announcements once and every listing opens
-   with them folded. The rows are still in the page (find-in-page, the
-   filter, the sort and the keyboard cursor all still see them), only
-   not drawn. The last section of a table is left as it is: a listing
-   whose every topic can be folded away is a listing that reads as
-   empty by accident. */
+// Section rows ("Announcements", "Topics") fold their run on click, remembered by
+// name across listings. Rows stay in the DOM (filter/sort/find-in-page still see
+// them), just hidden. The last section is never foldable — a listing that can fold
+// away entirely reads as empty by accident.
 const FOLDED_SECTIONS_KEY = "foldedSections";
 
 function foldedSections() {
@@ -889,12 +706,9 @@ function foldedSections() {
     return kept && typeof kept === "object" ? kept : {};
 }
 
-/* A listing's section row, in either of the two shapes the template
-   uses: a td.cat with an h4 (search results, the index), or one
-   spanning td.row3 holding a bold word and nothing else (a forum
-   listing's "Global Announcements", "Announcements", "Stickies",
-   "Topics"). The second is named here so the stylesheet can draw it
-   as the section head it is rather than as a row. */
+// A section row is either td.cat+h4 (search results, the index), or a spanning
+// td.row3 holding just a bold word (a forum listing's "Announcements", "Stickies").
+// The second shape is tagged here so the stylesheet can draw it as a section head.
 function sectionOf(row) {
     let cell = row.querySelector(":scope > td.cat");
     if (cell) {
@@ -915,9 +729,7 @@ function sectionOf(row) {
 
 function initSectionFolds(table) {
     const rows = Array.from(table.querySelectorAll(":scope > tbody > tr"));
-    // Every section row is named first, then the runs are read: a run
-    // ends at the next section row, which has to be known as one by
-    // then.
+    // Section rows are all identified first — a run's end depends on knowing the next one.
     const heads = rows.map(sectionOf);
     const sections = [];
     rows.forEach((row, index) => {
@@ -977,13 +789,9 @@ function initSectionFolds(table) {
 
 /* ---- The control panel's menu ------------------------------------- */
 
-/* The left column of the control panel is a list of sections. The one
-   you are in is bold with its pages under it; the others are links
-   that open theirs. Nothing said so: each was a word on a row, and
-   which words would unfold something was found by clicking. The
-   closed ones carry a chevron pointing at what they open, the open one
-   a chevron pointing down at its pages, and its pages step in under
-   it. */
+// Control panel's nav sections give no visual sign of which unfold — found only by
+// clicking. Closed items get a chevron pointing at what they open, the open one a
+// chevron pointing down at its pages, which step in under it.
 function decorateNavLists() {
     for (const table of document.querySelectorAll("#wrapcentre table.tablebg[data-rr-navlist]")) {
         for (const cell of table.querySelectorAll(":scope > tbody > tr > td")) {
@@ -1003,9 +811,8 @@ function decorateNavLists() {
     }
 }
 
-/* The table of sub-forums above a listing has the same "Forum" heading
-   as the index and no name of its own; heading it "Subforums" is what
-   keeps it from reading as a second, shorter, index above the topics. */
+// Sub-forums table shares the index's "Forum" heading; relabeled "Subforums" so it
+// doesn't read as a second, shorter index above the topics.
 function labelSubforums() {
     if (!PAGE.isForum) return;
     for (const table of document.querySelectorAll("#wrapcentre table[data-rr-list]")) {
@@ -1021,27 +828,13 @@ function labelSubforums() {
 
 /* ---- Entry point --------------------------------------------------- */
 
-/* The shapes the stylesheet needs to know about, named once here.
-
-   These were `:has()` selectors — `tr:has(> td.cat) > td`, `td.cat:has(
-   select)`, `table:not(:has(table)):has(td[bgcolor] > a[onclick])` — and
-   they cost the listing 240ms of style work: a `:has()` on a table or a
-   row is re-checked every time anything inside changes, and this script
-   changes six hundred cells on a listing. An attribute set once is
-   free to match. */
+// Replaces :has() selectors that cost 240ms of style work — re-checked on every DOM
+// change, and this script touches ~600 cells per listing — with attributes set once.
 function markShapes() {
     for (const cell of document.querySelectorAll("#wrapcentre td.cat")) {
         const row = cell.parentElement;
-        // "controls" rides along onto the row too: the sort strip at
-        // the foot of a listing is the last row of the same table the
-        // results render in, and the phone stylesheet needs to pull it
-        // away from that table's card on the row, not the cell — a
-        // margin on the cell would sit inside the row's own padding.
-        // A cell that matches the controls shape always has content (a
-        // select, a table, a submit button), so kind starts as the
-        // empty string for it every time — an "only override if kind
-        // is already truthy" guard here would test a value that is
-        // always falsy at this point and would never fire.
+        // "controls" is set on the row too — the phone stylesheet pulls the sort
+        // strip away from the card via a margin on the row, not the cell.
         let kind = cell.childNodes.length ? "" : "empty";
         if (cell.querySelector(':scope > table, select, input[type="submit"]')) {
             cell.setAttribute("data-rr-cat", "controls");
@@ -1064,10 +857,9 @@ function markShapes() {
         }
     }
 
-    // Tables that are lists of links rather than data — the control
-    // panel's Options column, the message folders — and the
-    // message-colour legend beside them. On a phone each row is a card
-    // otherwise, and a menu of nine cards is a wall.
+    // Link-list tables (control panel Options, message folders) and their
+    // message-colour legend — otherwise each row becomes a phone card, and a
+    // 9-item menu becomes a wall of them.
     for (const table of document.querySelectorAll("#wrapcentre table.tablebg")) {
         const cells = Array.from(table.querySelectorAll(":scope > tbody > tr > td"));
         if (!cells.length) continue;
@@ -1080,26 +872,22 @@ function markShapes() {
         }
     }
 
-    // The permissions notice ("You can post new topics…") is the table
-    // right after the one holding the jump-to form, with nothing between
-    // them. Named here so the stylesheet can give it its gap without a
-    // :has() on a table.
+    // Permissions notice ("You can post new topics…") is the table right after the
+    // jump-to form's — tagged here so the stylesheet can gap it without a :has().
     const jump = document.querySelector('form[name="jumpbox"]');
     const jumpTable = jump && jump.closest("table");
     if (jumpTable && jumpTable.nextElementSibling && jumpTable.nextElementSibling.tagName === "TABLE") {
         jumpTable.nextElementSibling.setAttribute("data-rr-after-jump", "");
     }
 
-    // A form row that is a checkbox or radio alone in its first cell,
-    // with the words in the next.
+    // A checkbox/radio alone in the first cell, with its label text in the next.
     for (const input of document.querySelectorAll(
         '#wrapcentre td:first-child > input[type="checkbox"]:only-child, #wrapcentre td:first-child > input[type="radio"]:only-child')) {
         const row = input.closest("tr");
         if (!row) continue;
         row.setAttribute("data-rr-check-row", "");
-        /* The words in the next cell are the control's label and the
-           template never says so: clicking them did nothing, where on
-           every other form it toggles the box. */
+        // Template never marks these words as the control's label — clicking did
+        // nothing, unlike every other form.
         const words = input.parentElement && input.parentElement.nextElementSibling;
         if (!words || words.querySelector("input, select, textarea, button")) continue;
         words.setAttribute("data-rr-check-label", "");
@@ -1109,11 +897,8 @@ function markShapes() {
         });
     }
 
-    // The "Top" row under every post. The link back to the header is
-    // already hidden (forum.css) — the floating button does that job
-    // now — so a row whose first cell holds nothing else is a band of
-    // empty space the width of the post, worse on a phone where the
-    // row is padded like a card.
+    // "Top" row's link is already hidden (forum.css, replaced by the floating
+    // button) — leaves an empty band the width of the post, worse as a padded card on a phone.
     for (const row of document.querySelectorAll("#wrapcentre table.tablebg > tbody > tr")) {
         const first = row.firstElementChild;
         if (!first || first.tagName !== "TD") continue;
@@ -1127,20 +912,15 @@ function markShapes() {
 }
 
 /**
- * The member list, a message folder and Who is online are listings too
- * — rows of members or messages under a header row — and got none of a
- * listing's treatment: no zebra, numbers left ragged, the header as the
- * template set it. A post table wears the same row1/row2 classes and is
- * not a listing, so the shape is checked rather than the class: a
- * header row, three or more rows opening with a row cell, a member or
- * message link somewhere, and nothing that belongs to a post or a form.
+ * Member list / message folders / Who's online are listings too, but a post table
+ * shares the same row1/row2 classes without being one — so the shape is checked
+ * (a header row, 3+ striped rows, a member/message link, nothing post- or form-like).
  */
 function isRoster(table) {
     if (PAGE.isTopic || profileView()) return false;
     if (!table.querySelector("th")) return false;
     if (table.querySelector(".postbody, textarea, table")) return false;
-    /* The row class sits on the cells in a message folder and on Who is
-       online, and on the <tr> itself in the member list. Either counts. */
+    // row1/row2 sits on the cells (message folder, Who's online) or on the <tr> itself (member list).
     const striped = (node) => Boolean(node) && /(^|\s)row[12](\s|$)/.test(node.className || "");
     const rows = Array.from(table.querySelectorAll(":scope > tbody > tr"))
         .filter((row) => striped(row) || striped(row.firstElementChild));
@@ -1148,13 +928,9 @@ function isRoster(table) {
     return Boolean(table.querySelector('a[href*="mode=viewprofile"], .topictitle a'));
 }
 
-/**
- * The whole title cell opens the topic. The row lights up on hover
- * from edge to edge and three quarters of the title cell were dead
- * space under that light: a promise the row did not keep. A click on a
- * link, a control or a text selection is left alone; Ctrl or ⌘ opens
- * in a new tab the way it does on a link.
- */
+/** Whole title cell opens the topic (the row highlights edge-to-edge on hover, but
+ *  most of the cell was dead space under that light). Links, controls and text
+ *  selections are left alone; Ctrl/⌘ opens a new tab. */
 function initRowClick() {
     let any = false;
     for (const table of document.querySelectorAll("table[data-rr-list]")) {
@@ -1179,15 +955,13 @@ function initRowClick() {
 }
 
 /**
- * A profile prints every field the template knows — ICQ, AIM, Yahoo,
- * MSN, Jabber, Occupation, Interests — with nothing after the colon on
- * nearly every account. A row whose label ends in a colon and whose
- * value cell holds no text, link or image is a row about nothing, and
- * goes. Judged by shape, not by name, so a filled-in field of any
- * name stays.
+ * Profiles print every field the template knows (ICQ, AIM, Yahoo, MSN, Jabber,
+ * Occupation, Interests…) blank on nearly every account. A row whose label ends in
+ * a colon and whose value cell has no text, link or image is dropped — judged by
+ * shape, not by field name, so a filled-in field of any name stays.
  */
-/* PAGE.isProfile is true of all of memberlist.php — the roster as well
-   as one member's page. This is the one member's page. */
+// PAGE.isProfile covers all of memberlist.php (the roster as well as one member's
+// page) — this checks for the latter.
 function profileView() {
     return PAGE.isProfile && /mode=viewprofile/.test(location.search);
 }
@@ -1196,9 +970,8 @@ function hideEmptyProfileRows() {
     for (const row of document.querySelectorAll("#wrapcentre table.tablebg tr")) {
         const cells = Array.from(row.children).filter((node) => node.tagName === "TD");
         if (cells.length !== 2) continue;
-        // The outer table's two columns — "PM: [button]" beside
-        // "Groups: [select]" — read as a label and a value too; they are
-        // two forms side by side, and the phone stacks those.
+        // "PM: [button]" beside "Groups: [select]" also look like label+value, but
+        // they're two forms side by side — the phone stacks those instead.
         if (cells.some((cell) => cell.querySelector("table, form"))) continue;
         const label = cells[0].textContent.replace(/\s+/g, " ").trim();
         if (!/:$/.test(label)) continue;
@@ -1214,20 +987,14 @@ function hideEmptyProfileRows() {
     }
 }
 
-/* The template's page links as a row of small chips, the words kept
-   as a label, the current page marked, the " ... " between two runs
-   of pages kept as a quiet mark. Two shapes come through here: the
-   "[ Go to page: 1 … 41, 42, 43 ]" under a long topic's title, bare
-   text around the links, and the "Go to page 1, 2, 3 … 615  Next"
-   strip a listing ends with, where the words are themselves a link
-   that asks for a page number. */
+// Turns page links into small chips (current page marked, "..." kept as a quiet
+// mark). Two shapes come through here: "[ Go to page: 1 … 43 ]" under a long topic's
+// title, and the "Go to page 1, 2, 3 … 615 Next" strip a listing ends with.
 function chipPager(holder) {
     if (holder.hasAttribute("data-rr-minipager")) return;
     if (!holder.querySelector("a[href]") || !/(Go to page|На страницу)/.test(holder.textContent)) return;
     const russian = /На страницу/.test(holder.textContent);
-    // The links, the bold current page and the gaps, in reading order,
-    // gathered before anything moves: a node's neighbours change once
-    // it has.
+    // Gathered in reading order before anything moves — a node's neighbours change once it does.
     const items = [];
     const walk = (node) => {
         for (const child of Array.from(node.childNodes)) {
@@ -1270,9 +1037,8 @@ function chipPager(holder) {
 
 function tidyPagers() {
     for (const p of document.querySelectorAll('td[data-rr-col="title"] p.gensmall')) chipPager(p);
-    /* "[ Go to page: 1 … 263, 264, 265 ]" under a subscribed topic or a
-       bookmark: the same shape as the one under a listing title, in a
-       cell this script does not label. Matched by its words instead. */
+    // "[ Go to page: 1 … 263, 264, 265 ]" under a subscribed topic or a bookmark: the
+    // same shape as under a listing title, in a cell this script does not label.
     for (const strip of document.querySelectorAll("#wrapcentre p.gensmall, #wrapcentre span.gensmall")) {
         if (strip.closest(".rr-topicbar, .rr-minipager, .rr-releases")) continue;
         if (!/(?:Go to page|На страницу)\s*:/.test(strip.textContent)) continue;
@@ -1292,17 +1058,11 @@ function tidyPagers() {
     }
 }
 
-/* A data table whose header says five columns and whose rows draw four.
-
-   The board hides a cell outright — `style="display: none"` in the
-   markup it sends — where a member has no e-mail address on the Team
-   page. In a real table that does not blank the column, it removes it:
-   every cell after it slides one column left and the row stops lining
-   up with its own header. The cell is put back, empty, wherever the
-   row and the header still agree on how many cells there are.
-
-   Only the board's own inline hiding is undone, and only before this
-   script hides anything of its own. */
+// The board hides a missing-email cell with inline display:none, which removes it
+// from a real table rather than blanking it — every later cell slides one column
+// left. Restores the empty cell wherever the row and header still agree on the
+// column count. Only the board's own inline hiding is undone, only before this
+// script hides anything of its own.
 function restoreGridCells(table) {
     const header = table.querySelector(":scope > tbody > tr[data-rr-head], :scope > tbody > tr:first-child");
     if (!header) return;
@@ -1317,8 +1077,8 @@ function restoreGridCells(table) {
     }
 }
 
-/* A roster's header sits over cells the template centres. Left over a
-   centred column, a header names nothing in particular. */
+// Roster headers align to match their (often centred) column, or a left-aligned
+// header names nothing in particular over a centred one.
 function alignRosterHeaders(table) {
     const header = table.querySelector(":scope > tbody > tr[data-rr-head], :scope > tbody > tr:first-child");
     if (!header) return;
@@ -1337,9 +1097,8 @@ function alignRosterHeaders(table) {
     });
 }
 
-/* The template pads a roster's e-mail and website cells with &nbsp;
-   whether or not the member has one; on a phone each of those became
-   an empty dark chip in the card. */
+// Roster's email/website cells are padded with &nbsp; even when empty — on phone
+// that drew as an empty dark chip in the card.
 function markEmptyCells(table) {
     for (const cell of table.querySelectorAll(":scope > tbody > tr > td")) {
         if (cell.textContent.replace(/[\s\u00a0]+/g, "")) continue;
@@ -1348,13 +1107,10 @@ function markEmptyCells(table) {
     }
 }
 
-/* A cell that is a row of links and the punctuation between them.
-
-   The template writes "Previous PM in history | Next PM in history |
-   Previous PM | Next PM", "[ Add friend | Add foe ]" and "Mark all ::
-   Unmark all" as bare text around the links. Read out, that punctuation
-   is noise; on the page it is a row of pipes at four different heights.
-   The links become a row with a gap, which is what the pipes were for. */
+// Template writes link rows as bare text with punctuation between them
+// ("Previous PM | Next PM", "[ Add friend | Add foe ]") — rendered as pipes at four
+// different heights. Replaced with a row and a gap, which is what the punctuation
+// was standing in for.
 const LINK_STRIP_JUNK = /^[\s |:·,;\[\]()–—-]*$/;
 
 function tidyLinkStrips() {
@@ -1380,10 +1136,8 @@ function tidyLinkStrips() {
     }
 }
 
-/* An image the board points at nothing — the avatar box of a member
-   who has none — draws as the browser's broken-image mark. Only the
-   board's own furniture is dropped; a picture inside a post is the
-   poster's, and a hole where it was is the honest thing to show. */
+// Board's own broken images (e.g. an avatar box for a member with none) are hidden;
+// a broken image inside a post is left as-is — that hole is honest, it's the poster's.
 function dropBrokenImages() {
     for (const img of document.querySelectorAll("#wrapcentre img")) {
         if (img.closest(".postbody, .rr-game, .rr-lightbox")) continue;
@@ -1397,13 +1151,9 @@ function dropBrokenImages() {
 
 /* ---- Sorting the page you are on ---------------------------------- */
 
-/* phpBB offers no way to reorder the hundred rows it has already sent.
-   The headings of a listing become controls that do — in this browser,
-   on the rows that are here: nothing is fetched and nothing is sent.
-
-   Rows are sorted inside each run of them, and the template's own
-   section rows ("Global Announcements", "Announcements") end a run, so
-   a pinned announcement never lands in the middle of the topics. */
+// Client-side sort only (phpBB has no server-side reorder for rows already sent).
+// Sorted within each run between the template's own section rows, so a pinned
+// announcement never lands among the topics.
 const SORT_KIND = {
     replies: "number", views: "number", topics: "number", posts: "number", num: "number",
     date: "date", last: "date",
@@ -1415,10 +1165,8 @@ const SORT_MONTHS = {
     jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
 };
 
-/* "02 Sep 2026, 09:49", which is what the board writes and what this
-   script leaves after the weekday goes. A row that says "4 minutes
-   ago" carries the whole date on its title, put there when it was
-   shortened; a row that says "Today" is today. */
+// Board's date format after the weekday is dropped. Relative times ("4 minutes
+// ago", "Today") read from the title attribute set when they were shortened.
 function boardTime(text) {
     const said = String(text || "");
     const match = /(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{4})(?:,\s*(\d{1,2}):(\d{2}))?/.exec(said);
@@ -1448,35 +1196,19 @@ function sortKey(row, index, kind) {
     return cell.textContent.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
-/* Which shade each row is drawn in.
-
-   subsilver2 hands out row1 and row2 by hand and alternates them
-   *across the columns* of one row: a topic row comes out as six
-   vertical bands, and every row of the index is split in two at the
-   counts. Banding is meant to carry the eye from a title across to its
-   last post, and drawn that way it cuts the line up instead.
-
-   So the shade is written on the row, in an attribute of this
-   script's own — the board's classes are left exactly as they are,
-   since they carry nothing but the shade and another script may be
-   reading them — and a sort simply writes it again. */
+// subsilver2 alternates row1/row2 *across columns*, not rows — a topic row comes out
+// striped in vertical bands instead of by row. Shade is written to a separate
+// attribute instead (the board's own classes are left alone, in case another script reads them).
 function restripe(rows) {
     rows.forEach((row, index) => row.setAttribute("data-rr-stripe", index % 2 ? "b" : "a"));
 }
 
-/**
- * The data rows of a listing, in the runs the template separates with
- * its own section rows ("Global Announcements", "Topics").
- *
- * A run is what a sort reorders inside, so a pinned announcement never
- * lands among the topics, and it is what the stripe runs down.
- */
+/** Data rows split into runs by the template's own section rows — a run is the unit
+ *  a sort reorders within, and it is what the stripe runs down. */
 function listingRuns(table) {
     const head = table.querySelector(":scope > tbody > tr[data-rr-head]");
     if (!head || !head.querySelector("th")) return [];
-    /* Columns, not cells: a listing spans its first heading over the
-       unread marker and the title, so five headings sit over six
-       cells. */
+    // Columns, not cells — the first heading spans the unread marker plus the title.
     const width = Array.from(head.children)
         .reduce((total, cell) => total + parseInt(cell.getAttribute("colspan") || "1", 10), 0);
 
@@ -1501,13 +1233,11 @@ function initColumnSort(table) {
     const sortable = listingRuns(table).filter((rows) => rows.length > 2);
     if (!sortable.length) return;
     const original = sortable.map((rows) => rows.slice());
-    /* Where the run ends, read once. Read again after a sort it would
-       be whichever row had moved to the end, and putting the rows back
-       in the board's order would scatter them through their own run. */
+    // Anchor read once, before any sort — re-reading it after a sort would give
+    // whichever row had ended up last, scattering rows through their own run on restore.
     const anchors = sortable.map((rows) => rows[rows.length - 1].nextSibling);
-    /* The "#" column is the board's own count down the page, not a
-       property of the row: reordered rows keep the numbers where they
-       were rather than carrying them along. */
+    // "#" is a page position, not a row property — sorted rows keep the number in
+    // place rather than carrying it with them.
     const numbers = sortable.map((rows) => rows.map((row) => {
         const cell = row.querySelector(':scope > td[data-rr-col="num"]');
         return cell ? cell.textContent : null;
@@ -1588,10 +1318,8 @@ function initColumnSort(table) {
 
 /* ---- A folder's Mark column --------------------------------------- */
 
-/* One checkbox a row, no way to take them all and no way to take a run
-   of them: deleting a dozen old messages was a dozen clicks. A control
-   in the heading takes the page, and shift-click takes a range, the
-   way every mail client has since 1996. */
+// No bulk-select existed — deleting a dozen messages was a dozen clicks. Adds a
+// select-all in the heading and shift-click range select, like any mail client.
 function initMarkColumn(table) {
     const boxes = Array.from(table.querySelectorAll(':scope > tbody > tr > td input[type="checkbox"]'));
     if (boxes.length < 3) return;
@@ -1623,21 +1351,12 @@ function initMarkColumn(table) {
     }
 }
 
-/* ---- The rules notice folds ----------------------------------------
+/* ---- The rules notice folds ---------------------------------------- */
 
-   On a restricted forum this notice is 217px of prose — nearer 290 on
-   the live board — printed above every topic in the forum, identical
-   every time, for the whole time you read that forum. It is worth
-   reading once and worth a line after that.
-
-   So it is read once: the first time a given notice is met it is open,
-   and it closes itself for every visit after. Not closed on the first
-   sight, because on a board that restricts posting and enforces the
-   rules it prints, a reader who has never seen these words needs to
-   meet them. What is remembered is the notice, not the forum — the
-   text is what changes between rooms, and keying on it means a forum
-   that rewrites its rules is met open again. */
-
+// Identical 217-290px notice repeats above every topic in a restricted forum — worth
+// reading once, a line after. Open on first sight (a reader who has never seen the
+// rules needs to meet them), folded after. Keyed by the notice's own text, not the
+// forum, so an edited notice is shown again.
 const RULES_FOLD_KEY = "rulesFold";
 
 function rulesFolds() {
@@ -1645,9 +1364,8 @@ function rulesFolds() {
     return kept && typeof kept === "object" ? kept : {};
 }
 
-/* A short, stable name for a run of text. djb2 over the normalised
-   words: two forums with the same rules share a line in the store, and
-   an edited notice gets a new one and is shown again. */
+// djb2 hash of the normalised text — two forums sharing wording share a store key;
+// an edited notice gets a new key and reappears.
 function rulesKey(text) {
     const said = text.replace(/\s+/g, " ").trim().toLowerCase();
     let hash = 5381;
@@ -1655,34 +1373,24 @@ function rulesKey(text) {
     return hash.toString(36);
 }
 
-/**
- * Fold one notice.
- *
- * `card` is the box the stylesheet dresses, `heading` the element
- * carrying its name (or null, when the board printed none), and
- * `content` the nodes that say the rules. The heading moves into a
- * button and the content into a body the button hides, so the card
- * keeps the shape and the colours it already had.
- */
+/** Folds one notice: `heading` (or null, when the board printed none) becomes the
+ *  toggle button's label, `content` moves into a body the button hides — the card
+ *  keeps its existing shape and colours. */
 function foldRulesNotice(card, heading, content) {
     if (!content.length || card.querySelector(".rr-rules__toggle")) return;
 
     const body = el("div.rr-rules__body");
     for (const node of content) body.append(node);
 
-    /* The board's own heading moves into the button rather than being
-       replaced by one: it is already dressed as the notice's label —
-       uppercase, faint, a step under the prose — and everything that
-       reads this card, the stylesheet included, looks for that
-       element. A notice printed without one gets a name here. */
+    // Board's own heading moves into the button rather than being replaced — the
+    // stylesheet, and anything else reading this card, already looks for that element.
     const label = heading || el("span.rr-rules__name", {}, [t("Forum rules")]);
     const toggle = el("button.rr-rules__toggle", { type: "button" }, [icon("chevronD", 13), label]);
 
     const key = rulesKey(body.textContent);
     const kept = rulesFolds();
-    /* Never met: open, and written closed straight away so the next
-       page of the same forum is a line. A reader who then opens it
-       back up is asking for it open, and that is what sticks. */
+    // First time: open, then immediately written closed — so opening it back up is
+    // the only thing that keeps it open on the next page of the same forum.
     const first = !Object.prototype.hasOwnProperty.call(kept, key);
     let open = first || kept[key] === "open";
     if (first) {
@@ -1709,43 +1417,19 @@ function foldRulesNotice(card, heading, content) {
     sync();
 }
 
-/* The forum-rules box.
-
-   subsilver2 writes it as a table of one `td.row3` above everything
-   else on a forum, a topic and the posting form, and this board fills
-   it for members only — which is why it is easy to miss. Two things
-   are wrong with it left alone.
-
-   The template types `style="margin-bottom: 2px"` into the tag, and an
-   inline style beats every rule in this stylesheet without a fight, so
-   the box sat 2px above the topic title: two blocks with nothing to do
-   with each other, touching. And the cell keeps the styling of a
-   listing row — a row's inset, a hairline drawn along the bottom of a
-   card that has no second row, the same ground as everything else —
-   so the one block on the page that is a notice read as a slab of
-   text with no edges and no heading.
-
-   Tagged here; the stylesheet dresses it as the notice it is.  */
+// subsilver2's rules box (a lone td.row3) has two problems left alone: an inline
+// `margin-bottom: 2px` beats any stylesheet rule and glues it to the topic title
+// below, and it keeps listing-row styling (inset, hairline, same ground) so it reads
+// as a slab of text with no edges. Tagged here; the stylesheet dresses it properly.
 function markForumRules() {
-    /* The shape the live board actually writes.
-     *
-     * Everything below reads the notice out of a `td.row3`, which is
-     * what subsilver2 ships and what the fixtures carry — and on
-     * cs.rin.ru it never matched once. The board writes a plain
-     * `div.forumrules` straight into #wrapcentre instead, so a member
-     * on a restricted forum got the notice exactly as the board draws
-     * it: 25px yellow on pure black inside a dark red hairline, hard
-     * against the topic title under it, in the middle of a page that
-     * had been redrawn around it.
-     */
+    // Live board writes div.forumrules directly, not the td.row3 subsilver2 and the
+    // fixtures ship — the td.row3 handling below never actually matched on cs.rin.ru.
     for (const box of document.querySelectorAll("#wrapcentre div.forumrules")) {
         if (box.hasAttribute("data-rr-rules")) continue;
         box.setAttribute("data-rr-rules", "");
         tameRulesEmphasis(box);
-        /* The template writes `<br>` on either side of it and one more
-           under its heading. They were the only spacing the notice had;
-           it has margins of its own now, and three blank lines inside a
-           card is not air, it is a gap. */
+        // Template's <br> spacing (both sides plus one under the heading) is now
+        // redundant — the card has its own margins.
         for (const side of ["previousElementSibling", "nextElementSibling"]) {
             const near = box[side];
             if (near && near.tagName === "BR") near.style.display = "none";
@@ -1764,16 +1448,9 @@ function markForumRules() {
         const box = cell.closest("table.tablebg");
         if (!box || box.hasAttribute("data-rr-rules")) continue;
 
-        /* What the table is, not what shape it is.
-
-           The test here counted the cells and wanted exactly one,
-           which made the box's own nesting the thing that decided it:
-           subsilver2 wraps the rules in one more table on the pages
-           where they are actually filled in, so on the live board this
-           never fired once and the notice kept the styling of a
-           listing row. A listing is told apart by what it holds — a
-           header row and topic links — and a rules box holds neither
-           however many tables it is wrapped in. */
+        // Checked by content (no header row, no topic links), not by nesting depth —
+        // a cell-count check failed on the live board, where the rules are wrapped in
+        // an extra table subsilver2 doesn't show in the fixtures.
         if (box.querySelector("th, a.topictitle, a.forumlink")) continue;
         if (!cell.querySelector("h4, p.rules, .postbody")) continue;
 
@@ -1781,36 +1458,19 @@ function markForumRules() {
         if (box.style.marginBottom) box.style.marginBottom = "";
         tameRulesEmphasis(cell);
 
-        /* The cell is the card here, not the table: the stylesheet
-           dresses `td.row3` and the accent rail hangs off it, so the
-           toggle and the body belong inside it too. */
+        // The cell (td.row3), not the table, is the card the stylesheet dresses —
+        // toggle and body go inside it.
         const heading = cell.querySelector("h4, p.rules, h3");
         const content = Array.from(cell.childNodes).filter((node) => node !== heading);
         foldRulesNotice(cell, heading, content);
     }
 }
 
-
-
-/* The board writes its notice with BBCode `[size=150]`, which lands as
-   `font-size: 150%` typed into the tag: 22px on a 15px page, three
-   lines of it, above a topic title set smaller than the notice above
-   it. Inline beats every rule in the stylesheet, so the size is taken
-   down here rather than fought there.
-
-   Dropped rather than clamped. A step above the body text was the
-   original reading, and 120% of a 15px page is still 18px of shouting
-   over three lines above a topic title set at 24 — the emphasis has to
-   come from the card, the rail and the colour, not from the type size.
-   The notice sizes itself from the stylesheet once the inline value is
-   gone.
-
-   The colour goes the same way, and for the reason it was reported:
-   the board writes #FFBF00 into the tag, which is not a colour this
-   redesign has anywhere else on any of its four themes. Cleared here
-   so the stylesheet can paint the notice in the theme's own warning
-   colour — one notice colour per theme rather than the board's, which
-   is also what makes the light theme's special case unnecessary. */
+// Board's [size=150] BBCode becomes inline font-size:150%, which beats the
+// stylesheet — 22px shouting over three lines above a smaller topic title. Dropped
+// rather than clamped: even 120% still overpowers, so emphasis has to come from the
+// card/rail/colour instead. Inline colour (#FFBF00, not in this theme system) is
+// cleared the same way so the stylesheet can paint its own per-theme warning colour.
 const RULES_MAX_EMPHASIS = 100;
 
 function tameRulesEmphasis(cell) {
@@ -1831,20 +1491,10 @@ const ROW_CLASS_RE = /\brow[1-5]\b/;
 /** A label cell: "Message subject:", "From:" — the colon is the tell. */
 const LABEL_RE = /:\s*$/;
 
-/* A table that is a list of fields rather than a list of rows.
-
-   The private message a member opens is one: four rows of "Message
-   subject: / From: / Sent: / To:", written as `<tr class="row1">` with
-   the cells left plain. Every inset in this stylesheet hangs off
-   `td.row1` — the class is on the row here, not on the cell — so the
-   only padding those cells ever had was the template's own
-   `cellpadding="4"`, and the labels sat four pixels off the card's
-   edge while the message panel under them sat at fourteen.
-
-   Told apart by shape, because nothing on the page names it: two cells
-   a row, a label ending in a colon in the first, no header row, no
-   topic links. That is the message header, and the same shape wherever
-   else the board writes one. */
+// Field tables (e.g. a PM's "Subject:/From:/Sent:/To:" header) put the row1/row2
+// class on the <tr>, not the <td> — so this stylesheet's td.row1 inset never applied,
+// and labels sat at 4px padding while the panel below sat at 14px. Told apart by
+// shape: two cells, a label ending in a colon, no header row, no topic links.
 function markFieldTables() {
     for (const table of document.querySelectorAll("#wrapcentre table.tablebg")) {
         if (table.hasAttribute("data-rr-fields")) continue;
@@ -1881,18 +1531,15 @@ function initLists() {
     for (const table of document.querySelectorAll("table.tablebg")) {
         restoreGridCells(table);
         labelColumns(table);
-        // A listing, as opposed to a post or a strip of chrome. The
-        // stylesheet needs to know which is which: row1/row2 alternate
-        // down a listing and wrap whole posts in a topic, so the same
-        // two classes mean opposite things on the two kinds of page.
+        // row1/row2 alternate down a listing but wrap whole posts in a topic — same
+        // classes, opposite meaning, so which kind of table this is has to be tagged.
         const roster = isRoster(table);
         if (table.querySelector("a.topictitle, a.forumlink") || roster) {
             table.setAttribute("data-rr-list", "");
             groupListingNumbers(table);
         }
-        // A roster of members — the member list, Who is online — as
-        // opposed to a folder of messages: the phone lays its cards out
-        // name first, and drops the cells the template left empty.
+        // Member roster (not a message folder) — the phone lays cards out name-first
+        // and drops template-empty cells.
         if (roster && !table.querySelector(".topictitle a, a.topictitle, a.forumlink")) {
             table.setAttribute("data-rr-roster", "");
             alignRosterHeaders(table);
@@ -1916,10 +1563,8 @@ function initLists() {
         hideEmptyProfileRows();
     }
     tidyPagers();
-    // The icon legend under a listing: the index names its table
-    // "legend", a listing's has no class at all. The dot cells and the
-    // spacer between pairs are named, so the phone can lay each dot
-    // beside its words and break the line on the spacer.
+    // Icon legend: the index's table is class="legend", a listing's has no class at
+    // all — dot cells and spacers are tagged so the phone can lay each dot beside its words.
     for (const table of document.querySelectorAll("#wrapcentre table.legend, #wrapcentre table:not([class])")) {
         if (table.hasAttribute("data-rr-legend") || table.querySelector("table, input, select, a")) continue;
         const cells = Array.from(table.querySelectorAll(":scope > tbody > tr > td"));
@@ -1943,18 +1588,14 @@ function initLists() {
     tidyLinkStrips();
     dropBrokenImages();
 
-    /* A private message draws its signature divider as a run of
-       underscores in the body, with no signature node for the topic
-       pass to find. Posts are left alone: there the divider is already
-       a rule, and a run of underscores inside a message is the poster's
-       own drawing. */
+    // A PM's signature divider is a run of underscores in the body (no signature
+    // node like a post has). Posts are left alone — there it's already a rule, not text.
     if (!PAGE.isTopic) {
         for (const body of document.querySelectorAll("#wrapcentre .postbody")) replaceUnderscoreRules(body);
     }
 
-    /* Before the page-kind gate: the member list, the message folders
-       and the control panel are none of those kinds and were getting
-       none of this. */
+    // Before the page-kind gate — the member list, message folders and control panel
+    // are none of those kinds and need this too.
     tightenDateCells();
     localiseRankCells();
     dropLonePageCounters();
@@ -1962,11 +1603,9 @@ function initLists() {
 
     if (!PAGE.isForum && !PAGE.isIndex && !PAGE.isSearch) return;
 
-    // Before the topic rows are looked for, not after. The index has no
-    // topic rows at all — it lists forums — so everything below the
-    // early return never ran there, and the Last post column read on
-    // one line in a forum listing and on two on the page in front of
-    // it. It is the same column.
+    // Before topic rows are looked for — the index has none (it lists forums), so
+    // this ran only on the forum page, leaving the same Last-post column one line
+    // there and two lines on the index in front of it.
     for (const cell of document.querySelectorAll('td[data-rr-col="last"]')) tightenLastPost(cell);
 
     const entries = topicRows();
@@ -1978,9 +1617,7 @@ function initLists() {
     const seenPrefixes = new Map();
     const unreadRouting = settings.get("unreadFromList") && !PAGE.isSearch && isLoggedIn();
 
-    // A prefix in a title is a button that drives the filter chips. On
-    // a page with no chips there is nothing for it to drive, so it is
-    // drawn as a label instead of a control that does nothing.
+    // Prefix becomes a clickable chip only when there are filter chips for it to drive.
     const filtering = settings.get("listFilter") && entries.length >= FILTER_MIN_ROWS;
 
     let setTag = () => {};
@@ -2007,15 +1644,9 @@ function initLists() {
         const toolbar = buildToolbar(entries, prefixes, filtering);
         setTag = toolbar.setTag;
 
-        // The action bar and the filter bar carry one job between them
-        // and sat as two separate cards with a gap, one above the other:
-        // 123px of chrome before the first topic on the page. The filter
-        // becomes the action bar's second row instead. They are not
-        // siblings in the template, so this cannot be done in CSS.
-        //
-        // A bar with nothing in it is not placed at all: on a short
-        // listing with no board search box there is no filter left to
-        // draw, and an empty card is worse than no card.
+        // Action bar and filter bar merge into one (was 123px of chrome as two
+        // stacked cards) — done in JS since they aren't siblings in the template.
+        // An empty bar is never placed at all.
         const actions = document.querySelector(".rr-topicbar");
         if (toolbar.empty) {
             /* nothing to place */
@@ -2028,18 +1659,10 @@ function initLists() {
     }
 }
 
-/* The sort strip's controls are flat siblings — a label, the select
-   it names, sometimes a second select, then the next label — with
-   nothing but a space between one and the next. Wrapped at the
-   browser's own discretion that space is a break point like any
-   other, and a narrow phone card broke "Sort by:" onto one line and
-   the select that names it onto the next. Each label and the
-   controls up to the next label (or the row's own submit) become one
-   span, so a wrap can only fall between one pair and the next, never
-   inside one. Runs on both shapes this cell comes in: the search
-   results page holds the label and its selects directly, a topic's
-   holds them one level down in the sort form beside the search box —
-   a descendant selector reaches either. */
+// Sort strip's label+select pairs are flat siblings separated only by a space, which
+// wraps like any other space — "Sort by:" broke onto its own line on a phone. Each
+// label and its controls up to the next label are grouped into one span so a wrap
+// only ever falls between pairs.
 function groupSortControls() {
     for (const label of document.querySelectorAll(
         '#wrapcentre td.cat[data-rr-cat="controls"] span.gensmall, #wrapcentre form[name="sortmsg"] span.gensmall',
@@ -2052,9 +1675,8 @@ function groupSortControls() {
             && (next.matches("span.gensmall") || next.matches('input[type="submit"], input[type="button"]')))) {
             const node = next;
             next = next.nextSibling;
-            // The &nbsp; and bare spaces the template used to hold
-            // these apart: the group's own gap replaces them, and left
-            // in they would sit alongside it as an empty flex item.
+            // Template's &nbsp;/spaces are dropped — the group's own gap replaces
+            // them (left in, they'd become empty flex items).
             if (node.nodeType === 3 && !node.textContent.trim()) { node.remove(); continue; }
             group.append(node);
         }

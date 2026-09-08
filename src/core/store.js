@@ -1,14 +1,7 @@
-/* ------------------------------------------------------------------
-   Persistence.
-
-   Everything the user changes lives in one object under one GM key, so
-   export/import is a single JSON blob and a corrupt value can never
-   take more than its own setting down.
-
-   GM_* is used when the userscript manager provides it and localStorage
-   is the fallback, which keeps the script working when it is pasted
-   into a console or run through a manager with restricted grants.
-   ------------------------------------------------------------------ */
+/* Persistence: all settings live in one object under one GM key, so
+   export/import is a single JSON blob and a corrupt value can't take down
+   more than its own setting. GM_* is used when the userscript manager
+   provides it, falling back to localStorage (console paste, restricted grants). */
 
 const KEY = "rr:settings";
 const DATA_KEY = "rr:data";
@@ -96,8 +89,6 @@ const settings = {
     onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
 };
 
-/* ---- Free-form data (bookmarks, history, hidden users) ------------ */
-
 let dataCache = null;
 
 const store = {
@@ -120,28 +111,14 @@ const store = {
     },
 };
 
-/* ---- Buckets: big things, kept on their own key ------------------- */
-
-/* store.set() rewrites the whole of rr:data every time, which is the
-   right trade for a dozen small values and the wrong one the moment
-   something in there runs to six figures. The palette's index of the
-   topics this browser has seen is 136 bytes a topic and holds
-   hundreds; store.set("history", …) runs on every topic opened, and it
-   would have re-serialised all of them each time.
-
-   A bucket is not exported with the settings either, and that is the
-   other half of the reason: a cache is not a preference, and nobody
-   wants 80 KB of remembered titles in their backup. Clearing the
-   script's data drops them (settingsui.js, clearData). */
+// Buckets: each on its own GM key, so a large or cache-like value (the
+// palette's seen-topics index, currently hundreds of 136-byte entries)
+// doesn't force a full re-save of rr:data on every write, and isn't
+// exported with settings (cleared instead via settingsui.js clearData).
 const bucketCache = new Map();
 
-/* Any JSON value, where parseJSON() above insists on an object.
-
-   That insistence is right for the settings and for rr:data, which are
-   both maps and where anything else means the value was corrupted. A
-   bucket holds whatever it was given — the palette's index is an
-   array and the last-search stamp is a number, and stamping it through
-   parseJSON() read every one of them back as "no value at all". */
+// Unlike parseJSON(), doesn't require an object back: a bucket can hold an
+// array or a number, and parseJSON() would read either as "no value".
 function parseAny(raw) {
     if (raw === null || raw === undefined) return undefined;
     if (typeof raw === "object") return raw;
@@ -174,8 +151,6 @@ const bucket = {
     },
 };
 
-/* ---- Schema access ------------------------------------------------ */
-
 let schemaRef = [];
 let defaults = null;
 
@@ -188,9 +163,8 @@ function allFields() {
     return out;
 }
 
-/* settings.get() is asked about a hundred times on a listing page and
-   most of those fall through to the default; rebuilding the flat field
-   list and scanning it for each one was the whole of that cost. */
+// Cached: settings.get() falls through to this on every uncustomized field,
+// often a hundred times per listing page.
 function defaultFor(id) {
     if (defaults === null) {
         defaults = new Map();

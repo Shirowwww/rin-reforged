@@ -1,7 +1,5 @@
-/* ------------------------------------------------------------------
-   Components the script injects. Everything here is prefixed .rr- and
-   owns its own markup, so no specificity fights with phpBB.
-   ------------------------------------------------------------------ */
+/* Everything here is prefixed .rr- and owns its own markup, so nothing
+   fights phpBB's specificity. */
 
 .rr-btn {
     display: inline-flex;
@@ -24,8 +22,7 @@
 .rr-btn[data-variant="quiet"] { background: transparent; border-color: transparent; color: var(--rr-muted); }
 .rr-btn[data-variant="quiet"]:hover { background: var(--rr-surface-2); color: var(--rr-text); }
 .rr-btn[aria-pressed="true"] { background: var(--rr-accent-soft); border-color: var(--rr-accent); color: var(--rr-accent-on-soft, var(--rr-accent)); }
-/* A quiet control that is open — "Close all spoilers", "Hide the
-   original post" — stays quiet: the turned chevron says the state. */
+/* Stays quiet when open — the turned chevron already says the state. */
 .rr-btn[data-variant="quiet"][data-rr-open] { background: transparent; border-color: transparent; color: var(--rr-text); }
 .rr-btn[data-variant="quiet"][data-rr-open]:hover { background: var(--rr-surface-2); }
 .rr-btn:disabled, .rr-btn[aria-busy="true"] { opacity: .6; cursor: progress; }
@@ -34,11 +31,9 @@
 .rr-icon-btn {
     display: inline-grid;
     place-items: center;
-    /* A <button> takes border-box from the UA sheet; an <a> stays
-       content-box, so the same 30px (34px on a phone, see responsive.css)
-       drew two different squares depending on which tag built it — the
-       settings cog a couple of pixels smaller than mail and account
-       beside it. */
+    /* border-box needed: a <button> is border-box by UA default but an
+       <a> stays content-box, so the same 30px drew two different
+       squares depending on which tag built the control. */
     box-sizing: border-box;
     width: 30px;
     height: 30px;
@@ -53,19 +48,13 @@
 .rr-icon-btn:hover { background: var(--rr-surface-2); color: var(--rr-text-strong); }
 .rr-icon-btn svg { width: 16px; height: 16px; }
 
-/* An icon button that happens to be a link is still an icon button.
-
-   `html[data-rr] a` is (0,1,1) and .rr-icon-btn is (0,1,0), so every
-   one of these built as an anchor — private messages, the account link
-   — lost its colour to the link rule and came out in the board's red,
-   while the two built as buttons stayed grey. Three controls sitting
-   together in the top bar, two of them coloured as if they meant
-   something different from the third. They do not. */
+/* html[data-rr] a is (0,1,1) vs .rr-icon-btn's (0,1,0) — without this,
+   icon buttons built as <a> (private messages, account) inherited
+   link-red while the ones built as <button> stayed grey. */
 html[data-rr] a.rr-icon-btn { color: var(--rr-muted); }
 
-/* Three heights in one strip — an 18px number, 25px text buttons, 30px
-   icon buttons — read as three different things. They are one row of
-   tools. */
+/* Normalises three different heights in one strip (an 18px number,
+   25px text buttons, 30px icon buttons) into one row of tools. */
 html[data-rr] .rr-posttools .rr-icon-btn { width: 26px; height: 26px; }
 
 /* The first-unread arrow after a listing title (icons.js). */
@@ -74,8 +63,6 @@ html[data-rr] a.rr-unread-jump {
     height: 22px;
     margin-left: 2px;
     vertical-align: middle;
-    /* --rr-accent-text is the ink for text *on* the accent: near-black
-       on every dark theme, which is what this arrow was painted in. */
     color: var(--rr-muted);
 }
 html[data-rr] a.rr-unread-jump:hover { color: var(--rr-accent); background: var(--rr-surface-3); }
@@ -91,8 +78,8 @@ html[data-rr] a.rr-icon-btn:hover { color: var(--rr-text-strong); text-decoratio
 
 /* ---- Skip link ---------------------------------------------------- */
 
-/* Off screen until it is focused, which is the only time it is useful
-   and the only time it must be impossible to miss. */
+/* Off screen until focused, the only time it's useful and the only
+   time it must be impossible to miss. */
 .rr-skip {
     position: fixed;
     top: 8px;
@@ -107,24 +94,20 @@ html[data-rr] a.rr-icon-btn:hover { color: var(--rr-text-strong); text-decoratio
     transform: translateY(-200%);
     transition: transform var(--rr-speed) ease;
 }
-/* `html[data-rr] a` is (0,1,1) and `.rr-skip` is (0,1,0), so the one
-   control on the page whose whole job is to be unmissable was drawing
-   the board's link red on the accent — 1.2:1 — and only the :focus
-   rule below was putting it right. It is only ever seen focused, so
-   nobody saw it; a rule that is correct by luck is a rule waiting to
-   be wrong. */
+/* html[data-rr] a (0,1,1) beat .rr-skip (0,1,0), so the one control
+   whose whole job is to be unmissable was drawing link-red on the
+   accent at 1.2:1 — invisible since it's only ever seen while focused. */
 html[data-rr] a.rr-skip { color: var(--rr-accent-text); }
 .rr-skip:focus {
     transform: none;
     color: var(--rr-accent-text);
     text-decoration: none;
 }
-/* The skip target must not keep a ring once it has been jumped to. */
+/* The skip target must not keep a ring once jumped to. */
 html[data-rr] #wrapcentre:focus { outline: none; }
 
-/* An imageset image the icon pass did not recognise. It is left alone
-   rather than hidden, so a control the board adds later still shows;
-   this only stops an oversized one stretching its row. */
+/* Left visible rather than hidden so a control the icon pass missed
+   still shows; this only stops an oversized one stretching its row. */
 html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align: middle; }
 
 /* ---- Top navigation --------------------------------------------- */
@@ -133,10 +116,9 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     position: sticky;
     top: 0;
     z-index: 900;
-    /* --rr-nav-h is what a sticky column heading offsets itself by and
-       what scroll-padding-top is worked out from, so it has to be the
-       whole bar: border-box, or the rule under it makes the bar a
-       pixel taller than everything measuring it believes. */
+    /* border-box: --rr-nav-h sizes a sticky heading's offset and
+       scroll-padding-top, so this must be the whole bar or that math
+       is a pixel off. */
     box-sizing: border-box;
     height: var(--rr-nav-h);
     padding: 0 var(--rr-s4);
@@ -144,11 +126,9 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     backdrop-filter: blur(10px) saturate(140%);
     border-bottom: 1px solid var(--rr-line);
 }
-/* The bar is full-bleed; what is in it follows the content column.
-   Without this the brand sat at x=16 and the icons at the screen's
-   edge while the board bar and the listing under them were indented
-   half a metre on a 2560px monitor — two stacked header rows with a
-   500px zig-zag between them. */
+/* Bar is full-bleed; content inside follows the content column —
+   without this the brand sat at x=16 and the icons hugged the screen
+   edge on a 2560px monitor, a 500px zig-zag against the bar below. */
 .rr-nav__inner {
     display: flex;
     align-items: center;
@@ -159,13 +139,9 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     margin: 0 auto;
     min-width: 0;
 }
-/* The wordmark, then a hairline: "whose board" separated from "where
-   on it".
-
-   The box is taller than the wordmark on purpose — a link 15px tall is
-   a hard thing to hit — and the hairline is drawn rather than
-   bordered, so growing the target does not grow the rule with it. 18px
-   is the height .rr-nav__divide uses at the other end of the bar. */
+/* Box is taller than the 15px wordmark on purpose (a 15px link is hard
+   to hit); hairline is drawn, not bordered, so growing the target
+   doesn't grow the rule. 18px matches .rr-nav__divide. */
 .rr-nav__brand {
     position: relative;
     display: flex;
@@ -185,14 +161,13 @@ html[data-rr] img.rr-legacy-img { max-width: 100%; height: auto; vertical-align:
     margin-top: -9px;
     background: var(--rr-line);
 }
-/* `html[data-rr] a` outranks a bare class, and painted the name in
-   the board's link red. */
+/* html[data-rr] a outranks a bare class and painted the name in the
+   board's link red. */
 html[data-rr] a.rr-nav__brand { color: var(--rr-text); }
 html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-text-strong); }
 
-/* The wordmark, built as an inline <svg> in navbar.js and filled with
-   currentColor. Height is the only number to set — the viewBox gives
-   the width. */
+/* Inline <svg> (navbar.js) filled with currentColor — height is the
+   only number to set; viewBox gives the width. */
 .rr-nav__logo {
     display: block;
     height: 15px;
@@ -201,8 +176,8 @@ html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-tex
 
 /* ---- Board links -------------------------------------------------- */
 
-/* The row the masthead used to carry. Slim, quiet and above the
-   content rather than inside it, which is where the board put it. */
+/* The row the masthead used to carry: slim and above the content
+   rather than inside it. */
 .rr-boardbar {
     display: flex;
     align-items: center;
@@ -221,52 +196,36 @@ html[data-rr] a.rr-nav__brand:hover { text-decoration: none; color: var(--rr-tex
     flex-wrap: wrap;
     min-width: 0;
 }
-/* The left half takes whatever the right half leaves and wraps inside
-   itself; the right half keeps its own width and stays whole.
-
-   The basis stays `auto` rather than 0. A left half that asks for
-   nothing is always on the first line — which is what makes the row
-   fold to one line where there is room for one — but on the index the
-   bar shares its row with a 380px masthead, and asking for nothing
-   there left it 190px wide with each group stacked one link to a line.
-   Asking for what it wants, it takes the whole line when the two will
-   not share one, and the right half drops below it intact. */
+/* basis stays auto, not 0 — on the index the bar shares its row with a
+   380px masthead; asking for nothing left the left half 190px wide
+   with each group stacked one link per line. Asking for what it
+   wants, it takes the line when the two won't share one. */
 .rr-boardbar__main { flex: 1 1 auto; }
 .rr-boardbar__end { flex: 0 0 auto; margin-left: auto; }
 
-/* Ways of looking at threads, then what the board is, then you.
-
-   Each group is one light box — a hairline round it, a hairline
-   between its links — so the row reads as three things without a
-   heading over any of them. The links inside are quiet text that
-   lights up under the pointer; nothing in the row is louder than the
-   rest, the donation link included. */
+/* Each group is one light box (hairline round it, hairline between
+   links) so the row reads as three things without headings; nothing
+   in it is louder than anything else, donation link included. */
 .rr-boardbar__group {
     display: inline-flex;
     align-items: stretch;
-    /* A group whose links will not fit the window used to run off the
-       side of the page — signed in, the five view links did exactly
-       that at 1100px, with "View your posts" half off screen. The links
-       themselves cannot break, so the ribbon does: it carries on on a
-       second line, still one box. */
+    /* Wraps rather than overflows — signed in, the five view links ran
+       off a 1100px window's edge, "View your posts" half off screen. */
     flex-wrap: wrap;
     min-width: 0;
     border: 1px solid var(--rr-line);
     border-radius: var(--rr-radius);
     background: color-mix(in srgb, var(--rr-surface) 70%, transparent);
 }
-/* Keyed on the link's own class rather than on `> :first-child`, for
-   the reason spelled out at .rr-cluster below: a universal rightmost
-   part is tested against every element on the page. */
+/* Keyed on the link's own class rather than `> :first-child`, for the
+   reason at .rr-cluster below: a universal rightmost part is tested
+   against every element on the page. */
 .rr-boardbar__link + .rr-boardbar__link { border-left: 1px solid var(--rr-line); }
 .rr-boardbar__link:first-child { border-radius: calc(var(--rr-radius) - 1px) 0 0 calc(var(--rr-radius) - 1px); }
 .rr-boardbar__link:last-child { border-radius: 0 calc(var(--rr-radius) - 1px) calc(var(--rr-radius) - 1px) 0; }
 .rr-boardbar__link:only-child { border-radius: calc(var(--rr-radius) - 1px); }
-/* Carrying `html[data-rr] a` for the same reason .rr-langswitch__option
-   does: the generic link rule is (0,1,1) and a bare class is (0,1,0), so
-   a whole row of quiet chips came out in link red — eleven of them,
-   louder than anything under them, on the very page where the row is
-   the header. */
+/* html[data-rr] a (0,1,1) beats a bare class — eleven quiet chips were
+   coming out in link red on the very page where this row is the header. */
 html[data-rr] a.rr-boardbar__link {
     display: inline-flex;
     align-items: center;
@@ -278,10 +237,9 @@ html[data-rr] a.rr-boardbar__link {
 }
 html[data-rr] a.rr-boardbar__link:hover { color: var(--rr-text-strong); background: var(--rr-surface-2); text-decoration: none; }
 html[data-rr] a.rr-boardbar__link:visited { color: var(--rr-muted); }
-/* Search and the settings panel, where there is no top bar to hold
-   them. They belong to the reader rather than to the board, so a
-   hairline sets them off from the board's own links — the same
-   distinction the bar draws at its own right-hand end. */
+/* Search and the settings panel, where there's no top bar to hold
+   them — hairlined off the board's own links, the same distinction
+   the bar draws at its own right end. */
 .rr-headertools {
     display: inline-flex;
     align-items: center;
@@ -302,8 +260,8 @@ html[data-rr] a.rr-boardbar__link:visited { color: var(--rr-muted); }
 
 /* ---- The language switch ------------------------------------------ */
 
-/* Two flags with no words and no current state, made into the same
-   segmented control the settings panel uses for a two-way choice. */
+/* Two flags with no words or current state, given the settings
+   panel's segmented-control shape for a two-way choice. */
 .rr-langswitch {
     display: inline-flex;
     padding: 2px;
@@ -355,43 +313,34 @@ html[data-rr] a.rr-langswitch__option[aria-current] .rr-boardbar__flag { opacity
     }
     .rr-boardbar__more[aria-expanded="true"] svg { transform: rotate(180deg); }
 
-    /* Two entry points stay: "Unanswered posts" and "Active topics"
-       are what every guide to this board says to bookmark, and they
-       lead the views group. Signed in, three more views follow them
-       there — unread, new, your own — and those fold like everything
-       else. What the board is, who you are and the language switch all
-       wait behind the More control. */
+    /* "Unanswered posts" and "Active topics" stay — what every guide
+       to this board says to bookmark. Signed in, three more views
+       (unread, new, yours) fold like everything else; the board
+       identity and language switch wait behind More too. */
     .rr-boardbar:not([data-rr-open]) .rr-boardbar__main > :not([data-rr-group="views"]),
     .rr-boardbar:not([data-rr-open]) [data-rr-group="views"] > :nth-child(n+3),
     .rr-boardbar:not([data-rr-open]) .rr-boardbar__end:not(:has(> .rr-headertools)) { display: none; }
-    /* Except this script's own two. On a page with no top bar the row
-       is the only place search and the settings panel are, and folding
-       them away behind More put the panel two taps from a phone. The
-       board's links in the same half still fold. */
+    /* Except this script's own two — on a page with no top bar this
+       row is the only place search and settings live, and folding
+       them away put the panel two taps deep on a phone. */
     .rr-boardbar:not([data-rr-open]) .rr-boardbar__end > :not(.rr-headertools) { display: none; }
     .rr-boardbar__main, .rr-boardbar__end { gap: var(--rr-s2) var(--rr-s3); }
 
-    /* The language switch used to be forced onto a full-width line of
-       its own here, which pushed More — the next thing in flow — onto
-       a line with nothing else on it, alone at the bar's far right and
-       a full row below anything it folds. Left to wrap like everything
-       above it, it shares whatever line still has room, and More lands
-       beside it instead of under everything. */
+    /* Left to wrap rather than forced full-width — full-width pushed
+       More onto a line of its own, alone at the far right and a full
+       row below the fold it controls. */
     .rr-boardbar[data-rr-open] { flex-wrap: wrap; position: relative; }
-    /* Signed in there is no language switch for More to share a line
-       with, so it still fell to a line of its own at the bottom, a bar's
-       height below the fold it controls. Pinned to the corner it stays
-       where the thumb found it when the bar was folded; only the first
-       group's lines make room for it, the rest run the full width. */
+    /* Signed in there's no language switch to share a line with, so
+       More still fell to its own line a bar's height below the fold —
+       pinned to the corner instead, where the thumb found it folded. */
     .rr-boardbar[data-rr-open] .rr-boardbar__more { position: absolute; top: 2px; right: 4px; margin-left: 0; }
     .rr-boardbar[data-rr-open] .rr-boardbar__main > [data-rr-group="views"] { padding-right: 78px; }
 }
 
 /* ---- Restored board controls -------------------------------------- */
 
-/* A control the board drew as a bare GIF inside a link. The image is
-   hidden and this label takes its place, so the control keeps working
-   and can now be seen. */
+/* The board drew this as a bare GIF inside a link; the image is
+   hidden and this label takes its place. */
 html[data-rr] a.rr-ctl {
     display: inline-flex;
     align-items: center;
@@ -428,9 +377,9 @@ html[data-rr] a.rr-ctl:hover {
 .rr-nav__sep { color: var(--rr-faint); }
 .rr-nav__actions { display: flex; align-items: center; gap: 2px; flex: none; }
 
-/* One search shape, used by the palette trigger here and by the
-   board's own forms in the topic bar and the listing toolbar. It was a
-   pill; a pill in this interface is a label, and this is a control. */
+/* One search shape, shared by the palette trigger and the board's own
+   forms in the topic bar and listing toolbar — it read as a label
+   pill before; this is a control. */
 .rr-nav__search,
 .rr-search {
     display: flex;
@@ -455,20 +404,16 @@ html[data-rr] a.rr-ctl:hover {
 .rr-search svg { width: 14px; height: 14px; flex: none; }
 .rr-nav__kbd { margin-left: auto; }
 
-/* The board's form inside that frame. The input loses its own border
-   and background — the frame is the border now — and the submit
-   becomes the trailing affordance, where the Ctrl K chip sits in the
-   palette trigger. */
+/* The board's form inside that frame: the input drops its own border
+   and background (the frame is the border now), and the submit
+   becomes a trailing affordance, like the Ctrl K chip in the palette
+   trigger. */
 .rr-search:focus-within { border-color: var(--rr-accent); }
 .rr-search__form { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
-/* input.rr-search__input, not the bare class: the board's own field
-   reset (forum.css, "input[type=text], … .inputbox") matches this
-   same input through its `input[type="text"]` branch, which is one
-   element more specific than a class alone — at equal specificity
-   that branch wins the tie regardless of which file loads last, so
-   the board's padding and border rode along and the input never
-   shrank to the pill's 26px. Matching the element ourselves puts both
-   rules on equal footing, where this one loads later and wins. */
+/* Matched by element (input.rr-search__input), not the bare class —
+   the board's own field reset also matches via `input[type="text"]`,
+   one level more specific than a class, so it won the tie and the
+   input never shrank to the pill's 26px until matched the same way. */
 html[data-rr] input.rr-search__input {
     flex: 1;
     min-width: 0;
@@ -482,14 +427,10 @@ html[data-rr] input.rr-search__input {
     box-sizing: border-box;
 }
 html[data-rr] input.rr-search__input:focus-visible { outline: none; }
-/* The submit, inside the frame. It had a border and a fill of its own,
-   which made a boxed button inside a boxed field — a control inside a
-   control. It is the word alone now, quiet, lit under the pointer, the
-   way the Ctrl K chip sits in the palette trigger beside it.
-
-   Matched by element (input.rr-search__go, not the bare class): the
-   board's input.button1 rule is one element more specific than a
-   class and its padding rode along otherwise. */
+/* Submit sits inside the frame as plain text now, not a boxed button
+   inside a boxed field. Matched by element (input.rr-search__go) for
+   the same specificity reason as the input above — the board's
+   input.button1 rule otherwise wins. */
 html[data-rr] input.rr-search__go {
     flex: none;
     height: 24px;
@@ -511,15 +452,13 @@ html[data-rr] input.rr-search__go:hover {
 
 /* ---- Where the search looks ---------------------------------------- */
 
-/* One small control at the end of the field opens the two choices the
-   board's own box never offered: this forum or the whole board, titles
-   or every post (navbar.js, addSearchOptions). Coloured in the accent
-   while the box is set to look somewhere other than its default, so a
-   reader can tell from across the bar that it will. */
+/* One control at the end of the field opens the two choices the
+   board's own box never offered: this forum or the whole board,
+   titles or every post (navbar.js, addSearchOptions). Accented while
+   set away from the default so it reads from across the bar. */
 .rr-search { position: relative; }
-/* The trigger carries the name of the room it will search, so it is
-   as wide as that name and no wider — a glyph on its own said there
-   were options and nothing about what they were set to. */
+/* Trigger carries the target room's name, sized to it and no wider —
+   a bare glyph said options existed but not what they were set to. */
 html[data-rr] button.rr-search__opts {
     display: inline-flex;
     align-items: center;
@@ -538,11 +477,9 @@ html[data-rr] button.rr-search__opts {
 }
 html[data-rr] button.rr-search__opts:hover,
 html[data-rr] button.rr-search__opts[aria-expanded="true"] { background: var(--rr-surface-3); color: var(--rr-text-strong); }
-/* The trigger's own hover label is drawn 6px under it, which is where
-   the popover's first row is: click it and the answer — Main Forum /
-   Whole board — is covered by a tip repeating the question. The button
-   read as doing nothing at all. Once the choices are open they say
-   what the tip said, so the tip stands down. */
+/* The trigger's own hover tooltip sits right where the popover's first
+   row lands, covering the answer with a repeat of the question — it
+   stands down once the popover is open. */
 html[data-rr] button.rr-search__opts[aria-expanded="true"]::after { display: none; }
 html[data-rr] button.rr-search__opts[data-rr-active] { color: var(--rr-accent); }
 html[data-rr] button.rr-search__opts svg { width: 13px; height: 13px; flex: none; }
@@ -553,10 +490,8 @@ html[data-rr] button.rr-search__opts svg { width: 13px; height: 13px; flex: none
     white-space: nowrap;
 }
 .rr-search__where:empty { display: none; }
-/* Where the field's own prompt already names the room — "Search Main
-   Forum" — the control does not say it a second time. It appears the
-   moment there is a query in the way of the prompt, which is when
-   knowing where the search is aimed starts to matter. */
+/* Hidden while the field's own placeholder already names the room
+   ("Search Main Forum"); appears once a query is in the way of it. */
 html[data-rr] .rr-search[data-rr-echo] input.rr-search__input:placeholder-shown ~ .rr-search__opts .rr-search__where {
     display: none;
 }
@@ -579,9 +514,8 @@ html[data-rr] .rr-search[data-rr-echo] input.rr-search__input:placeholder-shown 
     color: var(--rr-text);
 }
 .rr-search__pop[hidden] { display: none; }
-/* Rooms are named now — "Temporarily Restricted Topics" is a segment
-   in this row — so the row and the control inside it both wrap rather
-   than pushing the popover off the side of the screen. */
+/* Rooms are named in full now ("Temporarily Restricted Topics"), so
+   the row wraps rather than pushing the popover off screen. */
 .rr-search__row {
     display: flex;
     flex-wrap: wrap;
@@ -633,13 +567,10 @@ html[data-rr] .rr-search[data-rr-echo] input.rr-search__input:placeholder-shown 
 
 /* ---- Tooltips ----------------------------------------------------- */
 
-/* An icon with no words next to it is a guess until you hover it for a
-   second and the browser decides to help. This draws the name of the
-   control straight away, on hover and on keyboard focus alike, from
-   the same string that is on `title` and `aria-label`.
-
-   Pointer events are off so the label can never sit between the cursor
-   and the button it describes. */
+/* Draws the control's name (from title/aria-label) right away on
+   hover or keyboard focus, instead of waiting on the browser's own
+   delayed tooltip. Pointer events off so the label never sits between
+   the cursor and the button it describes. */
 html[data-rr] [data-rr-tip] { position: relative; }
 html[data-rr] [data-rr-tip]::after {
     content: attr(data-rr-tip);
@@ -657,42 +588,38 @@ html[data-rr] [data-rr-tip]::after {
     font: 600 var(--rr-fs-xs) / 1.4 var(--rr-font);
     white-space: nowrap;
     pointer-events: none;
-    /* display, not visibility: a hidden-but-laid-out label on a control
-       at the right edge of the window is 41px of horizontal overflow on
-       every page of the board, which is exactly what it was. */
+    /* display, not visibility — a hidden-but-laid-out label on a
+       control at the window's right edge was 41px of horizontal
+       overflow on every page. */
     display: none;
 }
 html[data-rr] [data-rr-tip]:hover::after,
 html[data-rr] [data-rr-tip]:focus-visible::after,
-/* A tip that hangs off a wrapper rather than off the control itself
-   (the writing toolbar: an `input` draws no pseudo-element) has to
-   answer to the control's focus, because the wrapper never takes any.
-   Scoped to the wrapper's own children, so this costs nothing on the
-   ancestors of a page full of them. */
+/* A tip on a wrapper rather than the control itself (the writing
+   toolbar: an input draws no pseudo-element) answers to the control's
+   focus since the wrapper never takes any. Scoped to its own children
+   so it costs nothing on the rest of the page. */
 html[data-rr] [data-rr-tip]:has(> :focus-visible)::after { display: block; }
-/* A control that has opened something says what it does with the thing
-   it opened. The label would land on top of it. */
+/* A control that opened something already says what it did — the
+   label would land on top of it. */
 html[data-rr] [data-rr-tip][aria-expanded="true"]::after { display: none; }
 /* Near the right edge the label would still push the page sideways
-   while it is up, so those hang off their own right edge instead. The
-   last control in the top bar is against the window; so is the corner
-   the jump buttons live in. */
+   while shown, so it hangs off its own right edge — the top bar's
+   last control and the jump-buttons corner both sit against the window. */
 html[data-rr] [data-rr-tip][data-rr-tip-side="right"]::after,
 html[data-rr] .rr-nav__actions > :last-child[data-rr-tip]::after { left: auto; right: 0; transform: none; }
 html[data-rr] [data-rr-tip][data-rr-tip-side="above"]::after,
 html[data-rr] [data-rr-tip][data-rr-tip-side="above-left"]::after,
 html[data-rr] [data-rr-tip][data-rr-tip-side="above-right"]::after { top: auto; bottom: calc(100% + 6px); }
-/* A bar of buttons wraps, so which end of the window a given button
-   sits at is only known once it is hovered; compose.js measures then
-   and picks one of these. */
+/* A wrapping button bar means which edge a button sits at is only
+   known once hovered; compose.js measures then and picks one of these. */
 html[data-rr] [data-rr-tip][data-rr-tip-side="above-left"]::after { left: 0; right: auto; transform: none; }
 html[data-rr] [data-rr-tip][data-rr-tip-side="above-right"]::after { left: auto; right: 0; transform: none; }
 
 /* ---- Reading progress ------------------------------------------- */
 
-/* On the bottom edge of the sticky top bar, not floating at the top
-   left of the window where a loading bar lives. --rr-nav-h is set by
-   theme.js so this stays put when the bar is switched off. */
+/* On the sticky bar's bottom edge, not floating top-left. --rr-nav-h
+   (set by theme.js) keeps it in place if the bar is switched off. */
 .rr-progress {
     position: fixed;
     top: calc(var(--rr-nav-h, 48px) - 2px);
@@ -703,8 +630,7 @@ html[data-rr] [data-rr-tip][data-rr-tip-side="above-right"]::after { left: auto;
     z-index: 950;
     transition: width 80ms linear, opacity var(--rr-speed) ease;
 }
-/* Nothing to report yet: at the top of the page, or on a page with
-   nothing below the fold. */
+/* Nothing to report yet: top of the page, or nothing below the fold. */
 .rr-progress[data-rr-idle] { opacity: 0; }
 
 /* ---- Topic prefix tags ------------------------------------------ */
@@ -712,10 +638,9 @@ html[data-rr] [data-rr-tip][data-rr-tip-side="above-right"]::after { left: auto;
 .rr-tag {
     display: inline-flex;
     align-items: center;
-    /* An inline-flex box sits on the *bottom margin edge* of the line
-       box by default, so in a heading two type sizes larger than the
-       tag the badge hung below the words it labels. Aligning it to the
-       middle of the surrounding text puts it back on the line. */
+    /* An inline-flex box sits on the line box's bottom margin edge by
+       default, so in a heading two sizes larger than the tag, the
+       badge hung below the words it labels — centred instead. */
     vertical-align: middle;
     height: 18px;
     padding: 0 7px;
@@ -730,30 +655,23 @@ html[data-rr] [data-rr-tip][data-rr-tip-side="above-right"]::after { left: auto;
     cursor: pointer;
     flex: none;
 }
-/* The same badge drawn as a label, on a listing too short to be worth
-   filtering: it says what kind of topic the row is and answers no
-   click, so it must not offer one. */
+/* Same badge as a label on a listing too short to filter — it names
+   the topic kind and must answer no click. */
 span.rr-tag { cursor: default; }
 
-/* One tag, three colours off one token.
-
-   A tag draws its own hue on a 15% tint of itself — which is a good
-   way to draw a label, and lands several of them just under 4.5:1 at
-   12px. Rather than move the palette (these hues are the board's
-   taxonomy, and two of them are the board's own red), the *ink* is
-   nudged toward whichever end of the theme it needs: lighter on a dark
-   theme, darker on a light one, from a single rule that never has to
-   know which it is on. The tint and the border stay on the pure
-   token, so the label still reads as its own colour. */
+/* Tag hues are the board's own taxonomy (two are the board's own red)
+   and land under 4.5:1 at 12px on a 15% tint. Rather than move the
+   palette, the ink alone is nudged toward the theme's extreme —
+   lighter on dark, darker on light — from one rule that never needs
+   to know which. Tint and border stay on the pure token. */
 .rr-tag[data-tag] {
     color: color-mix(in srgb, var(--rr-tag-ink) 84%, var(--rr-text-strong));
     background: color-mix(in srgb, var(--rr-tag-ink) 15%, transparent);
     border-color: color-mix(in srgb, var(--rr-tag-ink) 32%, transparent);
 }
-/* Declared on the attribute rather than on `.rr-tag`, because the
-   filter's trigger wears the ink of the prefix it is holding and is
-   not a tag. Nothing is painted here — only the token is named — so
-   the pair of rules above stays the only thing that draws a chip. */
+/* Declared on the attribute, not on .rr-tag — the filter's own trigger
+   wears a prefix's ink without being a tag; only the pair of rules
+   above ever paints a chip. */
 [data-tag="info"]      { --rr-tag-ink: var(--rr-tag-info); }
 [data-tag="release"]   { --rr-tag-ink: var(--rr-tag-release); }
 [data-tag="problem"]   { --rr-tag-ink: var(--rr-tag-problem); }
@@ -802,8 +720,8 @@ span.rr-tag { cursor: default; }
 .rr-toolbar__count { color: var(--rr-faint); font-size: var(--rr-fs-xs); margin-left: auto; white-space: nowrap; }
 
 /* The board's own search sits in the same bar as the page filter, so a
-   rule keeps "narrow what is here" and "search the whole board" from
-   reading as one control. */
+   rule keeps "narrow what's here" from reading as one control with
+   "search the whole board". */
 .rr-toolbar__board {
     display: flex;
     align-items: center;
@@ -815,9 +733,9 @@ span.rr-tag { cursor: default; }
 .rr-toolbar__quick .rr-tag { margin: 0; opacity: .55; }
 .rr-toolbar__quick .rr-tag[aria-pressed="true"] { opacity: 1; }
 
-/* The prefixes, behind one trigger at the end of the filter box. The
-   hairline is the whole separation it needs: it is inside the control
-   it narrows, not a control of its own. */
+/* Prefixes sit behind one trigger at the filter box's end — the
+   hairline is separation enough since it belongs to the control it
+   narrows, not a control of its own. */
 .rr-toolbar__tagbtn {
     display: flex;
     align-items: center;
@@ -882,9 +800,8 @@ tr[data-rr-hidden] { display: none; }
     font: var(--rr-fs) / var(--rr-lh) var(--rr-font);
     box-sizing: border-box;
 }
-/* The board's field rules no longer reach the script's own controls
-   (forum.css, "only the board's fields"), so the ones that do want an
-   accent border on focus say so themselves. */
+/* The board's field rules no longer reach this script's own controls
+   (forum.css), so an accent focus border is declared here directly. */
 html[data-rr] textarea.rr-reply__text:focus { border-color: var(--rr-accent); outline: none; }
 .rr-reply__actions { display: flex; gap: var(--rr-s2); align-items: center; }
 
@@ -933,13 +850,10 @@ html[data-rr] textarea.rr-reply__text:focus { border-color: var(--rr-accent); ou
     border: 1px solid var(--rr-line);
     border-radius: var(--rr-radius-lg);
 }
-/* The filter, nested into the action bar as its second row: one card
-   with a rule across it rather than two cards with a gap.
-
-   Its own padding and the bar's cancelled each other out at the seam —
-   the negative margin pulls it back to the card edge and the padding
-   pushes it in again — so both have to move together or the second row
-   sits at a different inset from the first. */
+/* Filter nested as the bar's second row: one card with a rule across
+   it, not two cards with a gap. Its own padding and a negative margin
+   cancel out at the seam, so both have to move together or the two
+   rows sit at different insets. */
 .rr-topicbar > .rr-toolbar {
     flex-basis: 100%;
     margin: var(--rr-card-pad) calc(-1 * var(--rr-card-pad)) calc(-1 * var(--rr-card-pad));
@@ -950,7 +864,6 @@ html[data-rr] textarea.rr-reply__text:focus { border-color: var(--rr-accent); ou
     border-radius: 0 0 calc(var(--rr-radius-lg) - 1px) calc(var(--rr-radius-lg) - 1px);
 }
 
-/* The forum name, moved into the bar it labels. */
 .rr-topicbar__title {
     margin: 0 var(--rr-s2) 0 0 !important;
     font-size: var(--rr-fs-lg) !important;
@@ -962,8 +875,8 @@ html[data-rr] textarea.rr-reply__text:focus { border-color: var(--rr-accent); ou
     white-space: nowrap;
 }
 
-/* Two rows, always. The first is this topic, the second is everywhere
-   else; a hairline between them says so without a heading. */
+/* Two rows, always: this topic, then everywhere else — a hairline
+   between them says so without a heading. */
 .rr-topicbar[data-rr-rows] { display: block; padding: 0; }
 .rr-topicbar__row {
     display: flex;
@@ -985,14 +898,12 @@ html[data-rr] textarea.rr-reply__text:focus { border-color: var(--rr-accent); ou
 .rr-topicbar__search .rr-search { min-width: 210px; }
 .rr-topicbar .rr-pager { margin: 0; }
 
-/* Acting on the forum or the topic rather than on what is in it:
-   subscribing, bookmarking, marking read. Once each, at the far end of
-   the bar, in the same quiet the topic page gives leaving a topic.
-
-   `html[data-rr] a.nav` colours these accent — they arrive as the
-   board's own nav links and keep the class — and it outranks the quiet
-   variant by a whole class, so it takes this much selector to say that
-   a link adopted into the bar is a control in the bar now. */
+/* Subscribing, bookmarking, marking read — acting on the forum or
+   topic, not on what's in it — sit once at the bar's far end, as
+   quiet as the topic page gives leaving a topic. html[data-rr] a.nav
+   colours these accent by default (they arrive as the board's nav
+   links) and outranks the quiet variant by a whole class, hence the
+   long selector. */
 html[data-rr] a.rr-forumnav {
     color: var(--rr-muted);
     font-weight: 500;
@@ -1010,10 +921,9 @@ html[data-rr] a.rr-forumnav:hover { color: var(--rr-text); text-decoration: none
 
 /* ---- Pager ------------------------------------------------------- */
 
-/* One boxed control: the steps and the page box with a hairline
-   between each, which is most of what keeps "Next" from being taken
-   for "Next topic" on the row below. The two ends are arrows alone;
-   their names are drawn on hover (tooltips, below). */
+/* One boxed control, hairlined between the steps and the page box —
+   most of what keeps "Next" from reading as "Next topic" on the row
+   below. Arrows alone; names shown on hover (tooltips, below). */
 .rr-pager { margin: 0; }
 .rr-pager__where {
     display: inline-flex;
@@ -1053,17 +963,8 @@ html[data-rr] input.rr-pager__input:focus { border-color: var(--rr-accent); outl
 /* Several small controls that belong together, drawn as one light box
    with a hairline between them: the pager, the topic bar's "Previous
    topic / Next topic / Print view" and its "Subscribe / Bookmark /
-   E-mail friend". One box says "these are one thing" where a row of
-   loose buttons said "here are six things". No overflow clip: the
-   tooltips on the controls inside draw outside it.
- *
- * Every child carries .rr-cluster__item, put there by the JS that
- * fills the cluster (topic.js, sealCluster). The obvious way to write
- * these rules is `.rr-cluster > * + *`, and that is a selector whose
- * rightmost part is the universal one: the engine has to test it
- * against every element on the page, and a listing here is four
- * thousand of them. Six such rules cost this page 30ms of style
- * recalculation, measured. Keyed on a class, they cost nothing. */
+   E-mail friend" — one box, not six loose buttons. No overflow clip:
+   tooltips on the controls inside draw outside it. */
 .rr-cluster {
     display: inline-flex;
     align-items: stretch;
@@ -1078,7 +979,11 @@ html[data-rr] input.rr-pager__input:focus { border-color: var(--rr-accent); outl
 .rr-cluster__item:first-child { border-radius: calc(var(--rr-radius) - 1px) 0 0 calc(var(--rr-radius) - 1px); }
 .rr-cluster__item:last-child { border-radius: 0 calc(var(--rr-radius) - 1px) calc(var(--rr-radius) - 1px) 0; }
 .rr-cluster__item:only-child { border-radius: calc(var(--rr-radius) - 1px); }
-/* A button in a cluster is the cluster's: no frame of its own. */
+/* Every child carries .rr-cluster__item (topic.js, sealCluster) rather
+   than using `.rr-cluster > * + *` — that selector's rightmost part is
+   universal, tested against every element on the page. Six such rules
+   cost a listing 30ms of style recalculation, measured; keyed on a
+   class, they cost nothing. */
 html[data-rr] .rr-cluster__item.rr-btn,
 html[data-rr] a.rr-cluster__item.rr-btn {
     border-top: 0;
@@ -1103,9 +1008,9 @@ html[data-rr] .rr-releases__toggle > svg:first-child,
 html[data-rr] td.cat.rr-section > svg { transition: transform var(--rr-speed) ease; }
 html[data-rr] .rr-fold[data-rr-open] > svg { transform: rotate(180deg); }
 
-/* A forum listing's own section rows — one spanning td.row3 with a
-   bold word in it (lists.js, sectionOf) — drawn as the section heads
-   they are: the tint and the mark a td.cat gets, at the same size. */
+/* A forum listing's own section rows (one spanning td.row3 with a bold
+   word, lists.js sectionOf) drawn as the section heads they are — the
+   same tint and mark as a td.cat, at the same size. */
 html[data-rr] td.row3[data-rr-section] {
     position: relative;
     padding: var(--rr-s2) var(--rr-s3) var(--rr-s2) 20px;
@@ -1128,9 +1033,9 @@ html[data-rr] td.row3[data-rr-section]::before {
     background: var(--rr-accent);
 }
 
-/* A listing's section head, which folds its run on a click (lists.js,
-   initSectionFolds). The chevron points down at an open run and right
-   at a folded one; the count says what is behind it. */
+/* A listing's section head folds its run on click (lists.js,
+   initSectionFolds). Chevron points down at an open run, right at a
+   folded one; the count says what's behind it. */
 html[data-rr] td.rr-section { cursor: pointer; user-select: none; transition: background var(--rr-speed) ease; }
 html[data-rr] tr[data-rr-cat-row] > td.rr-section:hover { background: color-mix(in srgb, var(--rr-accent) 10%, var(--rr-surface-2)); }
 html[data-rr] td.rr-section:focus-visible { outline: 2px solid var(--rr-accent); outline-offset: -2px; }
@@ -1146,10 +1051,9 @@ html[data-rr] tr[data-rr-section-folded] { display: none; }
 
 /* ---- The control panel's menu ----------------------------------------- */
 
-/* Each section of the control panel is a row that opens: the closed
-   ones say so with a chevron at their end, the open one with a chevron
-   turned down and its pages stepped in under it (lists.js,
-   decorateNavLists). */
+/* Each section of the control panel is a row that opens: closed rows
+   end in a chevron, the open one turns it down with its pages stepped
+   in under it (lists.js, decorateNavLists). */
 html[data-rr] td[data-rr-navitem="closed"] { padding: 0; }
 html[data-rr] td[data-rr-navitem="closed"] > a.nav {
     display: flex;
@@ -1210,9 +1114,8 @@ html[data-rr] td[data-rr-navitem="open"] ul.nav li { padding: 3px 0; font-size: 
     gap: 6px var(--rr-s4);
     margin: var(--rr-s4) 0 0;
     font-size: var(--rr-fs-sm);
-    /* Short values — a developer, a date — sat by their label with a
-       metre of nothing to their right on a wide card. The grid is as
-       wide as a long line needs and no wider. */
+    /* Short values (a developer, a date) sat with a metre of nothing
+       beside them on a wide card — capped to what a long line needs. */
     max-width: 72ch;
 }
 .rr-game__meta dt { color: var(--rr-faint); white-space: nowrap; }
@@ -1226,17 +1129,12 @@ html[data-rr] td[data-rr-navitem="open"] ul.nav li { padding: 3px 0; font-size: 
 
 /* ---- Post chrome ------------------------------------------------- */
 
-/* The author band.
-
-   It was a line of text with a rule under it, floating at the same
-   inset as the message: the name, the rank, the join date, the post
-   count, the date and six controls, all the same size, all on the
-   same ground. Which of them was the author took reading.
-
-   Drawn as a band instead — pulled out to the post's own edges, on
-   the quieter surface, with the message starting under it — the
-   header is a header and the message is the message. The inset comes
-   from the post's own token, so the two can never drift apart. */
+/* The author band was a line of text with a rule under it, at the
+   message's own inset — name, rank, join date, post count, date and
+   six controls, all the same size and ground. Which was the author
+   took reading. Pulled to the post's own edges on a quieter surface
+   instead, header reads as header; the inset comes from the post's
+   own token so the two can never drift apart. */
 .rr-posthead {
     display: flex;
     align-items: center;
@@ -1247,9 +1145,8 @@ html[data-rr] td[data-rr-navitem="open"] ul.nav li { padding: 3px 0; font-size: 
     background: var(--rr-surface-2);
     border-bottom: 1px solid var(--rr-line);
 }
-/* The face beside the name: a size at which it is a face, centred on
-   the line it belongs to, on a plate so an avatar that is mostly
-   transparent still reads as a circle. */
+/* Sized to read as a face, centred on the line it belongs to, on a
+   plate so a mostly-transparent avatar still reads as a circle. */
 .rr-posthead__avatar {
     width: 36px;
     height: 36px;
@@ -1279,29 +1176,23 @@ html[data-rr] td[data-rr-navitem="open"] ul.nav li { padding: 3px 0; font-size: 
     overflow: hidden;
     text-overflow: ellipsis;
     /* No fixed cap. 28ch cut "Joined: Thursday, 13 Feb 2020, 13:07"
-       inside the clock and left "13:…" on the page. The line is
-       shortened at the source now, so it fits — and where it still
-       does not, it gives way to the things around it rather than to a
+       down to "13:…"; shortened at the source now, and where it still
+       doesn't fit it gives way to its neighbours rather than to a
        number written here. */
     min-width: 0;
     flex: 0 1 auto;
 }
-/* Per-post actions.
-
-   These were invisible until the post was hovered. The board showed its
-   own Quote and Profile controls at all times, so hiding them outright
-   is one step back from what it did: a control nobody can see is a
-   control nobody uses. They rest dimmed instead — quiet enough not to
-   compete with the message, present enough to be found. */
+/* Per-post actions were invisible until hovered — a step back from the
+   board's own always-visible Quote/Profile controls: a control nobody
+   can see is a control nobody uses. Rest dimmed instead: quiet enough
+   not to compete with the message, present enough to be found. */
 .rr-posttools {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    /* It wraps. On a phone at the largest text size the strip is a post
-       number, three icon buttons and two labelled controls the board
-       drew as GIFs, and one line of that is wider than the screen —
-       which is how it came to push the page sideways the moment the
-       "hide posts by someone" control joined it. */
+    /* Wraps — on a phone at the largest text size a post number, three
+       icon buttons and two GIF-drawn controls don't fit one line, and
+       that's how "hide posts by" first pushed the page sideways. */
     flex-wrap: wrap;
     gap: 2px;
     margin-left: auto;
@@ -1316,9 +1207,8 @@ tr:hover .rr-posttools,
 .rr-posttools:focus-within { opacity: 1; }
 @media (hover: none) { .rr-posttools { opacity: 1; } }
 
-/* The post number, which is also the link to the post: it took the
-   job off the board's own "Post" control rather than sitting beside
-   it saying the same thing without doing anything. */
+/* The post number doubles as the link to the post, taking over the
+   job of the board's own inert "Post" control. */
 html[data-rr] .rr-postnum {
     font: 600 var(--rr-fs-xs) / 1 var(--rr-font-mono);
     color: var(--rr-faint);
@@ -1345,8 +1235,8 @@ html[data-rr] a.rr-postnum:hover {
 .rr-sig-toggle:hover { color: var(--rr-muted); }
 [data-rr-sig="collapsed"] { display: none; }
 
-/* The board draws the divider as a run of underscores. A rule reads
-   better and does not wrap. */
+/* The board draws the divider as a run of underscores; a rule reads
+   better and doesn't wrap. */
 .rr-signature {
     position: relative;
     margin-top: var(--rr-s3);
@@ -1371,8 +1261,8 @@ html[data-rr] a.rr-postnum:hover {
 .rr-palette {
     width: min(640px, calc(100vw - 32px));
     /* The overlay is a flex row, so without this the box stretches to
-       the height it is allowed rather than to the height it needs, and
-       a search with one answer drew 500px of empty panel under it. */
+       the height allowed rather than needed — a one-answer search drew
+       500px of empty panel under it. */
     align-self: flex-start;
     max-height: min(60vh, 520px);
     margin-top: 12vh;
@@ -1382,27 +1272,25 @@ html[data-rr] a.rr-postnum:hover {
     border: 1px solid var(--rr-line-strong);
     border-radius: var(--rr-radius-lg);
     box-shadow: var(--rr-shadow-pop);
-    /* Not clipped: the scope popover hangs off the strip at the top and
-       is taller than the strip, so `overflow: hidden` cut it off at the
-       panel's own edge and swallowed the second row of choices whole.
-       Nothing here paints into the corners — the strip and the list
-       have no background of their own — so the radius holds without
-       it, and the list rounds its own bottom corners. */
+    /* Not clipped: the scope popover hangs off the top strip, taller
+       than the strip itself, and overflow:hidden cut it off mid-way.
+       Nothing here paints into the corners, so the radius holds
+       without a clip. */
     overflow: visible;
 }
-/* input.rr-palette__input, not the bare class, for the reason
-   input.rr-search__input carries the same shape above: the board's
-   field rules reach this input through `input[type="text"]:focus` too,
-   and a class alone loses that tie — which lit the divider under the
-   box accent-red for as long as the palette was open, which is always.
-   The box itself is the panel; the field draws nothing of its own. */
+/* Matched by element (input.rr-palette__input), not the bare class,
+   for the reason input.rr-search__input carries the same shape above:
+   the board's field rules reach this input via `input[type="text"]:focus`
+   too, and a class alone loses that tie — which lit the divider under
+   the box accent-red for as long as the palette was open, which is
+   always. The box itself is the panel; the field draws nothing of
+   its own. */
 html[data-rr] input.rr-palette__input {
     /* The strip is a flex row and the field is what stretches in it;
-       the strip itself is what does not shrink. The panel is a flex
-       column against a max-height, and the field was a shrinkable item
-       beside a list of forty boards: it gave up 13 of its 48px to
-       them, and the palette opened on a field shorter than its own
-       rows. The list scrolls; the field does not move. */
+       the strip is what doesn't shrink. The field used to be a
+       shrinkable item beside a list of forty boards and gave up 13 of
+       its 48px to them, opening the palette on a field shorter than
+       its own rows. */
     flex: 1 1 auto;
     min-width: 0;
     height: 48px;
@@ -1416,9 +1304,9 @@ html[data-rr] input.rr-palette__input {
     box-sizing: border-box;
 }
 /* Where a query is aimed, at the head of the field that carries it:
-   which board, and how deep (palette.js, buildPaletteScope). The rule
-   under the strip is the strip's now, so the field draws nothing at
-   all — see the focus note below for why it has to say so twice. */
+   which board, and how deep (palette.js, buildPaletteScope). The
+   hairline belongs to the strip now, so the field draws none of its
+   own — see the focus note below for why it has to say so twice. */
 .rr-palette__bar {
     position: relative;
     flex: none;
@@ -1427,9 +1315,9 @@ html[data-rr] input.rr-palette__input {
     padding-left: var(--rr-s3);
     border-bottom: 1px solid var(--rr-line);
 }
-/* Room names run long — "Temporarily Restricted Topics" — and this
-   trigger sits in front of the field rather than at the end of a bar,
-   so it is given a little more of the width than the one in the bar. */
+/* Room names run long ("Temporarily Restricted Topics"); this trigger
+   sits in front of the field rather than at a bar's end, so it gets a
+   little more width than the one in the search bar. */
 html[data-rr] button.rr-palette__scope { max-width: 170px; height: 28px; }
 .rr-palette__pop {
     position: absolute;
@@ -1450,10 +1338,9 @@ html[data-rr] button.rr-palette__scope { max-width: 170px; height: 28px; }
     color: var(--rr-text);
 }
 .rr-palette__pop[hidden] { display: none; }
-/* The rooms are a column rather than a row of pills: twenty of them
-   with subforums indented under their board is a tree, and a tree that
-   wraps is a wall. It scrolls at about eight rows, which is where the
-   popover stops being taller than the palette it hangs off. */
+/* A column, not a row of pills — twenty rooms with subforums indented
+   is a tree, and a tree that wraps is a wall. Scrolls at about eight
+   rows, where the popover stops outgrowing the palette. */
 .rr-palette__poprow { display: flex; flex-direction: column; gap: var(--rr-s1); }
 .rr-palette__rooms {
     max-height: 208px;
@@ -1468,10 +1355,9 @@ html[data-rr] button.rr-palette__scope { max-width: 170px; height: 28px; }
 }
 html[data-rr] button.rr-palette__room {
     display: block;
-    /* Twenty rows in a scroller that stops at 208px: as flex items
-       they shared the height out between them and drew twenty 10px
-       slivers of text. The list scrolls; a row is the height it
-       needs. */
+    /* Not a flex item sharing the height out — twenty rows in a 208px
+       scroller drew twenty 10px slivers of text. A row is the height
+       it needs; the list scrolls instead. */
     flex: none;
     width: 100%;
     padding: 5px 8px;
@@ -1492,8 +1378,8 @@ html[data-rr] button.rr-palette__room[aria-pressed="true"] {
     color: var(--rr-text-strong);
     font-weight: 600;
 }
-/* A category holds no topics of its own, so it is a heading and not
-   somewhere a search can be sent. */
+/* A category holds no topics of its own — a heading, not somewhere a
+   search can be sent. */
 .rr-palette__roomcat {
     flex: none;
     padding: var(--rr-s2) 8px 2px;
@@ -1515,12 +1401,11 @@ html[data-rr] input.rr-palette__author {
     box-sizing: border-box;
 }
 html[data-rr] input.rr-palette__author:focus { border-color: var(--rr-accent); outline: none; }
-/* The board's field rules colour a focused border accent, and four
-   :not()s make that rule specific enough to win here. The palette's
-   field is focused from the moment it opens, so the divider under it
-   read as a red rule across the panel rather than as a divider. The
-   divider belongs to the strip now and the field has no border of its
-   own, which is exactly what this has to keep saying under :focus. */
+/* Four :not()s make the board's own focus-accent rule specific enough
+   to win here — the palette's field is focused from the moment it
+   opens, so that rule painted the divider red as a permanent line
+   rather than a focus state. The divider belongs to the strip; the
+   field has no border to fight over, on load and under :focus alike. */
 html[data-rr] input.rr-palette__input:focus { border: 0; }
 .rr-palette__list {
     overflow-y: auto;
@@ -1564,12 +1449,10 @@ html[data-rr] input.rr-palette__input:focus { border: 0; }
     border-left: 1px solid var(--rr-line-strong);
     box-shadow: var(--rr-shadow-pop);
 }
-/* Every row of the panel is a grid item, and a grid item's automatic
-   minimum size is its content's — so a head whose title, search box
-   and close button will not fit, or a page holding a control wider
-   than the sheet, made the *panel* wider than the window it is
-   pinned to and put a scrollbar across the whole thing. They may
-   shrink; what is inside them wraps or scrolls on its own. */
+/* Every row of the panel is a grid item, whose automatic minimum size
+   is its own content's — an unfittable head or a control wider than
+   the sheet made the whole *panel* wider than the window it's pinned
+   to. They may shrink; what's inside them wraps or scrolls instead. */
 .rr-panel__head,
 .rr-panel__body,
 .rr-panel__foot,
@@ -1586,8 +1469,8 @@ html[data-rr] input.rr-palette__input:focus { border: 0; }
 .rr-panel__id { display: flex; align-items: baseline; gap: 6px; flex: none; }
 .rr-panel__title { font: 650 var(--rr-fs-lg) / 1.2 var(--rr-font); color: var(--rr-text-strong); margin: 0; }
 .rr-panel__ver { font: var(--rr-fs-xs) / 1 var(--rr-font-mono); color: var(--rr-faint); }
-/* Same shape as the palette's field, and for the same reason: this one
-   is type="search", which the board's field rules also reach. */
+/* Same shape as the palette's field, for the same reason: this one is
+   type="search", which the board's field rules also reach. */
 html[data-rr] input.rr-panel__search {
     flex: 1;
     min-width: 0;
@@ -1603,8 +1486,8 @@ html[data-rr] input.rr-panel__search {
 }
 html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
 
-/* The rail and the page beside it. The rail scrolls on its own, so a
-   long category cannot push the categories off the bottom. */
+/* The rail scrolls on its own so a long category can't push the
+   categories off the bottom. */
 .rr-panel__body {
     display: grid;
     grid-template-columns: 186px 1fr;
@@ -1654,8 +1537,8 @@ html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
     font: 700 var(--rr-fs-xs) / 1.5 var(--rr-font-mono);
     text-align: center;
 }
-/* A category with nothing matching the search is dimmed rather than
-   removed: the rail keeps the same shape while typing. */
+/* A category with nothing matching the search is dimmed, not removed
+   — the rail keeps its shape while typing. */
 .rr-panel__tab[data-rr-empty] { opacity: .35; }
 .rr-panel__tab[data-rr-empty] .rr-panel__tabcount { background: none; color: var(--rr-faint); }
 
@@ -1685,32 +1568,27 @@ html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
 .rr-group[data-rr-searching] .rr-group__note { display: none; }
 
 /* A row is words on the left and a control on the right, until the
-   control is wider than the room left over — and then it takes a line
-   of its own rather than squeezing the words into a column.
- *
- * That squeeze was the panel's worst habit: five theme buttons and a
- * three-line sentence in the same row left the sentence wrapping at
- * about thirty characters beside three hundred pixels of nothing. A
- * min-width on the words and `flex-wrap` on the row is the general
- * form of what the accent chips already had as a special case. */
+   control is wider than the room left over — then it takes a line of
+   its own rather than squeezing the words into a column. Previously
+   five theme buttons beside a three-line sentence wrapped it at about
+   thirty characters next to three hundred pixels of nothing. */
 .rr-field {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
-    /* space-between rather than a margin on the control: on the line it
-       shares with the words it is pushed to the right edge, and on a
-       line of its own it starts at the left, under them. A margin
-       would strand it at the right of an otherwise empty row. */
+    /* space-between rather than a margin on the control: on a shared
+       line it's pushed to the right edge, and on its own line it
+       starts at the left, under the words. A margin would strand it
+       at the right of an otherwise empty row. */
     justify-content: space-between;
     gap: var(--rr-s3) var(--rr-s5);
     padding: var(--rr-s4) 0;
     border-top: 1px solid var(--rr-line);
 }
 .rr-field:first-of-type { border-top: 0; }
-/* The basis is the wrap threshold, not the width: the words grow into
-   whatever the line has left. 16rem is where a sentence stops reading
-   as a column of two-word lines, so a control wider than the rest of
-   the row takes its own line rather than squeezing them into one. */
+/* The basis is the wrap threshold, not a width — 16rem is where a
+   label sentence stops reading as a column of two-word lines, so a
+   wider control takes its own line instead of squeezing them in. */
 .rr-field__text { flex: 1 1 16rem; min-width: 0; }
 .rr-field__label { display: block; font: 600 var(--rr-fs-sm) / var(--rr-lh-meta) var(--rr-font); color: var(--rr-text); }
 .rr-field__desc { display: block; margin-top: 4px; font-size: var(--rr-fs-xs); line-height: 1.6; color: var(--rr-muted); max-width: 56ch; }
@@ -1718,11 +1596,11 @@ html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
 .rr-field[hidden],
 .rr-field[data-rr-dep-off],
 .rr-field[data-rr-nomatch] { display: none; }
-/* A search hit under a parent that is switched off is still a hit:
-   shown, dimmed, rather than counted on the tab and then not there. */
+/* A search hit under a parent that's switched off is still a hit:
+   shown, dimmed, rather than counted on the tab and then missing. */
 .rr-group[data-rr-searching] .rr-field[data-rr-dep-off]:not([data-rr-nomatch]) { display: flex; opacity: .6; }
-/* A field that depends on another is stepped in under it, so "off
-   because the thing above is off" is visible rather than inferred. */
+/* Stepped in under its parent so "off because the thing above is off"
+   is visible rather than inferred. */
 .rr-field[data-rr-dep] { padding-left: var(--rr-s3); }
 .rr-rangewrap { display: flex; align-items: center; gap: var(--rr-s2); }
 
@@ -1765,12 +1643,11 @@ html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
 .rr-range { width: 130px; accent-color: var(--rr-accent); }
 .rr-range-val { font: var(--rr-fs-xs) / 1 var(--rr-font-mono); color: var(--rr-muted); min-width: 34px; text-align: right; }
 
-/* The accent, chosen from named chips rather than bare squares. Six
-   named chips never share a line with anything, so they start at the
-   left of their own one rather than being pushed to the right of it by
-   the row's `margin-left: auto`. On a phone the field is already a
-   column and needs none of it: `flex-basis: 100%` there is a *height*,
-   which is how the chips came to overrun the sheet. */
+/* Accent chips never share a line with anything, so they start at the
+   left of their own row rather than being pushed right by the row's
+   `margin-left: auto`. On a phone the field is already a column and
+   needs none of it: `flex-basis: 100%` there is a *height*, which is
+   how the chips came to overrun the sheet. */
 @media (min-width: 641px) {
     .rr-field[data-field="accent"] > .rr-field__control { flex-basis: 100%; padding-top: 0; }
 }
@@ -1780,11 +1657,9 @@ html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
     flex-direction: column;
     align-items: center;
     gap: 5px;
-    /* Wide enough to line up, never narrower than its own name. A fixed
-       62px cut "RIN orange" out of the pressed swatch's box on both
-       sides — the label is nowrap, so it overflowed rather than
-       wrapping, and the selected background stopped short of the word
-       it belonged to. */
+    /* Never narrower than its own name — a fixed 62px cut "RIN orange"
+       off both sides of the pressed swatch's box, since the nowrap
+       label overflowed rather than wrapping. */
     min-width: 62px;
     padding: 7px 8px 6px;
     background: none;
@@ -1936,7 +1811,7 @@ html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
 
 /* ---- Scrollbars --------------------------------------------------- */
 
-/* Only inside the script's own panels: the page keeps the browser's. */
+/* Only inside the script's own panels — the page keeps the browser's. */
 .rr-palette__list,
 .rr-panel__body,
 .rr-sheet {
@@ -1977,28 +1852,27 @@ html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
     color: var(--rr-faint);
 }
 
-/* On a phone the groups stack and lose their hairline; the pull to the
-   left that hides a desktop hairline then cut the first letters off
-   "User Control Panel" and "Forum rules". */
+/* On a phone the groups stack and lose their hairline; the pull left
+   that hides a desktop hairline then cut the first letters off "User
+   Control Panel" and "Forum rules". */
 @media (max-width: 720px) {
     .rr-boardbar__main { margin-left: 0; }
     .rr-boardbar__group { padding-left: 0; border-left: 0; margin-right: 0; }
 }
 
-/* The optional noun on a topic-bar link (" topic", " friend") is a flex
-   item like the word before it, so the button's 6px gap sat between
-   them on top of the noun's own space. The gap is taken back and the
-   space kept, so "Previous topic" is spaced like two words. */
+/* The optional noun on a topic-bar link (" topic", " friend") is its
+   own flex item, so the button's 6px gap sat on top of its own
+   leading space. Taken back here so "Previous topic" is spaced like
+   two words. */
 .rr-topicbar .rr-opt { margin-left: -6px; white-space: pre; }
 
-/* A crumb that is a place, not a link: the control panel section the
-   window title named. It sits in the same shrinking flex row as the
-   linked crumbs before it, but had none of the treatment that lets
-   them ellipsize — a flex item's automatic minimum width is its full
-   nowrap content width unless overflow is something other than
-   visible, so on a narrow phone this span refused to shrink, overran
-   the crumbs bar's own clip, and read as a word guillotined mid-way
-   with no "more to see" cue rather than a title trimmed with one. */
+/* A crumb that is a place, not a link — the control panel section the
+   window title named. It shares the same shrinking flex row as the
+   linked crumbs before it, but had none of their ellipsis treatment:
+   a flex item's automatic minimum width is its full nowrap content
+   width unless overflow is something other than visible, so on a
+   narrow phone it refused to shrink and was guillotined by the crumb
+   bar's own clip instead of ellipsized. */
 .rr-nav__here {
     color: var(--rr-text-strong);
     font-weight: 600;
@@ -2019,8 +1893,8 @@ html[data-rr] input.rr-panel__search:focus { border-color: var(--rr-accent); }
 /* ---- Keyboard cursor on a listing ---------------------------------- */
 
 /* j/k walk the rows the way they walk the posts of a topic; the row
-   under the cursor is marked the way a hovered row is, plus a hairline
-   in the accent so a hovered row and the chosen one read differently. */
+   under the cursor is marked like a hovered row, plus an accent
+   hairline so hover and selection read differently. */
 html[data-rr] table[data-rr-list] tr[data-rr-cursor] > td { background: var(--rr-surface-3); }
 html[data-rr] table[data-rr-list] tr[data-rr-cursor] > td:first-child { box-shadow: inset 3px 0 0 var(--rr-accent); }
 
@@ -2031,7 +1905,7 @@ html[data-rr] table[data-rr-list] tr[data-rr-cursor] > td:first-child { box-shad
 .rr-minipager { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px 4px; font-weight: 400; }
 .rr-minipager__label { margin-right: 3px; font-size: var(--rr-fs-xs); color: var(--rr-faint); }
 /* In a listing's strip the words are the board's own link that asks
-   for a page number; it keeps that, quietly. */
+   for a page number; kept, quietly. */
 html[data-rr] a.rr-minipager__label { color: var(--rr-muted); font-weight: 500; text-decoration: none; }
 html[data-rr] a.rr-minipager__label:hover { color: var(--rr-text-strong); }
 html[data-rr] a.rr-minipager__page,
@@ -2053,15 +1927,15 @@ html[data-rr] a.rr-minipager__step { min-width: 0; padding: 0 9px; }
 
 /* ---- Loose strips between cards --------------------------------- */
 
-/* The "Go to page" strip a listing ends with, the "Page 1 of 5" line
-   over Who is online, the message folder's sort form: bare tables
-   dropped between two cards, with nothing holding them apart. */
+/* Bare tables the template drops between cards with nothing holding
+   them apart: a listing's "Go to page" strip, "Page 1 of 5" over Who
+   is online, the message folder's sort form. */
 html[data-rr] #wrapcentre table[data-rr-strip],
 html[data-rr] #wrapcentre table[data-rr-sortfoot] { margin: var(--rr-s3) 0; }
 html[data-rr] #wrapcentre table[data-rr-strip] td.nav,
 html[data-rr] #wrapcentre table[data-rr-strip] td.pagination { font-size: var(--rr-fs-sm); color: var(--rr-muted); }
-/* "Delete all board cookies | The team" is a bare span dropped
-   between two cards. A line of its own, quiet. */
+/* A bare span dropped between two cards ("Delete all board cookies |
+   The team") — given a line of its own, quiet. */
 html[data-rr] #wrapcentre > span.gensmall {
     display: block;
     margin: var(--rr-s2) var(--rr-s1) var(--rr-s3);
@@ -2072,9 +1946,8 @@ html[data-rr] #wrapcentre > span.gensmall {
 /* ---- Sort controls --------------------------------------------- */
 
 /* Each label and the select(s) it names, glued into one span by
-   lists.js (groupSortControls). white-space: nowrap keeps a wrap from
-   ever landing between a label and its own control — only between one
-   pair and the next. */
+   lists.js (groupSortControls); nowrap keeps a wrap from landing
+   inside a pair, only between one pair and the next. */
 html[data-rr] .rr-ctrl-group {
     display: inline-flex;
     align-items: center;
@@ -2083,7 +1956,6 @@ html[data-rr] .rr-ctrl-group {
 }
 html[data-rr] td.cat[data-rr-cat="controls"] > .rr-ctrl-group + .rr-ctrl-group,
 html[data-rr] td.cat[data-rr-cat="controls"] > .rr-ctrl-group + input { margin-left: var(--rr-s3); }
-/* The sort form itself: one wrapped row of pairs, the pairs apart. */
 html[data-rr] td.cat[data-rr-cat="controls"] > form,
 html[data-rr] #wrapcentre form[name="sortmsg"] {
     display: inline-flex;
@@ -2095,7 +1967,7 @@ html[data-rr] #wrapcentre form[name="sortmsg"] {
 }
 /* The topic search under the posts: the template floats its box, and
    the button wrapped under the input in the width the float left it.
-   One line, beside the sort form. */
+   One line instead, beside the sort form. */
 html[data-rr] #search-box_thread,
 html[data-rr] #wrapcentre #search-box:not([data-rr-dupe]) {
     float: none !important;
@@ -2114,9 +1986,9 @@ html[data-rr] #search-box_thread form {
     margin: 0;
     white-space: nowrap;
 }
-/* The field carries the floor every board text field gets (a size="22"
-   in ems); here that floor is wider than the line the box has, and the
-   button went under it. A fixed width, no floor, no growing. */
+/* The field inherits the board's default text-field floor (size="22"
+   in ems), wider than the line here — fixed width instead, no floor,
+   no growing. */
 html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] #search-box_thread input[type="text"],
 html[data-rr] #wrapcentre #search-box:not([data-rr-dupe]) input[type="text"] {
     width: 14em !important;
@@ -2126,24 +1998,21 @@ html[data-rr] #wrapcentre #search-box:not([data-rr-dupe]) input[type="text"] {
 
 /* ---- A post's header, on a desktop ------------------------------- */
 
-/* The strip is name, rank, meta, then the tools and the date. Left to
-   wrap, the tools dropped to a second line while the date stayed alone
-   at the right of the first — two lines saying what fits on one. The
-   meta line is the part with something to give: it already ends in an
-   ellipsis, and it is the only thing here that is not a control. */
+/* Left to wrap, the tools dropped to a second line while the date
+   stayed alone at the right of the first. The meta line gives way
+   first: it already ends in an ellipsis and isn't a control. */
 @media (min-width: 861px) {
     html[data-rr] .rr-posthead { flex-wrap: nowrap; }
-    /* The meta gives way first — it is the only thing here that is not
-       a control, and it already ends in an ellipsis. The tools may
-       still wrap inside themselves rather than push the page sideways,
-       which is what a 1280px window with a long "Location:" did. */
     html[data-rr] .rr-posthead__meta { flex: 0 100 auto; }
+    /* The tools may still wrap inside themselves rather than push the
+       page sideways, which is what a 1280px window with a long
+       "Location:" did. */
     html[data-rr] .rr-posthead .rr-posttools { flex: 0 1 auto; }
 }
-/* Wide enough that the controls always fit once the meta has given way:
-   they stop shrinking, so the last icon no longer drops to a line of
-   its own. Below this the tools may still wrap inside themselves,
-   which is the one thing that must never push the page sideways. */
+/* Wide enough that the controls always fit once the meta has given
+   way: they stop shrinking, so the last icon no longer drops to a
+   line of its own. Below this they may still wrap internally, which
+   is the one thing that must never push the page sideways. */
 @media (min-width: 1100px) {
     html[data-rr] .rr-posthead .rr-posttools { flex: 0 0 auto; }
 }
@@ -2151,8 +2020,8 @@ html[data-rr] #wrapcentre #search-box:not([data-rr-dupe]) input[type="text"] {
 /* ---- Strips of links the template joins with pipes ---------------- */
 
 /* "Previous PM in history | Next PM | …", "[ Add friend | Add foe ]",
-   "Mark all :: Unmark all": a row of links and the punctuation between
-   them. The punctuation goes and the gap says the same thing. */
+   "Mark all :: Unmark all": the punctuation goes and the gap says the
+   same thing. */
 html[data-rr] .rr-linkrow {
     display: flex;
     flex-wrap: wrap;
@@ -2171,8 +2040,8 @@ html[data-rr] .rr-linkrow[data-rr-align="right"] { justify-content: flex-end; }
 
 /* ---- A listing's headings ---------------------------------------- */
 
-/* Kept in view while their own listing is on screen. The top bar is
-   48px of sticky chrome above them when it is drawn. */
+/* Kept in view while their own listing is on screen — the top bar is
+   48px of sticky chrome above them when it's drawn. */
 html[data-rr][data-rr-sticky="on"] table[data-rr-list] > tbody > tr[data-rr-head] > th {
     position: sticky;
     top: 0;
@@ -2183,7 +2052,7 @@ html[data-rr][data-rr-sticky="on"][data-rr-nav="on"] table[data-rr-list] > tbody
     top: var(--rr-nav-h, 48px);
 }
 
-/* A heading that sorts. It is a button, and reads as the heading it
+/* A heading that sorts: a button that reads as the heading it
    replaced until it is pointed at. */
 html[data-rr] th[data-rr-sortable] { padding: 0; }
 html[data-rr] button.rr-sortbtn {
@@ -2210,10 +2079,8 @@ html[data-rr] button.rr-sortbtn:focus-visible { outline: 2px solid var(--rr-acce
 html[data-rr] th[data-rr-sorted] button.rr-sortbtn { color: var(--rr-text-strong); }
 .rr-sortmark { font-size: var(--rr-fs-xs); line-height: 1; opacity: .9; }
 
-/* Mark everything in a folder. */
 html[data-rr] input.rr-markall { margin: 0; vertical-align: middle; accent-color: var(--rr-accent); }
 
-/* The chip for rows with something new in them. */
 html[data-rr] .rr-tag--unread { display: inline-flex; align-items: center; }
 html[data-rr] .rr-tag--unread::before {
     content: "";
@@ -2254,16 +2121,12 @@ html[data-rr] .rr-lightbox__step:focus-visible { outline: 2px solid var(--rr-acc
 
 /* ---- The writing toolbar ------------------------------------------ */
 
-/* The board's BBCode buttons, regrouped by compose.js. What was two
-   undivided rows of grey rectangles is one bar in five groups: the
-   letter styles, the blocks, what is fetched from elsewhere, what is
-   hidden, and the board's own generator.
-
-   The groups are told apart by the space between them and nothing
-   else. A hairline would be read the same way, right up to the moment
-   the bar wraps on a narrow window and a line opens with a divider
-   against nothing — which is exactly what the board bar had to be
-   rebuilt to avoid. */
+/* The board's BBCode buttons, regrouped by compose.js into five
+   groups (letter styles, blocks, fetched-from-elsewhere, hidden, the
+   board's own generator) — was two undivided rows of grey rectangles.
+   Groups are told apart by space alone, not a hairline: a hairline
+   would read fine right up until the bar wraps on a narrow window and
+   a line opens with a divider against nothing. */
 .rr-bbtools {
     display: flex;
     flex-wrap: wrap;
@@ -2278,9 +2141,8 @@ html[data-rr] .rr-lightbox__step:focus-visible { outline: 2px solid var(--rr-acc
     gap: 6px;
 }
 
-/* The tooltip hangs off this wrapper rather than off the button: an
-   `input` is a replaced element and draws no pseudo-element, so
-   `input::after` is nothing at all. */
+/* The tooltip hangs off this wrapper rather than the button — an
+   input is a replaced element and draws no pseudo-element. */
 .rr-bbtool {
     position: relative;
     display: inline-flex;
@@ -2324,8 +2186,8 @@ html[data-rr] .rr-bbtool > input[data-rr-face="italic"] { font-style: italic; }
 html[data-rr] .rr-bbtool > input[data-rr-face="underline"] { text-decoration: underline; }
 html[data-rr] .rr-bbtool > input[data-rr-face="strike"] { text-decoration: line-through; }
 
-/* The font size menu, which the template leaves stranded at the end of
-   the first row with a label of its own. */
+/* The font size menu, stranded by the template at the end of the
+   first row with a label of its own. */
 .rr-bbtool--menu > span {
     display: inline-flex;
     align-items: center;
@@ -2336,10 +2198,10 @@ html[data-rr] .rr-bbtool > input[data-rr-face="strike"] { text-decoration: line-
 }
 html[data-rr] .rr-bbtool--menu select { height: 30px; padding: 0 6px; }
 
-/* The read-only field the board wrote its explanations into. It stays
-   in the page — `helpline()` sets its value on every mouseover of
-   every button, and a removed one throws on all of them — and stops
-   being a field the eye reads as a second Subject box. */
+/* The read-only field the board wrote its explanations into stays in
+   the page — helpline() sets its value on every mouseover of every
+   button and a removed one throws on all of them — and just stops
+   reading as a second Subject box. */
 html[data-rr] input[data-rr-helpbox] { display: none; }
 html[data-rr] tr[data-rr-helprow] > td { padding: 0 0 var(--rr-s2); }
 

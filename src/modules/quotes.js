@@ -1,39 +1,17 @@
-/* ------------------------------------------------------------------
-   Folding quotes.
+/* Folding quotes: other scripts fix long quoted replies by rebuilding the
+   quote node, which loses links/nested quotes and breaks under Trusted
+   Types. This only clips with overflow+mask, so the DOM, a11y tree and
+   find-in-page stay intact. */
 
-   A reply that quotes three paragraphs to add one line reads as four,
-   and a page of those is most of what makes a long thread hard to
-   skim. Every other script on this board fixes it by rebuilding the
-   quote node, which loses the links, the nested quotes and whatever
-   another script attached — and does not run at all under a Trusted
-   Types policy.
-
-   Nothing here removes anything: a folded quote is the same nodes with
-   `overflow` and a mask drawing a smaller box around them, so the text
-   stays laid out, in the accessibility tree, findable by find-in-page,
-   and visible to the finder, which reads the DOM.
-   ------------------------------------------------------------------ */
-
-/** Quote blocks in post content, outermost first.
-
-    A spoiler's body wears `.quotecontent` too on this board — the
-    board reuses the class — so a spoiler somebody opened was measured
-    as a quote and folded behind a "show more" of its own, one click
-    after they had just asked to see it. A spoiler is the board's own
-    fold and does not need a second one. */
+/** Quote blocks in post content, outermost first. Excludes spoilers, which
+    also wear `.quotecontent` on this board and already fold themselves. */
 function quoteBlocks(root = document) {
     return Array.from(root.querySelectorAll(".postbody .quotecontent, .postbody blockquote"))
         .filter((node) => !(node.parentElement && node.parentElement.classList.contains("spoiler")));
 }
 
-/**
- * The heading the board prints above a quote ("Someone wrote:").
- *
- * subsilver2 emits div.quotetitle immediately before div.quotecontent.
- * A <blockquote> carries its own <cite> inside instead. Either is a
- * label already sitting where the control belongs, so the toggle joins
- * it rather than adding a strip of its own.
- */
+/** The heading above a quote ("Someone wrote:"): subsilver2's div.quotetitle,
+    or a <blockquote>'s own <cite> — the toggle joins whichever exists. */
 function quoteHeading(quote) {
     const previous = quote.previousElementSibling;
     if (previous && previous.classList.contains("quotetitle")) return previous;
@@ -42,32 +20,20 @@ function quoteHeading(quote) {
     return null;
 }
 
-/**
- * How tall the fold would be for this quote, or null when it fits
- * within `lines` and is left alone. Reads only — see initQuotes for
- * why the reads and the writes are kept apart.
- */
+/** Fold height for this quote, or null if it fits within `lines`. Reads
+    only — see initQuotes for why reads and writes are kept apart. */
 function measureQuote(quote, lines) {
     if (quote.hasAttribute("data-rr-quote")) return null;
 
-    // Measured, not guessed: a quote of two long lines and a quote of
-    // six short ones are the same number of characters and only one of
-    // them is worth folding.
-    //
-    // Both numbers have to be content-box or the comparison is off by
-    // the padding: max-height below sizes the content box, while
-    // scrollHeight counts the padding too. Read together, a quote of
-    // exactly the limit measured a line and a bit over it and got
-    // folded to a box it already fitted — a control, a mask and a
-    // click, for nothing hidden.
+    // scrollHeight includes padding but max-height (below) is content-box;
+    // subtract padding here or a quote right at the limit gets folded to a
+    // box it already fits.
     const style = getComputedStyle(quote);
     const lineHeight = parseFloat(style.lineHeight) || 20;
     const padding = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
     const content = quote.scrollHeight - padding;
     const limit = lineHeight * lines;
-    // Half a line of slack, so a quote that spills by a word is left
-    // alone rather than folded to save four pixels.
-    if (content <= limit + lineHeight * 0.5) return null;
+    if (content <= limit + lineHeight * 0.5) return null; // half a line of slack
     return limit;
 }
 
@@ -95,9 +61,7 @@ function foldQuote(quote, limit) {
         setOpen(quote.getAttribute("data-rr-quote") === "folded");
     });
 
-    // Clicking the clipped body opens it too — the mask is an obvious
-    // "there is more here" and a reader should not have to find the
-    // control to act on it. Not on a link, which is still a link.
+    // Clicking the clipped body opens it too, not just the toggle; links stay links.
     quote.addEventListener("click", (event) => {
         if (quote.getAttribute("data-rr-quote") !== "folded") return;
         if (event.target.closest("a, button, input, textarea, select")) return;
@@ -116,20 +80,13 @@ function initQuotes() {
 
     const lines = clamp(Number(settings.get("foldQuotesLines")) || 6, 3, 16);
 
-    /* Every quote is measured first and only then is any of them
-       changed. Reading a height after writing to the page forces a
-       layout, one per quote when the two are interleaved; read
-       together they cost one. */
+    // All quotes measured first, then folded — interleaving read/write forces a layout per quote.
     const plan = quoteBlocks().map((quote) => ({ quote, limit: measureQuote(quote, lines) }));
 
     let folded = 0;
     for (const { quote, limit } of plan) {
         if (limit === null) continue;
-        // A quote nested inside one that is already folded would draw a
-        // control nobody can reach until the outer one opens, and the
-        // outer fold already hides it. Outermost come first in document
-        // order, so the outer fold is in place by the time the inner
-        // one is asked about.
+        // Skip quotes already hidden inside an outer fold (outermost fold first, in document order).
         if (quote.parentElement && quote.parentElement.closest('[data-rr-quote="folded"]')) continue;
         foldQuote(quote, limit);
         folded += 1;

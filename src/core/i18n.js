@@ -1,18 +1,8 @@
-/* ------------------------------------------------------------------
-   The script's own words, in the board's other language.
-
-   The board is bilingual and the script reads both halves (column
-   headers, page counters, weekdays — see lists.js and topic.js). What
-   it *says* — Reply, First unread, Releases, Show all 300 names — was
-   English on both. On the Russian interface that put a row of English
-   controls over a Russian page. These are those words, once each, with
-   the Russian beside them; the settings panel stays in English.
-
-   `t("Open all {n} spoilers", { n })` looks the key up when the page is
-   Russian and fills the braces either way. A Russian entry may be a
-   function of the variables, because Russian counts in three forms:
-   1 спойлер, 3 спойлера, 5 спойлеров.
-   ------------------------------------------------------------------ */
+/* The script's own UI strings, translated for the Russian half of this
+   bilingual board (see lists.js/topic.js for reading the board's own RU
+   text). `t(key, vars)` looks up `key` on a Russian page and fills `{vars}`;
+   an entry may be a function because Russian plurals have three forms
+   (1 спойлер, 3 спойлера, 5 спойлеров). */
 
 /** Russian plural: one / few / many, by the last digits. */
 function ruPlural(n, one, few, many) {
@@ -26,7 +16,6 @@ function ruPlural(n, one, few, many) {
 }
 
 const RU_WORDS = {
-    // The topic bar
     "Reply": "Ответить",
     "New topic": "Новая тема",
     "Open all {n} spoilers": ({ n }) => "Раскрыть все " + n + " " + ruPlural(n, "спойлер", "спойлера", "спойлеров"),
@@ -48,7 +37,6 @@ const RU_WORDS = {
     "Next topic": "Следующая тема",
     "Print view": "Версия для печати",
 
-    // Posts
     "Copy link to this post": "Скопировать ссылку на сообщение",
     "Copy as a quote": "Скопировать как цитату",
     "Show signature": "Показать подпись",
@@ -71,7 +59,6 @@ const RU_WORDS = {
     "Hide posts by {name}": "Скрыть сообщения {name}",
     "Hide posts by this member": "Скрыть сообщения этого участника",
 
-    // Listings
     "{n} on this page": "{n} на этой странице",
     "{a} of {b} on this page": "{a} из {b} на этой странице",
     "Filter this page by title": "Фильтр по названию",
@@ -89,7 +76,6 @@ const RU_WORDS = {
     "Show this section": "Показать раздел",
     "Subforums": "Подфорумы",
 
-    // The search box
     "This topic": "Эта тема",
     "This forum": "Этот форум",
     "Whole board": "Весь форум",
@@ -115,7 +101,6 @@ const RU_WORDS = {
     "Search options — looking in {where}": "Параметры поиска — ищет в «{where}»",
     "That forum": "Тот форум",
 
-    // Who is online
     "{n} online": "{n} онлайн",
     "{n} browsing": "{n} просматривают",
     "{n} registered": "{n} зарегистрированных",
@@ -124,7 +109,6 @@ const RU_WORDS = {
     "Show all {n} names": ({ n }) => "Показать все " + n + " " + ruPlural(n, "имя", "имени", "имён"),
     "Hide the list": "Скрыть список",
 
-    // The Releases panel
     "Releases": "Релизы",
     "Fold the Releases panel": "Свернуть панель релизов",
     "Open the Releases panel": "Открыть панель релизов",
@@ -188,7 +172,6 @@ const RU_WORDS = {
     "Language": "Локализация",
     "Tool": "Утилита",
 
-    // The quick reply
     "Write a reply": "Написать ответ",
     "Finish your reply": "Закончить ответ",
     "Loading the reply form…": "Загрузка формы…",
@@ -206,8 +189,7 @@ const RU_WORDS = {
     "Link": "Ссылка",
     "Spoiler": "Спойлер",
 
-    /* The writing toolbar on posting.php. The captions are what the
-       button says, so they are short; the tips are what it does. */
+    // posting.php toolbar: captions are the button's own short label, tips describe the action.
     "B": "Ж",
     "i": "К",
     "u": "П",
@@ -232,7 +214,6 @@ const RU_WORDS = {
     "Game details from Steam": "Данные об игре из Steam",
     "Text size": "Размер текста",
 
-    // The top bar
     "More": "Ещё",
     "Less": "Свернуть",
     "Unread": "Новое",
@@ -263,13 +244,9 @@ const RU_WORDS = {
     "RIN Reforged settings": "Настройки RIN Reforged",
     "Skip to content": "К содержимому",
 
-    // The Steam preview card. The board's own "Posted:" tooltip is
-    // taken off the title so this card can be the only thing that
-    // answers on hover, so the date it carried has to speak Russian
-    // here too.
+    // The Steam preview card replaces the board's own "Posted:" hover tooltip, so its date needs translating too.
     "Topic opened {when}": "Тема создана {when}",
 
-    // The command palette
     "Boards": "Разделы",
     "Recent": "Недавние",
     "Actions": "Действия",
@@ -287,7 +264,6 @@ const RU_WORDS = {
     "topic": "тема",
     "board": "раздел",
 
-    // Topics in the palette, and the pane beside it
     "Topics": "Темы",
     "wait {n}s": "подождите {n} с",
     "Reading that topic…": "Читаю тему…",
@@ -295,8 +271,7 @@ const RU_WORDS = {
     "Opened by {who}": "Создал {who}",
     "Enter to open": "Enter — открыть",
     "{n} pages": (vars) => {
-        // Страница / страницы / страниц: the count decides, and the
-        // teens are the exception that catches every naive rule.
+        // страница/страницы/страниц plural, with the teens as the exception.
         const n = Number(vars.n) || 0;
         const teens = n % 100 >= 11 && n % 100 <= 14;
         const last = n % 10;
@@ -306,11 +281,7 @@ const RU_WORDS = {
     },
 };
 
-/**
- * The word for the page's language, with `{name}` slots filled.
- * `currentLanguage()` (navbar.js) reads <html lang>; anything but
- * Russian gets the English key as written.
- */
+/** Looks up `key` for the page's language (via `currentLanguage()`) and fills `{vars}` slots. */
 function t(key, vars) {
     let text = key;
     if (currentLanguage() === "ru" && Object.prototype.hasOwnProperty.call(RU_WORDS, key)) {

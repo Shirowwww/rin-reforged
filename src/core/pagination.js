@@ -1,26 +1,19 @@
-/* ------------------------------------------------------------------
-   Pagination.
-
-   phpBB prints "1, 2, 3 ... 19, Next" and never a link to an arbitrary
-   page, so anything that wants to jump has to work the offsets out.
-
-   The approach follows the one worked out in the wefalltomorrow fork of
-   CS.RIN.RU Enhanced, rewritten without jQuery: read the numbered
-   anchors, derive the posts-per-page step from any two of them, and
-   synthesise the href for pages that have no link.
-   ------------------------------------------------------------------ */
+/* phpBB never links an arbitrary page ("1, 2, 3 ... 19, Next"), so jumping
+   means deriving offsets: read the numbered anchors, work out the
+   posts-per-page step from any two, then synthesise the href for the rest.
+   Approach follows the wefalltomorrow fork of CS.RIN.RU Enhanced, no jQuery. */
 
 /** Numbered page anchors on the page, as { page: {href, start} }. */
 function pageLinkMap(root = document) {
     const map = new Map();
     for (const link of root.querySelectorAll("a[href]")) {
         const label = link.textContent.trim();
-        if (!/^\d+$/.test(label)) continue;              // skip Go, Next, Previous
+        if (!/^\d+$/.test(label)) continue;
         const href = link.getAttribute("href");
         if (!href || !/viewtopic|viewforum|search|memberlist|viewonline|ucp\.php/.test(href)) continue;
 
         const page = parseInt(label, 10);
-        if (map.has(page)) continue;                     // first occurrence wins
+        if (map.has(page)) continue;
         const match = href.match(/[?&]start=(\d+)/);
         map.set(page, { href, start: match ? parseInt(match[1], 10) : 0 });
     }
@@ -44,9 +37,7 @@ function pageStep(map) {
 function totalPages() {
     let best = null;
     for (const cell of document.querySelectorAll("td.nav, .nav, .pagination")) {
-        // "Page 1 of 19", or "Страница 1 из 19" on the Russian interface.
-        // No \b before "из": a JavaScript word boundary is ASCII-only and
-        // never fires next to a Cyrillic letter.
+        // Matches EN "Page 1 of 19" and RU "из 19"; no \b before "из" since \b is ASCII-only.
         const match = cell.textContent.match(/(?:^|\s)(?:of|из)\s+(\d+)(?!\d)/);
         if (!match) continue;
         const value = parseInt(match[1], 10);
@@ -69,10 +60,7 @@ function currentPage() {
     return 1;
 }
 
-/**
- * A URL for the given page number: a real link when the template
- * printed one, otherwise the current URL with start= rewritten.
- */
+/** A URL for the given page: a real link if the template printed one, else start= rewritten. */
 function pageHref(page) {
     if (page < 1) return null;
 

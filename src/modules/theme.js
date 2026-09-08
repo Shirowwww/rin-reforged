@@ -1,9 +1,5 @@
-/* ------------------------------------------------------------------
-   Theme application.
-
-   Runs at document-start so the page never flashes the original
-   stylesheet, and re-runs on every settings change.
-   ------------------------------------------------------------------ */
+// Theme application: runs at document-start (before the original stylesheet
+// can flash) and again on every settings change.
 
 const ACCENTS = {
     brass:  { accent: "#e0a338", soft: "#4a3a1c", text: "#0e1013", light: "#a5701a", lightSoft: "#f5e6c8", lightText: "#ffffff" },
@@ -33,11 +29,9 @@ function applyTheme() {
     root.setAttribute("data-rr-page", PAGE.isTopic ? "topic" : PAGE.isForum ? "forum" : PAGE.isIndex ? "index" : PAGE.isSearch ? "search" : "other");
     root.setAttribute("data-rr-icons", settings.get("modernIcons") ? "on" : "off");
     root.setAttribute("data-rr-nav", settings.get("navbar") ? "on" : "off");
-    /* Whether the board's own header is replaced, which is not the
-       same question as whether the top bar is on: with the bar off the
-       board links row and the masthead still stand in for it. Set here
-       so the original 340px header never flashes; navbar.js corrects
-       it if nothing was actually built. */
+    // Distinct from the top-bar setting: board links or masthead alone also
+    // replace the header. Set early to avoid a flash; navbar.js corrects it
+    // if nothing was actually built.
     root.setAttribute("data-rr-header",
         settings.get("navbar") || settings.get("boardLinks") || settings.get("masthead") ? "rr" : "board");
     root.setAttribute("data-rr-sticky", settings.get("stickyHeads") ? "on" : "off");
@@ -51,20 +45,16 @@ function applyTheme() {
     root.style.setProperty("--rr-accent", ink);
     root.style.setProperty("--rr-accent-soft", soft);
     root.style.setProperty("--rr-accent-text", isLight ? accent.lightText : accent.text);
-    /* The accent used as text on its own soft wash — a pressed filter
-       chip, the count on a settings tab. On the light theme the raw
-       accent read at 3.3:1 there; it is lifted toward black or white
-       until it clears 4.5, and left as it is where it already does. */
+    // Accent-as-text on its own soft wash (filter chip, tab count) read 3.3:1
+    // on the light theme; lifted toward black/white until it clears 4.5.
     const lifted = readableInk(parseColour(ink), parseColour(soft), 4.5);
     root.style.setProperty("--rr-accent-on-soft", lifted ? rgbText(lifted) : ink);
     root.style.setProperty("color-scheme", isLight ? "light" : "dark");
 }
 
-/** The forum ships no viewport tag, which is why phones get a 1000px
-    page scaled down to unreadable. */
+/** The forum ships no viewport tag, so phones get the 1000px page scaled down unreadable. */
 function ensureViewport() {
-    // <head> may not exist yet at document-start; the tag is only
-    // needed before layout, so waiting for it is fine.
+    // <head> may not exist yet at document-start; safe to wait since layout hasn't happened.
     const place = () => {
         if (!document.head) return false;
         let meta = document.querySelector('meta[name="viewport"]');
@@ -98,28 +88,17 @@ function initTheme() {
     }
 }
 
-/* ---- The board's own colours, kept and made readable --------------- */
-
-/* The board's own inline colours, kept and lifted.
-
-   Group-coloured usernames come out at 2.5:1 on the dark themes and
-   1.9:1 on the light one, and the "[[Please login to see this link.]]"
-   marker at 3.1. Each keeps its hue and its saturation and moves only
-   in lightness, by the smallest step that reads against whatever is
-   actually behind it. Only colours the board wrote inline, only where
-   they fail; the original stays on the element.
-
-   One threshold for everything, a little over the 4.5 the rest of the
-   web is held to and well over the 3 WCAG allows large text: two
-   thresholds meant this pass and test/contrast.js could disagree about
-   one span in a signature and both be right. */
+// The board's own inline colours (group-coloured usernames at 2.5:1 dark /
+// 1.9:1 light, the login-to-see-link marker at 3.1) are lifted in lightness
+// only, by the smallest step that clears contrast against their actual
+// backdrop; the original value is kept on the element. One shared threshold,
+// slightly above the usual 4.5, so this pass and test/contrast.js can't disagree.
 const INK_TARGET = 4.75;
 
 function readableBoardInk() {
     if (!settings.get("readableInk")) return;
 
-    // The end of the mix: the theme's own strongest text colour, so a
-    // lifted username lands in this palette rather than beside it.
+    // Lift toward the theme's own strongest text colour, so results land in-palette.
     const toward = parseColour(
         getComputedStyle(document.documentElement).getPropertyValue("--rr-text-strong").trim())
         || null;

@@ -1,25 +1,11 @@
-/* ------------------------------------------------------------------
-   Writing a reply.
-
-   Replying means leaving the thread for posting.php and coming back,
-   which loses your place in a 19 page topic. This fetches the real
-   reply form and puts it at the foot of the thread.
-
-   The form that gets submitted is the board's own, tokens and all:
-   nothing here forges a post or works around a restriction. If the
-   board would refuse the post, it still refuses it.
-   ------------------------------------------------------------------ */
+// Fetches the real posting.php reply form into the foot of the thread, so
+// replying doesn't lose your place in a long topic. Submits the board's own
+// form, tokens and all — nothing here forges a post or bypasses a restriction.
 
 let quickReplyForm = null;
 
-/* ---- Drafts --------------------------------------------------------
-
-   A quick reply is written in a box at the foot of a page that is full
-   of links, and following one of them throws it away — which is the
-   oldest complaint about writing anything in a browser. Kept here
-   against the topic id, in this browser, never sent anywhere, and
-   dropped the moment the reply is submitted.
-   -------------------------------------------------------------------- */
+// Drafts are kept locally against the topic id, never sent anywhere, and
+// dropped once the reply is submitted — following a link used to lose them.
 
 const DRAFT_KEY = "drafts";
 const DRAFT_MAX = 20000;
@@ -57,7 +43,6 @@ function clearDraft(topicId) {
     store.set(DRAFT_KEY, all);
 }
 
-/** Fetch the reply page and lift its form out of the response. */
 async function fetchReplyForm() {
     const url = new URL("./posting.php", location.href);
     url.searchParams.set("mode", "reply");
@@ -74,11 +59,8 @@ async function fetchReplyForm() {
     return form;
 }
 
-/**
- * Strip the form down to what a quick reply needs: the message box,
- * the hidden state, and one submit button. Preview, poll options and
- * attachment panels stay on the full page where they belong.
- */
+// Strips the form to what a quick reply needs: message box, hidden state, one
+// submit button. Preview, polls and attachments stay on the full page.
 function slimReplyForm(form) {
     const message = form.querySelector('textarea[name="message"]');
     if (!message) throw new Error("no message field");
@@ -95,14 +77,12 @@ function slimReplyForm(form) {
 
     message.classList.add("rr-reply__text");
     message.setAttribute("rows", "6");
-    // The template wires the box to editor.js — storeCaret(this) on
-    // select, click and keyup, initInsertions() on focus — and that
-    // script is not loaded on a topic page. Every keystroke threw.
+    // Template wires the box to editor.js handlers, which isn't loaded here —
+    // every keystroke threw without stripping them.
     for (const handler of ["onselect", "onclick", "onkeyup", "onfocus", "onblur", "onchange"]) message.removeAttribute(handler);
     message.setAttribute("placeholder", t("Write a reply"));
 
-    // What was being written last time, if anything. The board's own
-    // form arrives empty, so this can only ever add.
+    // The board's own form arrives empty, so a restored draft can only add.
     if (settings.get("saveDraft") && PAGE.topicId && !message.value.trim()) {
         const kept = draftFor(PAGE.topicId);
         if (kept) message.value = kept;
@@ -128,9 +108,7 @@ function slimReplyForm(form) {
     return { slim, message };
 }
 
-/* The tags a reply most often needs, one press each. The full editor
-   has the whole toolbar; the quick reply had none, and a quote or a
-   spoiler meant typing the tags by hand. Face, name, opening, closing. */
+// The tags a reply needs most often, one press each: face, name, open, close.
 const REPLY_TOOLS = [
     ["B", "Bold", "[b]", "[/b]"],
     ["I", "Italic", "[i]", "[/i]"],
@@ -177,9 +155,7 @@ function buildQuickReply() {
     ]);
     holder.append(openButton);
 
-    // Say so on the button rather than only revealing it once opened:
-    // an unsent reply nobody is told about is an unsent reply nobody
-    // comes back to.
+    // Flagged on the button itself, not only once opened, so a draft isn't forgotten.
     const kept = settings.get("saveDraft") && PAGE.topicId ? draftFor(PAGE.topicId) : "";
     if (kept) {
         openButton.lastChild.textContent = t("Finish your reply");
@@ -188,8 +164,7 @@ function buildQuickReply() {
     }
 
     const setLabel = (text) => {
-        // textContent would take the icon with it, and the button comes
-        // back without one after a failure.
+        // textContent would take the icon with it too.
         const label = openButton.lastChild;
         if (label && label.nodeType === 3) label.textContent = text;
         else openButton.append(document.createTextNode(text));
@@ -205,8 +180,6 @@ function buildQuickReply() {
             holder.append(slim);
             quickReplyForm = message;
             message.focus();
-            // Caret at the end of what was already written, not in
-            // front of it.
             message.setSelectionRange(message.value.length, message.value.length);
         } catch (err) {
             console.warn("[RIN Reforged] quick reply:", err);
@@ -221,12 +194,8 @@ function buildQuickReply() {
     return holder;
 }
 
-/* ---- Quote what is selected --------------------------------------- */
-
-/**
- * Selecting text inside a post offers a Quote button. It goes into the
- * quick reply if it is open, and onto the clipboard if it is not.
- */
+// Selecting text in a post offers a Quote button: into the quick reply if
+// it's open, onto the clipboard if not.
 function initSelectionQuote() {
     let bubble = null;
 
@@ -260,8 +229,7 @@ function initSelectionQuote() {
                     quickReplyForm.scrollIntoView({ behavior: scrollBehaviour(), block: "center" });
                     toast(t("Added to your reply"));
                 } else if (settings.get("saveDraft") && settings.get("quickReply") && PAGE.topicId) {
-                    // No box open: it goes into the draft for this
-                    // topic, so opening the reply later finds it there.
+                    // No box open: goes into the topic's draft so the reply finds it later.
                     const kept = draftFor(PAGE.topicId);
                     setDraft(PAGE.topicId, kept ? kept + "\n" + quoted : quoted);
                     copyText(quoted, "Quote copied, and kept for your reply");
@@ -279,29 +247,20 @@ function initSelectionQuote() {
     document.addEventListener("keydown", (event) => { if (event.key === "Escape") hide(); });
 }
 
-/* ---- Entry point ---------------------------------------------------- */
-
 function initCompose() {
     if (!PAGE.isTopic) return;
     if (!isLoggedIn()) return;                 // both features need an account
 
     if (settings.get("quickReply")) {
-        // The board answers "can this person reply here?" by printing a
-        // reply link, or not printing one. That is the whole test.
-        //
-        // The previous check read `img[alt*=locked], a[mode=reply]` and
-        // treated a match as "not locked" — so a locked topic, which
-        // shows a padlock and no reply link, matched on the padlock and
-        // got a reply box that could only ever be refused on submit.
+        // The board's whole test for "can this person reply" is whether it
+        // printed a reply link. A prior check matched on the padlock icon
+        // instead, so locked topics got a reply box refused only on submit.
         const canReply = Boolean(document.querySelector('a[href*="mode=reply"]'));
         const anchor = document.querySelector("#pagecontent") || document.querySelector("#wrapcentre");
         if (anchor && canReply) {
             anchor.append(buildQuickReply());
-            /* The board's own "Reply to topic" button sits 40px above
-               this card, and the bar at the top of the page has one
-               too. Two orange buttons that say the same thing, one over
-               the other. The cell goes; the link stays in the page for
-               the fallback below. */
+            // Hides the board's own reply button (redundant with this card),
+            // but keeps the link itself for the fallback below.
             for (const link of document.querySelectorAll('a[href*="mode=reply"]')) {
                 if (link.closest(".rr-topicbar, .rr-reply")) continue;
                 const cell = link.closest("td");
@@ -313,16 +272,9 @@ function initCompose() {
     if (settings.get("selectionQuote")) initSelectionQuote();
 }
 
-/* ---- The posting options ------------------------------------------ */
-
-/* "Notify me when a reply is posted", "Attach a signature", "Disable
-   BBCode": five checkboxes under every message box, reset to the
-   board's defaults every single time. Whatever was ticked when a post
-   was last written is ticked again on the next one.
-
-   Only when writing something new. Editing an existing post loads that
-   post's own options, and overwriting them would quietly change what
-   is already published. */
+// The board resets these five checkboxes to its defaults every time; this
+// remembers the last choice, but only for new posts — editing an existing
+// one must keep loading that post's own saved options, not overwrite them.
 const POSTING_OPTIONS = ["disable_bbcode", "disable_smilies", "disable_magic_url", "attach_sig", "notify"];
 
 function initPostingMemory() {
@@ -345,24 +297,13 @@ function initPostingMemory() {
     }
 }
 
-/* ---- The writing toolbar -------------------------------------------
+// The board's own BBCode bar is unlabelled grey rectangles whose explanation
+// sits in a separate full-width field below. This redresses each button with
+// a caption/icon/tooltip instead, grouped — without touching bbstyle(),
+// accesskeys or onclick, since those key off the `bbtags` array, not the face.
+// The helpbox stays in the page (hidden): helpline() still writes to it on hover.
 
-   The board's own BBCode bar is sixteen grey rectangles reading "s",
-   "[*]", "List=" and "spoiler=", and what each one does is written
-   nowhere on it: the explanation goes into a read-only field under the
-   bar, full width, which reads as a second Subject box. So the caption
-   says what the button makes, an icon repeats it, the bar is cut into
-   groups, and the explanation becomes the same tooltip every other
-   control here uses.
-
-   Nothing about the button changes but its face: `bbstyle()` works off
-   the `bbtags` array and never off a caption, the accesskeys and the
-   onclick stay, and the helpbox stays in the page (hidden) because
-   `helpline()` writes into it on every mouseover.
-   -------------------------------------------------------------------- */
-
-/* Keyed by the input's name for the tags phpBB numbers itself, which
-   is stable and the same in both languages. */
+// Keyed by the input's name for tags phpBB numbers itself (stable, both languages).
 const BB_BY_NAME = {
     addbbcode0:   { label: "B", face: "bold", tip: "Bold" },
     addbbcode2:   { label: "i", face: "italic", tip: "Italic" },
@@ -377,9 +318,7 @@ const BB_BY_NAME = {
     addsteaminfo: { label: "SteamInfo", icon: "game", tip: "Game details from Steam" },
 };
 
-/* The board's own added BBCodes are numbered in whatever order the
-   admin defined them, so those are keyed by the tag itself — which is
-   what the button already says. */
+// Board-added BBCodes are numbered in admin-defined order, so keyed by tag.
 const BB_BY_TAG = {
     "s":        { label: "S", face: "strike", tip: "Strikethrough" },
     "spoiler":  { label: "Spoiler", icon: "hide", tip: "Hide text until clicked" },
@@ -387,10 +326,8 @@ const BB_BY_TAG = {
     "youtube":  { label: "YouTube", icon: "play", tip: "Embed a YouTube video" },
 };
 
-/* What belongs beside what: the letter styles, then the blocks, then
-   what is fetched from somewhere else, then what is hidden, then the
-   board's own generator. A key is a button name, or a tag written
-   `tag:`. */
+// Grouping order: letter styles, blocks, fetched-elsewhere, hidden, generator.
+// A key is a button name, or a tag written `tag:`.
 const BB_GROUPS = [
     ["addbbcode0", "addbbcode2", "addbbcode4", "tag:s"],
     ["addbbcode6", "addbbcode8", "addbbcode10", "addbbcode12", "addlistitem"],
@@ -399,22 +336,15 @@ const BB_GROUPS = [
     ["addsteaminfo"],
 ];
 
-/**
- * The board's own help text, out of the inline `help_line` table it
- * writes beside the toolbar.
- *
- * Only ever used for a BBCode this script has no entry for — one the
- * board has added since — so that an unknown button still says
- * something rather than nothing.
- */
+// The board's help text from its inline `help_line` table, used only as a
+// fallback for a BBCode this script has no entry for.
 function boardHelpLines() {
     const table = {};
     for (const script of document.querySelectorAll("script:not([src])")) {
         const text = script.textContent || "";
         const at = text.indexOf("help_line");
         if (at < 0 || !/var\s+help_line\s*=/.test(text)) continue;
-        // No value in that object contains a brace, so the first one
-        // after it closes the literal.
+        // No value contains a brace, so the first one after it closes the literal.
         const body = text.slice(at, text.indexOf("}", at));
         const entry = /([A-Za-z_]\w*)\s*:\s*'((?:[^'\\]|\\.)*)'/g;
         let match;
@@ -430,22 +360,15 @@ function helpKeyOf(input) {
     return match ? match[1] : null;
 }
 
-/**
- * Draw one button as a tool: a caption that says what it makes, an
- * icon beside it, and its name on a label above it.
- *
- * The tooltip goes on a wrapper rather than on the input, because a
- * replaced element draws no pseudo-elements — `input::after` is
- * nothing at all, which is the reason the board needed a field for
- * this in the first place.
- */
+// Tooltip goes on a wrapper, not the input: a replaced element draws no
+// pseudo-elements, so `input::after` is nothing — the reason the board
+// needed a separate field for this in the first place.
 function dressTool(input, spec, fallbackTip) {
     const tip = spec ? t(spec.tip) : fallbackTip;
     const holder = el("span.rr-bbtool", { "data-rr-tip": tip, "data-rr-tip-side": "above" });
 
     if (spec) {
-        // The template types a width and a text-decoration into every
-        // one of these; both are wrong once the caption is a word.
+        // The template's inline width/text-decoration are wrong once the caption is a word.
         input.removeAttribute("style");
         input.value = t(spec.label);
         if (spec.face) input.setAttribute("data-rr-face", spec.face);
@@ -458,8 +381,8 @@ function dressTool(input, spec, fallbackTip) {
     return holder;
 }
 
-/** Above the button, and inside the window: a label centred on a
-    button at either edge of a narrow screen hangs off the page. */
+// Keeps the label inside the window on a narrow screen, where a centred
+// tooltip on an edge button would hang off the page.
 function clampTip(holder) {
     const box = holder.getBoundingClientRect();
     const room = 130;
@@ -473,8 +396,7 @@ function initPostingToolbar() {
     const buttons = Array.from(document.querySelectorAll("#wrapcentre input.btnbbcode"));
     if (!buttons.length) return;
 
-    /* Where the buttons came from, read before any of them is moved:
-       once one is in the new bar its `closest("td")` is the bar. */
+    // Read before any button moves: once in the new bar, closest("td") is the bar.
     const cells = new Set(buttons.map((input) => input.closest("td")).filter(Boolean));
     const home = buttons[0].closest("td");
     if (!home) return;
@@ -483,8 +405,7 @@ function initPostingToolbar() {
     const pool = new Map();
     for (const input of buttons) {
         pool.set("name:" + (input.getAttribute("name") || ""), input);
-        // First one wins: two BBCodes cannot share a tag, but a stray
-        // duplicate must not take a named button's place.
+        // First one wins, so a stray duplicate can't take a named button's place.
         const tag = "tag:" + input.value.trim();
         if (!pool.has(tag)) pool.set(tag, input);
     }
@@ -508,9 +429,8 @@ function initPostingToolbar() {
             const tool = take(key);
             if (tool) group.append(tool);
         }
-        /* The font size menu is a letter style like the three beside
-           it, and the board leaves it stranded at the end of the first
-           row wearing a label of its own. */
+        // The font size menu is a letter style too, but the board leaves it
+        // stranded at the end of the row with its own label.
         if (keys[0] === "addbbcode0") {
             const size = document.querySelector('#wrapcentre select[name="addbbcode20"]');
             const label = size && size.closest("span");
@@ -522,10 +442,8 @@ function initPostingToolbar() {
         if (group.childElementCount) bar.append(group);
     }
 
-    /* A BBCode the board has added since this was written: it keeps
-       its own caption, and the board's own help line becomes its
-       tooltip. Better an unfamiliar button that explains itself than
-       one this script quietly drops. */
+    // A BBCode added since this was written: keeps its caption, gets the
+    // board's help line as a tooltip, rather than being silently dropped.
     const strays = buttons.filter((input) => !taken.has(input));
     if (strays.length) {
         const group = el("div.rr-bbtools__group");
@@ -541,10 +459,8 @@ function initPostingToolbar() {
         holder.addEventListener("focusin", () => clampTip(holder));
     }
 
-    /* The buttons come out of two table rows. The first takes the
-       toolbar — it also holds the inline scripts the board runs there,
-       which are left exactly where they are — and any row left with no
-       control on it goes. */
+    // Buttons come from two table rows; `home` keeps the board's own inline
+    // scripts, so the bar goes there. Any row left with no control is hidden.
     home.append(bar);
     for (const cell of cells) {
         if (cell !== home && !cell.querySelector("input, select, a, textarea")) {
@@ -553,9 +469,8 @@ function initPostingToolbar() {
         }
     }
 
-    /* The field the board wrote the explanation into. It stays in the
-       page and it stays a field: `helpline()` sets its value on every
-       mouseover, and a removed one throws on all of them. */
+    // Stays a field (only hidden): helpline() sets its value on every mouseover
+    // and throws if it's been removed.
     const helpbox = document.querySelector('#wrapcentre input[name="helpbox"]');
     if (helpbox) {
         helpbox.setAttribute("data-rr-helpbox", "");
@@ -568,18 +483,9 @@ function initPostingToolbar() {
     movePaletteHeading();
 }
 
-/**
- * "Font colour" belongs to the swatches, so it goes in their cell.
- *
- * The board writes it in the cell above them — the row that also
- * carries the help field — which reads correctly only while the two
- * rows are drawn as a grid. On a phone the rows unpack and the heading
- * lands above the message box with its swatches a screen below it.
- *
- * Found by position rather than by its words, which are translated:
- * the cell in the same column, one row up. markShapes() (lists.js) has
- * named the palette by the time this runs.
- */
+// "Font colour" reads correctly next to the board's own row only as a grid;
+// on a phone the rows unpack and the heading strands above the message box.
+// Moved by position (one row up, same column), not by its translated text.
 function movePaletteHeading() {
     const palette = document.querySelector("#wrapcentre table[data-rr-palette]");
     const cell = palette && palette.closest("td");

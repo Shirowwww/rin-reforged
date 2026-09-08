@@ -4640,6 +4640,78 @@ const CHECKS = [
         },
     },
     {
+        /* The commonest shape on a busy game thread, and the one no
+           earlier rule saw: somebody answering at length and linking
+           to wherever the thing lives. It is not a question, not a
+           failure report and does not open with a mention, so the
+           rules written for those all pass it — and it carries a
+           version, three release words and an off-site link.
+
+           Labelled by hand off 885 real posts of the 429 page HITMAN
+           topic, 35 of the 73 rows it produced were this. */
+        name: "releases: explaining what to do is not handing it over",
+        url: KINDS,
+        run: () => {
+            const said = Array.from(document.querySelectorAll(".rr-releases__row"))
+                .map((node) => node.textContent);
+            const wrong = said.filter((text) => /helper/.test(text));
+            return wrong.length ? "advice listed as a release: " + wrong[0].slice(0, 90) : null;
+        },
+    },
+    {
+        /* A build you unzip and run. Two of the Black Flag releases
+           matched no kind at all without a word for it, and a row
+           needs one. */
+        name: "releases: a build you unzip and run has a word for it",
+        url: KINDS,
+        run: () => {
+            const row = Array.from(document.querySelectorAll(".rr-releases__row"))
+                .find((node) => /zipper/.test(node.textContent));
+            if (!row) return "the pre-installed release was not listed";
+            const tags = Array.from(row.querySelectorAll(".rr-releases__tag")).map((n) => n.textContent.trim());
+            return tags.includes("Pre-installed") ? null : "tagged " + (tags.join(", ") || "(nothing)");
+        },
+    },
+    {
+        /* Release names are written run together — EpicCrack,
+           CrackFix, ACBlackFlagFix — and there is no word boundary in
+           the middle of a word, so a post handing over a modded
+           EpicCrack matched no kind and was never listed. */
+        name: "releases: a capital letter is a word boundary too",
+        url: KINDS,
+        run: () => {
+            const row = Array.from(document.querySelectorAll(".rr-releases__row"))
+                .find((node) => /compounder/.test(node.textContent));
+            if (!row) return "the run-together release name was not recognised at all";
+            const tags = Array.from(row.querySelectorAll(".rr-releases__tag")).map((n) => n.textContent.trim());
+            return tags.includes("Crack") ? null : "tagged " + (tags.join(", ") || "(nothing)");
+        },
+    },
+    {
+        /* The board wraps a link to a filehost it distrusts in a
+           placeholder, a warning sign and a note, and none of it was
+           typed by the person posting. All of it was landing in the
+           post's own words: a release read as starting "buzzheavier
+           .com link ⚠ Malicious ads - [READ ME] This site shows fake
+           download pages with malware…", forty words of boilerplate
+           in front of every excerpt on the board. */
+        name: "releases: the board's warning on a link is not the post's words",
+        url: KINDS,
+        run: () => {
+            const row = Array.from(document.querySelectorAll(".rr-releases__row"))
+                .find((node) => /warned/.test(node.textContent));
+            if (!row) return "the release behind a warned link was not listed";
+            const excerpt = row.querySelector(".rr-releases__link").getAttribute("title") || "";
+            if (/Malicious ads|stay safe|READ ME/.test(excerpt)) {
+                return "the excerpt is the board's warning: " + excerpt.slice(0, 90);
+            }
+            if (!/Sovereign Tower/.test(excerpt)) return "the excerpt lost the post: " + excerpt.slice(0, 90);
+            // And the link behind the placeholder is still counted.
+            const hosts = Array.from(row.querySelectorAll(".rr-releases__host")).map((n) => n.textContent.trim());
+            return hosts.includes("Buzzheavier") ? null : "hosts read " + (hosts.join(", ") || "(none)");
+        },
+    },
+    {
         /* The results page could refine a query and not move it: a
            search of titles in one forum that found nothing had to be
            retyped into the full form to become a search of every post. */

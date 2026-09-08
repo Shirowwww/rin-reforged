@@ -1,29 +1,21 @@
-/* ------------------------------------------------------------------
-   Mobile.
-
-   The forum ships no viewport meta and lays everything out in fixed
-   tables, so on a phone it is a horizontal scroll of 11px text. The
-   script injects the viewport tag; these rules unpack the tables.
-
-   Layout modules tag cells with data-rr-col so the rules below can be
-   specific instead of guessing at :nth-child.
-   ------------------------------------------------------------------ */
+/* Mobile. The forum ships no viewport meta and lays out in fixed tables,
+   so on a phone it's a horizontal scroll of 11px text — the script
+   injects the viewport tag and these rules unpack the tables. Layout
+   modules tag cells with data-rr-col so rules below can target them
+   directly instead of guessing at :nth-child. */
 
 @media (max-width: 860px) {
-    /* The optional nouns on the topic bar's second row. */
     html[data-rr] .rr-topicbar .rr-opt { display: none; }
 
-    /* A profile or control panel form puts its labels in cells aligned
-       right, against the value in the next cell. Stacked, the label sat
-       at the right edge above a value at the left: read as a column,
-       they belong on the same side. */
+    /* A profile/control-panel form right-aligns labels against the value
+       in the next cell; stacked, the label sat at the right edge above a
+       left-aligned value — read as a column they belong on the same
+       side. */
     html[data-rr] #wrapcentre td[align="right"]:not([data-rr-col]) { text-align: left; }
 
-    /* A form row that is a checkbox in one cell and its words in the
-       next: stacked, the box sat on a line of its own above "Disable
-       BBCode". The row stays a row. */
-    /* !important: the generic table rules above carry a class more
-       than this attribute does, and would stack the row again. */
+    /* A checkbox-then-words form row stacked into two lines; !important
+       because the generic table rules above carry a class more than
+       this attribute and would stack it again. */
     html[data-rr] #wrapcentre tr[data-rr-check-row] {
         display: flex !important;
         align-items: center;
@@ -35,12 +27,10 @@
         padding: 4px 0 !important;
     }
 
-    /* The colour palette flows to the width it has (forum.css lays it
-       out as a wrapped row of squares). */
     html[data-rr] table[data-rr-palette] { width: auto; max-width: 100%; }
 
     /* Content width is a desktop setting; on a phone the window is the
-       constraint whatever it says. */
+       constraint regardless. */
     html[data-rr] { --rr-content-max: 100%; --rr-measure: none; }
 
     html[data-rr] #wrapcentre,
@@ -48,21 +38,20 @@
     html[data-rr] #wrapcentre { padding-top: var(--rr-s3); }
 
     html[data-rr] .rr-nav { padding: 0 var(--rr-s2); gap: var(--rr-s2); }
-    /* The wordmark is 10 times as wide as it is tall, so a couple of
-       pixels off its height is 20px of a 390px bar. */
+    /* The wordmark is 10x as wide as tall, so a couple px off its height
+       is 20px of a 390px bar. */
     html[data-rr] .rr-nav__logo { height: 12px; }
     html[data-rr] .rr-nav__brand { height: 34px; padding-right: var(--rr-s2); }
 
-    /* The prefix chips are a filter here, not a label on a title: 18px
-       is a fine badge and a poor thing to hit with a thumb. */
+    /* Prefix chips are a filter here, not a title label: 18px is a fine
+       badge and a poor thumb target. */
     html[data-rr] .rr-toolbar__tags .rr-tag,
     html[data-rr] .rr-toolbar__quick .rr-tag { height: 26px; padding: 0 10px; }
-    /* Collapsed to a bare glyph, this control kept the desktop pill's
-       frame — a border and a sunken fill — so it sat in the bar as a
-       boxed search field beside two borderless icon buttons: three
-       controls that open the same kind of thing, drawn as two
-       different kinds of control. It takes the icon button's own look
-       here, sized to match the tap targets below. */
+    /* Collapsed to a bare glyph, this kept the desktop pill's bordered
+       sunken frame, drawing as a boxed field beside two borderless icon
+       buttons — three controls opening the same kind of thing in two
+       different styles. Takes the icon button's look instead, sized to
+       match the tap targets below. */
     html[data-rr] .rr-nav__search {
         min-width: 0;
         width: 34px;
@@ -82,9 +71,9 @@
     html[data-rr] .rr-nav__search span,
     html[data-rr] .rr-nav__kbd { display: none; }
 
-    /* subsilver2 nests unclassed layout tables inside the data tables:
-       pagination strips, button rows, the profile block. Each one keeps
-       a table's intrinsic minimum width, so they are unpacked too. */
+    /* subsilver2 nests unclassed layout tables inside the data tables
+       (pagination strips, button rows, the profile block); each keeps a
+       table's intrinsic minimum width, so these are unpacked too. */
     html[data-rr] #wrapcentre table:not(.tablebg):not(.forumline),
     html[data-rr] #wrapcentre table:not(.tablebg):not(.forumline) > tbody,
     html[data-rr] #wrapcentre table:not(.tablebg):not(.forumline) > tbody > tr,
@@ -94,9 +83,9 @@
         max-width: 100%;
     }
 
-    /* Tables stop being grids and become stacked blocks. overflow is
-       left visible: with the rows as flex containers, hiding it clips
-       any cell that wraps to a second line. */
+    /* Tables become stacked blocks. overflow stays visible: with rows as
+       flex containers, hiding it clips any cell that wraps to a second
+       line. */
     html[data-rr] table.tablebg,
     html[data-rr] table.forumline { display: block; overflow: visible; }
     html[data-rr] table.tablebg > tbody,
@@ -114,35 +103,32 @@
     html[data-rr] table.forumline > tbody > tr > td {
         display: block;
         width: auto !important;
-        /* Flex items default to min-width:auto, which refuses to shrink
-           below the widest word — a long list item then sets the page
-           width. */
+        /* Flex items default to min-width:auto, refusing to shrink below
+           the widest word — a long list item would set the page width. */
         min-width: 0;
         max-width: 100%;
-        /* The template pins cells with height="30". On a table cell that
-           is a minimum and the row grows past it; on a block it is the
-           height, and the content simply leaves: the Statistics block on
-           the index drew its last two lines below its own card, over the
-           next one. */
+        /* The template pins cells with height="30": a minimum on a table
+           cell, but the height on a block, so content simply overflows
+           it — the index's Statistics block drew its last lines below
+           its own card, over the next one. */
         height: auto;
         padding: 0;
         border: 0;
         background: none;
     }
     /* Column headers mean nothing once the columns are gone; the row
-       has to go with them or it leaves a padded empty band. */
+       goes with them or it leaves a padded empty band. */
     html[data-rr] table.tablebg > tbody > tr > th { display: none; }
     html[data-rr] table.tablebg > tbody > tr:has(> th):not(:has(> td)) { display: none; }
 
-    /* Topic and forum rows as cards. The marker and the title share the
-       first line — the marker used to sit alone on a line of its own,
-       with the title forced under it — the description sits under the
-       title in the small muted face, the counters make one quiet line
-       with no boxes drawn around them, and the last post is a line of
-       text rather than a full-width bar. */
-    /* Written as table.tablebg > tbody > tr > td[...]: the generic cell
-       rules above are that specific, and a plain td[data-rr-col] lost
-       its min-width to their `min-width: 0`. */
+    /* Topic/forum rows as cards: marker and title share the first line
+       (the marker used to sit alone with the title forced under it),
+       the description sits under the title in the small muted face, the
+       counters are one quiet line with no boxes, and last-post is a
+       line of text rather than a full-width bar. */
+    /* Written through table.tablebg > tbody > tr > td[...]: the generic
+       cell rules above are that specific, and a plain td[data-rr-col]
+       lost its min-width to their min-width:0. */
     html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="icon"] {
         order: 0;
         flex: 0 0 auto;
@@ -155,12 +141,10 @@
     }
     html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="title"] {
         order: 0;
-        /* The rest of the marker's line, and only that line: at four
-           fifths of the row nothing else fits beside it, so the counters
-           wrap under it whatever the marker's width. */
-        /* A zero basis, not auto: auto is the title's own width, and a
-           long title is the whole row, which put it under the marker
-           again. From zero it grows into what the marker leaves. */
+        /* Zero basis, not auto: auto is the title's own width, and a
+           long title takes the whole row, putting it under the marker
+           again. From zero it grows into whatever the marker leaves —
+           at most 80%, so nothing else can share this line. */
         flex: 1 1 0%;
         min-width: 80%;
     }
@@ -200,10 +184,10 @@
     html[data-rr] td[data-rr-col="last"] .rr-lastpost { color: var(--rr-faint); }
     html[data-rr] td[data-rr-col] p { display: inline; margin: 0; }
 
-    /* Category rows and the bands with one link in them: a header, not
-       a card. The control that folds a category goes to the far end.
-       The accent mark is drawn inside the cell's own padding on a
-       desktop; here the cell has none, so the row carries it. */
+    /* Category rows and one-link bands read as a header, not a card. The
+       fold control goes to the far end; the accent mark is drawn inside
+       the cell's padding on desktop, so here — where the cell has none —
+       the row carries it instead. */
     html[data-rr] tr[data-rr-cat-row] { padding: 8px 14px !important; align-items: center !important; }
     html[data-rr] tr[data-rr-cat-row] > td.cat::before,
     html[data-rr] tr[data-rr-cat-row] > td.row3[data-rr-section]::before { display: none; }
@@ -213,15 +197,14 @@
     html[data-rr] tr[data-rr-cat-row="section"] { box-shadow: inset 3px 0 0 var(--rr-accent); }
     html[data-rr] tr[data-rr-cat-row] > td.catdiv { margin-left: auto; }
     html[data-rr] tr[data-rr-cat-row] > td.cat[data-rr-cat="plain"] { margin-left: auto; font-size: var(--rr-fs-xs); }
-    /* A message folder: the date and the checkbox had no order and led
-       the card, before the subject. */
+    /* A message folder's date and checkbox had no order and led the
+       card, ahead of the subject. */
     html[data-rr] tr[data-rr-pm-row] > td[data-rr-col="date"] { order: 3; font-size: var(--rr-fs-xs); color: var(--rr-muted); }
     html[data-rr] td[data-rr-col="mark"] { order: 4; }
 
-    /* The template pins several cells with nowrap="nowrap" and the
-       original stylesheet adds more. On a 390px screen a single
-       unbreakable "Wednesday, 02 Sep 2026, 23:04" is the whole
-       horizontal scrollbar. */
+    /* The template (and its stylesheet) pins several cells nowrap; on a
+       390px screen a single unbreakable "Wednesday, 02 Sep 2026, 23:04"
+       is the whole horizontal scrollbar. */
     html[data-rr] #wrapcentre :where(td, th, p, span, div, li, ul, ol, dd, dt, b, strong, i, em, a),
     html[data-rr] [nowrap] { white-space: normal !important; }
     html[data-rr] #wrapcentre :where(pre, code, .code) { white-space: pre !important; }
@@ -232,11 +215,11 @@
     html[data-rr] td[data-rr-col="posts"]::before { content: "posts "; color: var(--rr-faint); }
     html[data-rr] td[data-rr-col="last"] br { display: none; }
 
-    /* Posts: the 150px author column becomes a header strip. */
-    /* Only where the post header has not replaced it (forum.css hides
-       it under data-rr-posts="modern"); the !important here was
-       bringing it back under the header, with the two-language rank
-       and the weekday date the header had already dealt with. */
+    /* Posts: the 150px author column becomes a header strip, except
+       where the post header already replaced it (forum.css hides it
+       under data-rr-posts="modern") — the !important here was bringing
+       it back under the header, with the two-language rank and weekday
+       date the header already shows. */
     html[data-rr]:not([data-rr-posts="modern"]) td.profile { display: flex !important; align-items: center; gap: var(--rr-s2); }
     html[data-rr] td.profile table { width: auto !important; }
     html[data-rr] td.profile img[src*="/avatars/"],
@@ -258,22 +241,16 @@
     html[data-rr] .rr-fab { right: var(--rr-s2); bottom: var(--rr-s2); }
 
     /* The print / previous-topic / next-topic strip is a nested table
-       that does not survive the column collapse, and on a phone the
-       action bar above it already covers moving around. */
+       that doesn't survive the column collapse; the action bar above
+       already covers moving around on a phone. */
     html[data-rr] tr:has(> td.cat > table) { display: none; }
 
-    /* A folded reply is still one line here.
-
-       Everything above unpacks a post's table cells into blocks and
-       lets its text wrap anywhere, which is right for a post and
-       undoes the fold for a folded one: the message went back to
-       laying itself out in full, on the screen where a wall of
-       "thanks" costs the most. */
-    /* #wrapcentre is in both selectors on purpose. The blanket rules
-       above carry an id, and an id outranks any number of classes even
-       when both sides are !important — so a class-only rule here loses
-       to them silently, which is exactly what happened: the fold was
-       written twice and applied on neither phone. */
+    /* A folded reply stays one line: the blanket rules above unpack a
+       post's cells into blocks that wrap anywhere, which undoes the
+       fold. #wrapcentre appears in both selectors because an id
+       outranks any number of classes even under !important — a
+       class-only rule here silently lost to the blanket ones and the
+       fold applied on neither phone case. */
     html[data-rr] #wrapcentre table.tablebg[data-rr-quiet] td:has(> .postbody) {
         display: flex !important;
         align-items: baseline;
@@ -282,25 +259,20 @@
     html[data-rr] #wrapcentre table.tablebg[data-rr-quiet] .postbody {
         min-width: 0;
         overflow: hidden;
-        /* !important against !important. The blanket rule further up
-           this file forces white-space: normal on every td, p, span
-           and div inside the content — it is what stops the board's
-           own nowrap attributes widening a phone — and it is the one
-           thing standing between a folded reply and one line. This is
-           the deliberate exception to it, on one state of one node. */
+        /* !important against !important: the blanket rule above forces
+           white-space:normal everywhere (stopping the board's own nowrap
+           from widening a phone), and this is the deliberate exception
+           for one state of one node. */
         white-space: nowrap !important;
         text-overflow: ellipsis;
     }
 
-    /* "Sort by:" is two words that label the control after them, and
-       the blanket rule above broke it across two lines with a select
-       in between. The exception carries #wrapcentre and !important for
-       the same reason the folded reply above does: the blanket rule
-       has both and would otherwise win. These labels are a handful of
-       words, so holding them together cannot widen the page. */
+    /* "Sort by:" broke across two lines around its own select under the
+       blanket nowrap-reset rule; #wrapcentre + !important beats it the
+       same way the folded reply does, and a handful of words can't
+       widen the page. */
     html[data-rr] #wrapcentre td.cat > span.gensmall { white-space: nowrap !important; }
 
-    /* Tap targets. */
     html[data-rr] .rr-icon-btn { width: 34px; height: 34px; }
     html[data-rr] td[data-rr-col="title"] a.topictitle { line-height: 1.45; }
 }
@@ -319,10 +291,9 @@
     html[data-rr] .rr-toolbar__board .rr-search,
     html[data-rr] .rr-topicbar__search .rr-search { flex: 1; min-width: 0; width: 100%; }
 
-    /* The room the search will look in is printed inside the field on
-       a desktop. On a phone the field is barely wide enough for the
-       query, so the glyph goes back to standing on its own and the
-       name is in the popover the glyph opens. */
+    /* The search scope is printed inside the field on desktop; here the
+       field is barely wide enough for the query, so the glyph stands
+       alone and the scope name moves into its popover. */
     html[data-rr] .rr-search__where { display: none; }
     html[data-rr] button.rr-search__opts { padding: 0; min-width: 26px; }
 
@@ -330,12 +301,10 @@
     html[data-rr] .rr-nav__sep { display: none; }
     html[data-rr] .rr-toolbar { padding: var(--rr-s3); }
 
-    /* The topic bar carries nine controls and a search box, and on a
-       phone that is five wrapped rows before the first post. The air
-       between them is what a wide screen wants — there they sit on one
-       line and the gap is the only thing separating them — and here it
-       is five gaps stacked on top of each other. So the row gap comes
-       back down, and only here. */
+    /* The topic bar's nine controls plus search box became five wrapped
+       rows before the first post; the gap that separates them on one
+       wide line is instead five gaps stacked, so it's tightened here
+       only. */
     html[data-rr] .rr-topicbar { gap: var(--rr-s1) var(--rr-s2); }
     html[data-rr] .rr-topicbar .rr-btn { padding: 6px 10px; }
     html[data-rr] .rr-topicbar__search { flex: 1 1 100%; }
@@ -344,37 +313,29 @@
 
 /* Print: drop the script chrome entirely. */
 @media print {
-    /* The skip link too: it is position:fixed and translated off the
-       top of the viewport, and a fixed element in print media is drawn
-       on every sheet — a printed thread came out with an orange "Skip
+    /* The skip link too: fixed-position elements are drawn on every
+       printed sheet, so a printed thread came out with an orange "Skip
        to content" tab at the head of each page. */
     .rr-nav, .rr-fab, .rr-toolbar, .rr-progress, .rr-toasts, .rr-posttools, .rr-skip,
     .rr-sig-toggle { display: none !important; }
     html[data-rr] body { background: #fff; color: #000; }
 
-    /* A collapsed signature is the one fold that hides its content
-       outright rather than clipping it, and it was the one fold that
-       stayed shut on paper. It opens, and the control that would have
-       opened it goes with the rest of the controls. */
+    /* A collapsed signature hides its content outright rather than
+       clipping it, so it was the one fold still shut on paper. */
     html[data-rr] [data-rr-sig="collapsed"] { display: block !important; }
 
-    /* And unfold everything the screen folded.
-
-       A fold is an affordance: a clipped quote says "there is more,
-       click here". Paper has no click. Printing a thread came out with
-       quotes cut off mid-sentence and every short reply clipped to its
-       first line, with the controls that would have opened them
-       printed alongside — the one place where folding really would
-       have lost content. */
+    /* Every other fold gets undone too: a clipped quote or short reply
+       is an affordance ("there's more, click here") and paper has no
+       click, so printing came out with quotes cut mid-sentence and
+       replies clipped to one line, controls and all. */
     html[data-rr] [data-rr-quote="folded"] {
         max-height: none !important;
         -webkit-mask-image: none !important;
                 mask-image: none !important;
     }
-    /* Carrying #wrapcentre for the same reason the narrow-screen rules
-       above do: printing from a phone-width window puts both media
-       queries in play at once, and without the id this loses to the
-       fold it is supposed to undo. */
+    /* Carries #wrapcentre for the same reason the narrow-screen rules
+       do: printing from a phone-width window puts both media queries in
+       play, and without the id this loses to the fold it's undoing. */
     html[data-rr] table.tablebg[data-rr-quiet] { opacity: 1 !important; }
     html[data-rr] table.tablebg[data-rr-quiet] > tbody > tr { display: table-row !important; }
     html[data-rr] #wrapcentre table.tablebg[data-rr-quiet] td:has(> .postbody) { display: table-cell !important; }
@@ -392,34 +353,22 @@
     .rr-quote-toggle, .rr-quiet-chip, .rr-sig-toggle, .rr-quote-bubble { display: none !important; }
 }
 
-/* ------------------------------------------------------------------
-   The listing card's marker gutter.
-
-   The gutter cell holds the read/unread dot and, on a bookmarkable
-   row, the star (lists.js appends it there on purpose — see
-   addBookmarkStar). On a phone card the gutter and the title share the
-   first line, and the star's 34px tap target beside the dot left the
-   title under its own 80% minimum, so the title dropped to a line of
-   its own under a line that was a dot and a star.
-
-   The star moves to the card's top-right corner instead, out of the
-   gutter's width, and the dot and the title share the first line
-   again.
-   ------------------------------------------------------------------ */
+/* The listing card's marker gutter. It holds the read/unread dot and, on
+   a bookmarkable row, the star (lists.js, addBookmarkStar). Beside the
+   dot the star's 34px tap target pushed the title under its own 80%
+   minimum, dropping it to its own line under a line that was just a dot
+   and a star — so the star moves to the card's top-right corner instead,
+   out of the gutter's width. */
 @media (max-width: 860px) {
     html[data-rr] table.tablebg > tbody > tr { position: relative; }
 
-    /* forum.css floors this cell at 44px, which is right for a column
-       and far too wide for a card. Repeating the phone selector here
-       (same specificity, later, so it wins) drops the floor to the
-       dot's own width and leaves the title its 80% beside it.
-
-       The star is still a child of this cell, and its absolutely
-       positioned box has to fit inside this one or it trips the "no
-       cell draws outside itself" check — hence align-self and
-       min-height. align-items then says where the *dot* sits in that
-       taller box: at its top, beside the title's first line, rather
-       than centred between a wrapped title's two lines. */
+    /* forum.css floors this cell at 44px (right for a column, too wide
+       for a card). Repeating the phone selector here — same specificity,
+       later, so it wins — drops the floor to the dot's own width. The
+       star, still a child of this cell, needs align-self/min-height so
+       its absolutely positioned box stays inside this one; align-items
+       then puts the dot at the top of that taller box, beside the
+       title's first line rather than centred against a wrapped title. */
     html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="icon"] {
         min-width: 0;
         align-self: flex-start;
@@ -428,9 +377,9 @@
     /* Only a row with a star needs the star's height; without one the
        34px pushed a message folder's second line 20px down. */
     html[data-rr] table.tablebg > tbody > tr[data-rr-star] > td[data-rr-col="icon"] { min-height: 34px; }
-    /* The star's containing block is the row (tr, made position:relative
-       above), not this cell, so top/right here are relative to the
-       row's own corner and not to wherever the cell happens to sit. */
+    /* The star's containing block is the row (made position:relative
+       above), not this cell, so top/right are relative to the row's
+       corner regardless of where the cell sits. */
     html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="icon"] > .rr-star {
         position: absolute;
         top: 0;
@@ -438,27 +387,22 @@
         margin: 0;
     }
 
-    /* Room for the star's corner, on the rows that carry one — the
-       chain down through tr and td matches the generic cell rule's
-       specificity above, which sets this same padding to 0.
-
-       min-width drops the 80% floor the generic title rule sets. That
-       floor keeps the counters off the marker's line, but a percentage
-       of a 390px card and of an 860px one are different numbers, and
-       at 390px it tipped the title itself onto a line of its own. The
-       spacer below does that job instead. */
+    /* Room for the star's corner, on rows that carry one — matches the
+       generic cell rule's specificity above, which otherwise sets this
+       padding to 0. min-width drops the 80% title floor: that floor
+       keeps counters off the marker's line, but 80% of 390px and of
+       860px are different numbers, and at 390px it tipped the title
+       itself onto its own line. The spacer below does that job instead. */
     html[data-rr] table.tablebg > tbody > tr[data-rr-star] > td[data-rr-col="title"] {
         min-width: 0;
         padding-right: 40px;
     }
 
-    /* An invisible flex item, ordered between the marker/title group
-       and the counters that follow them, whose own 100% flex-basis can
-       never share a line with anything: it always starts a fresh one,
-       so the counters always land under the title regardless of how
-       widely either side's own width happens to divide the card.
-       Sturdier than sizing the title to leave "enough" room, which is
-       exactly the arithmetic that went stale at 390px. */
+    /* An invisible flex item between the marker/title group and the
+       counters, whose own 100% basis always starts a fresh line — so
+       counters land under the title regardless of either side's actual
+       width. Sturdier than sizing the title to leave "enough" room,
+       which is exactly the arithmetic that went stale at 390px. */
     html[data-rr] table.tablebg > tbody > tr[data-rr-star]::before {
         content: "";
         order: 1;
@@ -468,27 +412,20 @@
     }
 }
 
-/* ------------------------------------------------------------------
-   The topic foot: the search-this-topic / display-options strip, the
-   jump-to box, and the floating buttons that sit over both. All three
-   were left to inline flow — a `<span>` label and a `<select>` as
-   plain siblings, wrapping wherever the browser found room — which is
-   the layout a form takes when nobody has laid it out, and it reads
-   differently every time the flow changes: Chrome stacks the search
-   input full width with "Search" centred alone under it; Safari puts
-   the label in the sliver of a line the input's own floor (forum.css,
-   min-width: min(100%, 22em)) leaves beside it, wrapping it letter by
-   letter. An explicit flex row does not care what the flow would have
-   done.
-   ------------------------------------------------------------------ */
+/* The topic foot (search-this-topic / display-options strip, jump-to
+   box, floating buttons) was left to inline flow — a <span> and a
+   <select> as plain siblings — which reads differently per browser:
+   Chrome stacked the search input full width with "Search" centred
+   under it; Safari wrapped the label letter by letter in the sliver the
+   input's own floor (forum.css, min-width: min(100%, 22em)) left beside
+   it. An explicit flex row doesn't depend on the flow. */
 @media (max-width: 860px) {
     /* The controls cell holds one or two forms: the search box on a
-       topic page, always the "Display posts from previous / Sort by /
-       Go" strip — direct children of the cell on a search-results
-       page, wrapped in form[name=viewtopic] on a topic page. Flexing
-       the cell itself, wrapped, lays out whichever shape is there;
-       the search box is given the whole first line so the display
-       form always starts a line of its own under it. */
+       topic page, and always the "Display posts / Sort by / Go" strip —
+       direct children on a search-results page, wrapped in
+       form[name=viewtopic] on a topic page. Flexing the cell lays out
+       whichever shape is there; the search box takes the whole first
+       line so the display form always starts fresh under it. */
     html[data-rr] td.cat[data-rr-cat="controls"] {
         display: flex;
         flex-wrap: wrap;
@@ -502,9 +439,8 @@
         display: flex;
         gap: 6px;
     }
-    /* The search field's own floor would otherwise take the whole
-       line and push its button under it — the Chrome half of the bug
-       photographed live. */
+    /* Without this the search field's own floor takes the whole line
+       and pushes its button under it — the Chrome half of the bug. */
     html[data-rr] td.cat[data-rr-cat="controls"] #search-box_thread input[type="text"] {
         flex: 1 1 auto;
         min-width: 0 !important;
@@ -533,18 +469,15 @@
         flex: 0 0 auto;
     }
 
-    /* form[name=jumpbox]: the label, the select and Go are inline
-       content of one unclassed cell, which the unpacking rules above
-       turn into a block, and the three then wrap on their own. The
-       extra :not()s match the specificity of the rule being
-       overridden — both sides carry #wrapcentre and !important, so the
-       tie breaks on class count rather than source order.
-
-       wrap, not nowrap: on the search results page this form sits
-       beside a floated sibling the board never clears, so the row is
-       well under 342px. A select sizes to its longest option, so
-       `flex: 1 1 auto` counted a forum name's full width and wrapped
-       Go away alone; a 0% basis asks with only the 6em floor. */
+    /* form[name=jumpbox]'s label/select/Go are inline content of one
+       unclassed cell that the unpacking rules above turn into a block,
+       wrapping on their own. The extra :not()s match the specificity of
+       the rule they override (both carry #wrapcentre + !important, so
+       the tie breaks on class count). wrap, not nowrap: on the
+       search-results page this form sits beside an uncleared floated
+       sibling, well under 342px — a select sizes to its longest option,
+       so `flex: 1 1 auto` wrapped Go away alone; a 0% basis asks only
+       for the 6em floor. */
     html[data-rr] #wrapcentre form[name="jumpbox"] table:not(.tablebg):not(.forumline) > tbody > tr > td {
         display: flex !important;
         flex-wrap: wrap;
@@ -555,42 +488,33 @@
     html[data-rr] #wrapcentre form[name="jumpbox"] select { flex: 1 1 0%; min-width: 6em; }
     html[data-rr] #wrapcentre form[name="jumpbox"] input[type="submit"] { flex: 0 0 auto; }
 
-    /* The floating back-to-top button is fixed in the corner, so it
-       sits over whatever is at the true bottom of the page once a
-       reader scrolls there — "Powered by phpBB", or the Who is online
-       card's corner. It is meant to be reached, not avoided, so the
-       page gets the extra room instead: enough to clear a button 38px
-       tall sitting 8px (--rr-s2) off the edge, plus a hand's width of
-       air above it. */
-    /* body.ltr carries a class the plain-body rule above does not, so
-       it is the one that would otherwise win this tie. */
+    /* The fixed back-to-top button sits over whatever is at the true
+       bottom of the page — "Powered by phpBB", or Who's-online's corner
+       — and it's meant to be reached, so the page gets extra room
+       instead: enough for a 38px button 8px off the edge plus a hand's
+       width of air. body.ltr carries a class the plain-body rule above
+       doesn't, so it's the one that would otherwise win this tie. */
     html[data-rr] body,
     html[data-rr] body.ltr { padding-bottom: 64px; }
 }
 
 @media (max-width: 860px) {
-    /* The sort strip — "Display posts from previous / Sort by / Go" —
-       is the last row of the same table.tablebg the list above it
-       renders in, so it inherited that table's rounded card outright
-       and read as bolted onto the last result rather than a strip of
-       its own under the list. lists.js (markShapes) now carries the
-       cell's "controls" kind onto the row, so the gap that pulls it
-       clear can live on the row itself rather than fighting the row's
-       own padding from inside the cell. #wrapcentre: an id beats the
-       table.tablebg > tbody > tr rule two blocks up on any property it
-       shares, and margin is not one it sets — but is one this page's
-       tighter search-page rule below could, so the habit is kept up
-       here too. */
+    /* The sort strip ("Display posts / Sort by / Go") is the last row
+       of the same table.tablebg the list renders in, so it inherited
+       that table's rounded card and read as bolted onto the last
+       result. lists.js (markShapes) now carries the cell's "controls"
+       kind onto the row, so the clearing gap lives on the row instead of
+       fighting the cell's own padding. #wrapcentre: beats the generic
+       tr rule two blocks up on any shared property, kept as a habit
+       since the tighter search-page rule below does set margin. */
     html[data-rr] #wrapcentre tr[data-rr-cat-row="controls"] {
         margin-top: var(--rr-s2);
     }
 
-    /* The cell itself, and — on a topic page, where the same shape
-       shares its row with the topic search box beside it — the sort
-       form one level down. Flex items ignore float, so this also
-       stops that search box eating into the sort form's line, which
-       was the other half of the ragged wrap this shape used to
-       produce there. */
+    /* The cell, and — on a topic page sharing its row with the topic
+       search box — the sort form one level down. Flex items ignore
+       float, which also stops that search box eating into the sort
+       form's line, the other half of the old ragged wrap. */
     html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"],
     html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > form {
         display: flex;
@@ -601,9 +525,9 @@
     }
     html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > form { flex: 1 1 100%; }
 
-    /* The message folder's export and mark controls: two floated divs
-       in the same cell, which spilled over the sort form under them.
-       Two full-width rows of the cell's own flex layout instead. */
+    /* The message folder's export/mark controls: two floated divs in the
+       same cell, spilling over the sort form under them — two full-width
+       flex rows instead. */
     html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > div[style*="float"] {
         float: none !important;
         display: flex;
@@ -613,8 +537,8 @@
         flex: 1 1 100%;
     }
     html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > div[style*="float"] > select { flex: 1 1 auto; min-width: 0; }
-    /* The topic search box: a row of its own, the input taking the
-       width the button leaves. */
+    /* The topic search box: a row of its own, input taking what the
+       button leaves. */
     html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] > #search-box_thread { flex: 1 1 100%; margin: 0; }
     html[data-rr] #search-box_thread form { display: flex; }
     html[data-rr] #wrapcentre td.cat[data-rr-cat="controls"] #search-box_thread input[type="text"] {
@@ -623,26 +547,22 @@
         min-width: 0 !important;
     }
 
-    /* The results footer's own float: the template sets it inline on
-       the match count and an empty companion strip, meant to be
-       cleared by a bare <br> — and #wrapcentre > br is dropped further
-       up this file as decorative spacing on every other page, which
-       silently undid the one place that clearing br was load-bearing.
-       Off the float, the count is a line of its own and the jump box
-       under it stops trying to fit "Jump to:" into whatever sliver of
-       the row the float happened to leave beside it. */
+    /* The results footer's own inline float, meant to be cleared by a
+       bare <br> — but #wrapcentre > br is dropped elsewhere as
+       decorative spacing, silently undoing the one place clearing it
+       mattered. Off the float, the match count is its own line and the
+       jump box stops fighting the float for room. */
     html[data-rr] #wrapcentre > div.gensmall[style*="float"],
     html[data-rr] #wrapcentre > div.nav[style*="float"] {
         float: none !important;
         margin: 0 0 var(--rr-s2);
     }
 
-    /* The jump-to box: a label, a forum <select> and a Go button in
-       one unstyled <td>, unpacked like any other nested table into
-       three stacked lines for one control. !important twice: the
-       table-unpacking rule above reaches this same td through one
-       more attribute selector than this one and would undo both the
-       row and the width this needs to make the select worth flexing. */
+    /* The jump-to box: label, forum <select> and Go in one unstyled
+       <td>, unpacked into three stacked lines. !important twice: the
+       table-unpacking rule above reaches this same td through one more
+       attribute selector and would undo both the row and the width the
+       select needs to flex. */
     html[data-rr] #wrapcentre form[name="jumpbox"] td {
         display: flex !important;
         flex-wrap: wrap;
@@ -652,20 +572,18 @@
     }
     html[data-rr] #wrapcentre form[name="jumpbox"] span.gensmall { white-space: nowrap; }
     /* flex-basis 0, not auto: auto reserves the select's own preferred
-       width — which Chromium sizes to its widest *option*, not the one
-       showing — before the row is split into a line at all, and that
-       alone was wider than the row, pushing Go onto a line by itself.
-       From a zero basis the select instead grows to fill whatever the
-       label and Go leave it. */
+       width (Chromium sizes it to the widest option, not the one
+       showing) before the row splits into a line at all, wider than the
+       row and pushing Go onto its own line. From zero the select grows
+       into whatever the label and Go leave it. */
     html[data-rr] #wrapcentre form[name="jumpbox"] select { flex: 1 1 0%; min-width: 0; }
     html[data-rr] #wrapcentre form[name="jumpbox"] input[type="submit"] { flex: none; }
 }
 
 @media (max-width: 860px) {
-    /* The sort strip is the last row of the results card. Drawn as a
-       dark box inset in the card it read as a panel dropped into the
-       last result; drawn flush, with a hairline over it and the card's
-       own footer tone, it reads as the card's foot. */
+    /* Drawn flush with a hairline and the card's own footer tone, the
+       sort strip reads as the card's foot rather than a panel dropped
+       into the last result. */
     html[data-rr] #wrapcentre tr[data-rr-cat-row="controls"] {
         margin-top: var(--rr-s2);
         padding: 10px 12px !important;
@@ -680,45 +598,36 @@
     }
 }
 
-/* ------------------------------------------------------------------
-   The phone's rhythm.
-
-   What the screenshots said, in the author's words: not enough air,
-   things glued together, the menus disorderly, the corners ugly. One
-   system for the whole phone layout, then: 12px between any two cards
-   and 14px inside them; every menu a list on a grid, not a wrapped
-   soup; a table that is a menu drawn as a menu; controls with the
-   corners of the box they sit in.
-   ------------------------------------------------------------------ */
+/* The phone's rhythm: one system for spacing across the whole layout —
+   12px between any two cards and 14px inside them, every menu a grid
+   rather than wrapped soup, a table that's a menu drawn as a menu,
+   controls sharing the corners of the box they sit in. */
 @media (max-width: 860px) {
-    /* Air between cards. Two tables back to back, a form after a
-       table, the reply box and Who is online: 12px, always. */
+    /* Air between cards: two tables back to back, a form after a table,
+       the reply box, Who's online — 12px, always. */
     html[data-rr] #wrapcentre > table.tablebg + table.tablebg,
     html[data-rr] #wrapcentre > table.tablebg + form,
     html[data-rr] #wrapcentre > form + table.tablebg,
     html[data-rr] #wrapcentre > .rr-online { margin-top: var(--rr-s3); }
     html[data-rr] .rr-reply { margin-bottom: var(--rr-s3); }
-    /* The permissions notice ("You can post new topics…") is an
-       unclassed table straight after the jump-to form, with nothing
-       between them: the one seam on the page that measured 0px. */
+    /* The permissions notice sits straight after the jump-to form with
+       no gap at all — the one seam on the page that measured 0px. */
     html[data-rr] #wrapcentre table[data-rr-after-jump] { margin-top: var(--rr-s3); }
-    /* The game card is a card like the others: the same inset. */
     html[data-rr] .rr-game { padding: 14px; }
-    /* "Delete all board cookies | The team" is a bare span dropped
-       between two cards. A line of its own, quiet. */
+    /* "Delete all board cookies | The team" is a bare span between two
+       cards; a line of its own, quiet. */
     html[data-rr] #wrapcentre > span.gensmall {
         display: block;
         margin: var(--rr-s3) var(--rr-s1);
         font-size: var(--rr-fs-xs);
         color: var(--rr-faint);
     }
-    /* Air inside them: a card's padding, not a table cell's. */
+    /* Air inside cards: a card's padding, not a table cell's. */
     html[data-rr] table.tablebg > tbody > tr,
     html[data-rr] table.forumline > tbody > tr { padding: 14px; gap: 4px var(--rr-s2); }
 
-    /* A listing card's second line reads who, then how much: the
-       author led the counters on the desktop table, and here sat
-       between them. */
+    /* A listing card's second line reads who, then how much; the author
+       led the counters on the desktop table and here sat between them. */
     html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="author"] { order: 2; }
     html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="replies"],
     html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="views"],
@@ -726,11 +635,11 @@
     html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="posts"] { order: 3; }
     html[data-rr] table.tablebg > tbody > tr > td[data-rr-col="last"] { order: 4; }
 
-    /* A roster's card — the member list, Who is online — name first
-       and in the reading face, then the rank, the joining date and the
-       count as one quiet line, then the controls on a line of their
-       own. The running number goes; it counts nothing a phone shows,
-       and the template's empty e-mail and website cells go with it. */
+    /* A roster card (member list, Who's online): name first in the
+       reading face, then rank/join date/count as one quiet line, then
+       controls on their own line. The running number goes — it counts
+       nothing a phone shows — and the template's empty e-mail/website
+       cells go with it. */
     html[data-rr] table.tablebg[data-rr-roster] > tbody > tr { align-items: center; gap: 2px var(--rr-s3); }
     html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-col="num"],
     html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-empty] { display: none !important; }
@@ -742,7 +651,7 @@
         color: var(--rr-text-strong);
     }
     /* The rank beside the name, then a break: the meta line starts under
-       them whatever the name's length. */
+       them regardless of name length. */
     html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-col="rank"] { order: -1; }
     html[data-rr] table.tablebg[data-rr-roster] > tbody > tr::before { content: ""; order: 0; flex-basis: 100%; height: 0; }
     /* A listing card never touches what stands above it. */
@@ -765,9 +674,9 @@
     html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td:not([data-rr-col]) { order: 3; flex: 0 0 auto; margin-top: 2px; }
     html[data-rr] table.tablebg[data-rr-roster] a.rr-ctl { padding: 3px 10px; font-size: var(--rr-fs-xs); }
 
-    /* A table that is a menu: the control panel's Options, the message
-       folders, the message-colour legend. Rows, not cards — a link a
-       line, no rule under each. */
+    /* A table that's a menu: control-panel Options, message folders, the
+       message-colour legend. Rows, not cards — a link a line, no rule
+       under each. */
     html[data-rr] table.tablebg[data-rr-navlist],
     html[data-rr] table.tablebg[data-rr-pm-legend] { padding: 6px 0; }
     html[data-rr] table.tablebg[data-rr-navlist] > tbody > tr,
@@ -786,25 +695,23 @@
         font-size: var(--rr-fs-xs);
         color: var(--rr-muted);
     }
-    /* The colour class is on the same cell as the words — phpBB writes
-       `<td class="row1 pm_marked_colour"><span>Marked message</span>`
-       — so the cell cannot be squeezed into a swatch: at 12px it drew
-       the label one character to a line. The stripe down its leading
-       edge carries the colour here exactly as it does on a wide
-       screen, and the row gives up its own padding so the stripe lands
-       on the card's edge rather than floating inside it. */
+    /* The colour class sits on the same cell as the words
+       (`<td class="row1 pm_marked_colour"><span>Marked message</span>`),
+       so it can't be squeezed into a swatch — at 12px it drew the label
+       one character to a line. The leading-edge stripe carries the
+       colour as it does on desktop; the row gives up its own padding so
+       the stripe lands on the card's edge. */
     html[data-rr] table.tablebg[data-rr-pm-legend] > tbody > tr { padding: 3px 0; }
     html[data-rr] table.tablebg[data-rr-pm-legend] > tbody > tr > td[class*="pm_"] {
         width: 100% !important;
         padding: 3px 14px;
         box-shadow: inset 3px 0 0 var(--rr-pm);
     }
-    /* A roster's meta line: the rank after the count, with a dot. */
     html[data-rr] table.tablebg[data-rr-roster] > tbody > tr > td[data-rr-col="rank"]::before { content: none; }
 
-    /* A post's tools: the number, the two copies and "Reply with
-       quote" lead; the board's own Profile / Send private message /
-       Report follow as quiet words, not as a second row of buttons. */
+    /* A post's tools: the number, the two copies and "Reply with quote"
+       lead; the board's own Profile / Send private message / Report
+       follow as quiet words, not a second row of buttons. */
     html[data-rr] .rr-posthead .rr-posttools {
         flex: 1 1 100%;
         justify-content: flex-start;
@@ -820,8 +727,8 @@
         color: var(--rr-muted);
     }
 
-    /* Leaving this topic: the two clusters take the width they need
-       and wrap as two lines; a stray control outside one is a chip. */
+    /* Leaving this topic: the two clusters wrap as two lines; a stray
+       control outside one is a chip. */
     html[data-rr] .rr-topicbar__row[data-rr-row="away"] > .rr-btn {
         padding: 5px 11px;
         background: var(--rr-surface-2);
@@ -830,20 +737,19 @@
     }
     html[data-rr] .rr-topicbar__row[data-rr-row="away"] .rr-cluster { flex-wrap: wrap; }
     /* A control inside a rounded box takes the box's corner minus the
-       gap between them, so the two curves are concentric instead of a
+       gap between them, so the two curves are concentric rather than a
        square end butting a round one. */
     html[data-rr] input.rr-search__go { border-radius: calc(var(--rr-radius) - 3px); }
 }
 
-/* The board bar, open: a menu. Each group on its own rows, two links
-   to a row, a hairline between groups; More pinned where it was
-   tapped. The wrapped row it used to be read as a soup of links with
-   no groups at all. */
+/* The board bar, open: a menu. Each group on its own rows, two links to
+   a row, a hairline between groups, More pinned where it was tapped —
+   the wrapped row it replaced read as a soup of links with no groups. */
 @media (max-width: 720px) {
     html[data-rr] .rr-boardbar[data-rr-open] { padding-bottom: var(--rr-s2); }
-    /* Both halves, not just the left one: the account group sits at the
-       right of the desktop row now, and behind the fold it is a row of
-       the menu like the two above it. */
+    /* Both halves, not just the left: the account group sits at the
+       right of the desktop row, and behind the fold it's a row of the
+       menu like the two above it. */
     html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__main,
     html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__end {
         flex-direction: column;
@@ -866,10 +772,10 @@
         background: none;
     }
     html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__group > .rr-boardbar__link { border-left: 0; border-radius: 0; }
-    /* The fold's control keeps the top line to itself; the groups
-       start under it at full width, so no link has to wrap around it.
-       Only the first group of the left half — the account group is
-       first inside the right one, and it is nowhere near the top. */
+    /* The fold control keeps the top line to itself; groups start under
+       it at full width so no link wraps around it. Only the left half's
+       first group — the account group is first in the right half and
+       nowhere near the top. */
     html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__main > .rr-boardbar__group:first-child {
         border-top: 0;
         padding-top: 38px;
@@ -882,21 +788,19 @@
     }
     html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__donate { justify-self: start; margin: 4px 0; }
     html[data-rr] .rr-boardbar[data-rr-open] .rr-boardbar__end { margin: 0; }
-    /* Everything in the open menu is a full-width row; the language
-       switch is a control, and a control stretched across the screen
-       stops reading as one. */
+    /* Everything in the open menu is a full-width row; a control
+       stretched across the screen stops reading as one. */
     html[data-rr] .rr-boardbar[data-rr-open] .rr-langswitch {
         align-self: flex-start;
         margin-top: var(--rr-s3);
     }
 }
 
-/* The settings panel on a phone: a sheet, not a two-column window.
-   The rail of categories becomes a strip of tabs across the top that
-   scrolls sideways, each field stacks its control under its words,
-   and the footer wraps. It was the desktop's 186px rail beside a
-   column too narrow for its own labels, which wrapped letter by
-   letter down the screen. */
+/* The settings panel on a phone: a sheet, not a two-column window. The
+   category rail becomes a horizontally scrolling strip of tabs, each
+   field stacks its control under its words, and the footer wraps. It
+   was previously a 186px rail beside a column too narrow for its own
+   labels, wrapping letter by letter. */
 @media (max-width: 640px) {
     html[data-rr] .rr-panel__head { gap: var(--rr-s2); padding: var(--rr-s3); }
     html[data-rr] .rr-panel__search { flex: 1 1 100px; }
@@ -918,31 +822,26 @@
     html[data-rr] .rr-field {
         flex-direction: column;
         align-items: stretch;
-        /* Both of these undo a desktop rule that means something else
-           once the field is a column rather than a row.
-         *
-         * `space-between` spreads the words and the control to the top
-         * and bottom of whatever height the row is given, and `wrap`
-         * lays a field too tall for its line out in a *second column*
-         * beside the first — 695px of it inside 358. */
+        /* Both undo a desktop rule that means something else once the
+           field is a column: `space-between` spread words/control to
+           the row's top and bottom, and `wrap` laid an overflowing field
+           into a second column beside the first — 695px inside 358. */
         flex-wrap: nowrap;
         justify-content: flex-start;
         gap: var(--rr-s2);
         padding: var(--rr-s3) 0;
     }
-    /* A switch stays beside its words: on and off need no room. */
+    /* A switch stays beside its words: on/off needs no room. */
     html[data-rr] .rr-field:has(> .rr-field__control > .rr-switch) {
         flex-direction: row;
         align-items: center;
         gap: var(--rr-s3);
     }
-    /* The desktop row wraps a wide control off the line by giving the
-       words a 16rem flex-basis. Down here the field is a column and
-       that basis is a *height*: 256px of nothing between a label and
-       the control it labels. Same trap as the accent chips' 100%.
-       It still has to shrink, though — a switch keeps its field a row
-       down here, and words that cannot shrink take their max-content
-       width and push the row 300px past the sheet. */
+    /* The desktop row wraps a wide control off the line via a 16rem
+       flex-basis on the words; down here the field is a column and that
+       basis becomes a *height* — 256px of nothing between a label and
+       its control. Same trap as the accent chips' 100%. It still has to
+       shrink, or unshrinkable words push the row 300px past the sheet. */
     html[data-rr] .rr-field__text { flex: 0 1 auto; }
     html[data-rr] .rr-field__desc { max-width: none; }
     html[data-rr] .rr-field__control { flex-wrap: wrap; padding-top: 0; }
@@ -953,30 +852,27 @@
     html[data-rr] .rr-panel__foot .rr-spacer { display: none; }
 }
 
-/* ------------------------------------------------------------------
-   The second reading of the phone screenshots.
-   ------------------------------------------------------------------ */
 @media (max-width: 860px) {
     /* A row hidden by the script stays hidden: the flex-row rule above
        was bringing a profile's empty rows back. */
     html[data-rr] #wrapcentre tr[data-rr-empty-row] { display: none !important; }
-    /* A profile's label and its value on one line, the label quiet. */
+    /* A profile's label and value on one line, the label quiet. */
     html[data-rr] #wrapcentre tr[data-rr-pair] { display: flex !important; flex-wrap: nowrap !important; align-items: baseline !important; gap: var(--rr-s2); }
     html[data-rr] #wrapcentre tr[data-rr-pair] > td:first-child { flex: none; width: auto !important; color: var(--rr-muted); }
     html[data-rr] #wrapcentre tr[data-rr-pair] > td:last-child { flex: 1 1 auto; width: auto !important; min-width: 0; }
 
     /* Centred cells are a desktop table's idea; stacked, they left a
-       radio row or a heading floating in the middle of the card. */
+       radio row or heading floating mid-card. */
     html[data-rr] #wrapcentre td[align="center"]:not([data-rr-col]) { text-align: left; }
 
-    /* The icon legend under a listing: the dot beside its words, one
-       pair to a line, instead of each dot centred above its label. */
-    /* The two :not() classes are there to outweigh the generic
-       table-unpacking rule above, which carries the same two. */
+    /* The icon legend under a listing: dot beside its words, one pair a
+       line, instead of each dot centred above its label. The two :not()
+       classes outweigh the generic table-unpacking rule above, which
+       carries the same two. */
     html[data-rr] #wrapcentre table[data-rr-legend]:not(.tablebg):not(.forumline) { margin: var(--rr-s3) 0; }
-    /* A two-column grid: every dot in the first column, its words in
-       the second, one pair to a line at one spacing. The template's
-       spacer cells between pairs go. */
+    /* A two-column grid: dots in the first column, words in the second,
+       one pair per line at one spacing. The template's spacer cells
+       between pairs go. */
     html[data-rr] #wrapcentre table[data-rr-legend]:not(.tablebg):not(.forumline) > tbody > tr {
         display: grid;
         grid-template-columns: 20px minmax(0, 1fr);
@@ -1000,15 +896,14 @@
         align-items: center;
     }
 
-    /* A post's header on a phone: name and rank, then the meta line,
-       then the date — each on its own line, all from the left. The
-       spacer that pushes the date right on a desktop put it right on
-       some cards and left on others, depending on what wrapped. */
+    /* A post's header on a phone: name/rank, then meta, then date — each
+       its own line, all from the left. The spacer that pushes the date
+       right on desktop put it right on some cards, left on others,
+       depending on what wrapped. */
     html[data-rr] .rr-posthead__spacer { display: none; }
-    /* The band reaches the card's edges here too, and the card's
-       padding lives on the row rather than on the cell. The selector
-       matches the desktop's exactly, so the tie is broken on source
-       order — this file is last in the build. */
+    /* The band reaches the card's edges here too, its padding moved from
+       the cell to the row. Selector matches desktop's exactly, so the
+       tie breaks on source order — this file is last in the build. */
     html[data-rr] table.tablebg[data-rr-post] { --rr-post-pad: 14px; --rr-post-pad-top: 14px; }
     html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row1,
     html[data-rr] table.tablebg[data-rr-post]:not([data-rr-quiet]) > tbody > tr > td.row2,
@@ -1017,21 +912,20 @@
     html[data-rr] .rr-posthead__meta,
     html[data-rr] .rr-posthead__date { flex: 1 1 100%; text-align: left; margin: 0; }
 
-    /* The page box holds two digits; it does not need a hand's width. */
     html[data-rr] .rr-pager__input { width: 3.4em; }
-    /* The arrow to the first unread post beside a title: on a phone the
-       title itself opens there, and the arrow read as a stray glyph. */
+    /* The jump-to-first-unread arrow beside a title: on a phone the
+       title itself opens there, so the arrow read as a stray glyph. */
     html[data-rr] a.rr-unread-jump { display: none; }
 
-    /* Forms: a multi-select as wide as its widest forum name overflowed
-       the card; the message box at fifteen rows was a screen and a half. */
+    /* A multi-select as wide as its widest forum name overflowed the
+       card; the message box at fifteen rows was a screen and a half. */
     html[data-rr] #wrapcentre select[multiple] { width: 100% !important; max-width: 100%; }
     html[data-rr] #wrapcentre textarea { max-height: 45vh; }
 
-    /* The message folder's foot: the sort form in a bare table of its
-       own, its cell right-aligned and nowrap for a desktop. The cell
-       the width of the card, the form a wrapped row. The listing's
-       "Go to page" strip and the "Page 1 of 5" line, the same. */
+    /* The message folder's foot: a sort form in a bare table with a
+       right-aligned, nowrap cell for desktop — full width and a wrapped
+       row here. The listing's "Go to page" strip and "Page 1 of 5" line
+       get the same treatment. */
     html[data-rr] #wrapcentre table[data-rr-sortfoot] > tbody > tr > td,
     html[data-rr] #wrapcentre table[data-rr-strip] > tbody > tr > td { width: 100% !important; text-align: left; white-space: normal !important; }
     html[data-rr] #wrapcentre table[data-rr-sortfoot] > tbody > tr > td:empty { display: none; }
@@ -1040,14 +934,13 @@
     html[data-rr] #wrapcentre form[name="sortmsg"] .rr-ctrl-group > span.gensmall { white-space: nowrap !important; }
     html[data-rr] #wrapcentre form[name="sortmsg"] { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: var(--rr-s2) var(--rr-s3); margin: 0 !important; }
     html[data-rr] #wrapcentre table[data-rr-sortfoot] { margin: var(--rr-s3) 0 !important; }
-    /* A profile's two columns — presence and statistics, contact and
-       profile — one under the other; side by side, the second's form
-       controls were squeezed to a few letters. */
+    /* A profile's two columns stack instead of sitting side by side,
+       where the second's form controls were squeezed to a few letters. */
     html[data-rr][data-rr-profile] #wrapcentre table.tablebg > tbody > tr > td.row1,
     html[data-rr][data-rr-profile] #wrapcentre table.tablebg > tbody > tr > td.row2 { flex: 1 1 100%; }
-    /* The message folder's export and mark controls sit in a table of
-       their own, not the list's, so the strip that reads as a card's
-       foot elsewhere was a bare band here. A card of its own. */
+    /* The message folder's export/mark controls sit in their own table,
+       not the list's, so the strip that reads as a card's foot elsewhere
+       was a bare band here — given a card of its own. */
     html[data-rr] #wrapcentre table:not(.tablebg):not(.forumline) > tbody > tr[data-rr-cat-row="controls"] {
         margin-top: var(--rr-s3);
         border: 1px solid var(--rr-line);
@@ -1060,12 +953,11 @@
 /* ---- The topic review, on a phone -------------------------------- */
 
 @media (max-width: 860px) {
-    /* The block above turns every row of it into a flex row, which put
-       the author's name in a 46px column beside the subject with the
-       card's left edge drawn round it. The card belongs to the row
-       here, not to the cells: the two rows of a post are the top and
-       the bottom of one box, and everything inside them is a line of
-       its own. */
+    /* The block above turns every row into a flex row, which put the
+       author's name in a 46px column beside the subject with the card's
+       edge drawn round it. Here the card belongs to the row, not the
+       cells: the two rows of a post are the top and bottom of one box,
+       everything inside its own line. */
     html[data-rr] #wrapcentre tr[data-rr-review-row="head"],
     html[data-rr] #wrapcentre tr[data-rr-review-row="body"] {
         display: block !important;
@@ -1093,9 +985,8 @@
     }
     html[data-rr] #wrapcentre td[data-rr-review-cell="author"] { padding-bottom: 2px !important; }
     /* "Post subject: Re: <the topic> [Reply with quote]" is four cells
-       of a nested table, and stacked that is four lines of a card
-       whose message is three. One wrapped line, with the button
-       pushed to the end of it. */
+       of a nested table — stacked, that's four lines for a card whose
+       message is three. One wrapped line, button pushed to its end. */
     html[data-rr] #wrapcentre tr[data-rr-review-row="head"] > td:not([data-rr-review-cell]) > table > tbody > tr {
         display: flex !important;
         flex-wrap: wrap;
@@ -1103,7 +994,7 @@
         gap: 2px var(--rr-s2);
     }
     html[data-rr] #wrapcentre tr[data-rr-review-row="head"] > td:not([data-rr-review-cell]) > table td:last-child { margin-left: auto; }
-    /* The scroller keeps its own edge, so the cards inside it need no
-       second one against the window. */
+    /* The scroller keeps its own edge, so cards inside it need no second
+       one against the window. */
     html[data-rr] [data-rr-review] { padding: var(--rr-s2); }
 }

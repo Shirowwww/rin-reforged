@@ -1,26 +1,10 @@
-/* ------------------------------------------------------------------
-   Command palette.
-
-   The forum has one search box that reloads the page, and no way to
-   reach a board without going back to the index. Ctrl+K covers both,
-   plus bookmarks, recent topics and every script action.
-
-   The forum list is cached the first time the index is visited, so the
-   jump list keeps working from any page.
-   ------------------------------------------------------------------ */
+// Command palette (Ctrl+K): search, bookmarks, recent topics, script actions.
+// Forum list is cached on first index visit so the jump list works anywhere.
 
 let paletteHost = null;
 
-/* ---- Searching the board ------------------------------------------ */
-
-/* Left unset, phpBB searches with sr=posts and sf=all — the raw text
-   of every post, quotes included, so a thread twelve people quoted the
-   same release in came back as twelve results pointing at it. The
-   board's own boxes have shipped sr=topics for years; this asks for
-   the same. How deep to look is a real choice, so sf is remembered.
-
-   Keyed by the board's own sf value, which is what the search box's
-   options (navbar.js, addSearchOptions) store. */
+// Unset, phpBB defaults to sr=posts/sf=all — a quoted post duplicates results
+// per quote. Keyed by the board's own sf value (see navbar.js addSearchOptions).
 const SEARCH_DEPTH = {
     titleonly: { sf: "titleonly", hint: "titles" },
     firstpost: { sf: "firstpost", hint: "titles + first post" },
@@ -28,36 +12,16 @@ const SEARCH_DEPTH = {
     all:       { sf: "all",       hint: "every post" },
 };
 
-/* The author to search for, from the chooser's own field.
- *
- * Not stored with the rest: a remembered room narrows a search in a
- * way the chip prints on itself, and a remembered name would narrow
- * every later search to one member with nothing on screen saying so.
- * It lives as long as the palette is open. */
+// Author filter, kept only in memory — a persisted name would silently
+// narrow every later search with no chip on screen to show it.
 let searchAuthor = "";
 
-/**
- * The board's search URL for a query, from wherever the reader is.
- * Scoped to the current board when there is one, the way the board's
- * own "Search this forum" box is.
- */
-/**
- * Which forum a search from the palette goes to, or null for the board.
- *
- * The same answer the box in the bar gives, from the same two places:
- * the breadcrumb, because half the links on this board carry no forum
- * id and PAGE.forumId is null on any topic reached from a listing;
- * and the remembered choice, so the palette and the box cannot
- * disagree about where a search goes.
- */
+// Which forum a search goes to (or null for the whole board) — mirrors the
+// navbar box's own logic, since PAGE.forumId is null on listing-reached topics.
 function paletteSearchPlace() {
     const kept = searchPrefs().where;
-    /* A board picked from the palette's own chooser, which offers the
-       whole cached list rather than the two or three rooms the page
-       you are on happens to sit in. It is named `f:<id>` so the box in
-       the bar, which only knows "here", "up" and "board", falls back
-       to its own default instead of trying to honour a room it has no
-       segment for. */
+    // Named f:<id> so the navbar box (which only knows here/up/board) falls
+    // back to its default instead of misreading a room it has no word for.
     if (kept && kept.slice(0, 2) === "f:") {
         const id = kept.slice(2);
         const name = knownForumName(id);
@@ -71,8 +35,7 @@ function paletteSearchPlace() {
     if (kept === "board") return null;
     if (kept === "here") return here;
     if (kept === "up") return up || here;
-    // Nobody has chosen: the forum above a topic, the forum itself on
-    // a listing. See parentForum().
+    // Default: the topic's parent forum, or the forum itself on a listing.
     return PAGE.isTopic ? (up || here) : here;
 }
 
@@ -80,9 +43,8 @@ function boardSearchUrl(query) {
     const depth = SEARCH_DEPTH[searchDepthChoice()] || SEARCH_DEPTH.titleonly;
     const place = paletteSearchPlace();
     const url = new URL("./search.php", location.href);
-    // The board takes a search with no words in it as long as there is
-    // a name on it, which is what "everything this member posted in
-    // Releases" is.
+    // A query with no words is valid as long as an author is set (a member's
+    // whole history in a room).
     if (query) url.searchParams.set("keywords", query);
     if (searchAuthor) url.searchParams.set("author", searchAuthor);
     url.searchParams.set("terms", searchChoice("terms", SEARCH_TERMS));
@@ -92,38 +54,15 @@ function boardSearchUrl(query) {
     return url.toString();
 }
 
-/* ---- The chooser at the head of the palette's field -----------------
-
-   The palette hands its query to the board, and it did that with
-   whatever the box in the bar had last been set to — chosen on another
-   page, invisible from here. The row said where the search was going
-   and there was no way to send it anywhere else without closing the
-   palette and finding a search box.
-
-   So what the full search form asks — which rooms, how deep, every
-   word or any word, threads or posts, whose posts — is asked here
-   instead, from one control at the head of the field. The form itself
-   is a page load away and comes back as a page of results; this is the
-   same query, aimed before it is sent.
-
-   Not all of it: sorting, the date range and how many characters of a
-   post to print back are choices about a page of results, and the
-   place to make those is the page of results. */
+// The chooser at the head of the field lets a search be aimed (room, depth,
+// terms, author) before it's sent, instead of inheriting whatever the navbar
+// box was last set to. Sorting/date-range/excerpt length stay on the results page.
 
 const FORUM_TREE_KEY = "forumTree";
 
-/**
- * Every room the reader may search, in the board's own order.
- *
- * Two sources, and the better one wins. The full search form prints
- * the whole tree in one <select> — categories, forums, subforums,
- * indented with non-breaking spaces — as the reader's own account sees
- * it, so a member with a restricted room gets it and everyone else
- * does not. The index knows less: top-level forums and the subforum
- * links under them, and no idea of what it cannot see. The index is
- * visited by everyone and the search form by almost nobody, so the
- * index fills the list until the form has been opened once.
- */
+// Forum list: the search form's <select> is complete (per-account visibility)
+// but rarely visited; the index is seen by everyone but knows less. Index
+// fills the list until the form has been opened once.
 function storeForumTree(rooms, source) {
     if (!rooms.length) return;
     const kept = store.get(FORUM_TREE_KEY, null);
@@ -136,13 +75,9 @@ function forumTree() {
     return kept && Array.isArray(kept.rooms) ? kept.rooms : [];
 }
 
-/* The search form's own list of rooms.
- *
- * Depth is the indent the template wrote: "&nbsp; &nbsp;" per level,
- * three characters once the entities are text. A row with something
- * deeper under it and nothing above it is a category — "English
- * Forums" holds no topics of its own — so it is a heading here rather
- * than somewhere a search can be sent. */
+// Depth = indent the template wrote ("&nbsp; &nbsp;" per level, 3 chars/level).
+// A depth-0 row with deeper rows under it and none above is a category heading
+// (e.g. "English Forums"), not a searchable room.
 function cacheSearchFormForums() {
     const select = document.querySelector('select[name="fid[]"]');
     if (!select) return;
@@ -174,14 +109,8 @@ function cacheIndexForums() {
     storeForumTree(rooms, "index");
 }
 
-/**
- * The rooms the chooser offers, and what picking one is stored as.
- *
- * `where` is shared with the box in the bar, which knows three words:
- * the room you are in, the one above it, and the whole board. A room
- * picked from the tree that happens to be one of those is stored as
- * that word, so the box keeps honouring it; anything else is stored as
- * `f:<id>`, which the box does not recognise and falls back from. */
+// `where` is shared with the navbar box, which only knows here/up/board — a
+// picked room matching one of those is stored as that word, else as `f:<id>`.
 function scopeValueFor(id) {
     const trail = forumTrail();
     const here = trail.length ? trail[trail.length - 1] : null;
@@ -195,8 +124,7 @@ function paletteScopeRooms() {
     const tree = forumTree();
     if (tree.length) return tree;
 
-    // Nothing cached yet — this browser has opened neither the index
-    // nor the search form. The breadcrumb still knows two rooms.
+    // No cache yet (index/search form never opened) — fall back to the breadcrumb.
     const trail = forumTrail();
     const here = trail.length ? trail[trail.length - 1] : null;
     const up = parentForum(trail);
@@ -206,16 +134,8 @@ function paletteScopeRooms() {
     return rooms;
 }
 
-/**
- * The control, its popover, and every pressed state kept in line with
- * what is stored.
- *
- * `onPick` redraws the palette behind it: the row that hands the query
- * to the board names the room, says how deep it will look and whose
- * posts it will look at, so a choice that did not redraw would leave
- * the answer to the question the reader just asked sitting one line
- * under the control.
- */
+// `onPick` redraws the palette: the search row names room/depth/author, so a
+// choice here that skipped the redraw would leave a stale answer showing.
 function buildPaletteScope(onPick) {
     const rooms = el("div.rr-palette__rooms", { role: "group", "aria-label": t("Where to search") });
     const inSeg = el("div.rr-seg", { role: "group", "aria-label": t("What to search") });
@@ -242,18 +162,13 @@ function buildPaletteScope(onPick) {
         el("div.rr-search__row", {}, [el("span.rr-search__rowlabel", {}, [t("Author")]), author]),
     ]);
 
-    /* Rooms are matched on the forum id rather than on the stored word:
-       the same room is "here" from inside it and `f:10` from the tree,
-       and both have to light the same row. */
+    // Matched by forum id, not stored word — "here" and "f:10" can be the same room.
     const sync = () => {
         const place = paletteSearchPlace();
         const id = place ? String(place.id) : null;
         const depth = searchDepthChoice();
         where.textContent = place ? shortForumName(place.name) : t("Whole board");
-        // The room is printed on the chip, so the accent is kept for
-        // everything that is not — how deep it looks, whose posts, any
-        // word rather than all of them — the same way the box in the
-        // bar spends it.
+        // Room is already shown on the chip; the accent flags the other options.
         button.toggleAttribute("data-rr-active", depth !== "titleonly"
             || Boolean(searchAuthor)
             || searchChoice("terms", SEARCH_TERMS) !== "all"
@@ -317,8 +232,7 @@ function buildPaletteScope(onPick) {
     const open = () => {
         pop.hidden = false;
         button.setAttribute("aria-expanded", "true");
-        // Somewhere to arrow from, and the answer to "where is it set"
-        // under the cursor.
+        // Focus the current selection so arrow keys have a starting point.
         const first = rooms.querySelector('button[aria-pressed="true"]') || rooms.firstElementChild;
         if (first) first.focus();
         if (first) first.scrollIntoView({ block: "nearest" });
@@ -328,9 +242,7 @@ function buildPaletteScope(onPick) {
         else { close(); button.focus(); }
     });
 
-    /* Enter in the author field is the reader saying they are done
-       here, not asking for a member list: it puts the choices away and
-       hands focus back to the query, where Enter runs the search. */
+    // Enter in the author field closes the popover and returns focus to the query.
     author.addEventListener("keydown", (event) => {
         if (event.key !== "Enter") return;
         event.preventDefault();
@@ -346,9 +258,7 @@ function cacheForumList() {
     if (!PAGE.isIndex) return;
 
     const forums = forumRows().map((entry) => {
-        // The topic count sits in the cell the listing labels "topics";
-        // it is the only ranking signal on the page, and it puts Main
-        // Forum above boards nobody posts in.
+        // Topic count is the only ranking signal available; sorts busy boards first.
         const cell = entry.row.querySelector('td[data-rr-col="topics"]');
         const topics = cell ? parseInt(cell.textContent.replace(/\D/g, ""), 10) : 0;
         return {
@@ -362,15 +272,11 @@ function cacheForumList() {
     forums.sort((a, b) => b.topics - a.topics);
     if (forums.length) store.set("forums", forums);
 
-    /* Ranked by traffic for the jump list above; in the board's own
-       order, subforums and all, for the chooser. Two lists because
-       they answer different questions: "which board do I mean" wants
-       Main Forum first, "which board do I search" wants Releases
-       under it. */
+    // Two lists for two questions: traffic order for "which board do I mean",
+    // board order (with subforums) for "which board do I search".
     cacheIndexForums();
 }
 
-/** The board's own donation link, wherever the template put it. */
 function donateHref() {
     const link = Array.from(document.querySelectorAll('#wrapheader a[href], .rr-boardbar a[href]'))
         .find((a) => /donat/i.test(a.getAttribute("href") || "") || /donat/i.test(a.textContent || ""));
@@ -382,10 +288,7 @@ function paletteActions() {
         { label: "Open settings", icon: "settings", run: () => openSettings() },
         { label: "Keyboard shortcuts", icon: "keyboard", run: () => openShortcutSheet() },
         { label: "Board index", icon: "home", href: "./index.php" },
-        // The board is hosted on donations and is asking for them. The
-        // masthead's own link is lifted into the board bar; this is the
-        // same destination, reachable from anywhere without going back
-        // to the top of the page.
+        // Reuses the masthead's donation link so it's reachable without scrolling up.
         { label: "Donate to the board", icon: "heart", href: donateHref() || "./donate.php" },
         { label: "View active topics", icon: "clock", href: "./search.php?search_id=active_topics" },
         { label: "View unanswered posts", icon: "clock", href: "./search.php?search_id=unanswered" },
@@ -423,11 +326,8 @@ function paletteActions() {
 function collectItems() {
     const groups = [];
 
-    /* A bookmark and a recent topic are topics, so they get the pane
-       beside the palette too (preview.js): the palette opens on these
-       two lists, and resting on one is the first thing anybody does
-       with it. `preview` is the URL to read; a board or an action has
-       none and gets no pane. */
+    // Bookmarks/recent topics get a preview pane (preview.js) via `preview`;
+    // boards and actions have none.
     const bookmarks = store.get("bookmarks", []);
     if (bookmarks.length) {
         groups.push({
@@ -458,9 +358,8 @@ function collectItems() {
         });
     }
 
-    /* On a topic page the actions are about this topic — copy its
-       link, jump to its last page — and were under seven boards and six
-       recent topics, below the fold of the palette. First, there. */
+    // On a topic page, put topic-specific actions first (used to be buried
+    // below boards/recent topics).
     const actions = { title: t("Actions"), items: paletteActions() };
     if (PAGE.isTopic) groups.unshift(actions);
     else groups.push(actions);
@@ -469,9 +368,7 @@ function collectItems() {
 
 function openPalette() {
     if (paletteHost) return;
-    // The settings panel and the shortcut sheet are modal. Ctrl+K over
-    // one of them used to draw the palette on top, with two focus traps
-    // fighting over Tab and Escape closing whichever listener ran last.
+    // Settings panel/shortcut sheet are modal; avoid stacking focus traps.
     if (document.querySelector(".rr-panel, .rr-sheet")) return;
 
     const groups = collectItems();
@@ -486,14 +383,10 @@ function openPalette() {
         "aria-controls": "rr-palette-list",
         "aria-autocomplete": "list",
     });
-    // A listbox nobody is told about. The input is what has focus, so
-    // the highlighted option has to be named on the input — without
-    // aria-activedescendant a screen reader reads the box and never
-    // says what pressing Enter would do.
+    // Focus stays on the input, so aria-activedescendant names the highlighted
+    // option for screen readers.
     const list = el("ul.rr-palette__list", { role: "listbox", id: "rr-palette-list" });
-    // The field and the control that says where its query goes are one
-    // strip; the popover hangs off it, so the strip is what it is
-    // positioned against.
+    // bar is the positioning anchor for the scope popover.
     const bar = el("div.rr-palette__bar", {}, [input]);
     const panel = el("div.rr-palette", { role: "dialog", "aria-modal": "true", "aria-label": "Command palette" }, [bar, list]);
     const overlay = el("div.rr-overlay", {}, [panel]);
@@ -502,15 +395,10 @@ function openPalette() {
     let cursor = 0;
 
     const searchItem = (query) => {
-        /* It says where it will look. The row said "the forum" and
-           searched the board the reader was in — and later named the
-           last crumb, which on a topic page is the topic. */
         const place = paletteSearchPlace();
         const cooldown = searchCooldown();
         return {
-            /* Four sentences rather than one with pieces bolted on: a
-               name and no words is a whole search on this board — what
-               did this member post in Releases — and reads as one. */
+            // Four full sentences rather than one assembled from bolted-together pieces.
             label: searchAuthor
                 ? (query
                     ? (place
@@ -523,10 +411,8 @@ function openPalette() {
                     ? t("Search {forum} for {q}", { forum: place.name, q: query })
                     : t("Search the forum for {q}", { q: query })),
             icon: "search",
-            /* The board allows one search about every half minute and
-               answers the ones in between with "you cannot use search
-               at this time" — a page load spent to be told no. The row
-               still works; it says what it is about to cost. */
+            // Board rate-limits searches (~30s); hint shows the wait instead of a
+            // wasted page load that just says no.
             hint: cooldown
                 ? t("wait {n}s", { n: cooldown })
                 : (SEARCH_DEPTH[searchDepthChoice()]?.hint || "Enter"),
@@ -543,15 +429,11 @@ function openPalette() {
         flat = [];
         const needle = query.trim().toLowerCase();
 
-        // A name in the chooser is a search on its own, with or without
-        // words to go with it.
+        // An author alone is a valid search, with or without a query.
         if (needle || searchAuthor) list.append(renderGroup(t("Search"), [searchItem(query.trim())], flat));
 
-        /* Topics this browser has already walked past, filtered as you
-           type (preview.js). Above the boards and below the search
-           row: what someone typing a game name wants is the thread,
-           and the row that hands the query to the board is the one
-           thing that can find a thread nobody here has seen. */
+        // Previously-seen topics (preview.js), shown above boards: a game name
+        // most likely means an existing thread, not a new search.
         const seen = needle ? topicPaletteItems(needle, 8) : [];
         if (seen.length) list.append(renderGroup(t("Topics"), seen, flat));
 
@@ -571,11 +453,8 @@ function openPalette() {
         const fragment = document.createDocumentFragment();
         fragment.append(el("li.rr-palette__group", { role: "presentation" }, [title]));
         for (const item of items) {
-            // An entry that navigates carries its URL. A listbox option
-            // cannot be an <a> without breaking the role, so the URL
-            // rides on the element and middle-click and Ctrl+click are
-            // handled here — opening a board or a bookmark in a new tab
-            // is the first thing anyone tries.
+            // data-href carries the URL since role="option" can't be an <a>;
+            // handles middle-click/ctrl-click to open in a new tab.
             const node = el("li.rr-palette__item", {
                 role: "option",
                 id: "rr-palette-opt-" + sink.length,
@@ -612,8 +491,7 @@ function openPalette() {
         return fragment;
     };
 
-    // A pane beside the panel, fed by whatever the cursor is on
-    // (preview.js). Returns a no-op where there is no room for it.
+    // Preview pane beside the panel (preview.js); no-op when there's no room.
     const onCursor = attachTopicPreview(overlay, () => (flat[cursor] ? flat[cursor]._item : null));
 
     const highlight = () => {
@@ -646,11 +524,8 @@ function openPalette() {
     };
 
     const onKey = (event) => {
-        /* This listener is on the document and captures, so with the
-           choices open it would still be the one answering: Enter would
-           run the highlighted row rather than press the button under
-           the cursor, and Escape would take the whole palette down
-           when the reader only meant to put the choices away. */
+        // Captures on document, so while the popover is open it must defer to
+        // it — else Enter/Escape would hit the palette instead of the popover.
         if (scope.isOpen()) {
             if (event.key !== "Escape") return;
             event.preventDefault();
@@ -679,8 +554,7 @@ function openPalette() {
 
     input.addEventListener("input", debounce(() => render(input.value), 60));
     overlay.addEventListener("mousedown", (event) => { if (event.target === overlay) close(); });
-    // Anywhere else in the palette puts the choices away, the way
-    // clicking off any other popover does.
+    // Click anywhere else in the palette closes the scope popover.
     panel.addEventListener("mousedown", (event) => {
         if (scope.isOpen() && !scope.pop.contains(event.target) && !scope.button.contains(event.target)) scope.close();
     });
@@ -695,8 +569,7 @@ function openPalette() {
 
 function initPalette() {
     cacheForumList();
-    // The full search form, met on its own page. Nothing else on the
-    // board prints the whole tree.
+    // Only the full search form's page prints the whole forum tree.
     cacheSearchFormForums();
     if (!settings.get("palette")) return;
     document.addEventListener("keydown", (event) => {
