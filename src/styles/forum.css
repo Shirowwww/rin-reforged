@@ -785,11 +785,23 @@ html[data-rr] .rr-rules__toggle {
 }
 html[data-rr] .rr-rules__toggle:hover { color: var(--rr-text-strong); }
 /* The heading is the button's label now, so the room it kept for the
-   rules under it belongs to the button, not to it. */
-html[data-rr] .rr-rules__toggle > h3,
-html[data-rr] .rr-rules__toggle > h4,
-html[data-rr] .rr-rules__toggle > p.rules,
-html[data-rr] .rr-rules__toggle > .rr-rules__name {
+   rules under it belongs to the button, not to it.
+ *
+ * The selector is this shape because the rule it has to beat is
+ * `html[data-rr] div.forumrules[data-rr-rules] h3`, which is three
+ * classes and three elements. A bare `.rr-rules__toggle > h3` is three
+ * and two and loses on the element count; adding `button` only ties,
+ * and a tie is decided by which rule is written last, which is not
+ * something to depend on. `:is()` takes the specificity of its
+ * strongest argument — `p.rules` — so this is four and three and wins
+ * outright, whichever of the four it is matching.
+ *
+ * It lost silently before, and the 12px bottom margin it left on the
+ * label is what pushed the chevron 6px below the words it points at:
+ * a flex row centres margin boxes, so a margin under one item lifts
+ * that item and drops every other. */
+html[data-rr] [data-rr-rules] button.rr-rules__toggle > :is(h3, h4, p.rules, .rr-rules__name),
+html[data-rr] button.rr-rules__toggle > :is(h3, h4, p.rules, .rr-rules__name) {
     margin: 0;
     color: inherit;
     font: inherit;
@@ -807,30 +819,6 @@ html[data-rr] .rr-rules__toggle > svg {
 html[data-rr] [data-rr-folded] > .rr-rules__toggle { margin-bottom: 0; }
 html[data-rr] [data-rr-folded] > .rr-rules__toggle > svg { transform: rotate(-90deg); }
 html[data-rr] .rr-rules__body[hidden] { display: none; }
-
-/* Folded there is nothing to enclose, so it stops being a card: the
-   fill, the hairline, the radius and the inset were a 1320x63 box
-   holding four small words at the far left of it, which reads as an
-   empty panel rather than as something to open. What is left is a
-   disclosure line — a chevron and the notice's name — and the accent
-   rail goes with the card, because a rail marks a block and there is
-   no block until it is open. */
-html[data-rr] div.forumrules[data-rr-rules][data-rr-folded],
-html[data-rr] table.tablebg[data-rr-rules] > tbody > tr > td.row3[data-rr-folded] {
-    margin: var(--rr-s2) 0 var(--rr-s3);
-    padding: 0;
-    background: none;
-    border: 0;
-    border-radius: 0;
-}
-html[data-rr] div.forumrules[data-rr-rules][data-rr-folded]::before,
-html[data-rr] table.tablebg[data-rr-rules] > tbody > tr > td.row3[data-rr-folded]::before {
-    display: none;
-}
-/* And the target is the words, not the width of the page: at 100% a
-   pointer anywhere on the line lit up a label 1200px away. */
-html[data-rr] [data-rr-folded] > .rr-rules__toggle { width: auto; }
-
 /* Marked by lists.js (markForumRules). It is prose, not a listing row:
    the room a panel gets, a heading told apart from the rules under it,
    the tinted ground and the accent mark that say "this is a heading,
