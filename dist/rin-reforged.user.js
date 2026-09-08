@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.13.1
+// @version         0.13.2
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -1183,6 +1183,29 @@ html[data-rr] .rr-rules__toggle > svg {
 html[data-rr] [data-rr-folded] > .rr-rules__toggle { margin-bottom: 0; }
 html[data-rr] [data-rr-folded] > .rr-rules__toggle > svg { transform: rotate(-90deg); }
 html[data-rr] .rr-rules__body[hidden] { display: none; }
+
+/* Folded there is nothing to enclose, so it stops being a card: the
+   fill, the hairline, the radius and the inset were a 1320x63 box
+   holding four small words at the far left of it, which reads as an
+   empty panel rather than as something to open. What is left is a
+   disclosure line — a chevron and the notice's name — and the accent
+   rail goes with the card, because a rail marks a block and there is
+   no block until it is open. */
+html[data-rr] div.forumrules[data-rr-rules][data-rr-folded],
+html[data-rr] table.tablebg[data-rr-rules] > tbody > tr > td.row3[data-rr-folded] {
+    margin: var(--rr-s2) 0 var(--rr-s3);
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+}
+html[data-rr] div.forumrules[data-rr-rules][data-rr-folded]::before,
+html[data-rr] table.tablebg[data-rr-rules] > tbody > tr > td.row3[data-rr-folded]::before {
+    display: none;
+}
+/* And the target is the words, not the width of the page: at 100% a
+   pointer anywhere on the line lit up a label 1200px away. */
+html[data-rr] [data-rr-folded] > .rr-rules__toggle { width: auto; }
 
 /* Marked by lists.js (markForumRules). It is prose, not a listing row:
    the room a panel gets, a heading told apart from the rules under it,
@@ -19436,7 +19459,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.13.1";
+const RR_VERSION = "0.13.2";
 
 function injectStyles() {
     const host = document.head || document.documentElement;

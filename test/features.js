@@ -2940,6 +2940,13 @@ const CHECKS = [
             const box = document.querySelector("#wrapcentre div.forumrules");
             if (!box) return "the fixture lost the notice";
             if (!box.hasAttribute("data-rr-rules")) return "the div shape is still not recognised";
+
+            /* This is about the card the notice gets, so there has to
+               be a card: folded it is a disclosure line with no ground
+               of its own, and whether it arrives folded depends on
+               whether another check met it first. Open it and ask. */
+            const toggle = box.querySelector(".rr-rules__toggle");
+            if (toggle && toggle.getAttribute("aria-expanded") === "false") toggle.click();
             if (box.querySelector('[style*="font-size"]')) return "the board's own sizing survived";
             if (box.querySelector('[style*="color"]')) return "the board's own colour survived";
             // The board's own ground is pure black; the card's is not.
