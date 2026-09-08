@@ -2869,6 +2869,64 @@ const CHECKS = [
     },
     /* ---- The shapes a member sees, and the ones reported at 0.12 --- */
     {
+        name: "rules: the notice is read once and is a line after that",
+        url: RULES,
+        // An empty store, in its own context: "never met" is the whole
+        // first half of this check, and another check on this page has
+        // already met it by the time this one runs.
+        data: {},
+        run: async () => {
+            /* 217px of prose above every topic in the forum, identical
+               every time. Open the first time it is met — a board that
+               restricts posting and enforces what it prints here is not
+               one to hide the rules from a reader who has never seen
+               them — and folded on every visit after. */
+            const box = document.querySelector("#wrapcentre div.forumrules");
+            if (!box) return "the fixture lost the notice";
+            const toggle = box.querySelector(".rr-rules__toggle");
+            if (!toggle) return "the notice does not fold";
+            if (toggle.getAttribute("aria-expanded") !== "true") return "a notice never met opened folded";
+
+            const open = box.getBoundingClientRect().height;
+            toggle.click();
+            const shut = box.getBoundingClientRect().height;
+            if (shut >= open) return "folding it saved nothing: " + Math.round(open) + "px to " + Math.round(shut);
+            if (shut > 72) return "folded it is still " + Math.round(shut) + "px";
+            if (box.querySelector(".rr-rules__body").getClientRects().length) return "the rules are still drawn";
+
+            // The name the board gave it survives, and still labels it.
+            const label = toggle.textContent.replace(/\s+/g, " ").trim();
+            if (!label) return "the fold has no label";
+            return null;
+        },
+    },
+    {
+        name: "releases: every filter chip drawn can narrow the list",
+        url: HV,
+        run: () => {
+            /* Counting the kinds rather than what they select drew four
+               chips over a single release carrying Crack, Hypervisor,
+               DLC and Update: a row of filters, in the list's own
+               colours, above the one row every one of them matched. A
+               chip on every row selects the list; a list of one cannot
+               be narrowed. */
+            const items = Array.from(document.querySelectorAll(".rr-releases__list > li"));
+            const chips = Array.from(document.querySelectorAll(".rr-releases__chip"));
+            if (!items.length) return "no releases on this page to filter";
+            if (!chips.length) return null;
+            if (items.length < 2) return "chips drawn over a list of one";
+            for (const chip of chips) {
+                const kind = chip.dataset.kind;
+                const hit = items.filter((li) => (li.getAttribute("data-kinds") || "").split(" ").includes(kind));
+                if (hit.length >= items.length) {
+                    return '"' + chip.textContent.trim() + '" is on all ' + items.length + " rows and narrows nothing";
+                }
+                if (!hit.length) return '"' + chip.textContent.trim() + '" matches no row at all';
+            }
+            return null;
+        },
+    },
+    {
         name: "rules: the notice the board really writes gets the card too",
         url: RULES,
         run: () => {
@@ -4658,7 +4716,14 @@ async function main() {
         return ctx;
     };
 
-    for (const check of CHECKS) {
+    /* `node test/features.js <words>` runs only the checks whose name
+       contains them. The whole suite is 196 browser pages; iterating on
+       one of them should not cost the other 195. */
+    const only = process.argv.slice(2).join(" ").toLowerCase();
+    const chosen = only ? CHECKS.filter((c) => c.name.toLowerCase().includes(only)) : CHECKS;
+    if (only && !chosen.length) { console.error("no check matches " + only); process.exit(2); }
+
+    for (const check of chosen) {
         const own = Boolean(check.fresh || check.width || check.settings || check.data
             || check.buckets || check.offline || check.stub || check.noGrant || check.media || check.slow);
         let tab = own ? null : cache.get(check.url);
@@ -4734,7 +4799,7 @@ async function main() {
     }
 
     await browser.close();
-    console.log(failures ? "\n" + failures + " checks failed" : "\nall " + CHECKS.length + " checks passed");
+    console.log(failures ? "\n" + failures + " checks failed" : "\nall " + chosen.length + " checks passed");
     process.exit(failures ? 1 : 0);
 }
 

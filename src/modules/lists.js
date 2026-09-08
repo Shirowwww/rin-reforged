@@ -1623,6 +1623,92 @@ function initMarkColumn(table) {
     }
 }
 
+/* ---- The rules notice folds ----------------------------------------
+
+   On a restricted forum this notice is 217px of prose — nearer 290 on
+   the live board — printed above every topic in the forum, identical
+   every time, for the whole time you read that forum. It is worth
+   reading once and worth a line after that.
+
+   So it is read once: the first time a given notice is met it is open,
+   and it closes itself for every visit after. Not closed on the first
+   sight, because on a board that restricts posting and enforces the
+   rules it prints, a reader who has never seen these words needs to
+   meet them. What is remembered is the notice, not the forum — the
+   text is what changes between rooms, and keying on it means a forum
+   that rewrites its rules is met open again. */
+
+const RULES_FOLD_KEY = "rulesFold";
+
+function rulesFolds() {
+    const kept = store.get(RULES_FOLD_KEY, null);
+    return kept && typeof kept === "object" ? kept : {};
+}
+
+/* A short, stable name for a run of text. djb2 over the normalised
+   words: two forums with the same rules share a line in the store, and
+   an edited notice gets a new one and is shown again. */
+function rulesKey(text) {
+    const said = text.replace(/\s+/g, " ").trim().toLowerCase();
+    let hash = 5381;
+    for (let i = 0; i < said.length; i += 1) hash = (((hash << 5) + hash) ^ said.charCodeAt(i)) >>> 0;
+    return hash.toString(36);
+}
+
+/**
+ * Fold one notice.
+ *
+ * `card` is the box the stylesheet dresses, `heading` the element
+ * carrying its name (or null, when the board printed none), and
+ * `content` the nodes that say the rules. The heading moves into a
+ * button and the content into a body the button hides, so the card
+ * keeps the shape and the colours it already had.
+ */
+function foldRulesNotice(card, heading, content) {
+    if (!content.length || card.querySelector(".rr-rules__toggle")) return;
+
+    const body = el("div.rr-rules__body");
+    for (const node of content) body.append(node);
+
+    /* The board's own heading moves into the button rather than being
+       replaced by one: it is already dressed as the notice's label —
+       uppercase, faint, a step under the prose — and everything that
+       reads this card, the stylesheet included, looks for that
+       element. A notice printed without one gets a name here. */
+    const label = heading || el("span.rr-rules__name", {}, [t("Forum rules")]);
+    const toggle = el("button.rr-rules__toggle", { type: "button" }, [icon("chevronD", 13), label]);
+
+    const key = rulesKey(body.textContent);
+    const kept = rulesFolds();
+    /* Never met: open, and written closed straight away so the next
+       page of the same forum is a line. A reader who then opens it
+       back up is asking for it open, and that is what sticks. */
+    const first = !Object.prototype.hasOwnProperty.call(kept, key);
+    let open = first || kept[key] === "open";
+    if (first) {
+        kept[key] = "closed";
+        store.set(RULES_FOLD_KEY, kept);
+    }
+
+    const sync = () => {
+        card.toggleAttribute("data-rr-folded", !open);
+        body.hidden = !open;
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        labelled(toggle, open ? t("Hide the forum rules") : t("Read the forum rules"));
+    };
+    toggle.addEventListener("click", () => {
+        open = !open;
+        const now = rulesFolds();
+        now[key] = open ? "open" : "closed";
+        store.set(RULES_FOLD_KEY, now);
+        sync();
+    });
+
+    card.prepend(toggle);
+    toggle.after(body);
+    sync();
+}
+
 /* The forum-rules box.
 
    subsilver2 writes it as a table of one `td.row3` above everything
@@ -1668,6 +1754,10 @@ function markForumRules() {
         if (heading && heading.nextElementSibling && heading.nextElementSibling.tagName === "BR") {
             heading.nextElementSibling.style.display = "none";
         }
+        // Everything but the heading is the rules; the heading becomes
+        // the control that shows them.
+        const content = Array.from(box.childNodes).filter((node) => node !== heading);
+        foldRulesNotice(box, heading, content);
     }
 
     for (const cell of document.querySelectorAll("#wrapcentre td.row3")) {
@@ -1690,6 +1780,13 @@ function markForumRules() {
         box.setAttribute("data-rr-rules", "");
         if (box.style.marginBottom) box.style.marginBottom = "";
         tameRulesEmphasis(cell);
+
+        /* The cell is the card here, not the table: the stylesheet
+           dresses `td.row3` and the accent rail hangs off it, so the
+           toggle and the body belong inside it too. */
+        const heading = cell.querySelector("h4, p.rules, h3");
+        const content = Array.from(cell.childNodes).filter((node) => node !== heading);
+        foldRulesNotice(cell, heading, content);
     }
 }
 

@@ -1098,13 +1098,32 @@ function releaseRow(row, latest) {
  *
  * Only kinds actually present: a row of eleven filters where nine
  * match nothing is a worse list than no filters at all.
+ *
+ * And only kinds that narrow something. Counting the kinds rather than
+ * what they select drew four chips over a single release carrying
+ * Crack, Hypervisor, DLC and Update — a row of filters, in the list's
+ * own colours, directly above the one row they all match. A kind on
+ * every row selects the whole list, which is the list; a list of one
+ * cannot be narrowed at all. Neither earns a band of the panel.
  */
 function releaseFilters(rows, list, onCount) {
     const present = new Map();
+    const matching = new Map();
     for (const row of rows) {
-        for (const [i, id] of row.kinds.entries()) present.set(id, t(row.labels[i]));
+        // Rows, not mentions: a row that names a kind twice still only
+        // counts once against "does this chip select the whole list".
+        const seen = new Set();
+        for (const [i, id] of row.kinds.entries()) {
+            present.set(id, t(row.labels[i]));
+            if (seen.has(id)) continue;
+            seen.add(id);
+            matching.set(id, (matching.get(id) || 0) + 1);
+        }
     }
-    if (present.size < 2) return null;
+    for (const [id, count] of matching) {
+        if (count >= rows.length) present.delete(id);
+    }
+    if (rows.length < 2 || present.size < 2) return null;
 
     const bar = el("div.rr-releases__filters", { role: "group", "aria-label": t("Filter by kind") });
     let active = null;

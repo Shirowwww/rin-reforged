@@ -760,6 +760,54 @@ html[data-rr] div.forumrules[data-rr-rules] ol {
 }
 html[data-rr] div.forumrules[data-rr-rules] li { margin: 2px 0; }
 
+/* ---- The notice folds ---------------------------------------------
+
+   Read once, a line after that. The heading the board prints becomes
+   the control that opens it, so the card keeps its ground, its rail
+   and its inset either way and nothing new is introduced to carry a
+   chevron. Folded, the card is that one line. */
+html[data-rr] .rr-rules__toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    margin: 0 0 var(--rr-s3);
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    color: var(--rr-faint);
+    font: 650 var(--rr-fs-xs) / 1.4 var(--rr-font);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    text-align: left;
+    cursor: pointer;
+}
+html[data-rr] .rr-rules__toggle:hover { color: var(--rr-text-strong); }
+/* The heading is the button's label now, so the room it kept for the
+   rules under it belongs to the button, not to it. */
+html[data-rr] .rr-rules__toggle > h3,
+html[data-rr] .rr-rules__toggle > h4,
+html[data-rr] .rr-rules__toggle > p.rules,
+html[data-rr] .rr-rules__toggle > .rr-rules__name {
+    margin: 0;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+}
+html[data-rr] .rr-rules__toggle > svg {
+    width: 13px;
+    height: 13px;
+    flex: none;
+    color: var(--rr-faint);
+}
+/* Folded: the chevron points at what it would open, and the space the
+   heading kept for the rules under it goes with them. */
+html[data-rr] [data-rr-folded] > .rr-rules__toggle { margin-bottom: 0; }
+html[data-rr] [data-rr-folded] > .rr-rules__toggle > svg { transform: rotate(-90deg); }
+html[data-rr] .rr-rules__body[hidden] { display: none; }
+
 /* Marked by lists.js (markForumRules). It is prose, not a listing row:
    the room a panel gets, a heading told apart from the rules under it,
    the tinted ground and the accent mark that say "this is a heading,

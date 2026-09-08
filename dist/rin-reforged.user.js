@@ -2,7 +2,7 @@
 // @name            RIN Reforged
 // @name:fr         RIN Reforged
 // @namespace       https://github.com/Shirowwww/rin-reforged
-// @version         0.13.0
+// @version         0.13.1
 // @description     A full redesign of CS.RIN.RU: modern themes, real mobile support, game info cards, command palette, keyboard navigation and a settings panel.
 // @description:fr  Refonte complete de CS.RIN.RU : themes modernes, support mobile, fiches de jeu, palette de commandes, navigation clavier et panneau de reglages.
 // @author          Shirowwww
@@ -1135,6 +1135,54 @@ html[data-rr] div.forumrules[data-rr-rules] ol {
     color: var(--rr-muted);
 }
 html[data-rr] div.forumrules[data-rr-rules] li { margin: 2px 0; }
+
+/* ---- The notice folds ---------------------------------------------
+
+   Read once, a line after that. The heading the board prints becomes
+   the control that opens it, so the card keeps its ground, its rail
+   and its inset either way and nothing new is introduced to carry a
+   chevron. Folded, the card is that one line. */
+html[data-rr] .rr-rules__toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    margin: 0 0 var(--rr-s3);
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    color: var(--rr-faint);
+    font: 650 var(--rr-fs-xs) / 1.4 var(--rr-font);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    text-align: left;
+    cursor: pointer;
+}
+html[data-rr] .rr-rules__toggle:hover { color: var(--rr-text-strong); }
+/* The heading is the button's label now, so the room it kept for the
+   rules under it belongs to the button, not to it. */
+html[data-rr] .rr-rules__toggle > h3,
+html[data-rr] .rr-rules__toggle > h4,
+html[data-rr] .rr-rules__toggle > p.rules,
+html[data-rr] .rr-rules__toggle > .rr-rules__name {
+    margin: 0;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+}
+html[data-rr] .rr-rules__toggle > svg {
+    width: 13px;
+    height: 13px;
+    flex: none;
+    color: var(--rr-faint);
+}
+/* Folded: the chevron points at what it would open, and the space the
+   heading kept for the rules under it goes with them. */
+html[data-rr] [data-rr-folded] > .rr-rules__toggle { margin-bottom: 0; }
+html[data-rr] [data-rr-folded] > .rr-rules__toggle > svg { transform: rotate(-90deg); }
+html[data-rr] .rr-rules__body[hidden] { display: none; }
 
 /* Marked by lists.js (markForumRules). It is prose, not a listing row:
    the room a panel gets, a heading told apart from the rules under it,
@@ -7991,6 +8039,9 @@ const RU_WORDS = {
     "Filter this page by title": "Фильтр по названию",
     "Filter topics on this page": "Фильтр тем на этой странице",
     "Show only {x}": "Показать только {x}",
+    "Forum rules": "Правила форума",
+    "Read the forum rules": "Прочитать правила форума",
+    "Hide the forum rules": "Скрыть правила форума",
     "Tag": "Метка",
     "Show only one kind of topic": "Показать только один вид тем",
     "Showing only {x} — pick another or clear": "Показаны только {x} — выберите другую или снимите",
@@ -11923,6 +11974,92 @@ function initMarkColumn(table) {
     }
 }
 
+/* ---- The rules notice folds ----------------------------------------
+
+   On a restricted forum this notice is 217px of prose — nearer 290 on
+   the live board — printed above every topic in the forum, identical
+   every time, for the whole time you read that forum. It is worth
+   reading once and worth a line after that.
+
+   So it is read once: the first time a given notice is met it is open,
+   and it closes itself for every visit after. Not closed on the first
+   sight, because on a board that restricts posting and enforces the
+   rules it prints, a reader who has never seen these words needs to
+   meet them. What is remembered is the notice, not the forum — the
+   text is what changes between rooms, and keying on it means a forum
+   that rewrites its rules is met open again. */
+
+const RULES_FOLD_KEY = "rulesFold";
+
+function rulesFolds() {
+    const kept = store.get(RULES_FOLD_KEY, null);
+    return kept && typeof kept === "object" ? kept : {};
+}
+
+/* A short, stable name for a run of text. djb2 over the normalised
+   words: two forums with the same rules share a line in the store, and
+   an edited notice gets a new one and is shown again. */
+function rulesKey(text) {
+    const said = text.replace(/\s+/g, " ").trim().toLowerCase();
+    let hash = 5381;
+    for (let i = 0; i < said.length; i += 1) hash = (((hash << 5) + hash) ^ said.charCodeAt(i)) >>> 0;
+    return hash.toString(36);
+}
+
+/**
+ * Fold one notice.
+ *
+ * `card` is the box the stylesheet dresses, `heading` the element
+ * carrying its name (or null, when the board printed none), and
+ * `content` the nodes that say the rules. The heading moves into a
+ * button and the content into a body the button hides, so the card
+ * keeps the shape and the colours it already had.
+ */
+function foldRulesNotice(card, heading, content) {
+    if (!content.length || card.querySelector(".rr-rules__toggle")) return;
+
+    const body = el("div.rr-rules__body");
+    for (const node of content) body.append(node);
+
+    /* The board's own heading moves into the button rather than being
+       replaced by one: it is already dressed as the notice's label —
+       uppercase, faint, a step under the prose — and everything that
+       reads this card, the stylesheet included, looks for that
+       element. A notice printed without one gets a name here. */
+    const label = heading || el("span.rr-rules__name", {}, [t("Forum rules")]);
+    const toggle = el("button.rr-rules__toggle", { type: "button" }, [icon("chevronD", 13), label]);
+
+    const key = rulesKey(body.textContent);
+    const kept = rulesFolds();
+    /* Never met: open, and written closed straight away so the next
+       page of the same forum is a line. A reader who then opens it
+       back up is asking for it open, and that is what sticks. */
+    const first = !Object.prototype.hasOwnProperty.call(kept, key);
+    let open = first || kept[key] === "open";
+    if (first) {
+        kept[key] = "closed";
+        store.set(RULES_FOLD_KEY, kept);
+    }
+
+    const sync = () => {
+        card.toggleAttribute("data-rr-folded", !open);
+        body.hidden = !open;
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        labelled(toggle, open ? t("Hide the forum rules") : t("Read the forum rules"));
+    };
+    toggle.addEventListener("click", () => {
+        open = !open;
+        const now = rulesFolds();
+        now[key] = open ? "open" : "closed";
+        store.set(RULES_FOLD_KEY, now);
+        sync();
+    });
+
+    card.prepend(toggle);
+    toggle.after(body);
+    sync();
+}
+
 /* The forum-rules box.
 
    subsilver2 writes it as a table of one `td.row3` above everything
@@ -11968,6 +12105,10 @@ function markForumRules() {
         if (heading && heading.nextElementSibling && heading.nextElementSibling.tagName === "BR") {
             heading.nextElementSibling.style.display = "none";
         }
+        // Everything but the heading is the rules; the heading becomes
+        // the control that shows them.
+        const content = Array.from(box.childNodes).filter((node) => node !== heading);
+        foldRulesNotice(box, heading, content);
     }
 
     for (const cell of document.querySelectorAll("#wrapcentre td.row3")) {
@@ -11990,6 +12131,13 @@ function markForumRules() {
         box.setAttribute("data-rr-rules", "");
         if (box.style.marginBottom) box.style.marginBottom = "";
         tameRulesEmphasis(cell);
+
+        /* The cell is the card here, not the table: the stylesheet
+           dresses `td.row3` and the accent rail hangs off it, so the
+           toggle and the body belong inside it too. */
+        const heading = cell.querySelector("h4, p.rules, h3");
+        const content = Array.from(cell.childNodes).filter((node) => node !== heading);
+        foldRulesNotice(cell, heading, content);
     }
 }
 
@@ -15713,13 +15861,32 @@ function releaseRow(row, latest) {
  *
  * Only kinds actually present: a row of eleven filters where nine
  * match nothing is a worse list than no filters at all.
+ *
+ * And only kinds that narrow something. Counting the kinds rather than
+ * what they select drew four chips over a single release carrying
+ * Crack, Hypervisor, DLC and Update — a row of filters, in the list's
+ * own colours, directly above the one row they all match. A kind on
+ * every row selects the whole list, which is the list; a list of one
+ * cannot be narrowed at all. Neither earns a band of the panel.
  */
 function releaseFilters(rows, list, onCount) {
     const present = new Map();
+    const matching = new Map();
     for (const row of rows) {
-        for (const [i, id] of row.kinds.entries()) present.set(id, t(row.labels[i]));
+        // Rows, not mentions: a row that names a kind twice still only
+        // counts once against "does this chip select the whole list".
+        const seen = new Set();
+        for (const [i, id] of row.kinds.entries()) {
+            present.set(id, t(row.labels[i]));
+            if (seen.has(id)) continue;
+            seen.add(id);
+            matching.set(id, (matching.get(id) || 0) + 1);
+        }
     }
-    if (present.size < 2) return null;
+    for (const [id, count] of matching) {
+        if (count >= rows.length) present.delete(id);
+    }
+    if (rows.length < 2 || present.size < 2) return null;
 
     const bar = el("div.rr-releases__filters", { role: "group", "aria-label": t("Filter by kind") });
     let active = null;
@@ -19269,7 +19436,7 @@ function initChrome() {
    not a blank page.
    ------------------------------------------------------------------ */
 
-const RR_VERSION = "0.13.0";
+const RR_VERSION = "0.13.1";
 
 function injectStyles() {
     const host = document.head || document.documentElement;
